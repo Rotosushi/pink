@@ -1,0 +1,42 @@
+#ifndef SYMBOLTABLE_H
+#define SYMBOLTABLE_H
+#include <stdint.h>
+
+#include "Ast.h"
+#include "StringInterner.h"
+
+// this is a classical hash map
+// scheme, with an array of buckets
+// to hash over, and each bucket is
+// itself a list of entries with the
+// same hash value.
+typedef struct Symbol
+{
+  InternedString id;
+  Ast*           term;
+  struct Symbol* next;
+} Symbol;
+
+typedef struct SymbolTable
+{
+  // load factor is [num_elements \ num_buckets]
+  // when the load factor becomes large, this
+  // is the signal to increase the size of the
+  // table. the particular value which signals
+  // a resize will require testing however.
+  int num_buckets;
+  int num_elements;
+  SymbolTable* enclosing_scope;
+  Symbol** table;
+} SymbolTable;
+
+SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope);
+SymbolTable* CloneSymbolTable(SymbolTable* other);
+void DestroySymbolTable(SymbolTable* table);
+
+Ast* lookup(SymbolTable* table, InternedString name);
+Ast* lookup_in_local_scope(SymbolTable* table, InternedString name);
+void bind(SymbolTable* table, InternedString name, Ast* term);
+void unbind(SymbolTable* table, InternedString name);
+
+#endif // !SYMBOLTABLE_H

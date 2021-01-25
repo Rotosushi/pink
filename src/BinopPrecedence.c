@@ -1,0 +1,97 @@
+#include <string.h>
+#include <stdlib.h>
+
+#include "StringInterner.h"
+#include "Associativity.h"
+
+#define BPATABLE_DEFAULT_NUM_BUCKETS 10
+
+BinopPrecedenceTable* CreateBinopPrecedenceTable()
+{
+  BinopPrecedenceTable* result = (BinopPrecedenceTable*)malloc(sizeof(BinopPrecedenceTable));
+  result->table                = (BPElem**)malloc(sizeof(BPElem*) * BPATABLE_DEFAULT_NUM_BUCKETS);
+  result->num_buckets          = BPATABLE_DEFAULT_NUM_BUCKETS;
+  result->num_elements         = 0;
+  return result;
+}
+
+void DestroyBinopPrecedenceTable(BinopPrecedenceTable* BPtbl)
+{
+  if (BPtbl == NULL)
+    return;
+  else if (BPtbl->table == NULL)
+  {
+    free(BPtbl);
+    return;
+  }
+
+
+  for (int i = 0; i < BPtbl->num_buckets; i++)
+  {
+    // cur(sor|rent)
+    BPElem* cur = BPtbl->table[i], *prv;
+    while (cur != NULL)
+    {
+      prv = cur;
+      cur = cur->next;
+      free(prv);
+    }
+  }
+  BPtbl->table = NULL;
+  BPtbl->num_buckets = 0;
+  BPtbl->num_elements = 0;
+  free(BPtbl);
+}
+
+BinopPrecAssoc* FindBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op)
+{
+  if (BPtbl == NULL || BPtbl->table == NULL)
+    return (BinopPrecAssoc*)NULL;
+
+  int hash = (int)(op);
+  hash %= BPtbl->num_buckets;
+
+  BPElem *cur = BPtbl->table[hash];
+
+  if (cur != NULL)
+  {
+    do {
+      if (cur->data.op == op)
+        return &(cur->data);
+      else
+        cur = cur->next;
+    } while (cur != NULL);
+  }
+  else
+    return (BinopPrecAssoc*)NULL;
+}
+
+BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, int prec, Associativity assoc)
+{
+  if (BPtbl == NULL || BPtbl->table == NULL)
+    return (BinopPrecAssoc*)NULL;
+
+  int hash = (int)(op);
+  hash %= BPtbl->num_buckets;
+
+  BPElem *head = BPtbl->table[hash];
+
+  if (head != NULL)
+  {
+    BPElem* elem = (BPElem*)malloc(sizeof(BPElem));
+    elem->data = {op, prec, assoc};
+    elem->next = head->next;
+    head = elem; // prepend the new node to the list.
+    BPtbl->num_elements++;
+    return head->data;
+  }
+  else
+  {
+    // insert into empty bucket
+    head = (BPElem*)malloc(sizeof(BPElem));
+    head->data = {op, prec, assoc};
+    head->next = NULL;
+    BPtbl->num_elements++;
+    return head->data;
+  }
+}

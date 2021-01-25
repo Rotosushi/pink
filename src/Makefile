@@ -1,0 +1,112 @@
+CC = clang
+CARGS = -fstandalone-debug -fexceptions -g -std=c11
+
+pink: DataStructures SymbolicComputation Types Objects Frontend
+	${CC} ${CARGS} -o pink StringInterner.o SymbolTable.o BinopEliminators.o
+	BinopTable.o BinopPrecedence.o UnopEliminators.o UnopTable.o
+	Application.o Variable.o Bind.o Assignment.o Conditional.o Iteration.o
+	Binop.o Unop.o AtomType.o ProcType.o Type.o Nil.o Integer.o
+	Boolean.o Lambda.o Object.o Entity.o
+
+clean:
+	rm -f *.o pink
+
+debug: pink
+	gdb -tui pink
+
+DataStructures: StringInterner SymbolTable BinopEliminators BinopTable BinopPrecedence UnopEliminators UnopTable Environment
+
+StringInterner:
+	${CC} ${CARGS} -c StringInterner.c -o StringInterner.o
+
+SymbolTable:
+	${CC} ${CARGS} -c SymbolTable.c -o SymbolTable.o
+
+BinopEliminators:
+	${CC} ${CARGS} -c BinopEliminators.c -o BinopEliminators.o
+
+BinopTable:
+	${CC} ${CARGS} -c BinopTable.c -o BinopTable.o
+
+BinopPrecedence:
+	${CC} ${CARGS} -c BinopPrecedence.c -o BinopPrecedence.o
+
+UnopEliminators:
+	${CC} ${CARGS} -c UnopEliminators.c -o UnopEliminators.o
+
+UnopTable:
+	${CC} ${CARGS} -c UnopTable.c -o UnopTable.o
+
+Environment:
+	${CC} ${CARGS} -c Environment.c -o Environemnt.o
+
+SymbolicComputation: Application Variable Bind Assignment Conditional Iteration Binop Unop
+
+Application:
+	${CC} ${CARGS} -c Application.c -o Application.o
+
+Variable:
+	${CC} ${CARGS} -c Variable.c -o Variable.o
+
+Bind:
+	${CC} ${CARGS} -c Bind.c -o Bind.o
+
+Assignment:
+	${CC} ${CARGS} -c Assignment.c -o Assignment.o
+
+Conditional:
+	${CC} ${CARGS} -c Conditional.c -o Conditional.o
+
+Iteration:
+	${CC} ${CARGS} -c Iteration.c -o Iteration.o
+
+Binop:
+	${CC} ${CARGS} -c Binop.c -o Binop.o
+
+Unop:
+	${CC} ${CARGS} -c Unop.c -o Unop.o
+
+
+Types: Type AtomType ProcType
+
+Type:
+	${CC} ${CARGS} -c Type.c -o Type.o
+
+AtomType:
+	${CC} ${CARGS} -c AtomType.c -o AtomType.o
+
+ProcType:
+	${CC} ${CARGS} -c ProcType.c -o ProcType.o
+
+
+Objects: Nil Integer Boolean Lambda Object Entity
+
+Nil:
+	${CC} ${CARGS} -c Nil.c -o Nil.o
+
+Integer:
+	${CC} ${CARGS} -c Integer.c -o Integer.o
+
+Boolean:
+	${CC} ${CARGS} -c Boolean.c -o Boolean.o
+
+Lambda:
+	${CC} ${CARGS} -c Lambda.c -o Lambda.o
+
+Object:
+	${CC} ${CARGS} -c Object.c -o Object.o
+
+Entity:
+	${CC} ${CARGS} -c Entity.c -o Entity.o
+
+
+Frontend: Token Lexer Parser
+
+Token:
+	${CC} ${CARGS} -c Token.c -o Token.o
+
+Lexer:
+	${CC} ${CARGS} -c Lexer.c -o Lexer.o
+
+Parser:
+	${CC} ${CARGS} -c Parser.c -o Parser.o
