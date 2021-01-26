@@ -19,7 +19,7 @@ Unop* CloneUnop(Unop* unop)
   return result;
 }
 
-char* ToStringUnop(Unop8 unop)
+char* ToStringUnop(Unop* unop)
 {
   char *result, *spc, *right;
   spc   = " ";

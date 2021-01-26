@@ -3,14 +3,14 @@
 #include <stdbool.h>
 
 #include "Type.h"
-#include "TypeError.h"
+#include "PinkError.h"
 
 typedef struct TypeJudgement
 {
   bool success;
   union {
       Type*     type;
-      TypeError error;
+      PinkError error;
   };
 } TypeJudgement;
 

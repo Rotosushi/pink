@@ -53,9 +53,10 @@
 
 #include "StringInterner.h"
 #include "ParseJudgement.h"
+#include "Parser.h"
 
 
-Parser* CreateParser(Environment* env)
+struct Parser* CreateParser(StringInterner* Iids, StringInterner* Iops, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
 {
   Parser* result    = (Parser*)malloc(sizeof(Parser));
   result->lexer     = (Lexer*)malloc(sizeof(Lexer));
@@ -66,8 +67,11 @@ Parser* CreateParser(Environment* env)
   result->idx       = 0;
   result->mkstksz   = 0;
   result->bufsz     = 0;
-  result->end       = NULL;
-  result->env       = env;
+  result->interned_ids = Iids;
+  result->interned_ops = Iops;
+  result->precedence_table = prec_table;
+  result->binops = bs;
+  result->unops  = us;
   return result;
 }
 
@@ -221,7 +225,7 @@ void filltok(Parser* p, int num)
 
     p->tokbuf = (Token*)realloc(p->tokbuf, sizeof(Token) * (p->bufsz + n));
     p->txtbuf = (char**)realloc(p->txtbuf, sizeof(char*) * (p->bufsz + n));
-    p->loxbuf = (StringLocation*)realloc(p->locbuf, sizeof(StringLocation) * (p->bufsz + n));
+    p->locbuf = (Location*)realloc(p->locbuf, sizeof(Location) * (p->bufsz + n));
 
     for (int j = 0; j < n; j++)
     {
@@ -259,12 +263,12 @@ Token curtok(Parser* p)
 char* curtxt(Parser* p)
 {
   if (p->txtbuf == NULL)
-    return T_ERR;
+    return NULL;
 
   return p->txtbuf[p->idx];
 }
 
-StringLocation* curloc(Parser* p)
+Location* curloc(Parser* p)
 {
   if (p->locbuf == NULL)
     return T_ERR;
@@ -307,8 +311,8 @@ affix := primary
 
 ParseJudgement ParseAffix(Parser* p)
 {
-  StringLocation lhsloc = *(curloc(p));
-  Ast*           lhsterm = ParsePrimary(p);
+  Location lhsloc = *(curloc(p));
+  Ast*    lhsterm = ParsePrimary(p);
 
   if (curtok(p) == T_OPERATOR)
   {

@@ -3,6 +3,7 @@
 
 #include "StringInterner.h"
 #include "Associativity.h"
+#include "BinopPrecedence.h"
 
 #define BPATABLE_DEFAULT_NUM_BUCKETS 10
 
@@ -62,8 +63,8 @@ BinopPrecAssoc* FindBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString o
         cur = cur->next;
     } while (cur != NULL);
   }
-  else
-    return (BinopPrecAssoc*)NULL;
+
+  return (BinopPrecAssoc*)NULL;
 }
 
 BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, int prec, Associativity assoc)
@@ -79,19 +80,23 @@ BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString
   if (head != NULL)
   {
     BPElem* elem = (BPElem*)malloc(sizeof(BPElem));
-    elem->data = {op, prec, assoc};
+    elem->data.op = op;
+    elem->data.precedence = prec;
+    elem->data.associativity = assoc;
     elem->next = head->next;
     head = elem; // prepend the new node to the list.
     BPtbl->num_elements++;
-    return head->data;
+    return &(head->data);
   }
   else
   {
     // insert into empty bucket
     head = (BPElem*)malloc(sizeof(BPElem));
-    head->data = {op, prec, assoc};
+    head->data.op = op;
+    head->data.precedence = prec;
+    head->data.associativity = assoc;
     head->next = NULL;
     BPtbl->num_elements++;
-    return head->data;
+    return &(head->data);
   }
 }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "PinkError.h"
 #include "Nil.h"
 #include "Integer.h"
 #include "Boolean.h"
@@ -16,10 +17,10 @@ void DestroyObject(Object* obj)
       DestroyNil(obj->nil);
       break;
     case O_INT:
-      DestroyInteger(obj->int);
+      DestroyInteger(obj->integer);
       break;
     case O_BOOL:
-      DestroyBoolean(obj->bool);
+      DestroyBoolean(obj->boolean);
       break;
     case O_PROC:
       DestroyLambda(obj->proc);
@@ -28,7 +29,8 @@ void DestroyObject(Object* obj)
       DestroyType(obj->type);
       break;
     default:
-      // report error here.
+      FatalError("Bad Object Kind", __FILE__, __LINE__);
+      break;
   }
   free(obj);
   obj = NULL;
@@ -45,10 +47,10 @@ Object* CloneObject(Object* obj)
       result->nil = CloneNil(obj->nil);
       break;
     case O_INT:
-      result->int = CloneInteger(obj->int);
+      result->integer = CloneInteger(obj->integer);
       break;
     case O_BOOL:
-      result->bool = CloneBoolean(obj->bool);
+      result->boolean = CloneBoolean(obj->boolean);
       break;
     case O_PROC:
       result->proc = CloneLambda(obj->proc);
@@ -57,12 +59,13 @@ Object* CloneObject(Object* obj)
       result->type = CloneType(obj->type);
       break;
     default:
-      // report error here.
+      FatalError("Bad Object Kind", __FILE__, __LINE__);
+      break;
   }
   return result;
 }
 
-char ToStringObject(Object* obj)
+char* ToStringObject(Object* obj)
 {
   char *result;
   switch (obj->kind)
@@ -71,10 +74,10 @@ char ToStringObject(Object* obj)
       result = ToStringNil(obj->nil);
       break;
     case O_INT:
-      result = ToStringInteger(obj->int);
+      result = ToStringInteger(obj->integer);
       break;
     case O_BOOL:
-      result = ToStringBoolean(obj->bool);
+      result = ToStringBoolean(obj->boolean);
       break;
     case O_PROC:
       result = ToStringLambda(obj->proc);
@@ -83,7 +86,8 @@ char ToStringObject(Object* obj)
       result = ToStringType(obj->type);
       break;
     default:
-      // report error here.
+      FatalError("Bad Object Kind", __FILE__, __LINE__);
+      break;
   }
   return result;
 }

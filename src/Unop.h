@@ -15,6 +15,6 @@ void DestroyUnop(Unop* unp);
 
 Unop* CloneUnop(Unop* unp);
 
-char* ToStringUnop(Unop8 unp);
+char* ToStringUnop(Unop* unp);
 
 #endif // !UNOP_H

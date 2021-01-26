@@ -19,6 +19,9 @@ Integer* CloneInteger(Integer* i)
 
 char* ToStringInteger(Integer* i)
 {
+  // allocate enough to fit the largest possible
+  // int result possible, so we never generate
+  // code which writes past the end of the array.
   char* result = (char*)calloc((sizeof(int) * 8) + 1, sizeof(char));
   sprintf(result, "%d", i->value);
   return result;

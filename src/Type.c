@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "PinkError.h"
 #include "AtomType.h"
 #include "ProcType.h"
 #include "Type.h"
@@ -18,7 +19,8 @@ void DestroyType(Type* type)
       DestroyProcType(type->proc);
       break;
     default:
-      // report error
+      FatalError("Bad Type Kind", __FILE__, __LINE__);
+      break;
   }
   free(type);
 }
@@ -36,7 +38,8 @@ Type* CloneType(Type* type)
       result->proc = CloneProcType(type->proc);
       break;
     default:
-      // report error
+      FatalError("Bad Type Kind", __FILE__, __LINE__);
+      break;
   }
   return result;
 }
@@ -53,7 +56,8 @@ char* ToStringType(Type* type)
       result = ToStringProcType(type->proc);
       break;
     default:
-      // report error
+      FatalError("Bad Type Kind", __FILE__, __LINE__);
+      break;
   }
   return result;
 }
@@ -74,7 +78,8 @@ bool EqualTypes(Type* t1, Type* t2)
       break;
 
     default:
-      // fatal error: unknown t1 type kind.
+      FatalError("Bad Type Kind", __FILE__, __LINE__);
+      break;
   }
   return result;
 }

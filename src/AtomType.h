@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+// or scalar type maybe?
 typedef enum AtomKind
 {
   P_NIL,

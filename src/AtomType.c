@@ -31,7 +31,8 @@ char* ToStringAtomType(AtomType* atom)
       result = "Bool";
       break;
     default:
-      // resport error
+      break;
+      // report error
   }
   return result;
 }
@@ -42,6 +43,6 @@ bool EqualAtomTypes(AtomType* t1, AtomType* t2)
 
   if (t1->kind != t2->kind)
     result = true;
-    
+
   return result;
 }

@@ -21,8 +21,8 @@ typedef struct Object
   ObjKind kind;
   union {
     Nil     *nil;
-    Integer *int;
-    Boolean *bool;
+    Integer *integer;
+    Boolean *boolean;
     Lambda  *proc;
     Type    *type;
   };
@@ -34,4 +34,4 @@ Object* CloneObject(Object* obj);
 
 char* ToStringObject(Object* obj);
 
-#endif OBJECT_H
+#endif // !OBJECT_H

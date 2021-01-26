@@ -4,21 +4,21 @@
 
 #include "Boolean.h"
 
-void DestroyBoolean(Boolean* bol)
+void DestroyBoolean(Boolean* b)
 {
-  free(bol);
-  bol = NULL;
+  free(b);
+  b = NULL;
 }
 
-Boolean* CloneBoolean(Boolean* bol)
+Boolean* CloneBoolean(Boolean* b)
 {
   Boolean* result = (Boolean*)malloc(sizeof(Boolean));
-  result->value   = bol->value;
+  result->value   = b->value;
   return result;
 }
 
-char* ToStringBoolean(Boolean* bol)
+char* ToStringBoolean(Boolean* b)
 {
-  char* result = bol->value == false ? "false" : "true";
+  char* result = ((b->value == false) ? "false" : "true");
   return result;
 }

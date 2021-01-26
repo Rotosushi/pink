@@ -8,26 +8,28 @@
 // unop eliminator set
 // cleanup list (only when sequence is added)
 #include "StringInterner.h"
-#include "BinopSet.h"
-#include "BinopPrecedenceTable.h"
-#include "UnopSet.h"
+#include "BinopTable.h"
+#include "BinopPrecedence.h"
+#include "UnopTable.h"
+
+struct Parser;
 
 typedef struct Environment
 {
-  Parser*               parser;
+  struct Parser*               parser;
   StringInterner*       interned_ids;
   StringInterner*       interned_ops;
   BinopPrecedenceTable* precedence_table;
-  BinopSet*             binops;
-  UnopSet*              unops;
+  BinopTable*             binops;
+  UnopTable*              unops;
 } Environment;
 
-Environment* CreateEnvironment(Parser* parser,
+Environment* CreateEnvironment(struct Parser* parser,
                                StringInterner* Iids,
                                StringInterner* Iops,
                                BinopPrecedenceTable* BPAtbl,
-                               BinopSet* bop,
-                               UnopSet*  uop);
+                               BinopTable* bop,
+                               UnopTable*  uop);
 
 void DestroyEnvironment(Environment* env); // even though this is a single call to free()
                                            // it's worth it for the horizontal consistency.

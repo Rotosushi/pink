@@ -23,7 +23,7 @@ void DestroyBinopTable(BinopTable* BOPTable)
 {
   for (int i = 0; i < BOPTable->num_buckets; i++)
   {
-    BTElem* cur = BOPtable->table[i], *prv;
+    BTElem* cur = BOPTable->table[i], *prv;
     while(cur != NULL)
     {
       prv = cur;
@@ -47,7 +47,7 @@ BinopEliminatorList* InsertBinop(BinopTable* BOPTable, InternedString op, BinopE
 
   BTElem* head = BOPTable->table[hash], *cur = (BTElem*)malloc(sizeof(BTElem));
   cur->op   = op;
-  cur->data = BElist;
+  cur->data = BEList;
 
   // prepend to list
   cur->next = head;
@@ -63,7 +63,7 @@ BinopEliminatorList* FindBinop(BinopTable* BOPTable, InternedString op)
 
   BTElem* cur = BOPTable->table[hash];
 
-  while(cur != NULL)
+  while (cur != NULL)
   {
     if (cur->op == op)
       return cur->data;

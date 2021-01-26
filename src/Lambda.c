@@ -11,7 +11,7 @@ void DestroyLambda(Lambda* lam)
 {
   DestroyType(lam->arg_type);
   DestroyAst(lam->body);
-  DestroyLambda(lam->scope);
+  DestroySymbolTable(lam->scope);
   free(lam);
   lam = NULL;
 }
@@ -23,7 +23,7 @@ Lambda* CloneLambda(Lambda* lam)
   result->arg_type = CloneType(lam->arg_type);
   result->body     = CloneAst(lam->body);
   result->scope    = CloneSymbolTable(lam->scope);
-  return Lambda;
+  return result;
 }
 
 char* ToStringLambda(Lambda* lam)

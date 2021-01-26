@@ -27,8 +27,8 @@ char* ToStringConditional(Conditional* cond)
   char *result, *iftxt, *condtxt, *thentxt;
   char *firsttxt, *elsetxt, *secondtxt;
   iftxt     = "if "; // 3
-  thentxt   = " then " // 6
-  elsetxt   = " else " // 6
+  thentxt   = " then "; // 6
+  elsetxt   = " else "; // 6
   condtxt   = ToStringAst(cond->cnd);
   firsttxt  = ToStringAst(cond->fst);
   secondtxt = ToStringAst(cond->snd);

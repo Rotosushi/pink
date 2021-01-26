@@ -20,14 +20,18 @@ void DestroyBinopEliminatorList(BinopEliminatorList* BElist)
   free(BElist);
 }
 
-BinopEliminator* InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, Type *ltype, Type *rtype, Type *restype, PrimitiveBinopEliminator* PBElim)
+BinopEliminator* InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, Type *ltype, Type *rtype, Type *restype, PrimitiveBinopEliminator PBElim)
 {
   if (!BElist || !ltype || !rtype || !restype || !PBElim)
     return NULL; // i should probably write a fatal error routine for this case tbh
 
   BElist->size += 1;
   BElist->list = (BinopEliminator*)realloc(BElist->list, sizeof(BinopEliminator) * BElist->size);
-  BElist->list[BElist->size - 1] = {ltype, rtype, restype, PBElim};
+  BinopEliminator* result = &(BElist->list[BElist->size - 1]);
+  result->ltype = ltype;
+  result->rtype = rtype;
+  result->restype = restype;
+  result->eliminator = PBElim;
   return &(BElist->list[BElist->size - 1]);
 }
 //

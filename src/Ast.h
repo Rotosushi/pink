@@ -4,11 +4,12 @@
 // Ast sits at the bottom of an
 // upside-down information pyramid
 // however, notice that in OOP,
-// it is considered the 
+// it is considered the
 // TOP of the heirarchy.
 
 
 #include "StringLocation.h"
+#include "Environment.h"
 #include "Variable.h"
 #include "Application.h"
 #include "Assignment.h"
@@ -17,7 +18,7 @@
 #include "Unop.h"
 #include "Conditional.h"
 #include "Iteration.h"
-#include "Entity.h"
+#include "Object.h"
 #include "TypeJudgement.h"
 
 typedef enum AstKind
@@ -30,7 +31,7 @@ typedef enum AstKind
   A_UOP,
   A_CND,
   A_ITR,
-  A_ENT,
+  A_OBJ,
 } AstKind;
 
 // the kinds of Ast represent the
@@ -49,7 +50,7 @@ typedef struct Ast
     Unop        *uop;
     Conditional *cnd;
     Iteration   *itr;
-    Entity      *ent;
+    Object      *obj;
   };
 } Ast;
 

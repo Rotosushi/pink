@@ -1,19 +1,19 @@
-#include <stdint.h>
+#include <stdlib.h>
 
 #include "Ast.h"
 #include "StringInterner.h"
 #include "SymbolTable.h"
 
-#define DEFAULT_NUM_BUCKETS 10
+#define SYMTABLE_DEFAULT_NUM_BUCKETS 10
 
 SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope)
 {
   SymbolTable* result     = (SymbolTable*)malloc(sizeof(SymbolTable));
-  result->num_buckets     = DEFAULT_NUM_BUCKETS;
+  result->num_buckets     = SYMTABLE_DEFAULT_NUM_BUCKETS;
   result->num_elements    = 0;
   result->enclosing_scope = enclosing_scope;
-  result->table           = (Symbol**)malloc(num_buckets * sizeof(Symbol*));
-  for (int i = 0; i < num_buckets; i++)
+  result->table           = (Symbol**)malloc(result->num_buckets * sizeof(Symbol*));
+  for (int i = 0; i < result->num_buckets; i++)
   {
     result->table[i] = NULL;
   }
@@ -25,7 +25,7 @@ SymbolTable* CloneSymbolTable(SymbolTable* other)
   SymbolTable* result     = (SymbolTable*)malloc(sizeof(SymbolTable));
   result->num_buckets     = other->num_buckets;
   result->enclosing_scope = other->enclosing_scope;
-  result->table           = (Symbol**)malloc(num_buckets * sizeof(Symbol*));
+  result->table           = (Symbol**)malloc(other->num_buckets * sizeof(Symbol*));
   for (int i = 0; i < other->num_buckets; i++)
   {
     Symbol* cursor = other->table[i];
@@ -71,7 +71,7 @@ Ast* lookup(SymbolTable* table, InternedString name)
   while (cursor != NULL)
   {
     // takin' advantage of interned strings here
-    if (name = cursor->id)
+    if (name == cursor->id)
       return cursor->term;
 
     cursor = cursor->next;
@@ -93,7 +93,7 @@ Ast* lookup_in_local_scope(SymbolTable* table, InternedString name)
   // look through the bucket (list)
   while (cursor != NULL)
   {
-    if (name = cursor->id)
+    if (name == cursor->id)
       return cursor->term;
 
     cursor = cursor->next;
@@ -135,7 +135,7 @@ void unbind(SymbolTable* table, InternedString name)
   // look through the bucket (list)
   while (cursor != NULL)
   {
-    if (name = cursor->id)
+    if (name == cursor->id)
     {
       prev->next = cursor->next;
       DestroyAst(cursor->term);

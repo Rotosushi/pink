@@ -1,10 +1,12 @@
+#ifndef BINOPELIMINATORS_H
+#define BINOPELIMINATORS_H
 #include <stdlib.h>
 
 #include "StringInterner.h"
 #include "Ast.h"
 #include "Type.h"
 
-typedef Ast* (*PrimitiveBinopEliminator)(Ast* lval, Ast* rval);
+typedef struct Ast* (*PrimitiveBinopEliminator)(struct Ast* lval, struct Ast* rval);
 
 
 typedef struct BinopEliminator
@@ -13,7 +15,7 @@ typedef struct BinopEliminator
   // probably held in a union,
   // just like a judgement,
   // except Composite v. Primitive
-  PrimitiveBinopEliminator primitive;
+  PrimitiveBinopEliminator eliminator;
   // Lambda* composite;
 } BinopEliminator;
 
@@ -27,6 +29,7 @@ typedef struct BinopEliminatorList
 
 BinopEliminatorList* CreateBinopEliminatorList();
 void                 DestroyBinopEliminatorList(BinopEliminatorList* BElist);
-BinopEliminator*     InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, Type *ltype, Type *rtype, Type *restype, PrimitiveBinopEliminator* PrimElim);
+BinopEliminator*     InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, Type *ltype, Type *rtype, Type *restype, PrimitiveBinopEliminator PrimElim);
 //
 BinopEliminator*     FindBinopEliminator(BinopEliminatorList* BElist, Type *ltype, Type* rtype);
+#endif // !BINOPELIMINATORS_H

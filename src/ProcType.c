@@ -39,7 +39,7 @@ char* ToStringProcType(ProcType* proc)
 bool EqualProcTypes(ProcType* t1, ProcType* t2)
 {
   bool result = false;
-  Type *t1ltype = t1->left, *t1rtype = t1->right, *t2ltype = l2->left, *t2rtype = l2->right;
+  Type *t1ltype = t1->lhs, *t1rtype = t1->rhs, *t2ltype = t2->lhs, *t2rtype = t2->rhs;
   result = EqualTypes(t1ltype, t2ltype) || EqualTypes(t1rtype, t2rtype);
   return result;
 }

@@ -1,6 +1,8 @@
 // implements a map between
 // interned binops and pointers
 // to that binops eliminator set.
+#ifndef BINOPTABLE_H
+#define BINOPTABLE_H
 #include <stdlib.h>
 
 #include "StringInterner.h"
@@ -26,3 +28,4 @@ BinopTable* CreateBinopTable();
 void        DestroyBinopTable(BinopTable* BOPTable);
 BinopEliminatorList* InsertBinop(BinopTable* BOPTable, InternedString op, BinopEliminatorList* BEList);
 BinopEliminatorList* FindBinop(BinopTable* BOPTable, InternedString op);
+#endif // !UNOPTABLE_H

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "Location.h"
+
 #define LEXER_BUF_SZ 4096
 
 /*
@@ -28,7 +30,7 @@ typedef struct Lexer {
 	FILE* yyin;
 	char  yych;
 	bool  is_stdin;
-	StringLocation yylloc;
+	Location yylloc;
 } Lexer;
 
 
@@ -36,7 +38,7 @@ Lexer*   CreateLexer(FILE* in);
 void     DestroyLexer(Lexer* lexer);
 void     yySetBuffer(Lexer* lexer, char* text, int len);
 char*    yyText(Lexer* lexer);
-StringLocation*  yyLloc(Lexer* lexer);
+Location*  yyLloc(Lexer* lexer);
 int      yyLex(Lexer* lexer);
 
 #endif // !LEXER_H

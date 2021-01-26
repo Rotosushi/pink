@@ -9,7 +9,7 @@
 #include "Unop.h"
 #include "Conditional.h"
 #include "Iteration.h"
-#include "Entity.h"
+#include "Object.h"
 #include "Ast.h"
 
 // this shall deallocate all memory associated
@@ -51,12 +51,13 @@ void DestroyAst(Ast* term)
       DestroyIteration(term->itr);
       break;
 
-    case A_ENT:
-      DestroyEntity(term->ent);
+    case A_OBJ:
+      DestroyObject(term->obj);
       break;
 
     default:
-      // report the fatal error
+      FatalError("Bad Ast Kind", __FILE__, __LINE__);
+      break;
   }
   free(term);
   term = NULL;
@@ -104,12 +105,13 @@ Ast* CloneAst(Ast* term)
       result->itr = CloneIteration(term->itr);
       break;
 
-    case A_ENT:
-      result->ent = CloneEntity(term->ent);
+    case A_OBJ:
+      result->obj = CloneObject(term->obj);
       break;
 
     default:
-      // report the fatal error
+      FatalError("Bad Ast Kind", __FILE__, __LINE__);
+      break;
   }
 }
 
@@ -152,12 +154,13 @@ char* ToStringAst(Ast* term)
       result = ToStringIteration(term->itr);
       break;
 
-    case A_ENT:
-      result = ToStringEntity(term->ent);
+    case A_OBJ:
+      result = ToStringObject(term->obj);
       break;
-
+      
     default:
-      // report the fatal error
+      FatalError("Bad Ast Kind", __FILE__, __LINE__);
+      break;
   }
   return result;
 }

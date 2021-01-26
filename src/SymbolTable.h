@@ -13,7 +13,7 @@
 typedef struct Symbol
 {
   InternedString id;
-  Ast*           term;
+  struct Ast*    term;
   struct Symbol* next;
 } Symbol;
 
@@ -26,7 +26,7 @@ typedef struct SymbolTable
   // a resize will require testing however.
   int num_buckets;
   int num_elements;
-  SymbolTable* enclosing_scope;
+  struct SymbolTable* enclosing_scope;
   Symbol** table;
 } SymbolTable;
 
@@ -34,9 +34,9 @@ SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope);
 SymbolTable* CloneSymbolTable(SymbolTable* other);
 void DestroySymbolTable(SymbolTable* table);
 
-Ast* lookup(SymbolTable* table, InternedString name);
-Ast* lookup_in_local_scope(SymbolTable* table, InternedString name);
-void bind(SymbolTable* table, InternedString name, Ast* term);
+struct Ast* lookup(SymbolTable* table, InternedString name);
+struct Ast* lookup_in_local_scope(SymbolTable* table, InternedString name);
+void bind(SymbolTable* table, InternedString name, struct Ast* term);
 void unbind(SymbolTable* table, InternedString name);
 
 #endif // !SYMBOLTABLE_H

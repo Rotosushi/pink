@@ -3,14 +3,14 @@
 #include <stdbool.h>
 
 #include "Ast.h"
-#include "ParseError.h"
+#include "PinkError.h"
 
 typedef struct ParseJudgement
 {
   bool success;
   union {
-    Ast*       term;
-    ParseError error;
+    struct Ast* term;
+    PinkError   error;
   };
 } ParseJudgement;
 

@@ -3,7 +3,9 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "PinkError.h"
 #include "Token.h"
+#include "Location.h"
 #include "Lexer.h"
 
 
@@ -29,6 +31,7 @@ Lexer* CreateLexer(FILE* in)
     lxr->yyin     = stdin;
     lxr->is_stdin = true;
   }
+  return lxr;
 }
 
 void DestroyLexer(Lexer* lexer)
@@ -44,7 +47,7 @@ void DestroyLexer(Lexer* lexer)
 void yySetBuffer(Lexer* lexer, char* text, int len)
 {
     if (len > LEXER_BUF_SZ)
-        error_abort("cannot buffer input text, aborting");
+        FatalError("cannot buffer input text", __FILE__, __LINE__);
 
     memset(lexer->buf, 0, LEXER_BUF_SZ);
     memcpy(lexer->buf, text, len);
@@ -53,17 +56,25 @@ void yySetBuffer(Lexer* lexer, char* text, int len)
     lexer->end = lexer->buf + len;
 }
 
-char* yyText(Lexer* lexer)
+char* dupstr(char* str, int len)
 {
-    return strndup(lexer->token, lexer->cursor - lexer->token);
+    char* result = (char*)malloc(sizeof(char) * len + 1);
+    result = strncpy(result, str, len);
+    result[len-1] = '\0';
+    return result;
 }
 
-StringLocation* yyLloc(Lexer* lexer)
+char* yyText(Lexer* lexer)
+{
+    return dupstr(lexer->token, lexer->cursor - lexer->token);
+}
+
+Location* yyLloc(Lexer* lexer)
 {
     return &(lexer->yylloc);
 }
 
-void updatelloc(StringLocation* llocp, char* token, int len)
+void updatelloc(Location* llocp, char* token, int len)
 {
     llocp->first_line   = llocp->last_line;
     llocp->first_column = llocp->last_column;
@@ -88,7 +99,7 @@ void updatelloc(StringLocation* llocp, char* token, int len)
 */
 
 #define YYPEEK() *lexer->cursor
-#define YYSKIP() ++(scanner->cursor)
+#define YYSKIP() ++(lexer->cursor)
 #define YYBACKUP() lexer->marker = lexer->cursor
 #define YYRESTORE() lexer->cursor = lexer->marker
 #define YYBACKUPCTX() lexer->mrkctx = lexer->cursor
@@ -104,32 +115,32 @@ int yyLex(Lexer* lexer)
         re2c:yyfill:enable = 0;
         re2c:eof = 0;
 
-        * { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_ERR; }
-        $ { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_END; }
-        [ \t\n]    { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); goto LOOP; }
-        operator   { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_OPERATOR; }
-        identifier { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_IDENTIFIER; }
-        "nil"      { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_NIL; }
-        "Nil"      { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_TYPE_NIL; }
-        "true"     { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_TRUE; }
-        "false"    { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_FALSE; }
-        "Bool"     { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_TYPE_BOOL; }
-        integer    { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_INTEGER; }
-        "Int"      { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_TYPE_INT; }
-        "\\"       { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_BSLASH; }
-        ":"        { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_COLON; }
-        "=>"       { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_EQRARROW; }
-        "->"       { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_RARROW; }
-        "<-"       { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_LARROW; }
-        ":="       { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_COLONEQ; }
-        "("        { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_LPAREN; }
-        ")"        { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_RPAREN; }
-        ";"        { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_SEMICOLON; }
-        "if"       { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_IF; }
-        "then"     { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_THEN; }
-        "else"     { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_ELSE; }
-        "while"    { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_WHILE; }
-        "do"       { updatelloc(lexer->yylloc, lexer->cursor - lexer->token); return T_DO; }
+        *          { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_ERR; }
+        $          { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_END; }
+        [ \t\n]    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); goto LOOP; }
+        operator   { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_OPERATOR; }
+        identifier { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_IDENTIFIER; }
+        "nil"      { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_NIL; }
+        "Nil"      { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_TYPE_NIL; }
+        "true"     { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_TRUE; }
+        "false"    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_FALSE; }
+        "Bool"     { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_TYPE_BOOL; }
+        integer    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_INTEGER; }
+        "Int"      { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_TYPE_INT; }
+        "\\"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_BSLASH; }
+        ":"        { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_COLON; }
+        "=>"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_EQRARROW; }
+        "->"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_RARROW; }
+        "<-"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_LARROW; }
+        ":="       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_COLONEQ; }
+        "("        { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_LPAREN; }
+        ")"        { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_RPAREN; }
+        ";"        { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_SEMICOLON; }
+        "if"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_IF; }
+        "then"     { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_THEN; }
+        "else"     { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_ELSE; }
+        "while"    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_WHILE; }
+        "do"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_DO; }
 
     */
 }

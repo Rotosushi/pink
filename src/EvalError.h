@@ -1,12 +1,12 @@
 #ifndef EVALERROR_H
 #define EVALERROR_H
 
-#include "StringLocation.h"
+#include "Location.h"
 
 typedef struct EvalError
 {
-  StringLocation errloc;
-  char*          errdsc;
+  Location errloc;
+  char*    errdsc;
 } EvalError;
 
 

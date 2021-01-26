@@ -1,12 +1,12 @@
 CC = clang
 CARGS = -fstandalone-debug -fexceptions -g -std=c11
 
-pink: DataStructures SymbolicComputation Types Objects Frontend
+pink: DataStructures SymbolicComputation Types Objects Frontend Utilities
 	${CC} ${CARGS} -o pink StringInterner.o SymbolTable.o BinopEliminators.o
 	BinopTable.o BinopPrecedence.o UnopEliminators.o UnopTable.o
 	Application.o Variable.o Bind.o Assignment.o Conditional.o Iteration.o
 	Binop.o Unop.o AtomType.o ProcType.o Type.o Nil.o Integer.o
-	Boolean.o Lambda.o Object.o Entity.o
+	Boolean.o Lambda.o Object.o PinkError.o
 
 clean:
 	rm -f *.o pink
@@ -79,7 +79,7 @@ ProcType:
 	${CC} ${CARGS} -c ProcType.c -o ProcType.o
 
 
-Objects: Nil Integer Boolean Lambda Object Entity
+Objects: Nil Integer Boolean Lambda Object
 
 Nil:
 	${CC} ${CARGS} -c Nil.c -o Nil.o
@@ -96,17 +96,22 @@ Lambda:
 Object:
 	${CC} ${CARGS} -c Object.c -o Object.o
 
-Entity:
-	${CC} ${CARGS} -c Entity.c -o Entity.o
-
 
 Frontend: Token Lexer Parser
 
 Token:
 	${CC} ${CARGS} -c Token.c -o Token.o
 
-Lexer:
+Lexer: re2c
 	${CC} ${CARGS} -c Lexer.c -o Lexer.o
+
+re2c: Lexer.re
+	re2c -W --input custom Lexer.re -o Lexer.c
 
 Parser:
 	${CC} ${CARGS} -c Parser.c -o Parser.o
+
+Utilities: PinkError
+
+PinkError:
+	${CC} ${CARGS} -c PinkError.c -o PinkError.o

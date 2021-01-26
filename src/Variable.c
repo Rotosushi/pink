@@ -9,7 +9,7 @@ void DestroyVariable(Variable* var)
   free(var);
 }
 
-Variable CloneVariable(Variable* var)
+Variable* CloneVariable(Variable* var)
 {
   Variable* result = (Variable*)malloc(sizeof(Variable));
   result->id = var->id;
