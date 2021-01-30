@@ -3,6 +3,14 @@
 
 #include "StringInterner.h"
 
+char* dupstr(char* str, int len)
+{
+    char* result = (char*)malloc(sizeof(char) * len + 1);
+    result = strncpy(result, str, len);
+    result[len-1] = '\0';
+    return result;
+}
+
 StringInterner* CreateStringInterner()
 {
   StringInterner* result   = (StringInterner*)malloc(sizeof(StringInterner));
@@ -38,7 +46,9 @@ InternedString InternString(StringInterner* interner, char* string)
     int cmp = strcmp(cur, string);
 
     if (cmp == 0)
+    {
       return (InternedString)cur;
+    }
   }
 
   // if we got here then the string was not a member
@@ -46,17 +56,14 @@ InternedString InternString(StringInterner* interner, char* string)
   // string into the set, and return that string as the
   // single instance of this string.
   // here realloc saves me from having to memcpy myself.
-  interner->interned_strings = (char**)realloc(interner->interned_strings, sizeof(char**) * (interner->length + 1));
-  // this is normally always an off by one error
-  // because of the nature of zero-indexed arrays,
-  // however here it occurs immediately after resizing
-  // the array to be one larger, and so this operation
-  // is safe.
-  interner->interned_strings[interner->length] = string;
+  char* candidate = dupstr(string);
   interner->length++;
-  // string is now the one and only instance of it's
+  interner->interned_strings = (char**)realloc(interner->interned_strings, sizeof(char**) * interner->length);
+
+  interner->interned_strings[interner->length - 1] = candidate;
+  // candidate is now the one and only instance of it's
   // exact layout of character data.
-  return string;
+  return candidate;
 }
 
 // searches for the interned string by using the pointer values.

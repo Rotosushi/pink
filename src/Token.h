@@ -4,6 +4,7 @@
 typedef enum Token
 {
   T_ERR,
+  T_EOF,
   T_END,
   T_OPERATOR,
   T_IDENTIFIER,

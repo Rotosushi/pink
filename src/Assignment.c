@@ -4,6 +4,14 @@
 #include "Ast.h"
 #include "Assignment.h"
 
+Assignment* CreateAssignment(struct Ast* left, struct Ast* right)
+{
+  Assignment* result = (Assignment*)malloc(sizeof(Assignment));
+  result->lhs = left;
+  result->rhs = right;
+  return result;
+}
+
 void DestroyAssignment(Assignment* ass)
 {
   DestroyAst(ass->lhs);

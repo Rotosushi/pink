@@ -3,6 +3,13 @@
 
 #include "Nil.h"
 
+Nil* CreateNil()
+{
+  Nil* result = (Nil*)malloc(sizeof(Nil));
+  result->value = NULL;
+  return result;
+}
+
 void DestroyNil(Nil* nil)
 {
   free(nil);

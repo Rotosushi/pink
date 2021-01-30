@@ -3,13 +3,14 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "StringInterner.h"
 #include "PinkError.h"
 #include "Token.h"
 #include "Location.h"
 #include "Lexer.h"
 
 
-Lexer* CreateLexer(FILE* in)
+Lexer* CreateLexer(StringInterner* Iids, StringInterner* Iops)
 {
   Lexer* lxr = (Lexer*)malloc(sizeof(Lexer));
   memset(lxr->buf, 0, LEXER_BUF_SZ + 1);
@@ -17,20 +18,9 @@ Lexer* CreateLexer(FILE* in)
   lxr->end      = lxr->cursor = lxr->token = lxr->marker = lxr->buf + LEXER_BUF_SZ;
   lxr->yyaccept = 0;
   lxr->state    = -1;
-  if (in)
-  {
-    if (in == stdin)
-      lxr->is_stdin = true;
-    else
-      lxr->is_stdin = false;
+  lxr->interned_ids = Iids;
+  lxr->interned_ops = Iops;
 
-    lxr->yyin = in;
-  }
-  else
-  {
-    lxr->yyin     = stdin;
-    lxr->is_stdin = true;
-  }
   return lxr;
 }
 
@@ -56,6 +46,7 @@ void yySetBuffer(Lexer* lexer, char* text, int len)
     lexer->end = lexer->buf + len;
 }
 
+// god why isn't strndup a stdlib procedure?
 char* dupstr(char* str, int len)
 {
     char* result = (char*)malloc(sizeof(char) * len + 1);
@@ -116,7 +107,7 @@ int yyLex(Lexer* lexer)
         re2c:eof = 0;
 
         *          { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_ERR; }
-        $          { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_END; }
+        $          { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_EOF; }
         [ \t\n]    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); goto LOOP; }
         operator   { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_OPERATOR; }
         identifier { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_IDENTIFIER; }
@@ -141,6 +132,7 @@ int yyLex(Lexer* lexer)
         "else"     { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_ELSE; }
         "while"    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_WHILE; }
         "do"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_DO; }
+        "end"      { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_END; }
 
     */
 }

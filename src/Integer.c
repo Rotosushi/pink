@@ -4,6 +4,13 @@
 
 #include "Integer.h"
 
+Integer* CreateInteger(int i)
+{
+  Integer* result = (Integer*)malloc(sizeof(Integer));
+  result->value   = i
+  return result;
+}
+
 void DestroyInteger(Integer* i)
 {
   free(i);

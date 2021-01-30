@@ -1,4 +1,14 @@
-
+/*
+  something i am noticing from this
+  rewrite, much of the benefiets that
+  come from c++ can be had by simply
+  sticking to a few choices when writing
+  the code. breaking up the switch bodies
+  into separate procedures defined within
+  the file, alongside the definitions of the
+  structure representing the idea in memory.
+  to evoke the idea of OOP.
+*/
 
 #include "Ast.h"
 #include "StringInterner.h"

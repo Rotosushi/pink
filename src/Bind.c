@@ -5,6 +5,14 @@
 #include "StringInterner.h"
 #include "Bind.h"
 
+Bind* CreateBind(InternedString id, struct Ast* right)
+{
+  Bind* result = (Bind*)malloc(sizeof(Bind));
+  result->id   = id;
+  result->rhs  = right;
+  return result;
+}
+
 void DestroyBind(Bind* bnd)
 {
   DestroyAst(bnd->rhs);

@@ -6,6 +6,8 @@ typedef struct Integer
   int value;
 } Integer;
 
+Integer* CreateInteger(int i);
+
 void DestroyInteger(Integer* i);
 
 Integer* CloneInteger(Integer* i);

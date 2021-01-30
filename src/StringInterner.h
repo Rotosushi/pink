@@ -20,7 +20,7 @@ void DestroyStringInterner(StringInterner* interner);
 // inserts the name into the set of interned strings
 // returns a pointer to the newly inserted string,
 // if the name already exists, we simply return a pointer
-// to the new result.
+// to the old result.
 InternedString InternString(StringInterner* interner, char* string);
 
 // searches for the interned string by using the pointer values.

@@ -9,6 +9,8 @@ typedef struct Application
   struct Ast* rhs;
 } Application;
 
+Application* CreateApplication(struct Ast* left, struct Ast* right);
+
 void DestroyApplication(Application* app);
 
 Application* CloneApplication(Application* app);

@@ -11,6 +11,8 @@ typedef struct Bind
   struct Ast*    rhs;
 } Bind;
 
+Bind* CreateBind(InternedString id, struct Ast* right);
+
 void DestroyBind(Bind* bnd);
 
 Bind* CloneBind(Bind* bnd);

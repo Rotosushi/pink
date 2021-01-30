@@ -4,6 +4,13 @@
 
 #include "Boolean.h"
 
+Boolean* CreateBoolean(bool b)
+{
+  Boolean* result = (Boolean*)malloc(sizeof(Boolean));
+  result->value = b;
+  return result;
+}
+
 void DestroyBoolean(Boolean* b)
 {
   free(b);

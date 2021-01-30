@@ -8,6 +8,8 @@ typedef struct Boolean
   bool value;
 } Boolean;
 
+Boolean* CreateBoolean(bool b);
+
 void DestroyBoolean(Boolean* b);
 
 Boolean* CloneBoolean(Boolean* b);

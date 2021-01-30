@@ -6,6 +6,8 @@ typedef struct Nil
   void* value;
 } Nil;
 
+Nil* CreateNil();
+
 void DestroyNil(Nil* nil);
 
 Nil* CloneNil(Nil* nil);

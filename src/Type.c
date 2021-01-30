@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "PinkError.h"
-#include "AtomType.h"
+#include "ScalarType.h"
 #include "ProcType.h"
 #include "Type.h"
 
@@ -13,7 +13,7 @@ void DestroyType(Type* type)
   switch (type->kind)
   {
     case T_ATOM:
-      DestroyAtomType(type->atom);
+      DestroyScalarType(type->atom);
       break;
     case T_PROC:
       DestroyProcType(type->proc);
@@ -32,7 +32,7 @@ Type* CloneType(Type* type)
   switch (result->kind)
   {
     case T_ATOM:
-      result->atom = CloneAtomType(type->atom);
+      result->atom = CloneScalarType(type->atom);
       break;
     case T_PROC:
       result->proc = CloneProcType(type->proc);
@@ -50,7 +50,7 @@ char* ToStringType(Type* type)
   switch (type->kind)
   {
     case T_ATOM:
-      result = ToStringAtomType(type->atom);
+      result = ToStringScalarType(type->atom);
       break;
     case T_PROC:
       result = ToStringProcType(type->proc);
@@ -69,7 +69,7 @@ bool EqualTypes(Type* t1, Type* t2)
   {
     case T_ATOM:
       if (t2->kind == T_ATOM)
-        result = EqualAtomTypes((AtomType*)t1, (AtomType*)t2);
+        result = EqualScalarTypes((ScalarType*)t1, (ScalarType*)t2);
       break;
 
     case T_PROC:

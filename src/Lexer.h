@@ -1,10 +1,11 @@
 #ifndef LEXER_H
 #define LEXER_H
-#include <stdio.h>
+
 #include <stdlib.h>
-#include <stdbool.h>
+
 
 #include "Location.h"
+#include "StringInterner.h"
 
 #define LEXER_BUF_SZ 4096
 
@@ -27,14 +28,14 @@ typedef struct Lexer {
   char* token;
 	unsigned int yyaccept;
 	int state;
-	FILE* yyin;
 	char  yych;
-	bool  is_stdin;
 	Location yylloc;
+	StringInterner* interned_ids;
+	StringInterner* interned_ops;
 } Lexer;
 
 
-Lexer*   CreateLexer(FILE* in);
+Lexer*   CreateLexer(StringInterner* Iids, StringInterner* Iops);
 void     DestroyLexer(Lexer* lexer);
 void     yySetBuffer(Lexer* lexer, char* text, int len);
 char*    yyText(Lexer* lexer);

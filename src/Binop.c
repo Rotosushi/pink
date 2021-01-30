@@ -5,6 +5,15 @@
 #include "StringInterner.h"
 #include "Binop.h"
 
+Binop* CreateBinop(InternedString op, struct Ast* left, struct Ast* right)
+{
+  Binop* result = (Binop*)malloc(sizeof(Binop));
+  result->op    = op;
+  result->lhs   = left;
+  result->rhs   = right;
+  return result;
+}
+
 void DestroyBinop(Binop* binop)
 {
   DestroyAst(binop->lhs);

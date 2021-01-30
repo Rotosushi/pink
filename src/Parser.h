@@ -5,6 +5,7 @@
 #include "Ast.h"
 #include "Location.h"
 #include "Token.h"
+#include "SymbolTable.h"
 #include "StringInterner.h"
 #include "BinopTable.h"
 #include "BinopPrecedence.h"
@@ -26,6 +27,7 @@ typedef struct Parser
   int             mkstksz;   // the actual length of our mark stack.
   Lexer*          lexer;     // the lexer structure, which splits the input text into tokens.
   // these pointers memory are managed elsewhere in the program.
+  SymbolTable*    outer_scope;
   StringInterner* interned_ids;
   StringInterner* interned_ops;
   BinopPrecedenceTable* precedence_table;
@@ -41,7 +43,7 @@ typedef struct Parser
   otherwise it is wholly independant from
   the rest of the program.
 */
-struct Parser* CreateParser(StringInterner* Iids, StringInterner* Iops, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
+struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
 void    DestroyParser(struct Parser* p);
 void    ResetParser(struct Parser* p);
 ParseJudgement Parse(struct Parser* p, char* input);

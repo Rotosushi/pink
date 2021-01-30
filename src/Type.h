@@ -3,12 +3,12 @@
 #include <stdbool.h>
 
 
-#include "AtomType.h"
+#include "ScalarType.h"
 #include "ProcType.h"
 
 typedef enum TypeKind
 {
-  T_ATOM,
+  T_SCALAR,
   T_PROC,
 } TypeKind;
 
@@ -16,7 +16,7 @@ typedef struct Type
 {
   TypeKind kind;
   union {
-    AtomType *atom;
+    ScalarType *scalar;
     ProcType *proc;
     // RefType ref;
   };

@@ -4,6 +4,14 @@
 #include "Type.h"
 #include "ProcType.h"
 
+ProcType* CreateProcType(struct Type* left, struct Type* right)
+{
+  ProcType* result = (ProcType*)malloc(sizeof(ProcType));
+  result->lhs = left;
+  result->rhs = right;
+  return result;
+}
+
 void DestroyProcType(ProcType* proc)
 {
   DestroyType(proc->lhs);

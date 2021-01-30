@@ -9,6 +9,8 @@ typedef struct Assignment
   struct Ast* rhs;
 } Assignment;
 
+Assignment* CreateAssignment(struct Ast* left, struct Ast* right);
+
 void DestroyAssignment(Assignment* ass);
 
 Assignment* CloneAssignment(Assignment* ass);

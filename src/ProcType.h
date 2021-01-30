@@ -9,6 +9,8 @@ typedef struct ProcType
   struct Type* rhs;
 } ProcType;
 
+ProcType* CreateProcType(struct Type* left, struct Type* right);
+
 void DestroyProcType(ProcType* proc);
 
 ProcType* CloneProcType(ProcType* proc);

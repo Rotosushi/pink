@@ -12,6 +12,8 @@ typedef struct Binop
   struct Ast* rhs;
 } Binop;
 
+Binop* CreateBinop(InternedString op, struct Ast* left, struct Ast* right);
+
 void DestroyBinop(Binop* bnp);
 
 Binop* CloneBinop(Binop* binop);

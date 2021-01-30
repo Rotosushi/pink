@@ -4,6 +4,14 @@
 #include "Ast.h"
 #include "Application.h"
 
+Application* CreateApplication(struct Ast* left, struct Ast* right)
+{
+  Application* result = (Application*)malloc(sizeof(Application));
+  result->lhs = left;
+  result->rhs = right;
+  return result;
+}
+
 void DestroyApplication(Application* app)
 {
   DestroyAst(app->lhs);

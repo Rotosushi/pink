@@ -5,7 +5,7 @@ pink: DataStructures SymbolicComputation Types Objects Frontend Utilities
 	${CC} ${CARGS} -o pink StringInterner.o SymbolTable.o BinopEliminators.o
 	BinopTable.o BinopPrecedence.o UnopEliminators.o UnopTable.o
 	Application.o Variable.o Bind.o Assignment.o Conditional.o Iteration.o
-	Binop.o Unop.o AtomType.o ProcType.o Type.o Nil.o Integer.o
+	Binop.o Unop.o ScalarType.o ProcType.o Type.o Nil.o Integer.o
 	Boolean.o Lambda.o Object.o PinkError.o
 
 clean:
@@ -67,13 +67,13 @@ Unop:
 	${CC} ${CARGS} -c Unop.c -o Unop.o
 
 
-Types: Type AtomType ProcType
+Types: Type ScalarType ProcType
 
 Type:
 	${CC} ${CARGS} -c Type.c -o Type.o
 
-AtomType:
-	${CC} ${CARGS} -c AtomType.c -o AtomType.o
+ScalarType:
+	${CC} ${CARGS} -c ScalarType.c -o ScalarType.o
 
 ProcType:
 	${CC} ${CARGS} -c ProcType.c -o ProcType.o
