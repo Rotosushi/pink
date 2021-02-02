@@ -22,8 +22,8 @@ void DestroyObject(Object* obj)
     case O_BOOL:
       DestroyBoolean(obj->boolean);
       break;
-    case O_LAMB;:
-      DestroyLambda(obj->proc);
+    case O_LAMB:
+      DestroyLambda(obj->lambda);
       break;
     case O_TYPE:
       DestroyType(obj->type);
@@ -52,8 +52,8 @@ Object* CloneObject(Object* obj)
     case O_BOOL:
       result->boolean = CloneBoolean(obj->boolean);
       break;
-    case O_LAMB;:
-      result->proc = CloneLambda(obj->proc);
+    case O_LAMB:
+      result->lambda = CloneLambda(obj->lambda);
       break;
     case O_TYPE:
       result->type = CloneType(obj->type);
@@ -79,8 +79,8 @@ char* ToStringObject(Object* obj)
     case O_BOOL:
       result = ToStringBoolean(obj->boolean);
       break;
-    case O_LAMB;:
-      result = ToStringLambda(obj->proc);
+    case O_LAMB:
+      result = ToStringLambda(obj->lambda);
       break;
     case O_TYPE:
       result = ToStringType(obj->type);

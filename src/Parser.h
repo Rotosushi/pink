@@ -2,11 +2,11 @@
 #define PARSER_H
 #include <stdio.h>
 
-#include "Ast.h"
 #include "Location.h"
 #include "Token.h"
 #include "SymbolTable.h"
 #include "StringInterner.h"
+#include "TypeInterner.h"
 #include "BinopTable.h"
 #include "BinopPrecedence.h"
 #include "UnopTable.h"
@@ -30,6 +30,7 @@ typedef struct Parser
   SymbolTable*    outer_scope;
   StringInterner* interned_ids;
   StringInterner* interned_ops;
+  TypeInterner*   interned_types;
   BinopPrecedenceTable* precedence_table;
   BinopTable*       binops;
   UnopTable*        unops;
@@ -43,7 +44,7 @@ typedef struct Parser
   otherwise it is wholly independant from
   the rest of the program.
 */
-struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
+struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, TypeInterner* Itypes, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
 void    DestroyParser(struct Parser* p);
 void    ResetParser(struct Parser* p);
 ParseJudgement Parse(struct Parser* p, char* input);

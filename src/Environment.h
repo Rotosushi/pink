@@ -8,25 +8,31 @@
 // unop eliminator set
 // cleanup list (only when sequence is added)
 #include "StringInterner.h"
-#include "BinopTable.h"
+#include "TypeInterner.h"
 #include "BinopPrecedence.h"
+#include "BinopTable.h"
 #include "UnopTable.h"
 
 struct Parser;
+struct SymbolTable;
 
 typedef struct Environment
 {
-  struct Parser*               parser;
+  struct Parser*        parser;
+  struct SymbolTable*   outer_scope;
   StringInterner*       interned_ids;
   StringInterner*       interned_ops;
+  TypeInterner*         interned_types;
   BinopPrecedenceTable* precedence_table;
-  BinopTable*             binops;
-  UnopTable*              unops;
+  BinopTable*           binops;
+  UnopTable*            unops;
 } Environment;
 
 Environment* CreateEnvironment(struct Parser* parser,
+                               struct SymbolTable* outer_scope,
                                StringInterner* Iids,
                                StringInterner* Iops,
+                               TypeInterner*   Ity,
                                BinopPrecedenceTable* BPAtbl,
                                BinopTable* bop,
                                UnopTable*  uop);

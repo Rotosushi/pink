@@ -19,6 +19,7 @@ typedef enum Token
   T_COLON,
   T_EQRARROW,
   T_RARROW,
+  T_LARROW,
   T_COLONEQ,
   T_LPAREN,
   T_RPAREN,

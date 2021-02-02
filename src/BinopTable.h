@@ -6,8 +6,6 @@
 #include <stdlib.h>
 
 #include "StringInterner.h"
-#include "Ast.h"
-#include "Type.h"
 #include "BinopEliminators.h"
 
 typedef struct BTElem

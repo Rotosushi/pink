@@ -51,6 +51,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "Token.h"
 #include "SymbolTable.h"
 #include "StringInterner.h"
 #include "Ast.h"
@@ -73,11 +74,10 @@
 #include "Boolean.h"
 #include "Parser.h"
 
-
-struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
+struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, TypeInterner* Itypes, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us)
 {
   Parser* result    = (Parser*)malloc(sizeof(Parser));
-  result->lexer     = CreateLexer(Iids, Iops);
+  result->lexer     = CreateLexer();
   result->markstack = NULL;
   result->tokbuf    = NULL;
   result->txtbuf    = NULL;
@@ -88,6 +88,7 @@ struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, Str
   result->outer_scope      = global_scope;
   result->interned_ids     = Iids;
   result->interned_ops     = Iops;
+  result->interned_types   = Itypes;
   result->precedence_table = prec_table;
   result->binops           = bs;
   result->unops            = us;
@@ -138,11 +139,6 @@ void DestroyParser(Parser* p)
 
 void ResetParser(Parser* p)
 {
-  if (p->lexer)
-  {
-      free(p->lexer);
-      p->lexer = NULL;
-  }
 
   if (p->markstack)
   {
@@ -332,7 +328,7 @@ Location* curloc(Parser* p)
 
 bool is_unop(Parser* p, InternedString input)
 {
-  InternedString possible = FindUnop(p->unops, input);
+  UnopEliminatorList* possible = FindUnop(p->unops, input);
 
   if (possible != NULL)
     return true;
@@ -342,7 +338,7 @@ bool is_unop(Parser* p, InternedString input)
 
 bool is_binop(Parser* p, InternedString input)
 {
-  InternedString possible = FindBinop(p->binops, input);
+  BinopEliminatorList* possible = FindBinop(p->binops, input);
 
   if (possible != NULL)
     return true;
@@ -382,10 +378,12 @@ bool is_ender(Token t)
 ParseJudgement ParseAffix(Parser* p);
 ParseJudgement ParseApplication(Parser* p);
 ParseJudgement ParsePrimitive(Parser* p);
+ParseJudgement ParseAtom(Parser* p);
 TypeJudgement  ParseType(Parser* p);  // asymmetry for convenience!
 ParseJudgement ParseConditional(Parser* p);
 ParseJudgement ParseIteration(Parser* p);
 ParseJudgement ParseLambda(Parser* p);
+ParseJudgement ParseUnop(Parser* p);
 ParseJudgement ParseInfix(Parser* p, Ast* lhs, int min_prec);
 
 /*
@@ -409,14 +407,17 @@ ParseJudgement ParseAffix(Parser* p)
   {
     if (curtok(p) == T_OPERATOR)
     {
-      lhsterm = ParseInfix(p, lhsterm, 0);
+      lhsjdgmt = ParseInfix(p, lhsjdgmt.term, 0);
     }
     else if (curtok(p) == T_LARROW)
     {
       nextok(p); // eat '<-'
+      // this essentially means that '<-'
+      // is a very high precedence binary
+      // operator.
       ParseJudgement rhsjdgmt = ParseAffix(p);
 
-      if (rhsjdgmt.success = true)
+      if (rhsjdgmt.success == true)
       {
         Location*   rhsloc       = curloc(p);
         Assignment* assignment   = CreateAssignment(lhsjdgmt.term, rhsjdgmt.term);
@@ -435,6 +436,8 @@ ParseJudgement ParseAffix(Parser* p)
       else
         return rhsjdgmt;
     }
+
+    return lhsjdgmt;
   }
   else
     return lhsjdgmt;
@@ -493,16 +496,18 @@ ParseJudgement ParsePrimitive(Parser* p)
 {
   switch (curtok(p))
   {
+    // scalar type terms are the only predictor tokens
+    // for literal type terms
     case T_TYPE_NIL: case T_TYPE_INT: case T_TYPE_BOOL:
       {
         ParseJudgement result;
-        TypeJudgement  type = ParseType(p);
+        TypeJudgement  typejdgmt = ParseType(p);
 
-        if (type.success == true)
+        if (typejdgmt.success == true)
         {
           Object* obj = (Object*)malloc(sizeof(Object));
           obj->kind   = O_TYPE;
-          obj->type   = type.term;
+          obj->type   = typejdgmt.type;
           Ast* ast    = (Ast*)malloc(sizeof(Ast));
           ast->kind   = A_OBJ;
           ast->obj    = obj;
@@ -512,30 +517,33 @@ ParseJudgement ParsePrimitive(Parser* p)
         else
         {
           result.success = false;
-          result.error   = type.error;
+          result.error   = typejdgmt.error;
         }
         return result;
         break;
       }
 
-
+    // this is the complete set of tokens that predict atoms
     case T_IDENTIFIER: case T_NIL: case T_INTEGER:
     case T_TRUE: case T_FALSE: case T_BSLASH:
     case T_IF: case T_WHILE: case T_LPAREN:
       return ParseAtom(p);
       break;
 
+    // an operator at this location predicts a unary operator.
     case T_OPERATOR:
       return ParseUnop(p);
       break;
 
     default:
+    {
       Location*      errloc = curloc(p);
       ParseJudgement result;
       result.success   = false;
       result.error.dsc = "unknown primitive token found";
       result.error.loc = *errloc;
       return result;
+    }
   }
 }
 
@@ -617,8 +625,8 @@ ParseJudgement ParseAtom(Parser* p)
     }
     case T_INTEGER:
     {
+      Integer* integer = CreateInteger(atoi(curtxt(p)));
       nextok(p); // eat Integer
-      Integer* integer = CreateInteger(atoi(curtxt));
       Object*  obj     = (Object*)malloc(sizeof(Object));
       obj->kind        = O_INT;
       obj->integer     = integer;
@@ -671,27 +679,41 @@ ParseJudgement ParseAtom(Parser* p)
     }
     case T_IF:
     {
-      lhsjdgmt = ParseIf(p);
+      lhsjdgmt = ParseConditional(p);
       return lhsjdgmt;
       break;
     }
     case T_WHILE:
     {
-      lhsjdgmt = ParseWhile(p);
+      lhsjdgmt = ParseIteration(p);
+      return lhsjdgmt;
       break;
     }
     case T_LPAREN:
     {
+      nextok(p);
+
+      lhsjdgmt = ParseAffix(p);
+
+      if (lhsjdgmt.success == true && curtok(p) != T_RPAREN)
+      {
+        DestroyAst(lhsjdgmt.term);
+        Location* errloc   = curloc(p);
+        lhsjdgmt.success   = false;
+        lhsjdgmt.error.dsc = "unexpected missing ')'";
+        lhsjdgmt.error.loc = *errloc;
+      }
+
+      return lhsjdgmt;
       break;
     }
     default:
     {
-      Location*      errloc = curloc(p);
-      ParseJudgement result;
-      result.success   = false;
-      result.error.dsc = "unknown Atom token found";
-      result.error.loc = *errloc;
-      return result;
+      Location*   errloc = curloc(p);
+      lhsjdgmt.success   = false;
+      lhsjdgmt.error.dsc = "unknown Atom token found";
+      lhsjdgmt.error.loc = *errloc;
+      return lhsjdgmt;
     }
   }
 }
@@ -713,42 +735,30 @@ TypeJudgement ParseTypeAtom(Parser* p)
     case T_TYPE_INT:
     {
       nextok(p);
-      ScalarType* scalarType = CreateScalarType(S_INT);
-      Type* type             = (Type*)malloc(sizeof(Type));
-      type->kind             = T_SCALAR;
-      type->scalar           = scalarType;
-      result.success         = true;
-      result.term            = type;
+      result.success = true;
+      result.type    = GetIntegerType(p->interned_types);
       break;
     }
     case T_TYPE_NIL:
     {
       nextok(p);
-      ScalarType* scalarType = CreateScalarType(S_NIL);
-      Type* type             = (Type*)malloc(sizeof(Type));
-      type->kind             = T_SCALAR;
-      type->scalar           = scalarType;
-      result.success         = true;
-      result.term            = type;
+      result.success = true;
+      result.type    = GetNilType(p->interned_types);
       break;
     }
 
     case T_TYPE_BOOL:
     {
       nextok(p);
-      ScalarType* scalarType = CreateScalarType(S_BOOL);
-      Type* type             = (Type*)malloc(sizeof(Type));
-      type->kind             = T_SCALAR;
-      type->scalar           = scalarType;
-      result.success         = true;
-      result.term            = type;
+      result.success = true;
+      result.type    = GetBooleanType(p->interned_types);
       break;
     }
 
     default:
     {
       result.success   = false;
-      result.error.dsc = "unknown Type Atom token found";
+      result.error.dsc = "unknown Scalar Type token found";
       result.error.loc = *lhsloc;
       break;
     }
@@ -761,7 +771,7 @@ TypeJudgement ParseType(Parser* p)
   Location* lhsloc = curloc(p);
   TypeJudgement lhsjdgmt = ParseTypeAtom(p);
 
-  if (lhsjdgmt.success = true)
+  if (lhsjdgmt.success == true)
   {
     if (curtok(p) == T_RARROW)
     {
@@ -770,11 +780,7 @@ TypeJudgement ParseType(Parser* p)
 
       if (rhsjdgmt.success == true)
       {
-        ProcType* pt  = CreateProcType(lhsjdgmt.term, rhsjdgmt.term);
-        Type* type    = (Type*)malloc(sizeof(Type));
-        type->kind    = T_PROC;
-        type->proc    = pt;
-        lhsjdgmt.term = type;
+        lhsjdgmt.type = GetProcedureType(p->interned_types, lhsjdgmt.type, rhsjdgmt.type);
         return lhsjdgmt;
       }
       else
@@ -792,6 +798,13 @@ TypeJudgement ParseType(Parser* p)
   problem, i like the solution of distinguishing
   the single alternative conditional and the
   double alternative conditional syntactical.
+  it is simple to implement and to understand.
+  plus, i'm not hamstrung by a nailed down syntax
+  so i can make changes like this.
+  if t1 then t2 else t3
+  and:
+  if t1 do t2
+
 */
 ParseJudgement ParseConditional(Parser* p)
 {
@@ -940,7 +953,7 @@ ParseJudgement ParseLambda(Parser* p)
   }
   nextok(p); // eat '\'
 
-  if (curtok(p) != T_ID)
+  if (curtok(p) != T_IDENTIFIER)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing identifier";
@@ -948,10 +961,19 @@ ParseJudgement ParseLambda(Parser* p)
     return result;
   }
 
+  // recall that the string interner copies the
+  // text passed in if it does insert, thus we
+  // can freely deallocate the memory associated
+  // with curtxt (which is allocated by the lexer,
+  // and held by the txtbuf)
   InternedString id = InternString(p->interned_ids, curtxt(p));
 
   nextok(p); // eat 'identifier'
 
+  // type annotations are completly required,
+  // until we add PolyLambda's, which
+  // take over the idea of writing in an
+  // annotation free style.
   if (curtok(p) != T_COLON)
   {
     result.success   = false;
@@ -975,7 +997,7 @@ ParseJudgement ParseLambda(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing '=>'";
-    result.error.lco = *(curloc(p));
+    result.error.loc = *(curloc(p));
     return result;
   }
   nextok(p);
@@ -985,12 +1007,16 @@ ParseJudgement ParseLambda(Parser* p)
   // while we parse the body of this procedure,
   // we need to point the outer scope to the
   // correct place, in order to make the name
-  // lookup rules work. we need to point the
-  // current_scope to this lambda's symbol table
+  // lookup rules work: we need to point the
+  // outer_scope to this lambda's symbol table
   // so that if a lambda is created within the
   // body of this lambda, the symbol tables
   // form a continuous chain from the
   // innermost procedure outwards to global scope.
+  // also also, this is essentially how i believe
+  // we can handle loops and conditionals having
+  // their own scope, they hold a scope, and we
+  // connect it to the outer scope.
   SymbolTable* lambda_scope = CreateSymbolTable(p->outer_scope);
   SymbolTable* last_scope   = p->outer_scope;
   p->outer_scope            = lambda_scope;
@@ -998,31 +1024,67 @@ ParseJudgement ParseLambda(Parser* p)
   ParseJudgement bodyjdgmt = ParseAffix(p);
 
   if (bodyjdgmt.success == false)
-    return bodyjdgmt; // if we actually take this path we gonna leak!
+    return bodyjdgmt; // TODO: if we actually take this path we gonna leak!
 
+  p->outer_scope = last_scope; // reset the outer scope to what it was before
   Location* rhsloc = curloc(p);
 
-  Lambda* lam    = (Lambda*)malloc(sizeof(Lambda));
-  lam->arg_id    = id;
-  lam->arg_type  = typejdgmt.type;
-  lam->body      = bodyjdgmt.term;
-  lam->scope     = lambda_scope;
-  p->outer_scope = last_scope; // reset the outer scope to what it was before
-  Object* obj    = (Object*)malloc(sizeof(Object));
-  obj->kind      = O_LAMB;
-  obj->lambda    = lam;
-  Ast* ast       = (Ast*)malloc(sizeof(Ast));
-  ast->kind      = A_OBJ;
+  Lambda* lambda        = (Lambda*)malloc(sizeof(Lambda));
+  lambda->arg_id        = id;
+  lambda->arg_type      = typejdgmt.type;
+  lambda->body          = bodyjdgmt.term;
+  lambda->scope         = lambda_scope;
+  Object* obj           = (Object*)malloc(sizeof(Object));
+  obj->kind             = O_LAMB;
+  obj->lambda           = lambda;
+  Ast* ast              = (Ast*)malloc(sizeof(Ast));
+  ast->kind             = A_OBJ;
   ast->loc.first_line   = lhsloc->first_line;
   ast->loc.first_column = lhsloc->first_column;
   ast->loc.last_line    = rhsloc->first_line;
   ast->loc.last_column  = rhsloc->first_column;
-  ast->obj       = obj;
+  ast->obj              = obj;
+  return result;
+}
+
+ParseJudgement ParseUnop(Parser* p)
+{
+  ParseJudgement result;
+  if (curtok(p) != T_OPERATOR)
+  {
+    result.success   = false;
+    result.error.dsc = "Unexpected missing operator for Unary expression";
+    result.error.loc = *curloc(p);
+    return result;
+  }
+  Location* lhsloc = curloc(p);
+  char* optxt      = curtxt(p);
+
+  nextok(p); // eat operator
+
+  ParseJudgement rhsjdgmt = ParseAffix(p);
+
+  if (rhsjdgmt.success == false)
+    return rhsjdgmt;
+
+  Location* rhsloc  = curloc(p);
+  InternedString op = InternString(p->interned_ops, optxt);
+  Unop* unop        = CreateUnop(op, rhsjdgmt.term);
+  Ast*  term        = (Ast*)malloc(sizeof(Ast));
+  term->kind        = A_UOP;
+  term->loc.first_line   = lhsloc->first_line;
+  term->loc.first_column = lhsloc->first_column;
+  term->loc.last_line    = rhsloc->first_line;
+  term->loc.last_column  = rhsloc->first_column;
+  term->uop              = unop;
+  result.success = true;
+  result.term    = term;
   return result;
 }
 
 ParseJudgement ParseInfix(Parser* p, Ast* lhs, int min_prec)
 {
+  Location* lhsloc = curloc(p);
   ParseJudgement result;
   BinopPrecAssoc* lookahead = NULL;
 
@@ -1041,6 +1103,10 @@ ParseJudgement ParseInfix(Parser* p, Ast* lhs, int min_prec)
     BinopPrecAssoc* operator = lookahead;
 
     nextok(p); // eat 'operator'
+    // we don't recurr fully up the grammr, because dont we want
+    // to recurr into this procedure again, so we go up
+    // to application, one step below where infix procedures can
+    // be parsed.
     ParseJudgement right = ParseApplication(p);
 
     if (right.success == false)
@@ -1052,19 +1118,19 @@ ParseJudgement ParseInfix(Parser* p, Ast* lhs, int min_prec)
        && (lookahead->precedence > operator->precedence
        || (lookahead->precedence == operator->precedence && lookahead->associativity == A_RIGHT)))
     {
-      right = ParseInfix(right.term, lookahead->precedence);
+      right = ParseInfix(p, right.term, lookahead->precedence);
 
       if (right.success == false)
         return right;
     }
 
-    Binop* binop = (Binop*)malloc(sizeof(Binop));
-    binop->op = InternString(p->interned_ops, optxt);
-    binop->lhs = lhs;
-    binop->rhs = right.term;
-    Ast* ast = (Ast*)malloc(sizeof(Ast));
-    ast->kind = A_BNP;
-    ast->bnp  = binop;
+    Binop* binop   = (Binop*)malloc(sizeof(Binop));
+    binop->op      = InternString(p->interned_ops, optxt);
+    binop->lhs     = lhs;
+    binop->rhs     = right.term;
+    Ast* ast       = (Ast*)malloc(sizeof(Ast));
+    ast->kind      = A_BOP;
+    ast->bop       = binop;
     result.success = true;
     result.term    = ast;
   }
@@ -1079,6 +1145,7 @@ ParseJudgement Parse(Parser* p, char* input)
 
   filltok(p, 1);
 
+  // enter into the top of the parser.
   ParseJudgement result = ParseAffix(p);
   return result;
 }

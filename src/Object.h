@@ -12,7 +12,7 @@ typedef enum ObjKind
   O_NIL,
   O_INT,
   O_BOOL,
-  O_LAMB;,
+  O_LAMB,
   O_TYPE,
 } ObjKind;
 

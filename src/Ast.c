@@ -113,6 +113,7 @@ Ast* CloneAst(Ast* term)
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
       break;
   }
+  return result;
 }
 
 // constructs a string that represents the passed
@@ -157,7 +158,7 @@ char* ToStringAst(Ast* term)
     case A_OBJ:
       result = ToStringObject(term->obj);
       break;
-      
+
     default:
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
       break;

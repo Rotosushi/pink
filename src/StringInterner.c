@@ -3,7 +3,7 @@
 
 #include "StringInterner.h"
 
-char* dupstr(char* str, int len)
+char* duplicatestring(char* str, int len)
 {
     char* result = (char*)malloc(sizeof(char) * len + 1);
     result = strncpy(result, str, len);
@@ -56,7 +56,7 @@ InternedString InternString(StringInterner* interner, char* string)
   // string into the set, and return that string as the
   // single instance of this string.
   // here realloc saves me from having to memcpy myself.
-  char* candidate = dupstr(string);
+  char* candidate = duplicatestring(string, strlen(string));
   interner->length++;
   interner->interned_strings = (char**)realloc(interner->interned_strings, sizeof(char**) * interner->length);
 

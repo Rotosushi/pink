@@ -3,14 +3,14 @@
 #include <stdlib.h>
 
 #include "StringInterner.h"
-#include "Ast.h"
-#include "Type.h"
+struct Ast;
+struct Type;
 
 typedef struct Ast* (*PrimitiveUnopEliminator)(struct Ast* rval);
 
 typedef struct UnopEliminator
 {
-  Type *rtype, *restype;
+  struct Type *rtype, *restype;
   PrimitiveUnopEliminator eliminator;
 } UnopEliminator;
 
@@ -22,6 +22,6 @@ typedef struct UnopEliminatorList
 
 UnopEliminatorList* CreateUnopEliminatorList();
 void                DestroyUnopEliminatorList(UnopEliminatorList* UElist);
-UnopEliminator*     InsertPrimitiveUnopEliminator(UnopEliminatorList* UElist, Type* rtype, Type* restype, PrimitiveUnopEliminator eliminator);
-UnopEliminator*     FindUnopEliminator(UnopEliminatorList* UElist, Type* rtype);
+UnopEliminator*     InsertPrimitiveUnopEliminator(UnopEliminatorList* UElist, struct Type* rtype, struct Type* restype, PrimitiveUnopEliminator eliminator);
+UnopEliminator*     FindUnopEliminator(UnopEliminatorList* UElist, struct Type* rtype);
 #endif // !UNOPELIMINATORS_H

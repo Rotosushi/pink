@@ -5,6 +5,14 @@
 #include "StringInterner.h"
 #include "Unop.h"
 
+Unop* CreateUnop(InternedString op, struct Ast* rhs)
+{
+  Unop* result = (Unop*)malloc(sizeof(Unop));
+  result->op   = op;
+  result->rhs  = rhs;
+  return result;
+}
+
 void DestroyUnop(Unop* unop)
 {
   DestroyAst(unop->rhs);

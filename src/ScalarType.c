@@ -28,13 +28,13 @@ char* ToStringScalarType(ScalarType* scalar)
   char* result;
   switch(scalar->kind)
   {
-    case P_NIL:
+    case S_NIL:
       result = "Nil";
       break;
-    case P_INT:
+    case S_INT:
       result = "Int";
       break;
-    case P_BOOL:
+    case S_BOOL:
       result = "Bool";
       break;
     default:

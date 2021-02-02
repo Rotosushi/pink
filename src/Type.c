@@ -12,8 +12,8 @@ void DestroyType(Type* type)
 {
   switch (type->kind)
   {
-    case T_ATOM:
-      DestroyScalarType(type->atom);
+    case T_SCALAR:
+      DestroyScalarType(type->scalar);
       break;
     case T_PROC:
       DestroyProcType(type->proc);
@@ -31,8 +31,8 @@ Type* CloneType(Type* type)
   result->kind = type->kind;
   switch (result->kind)
   {
-    case T_ATOM:
-      result->atom = CloneScalarType(type->atom);
+    case T_SCALAR:
+      result->scalar = CloneScalarType(type->scalar);
       break;
     case T_PROC:
       result->proc = CloneProcType(type->proc);
@@ -49,8 +49,8 @@ char* ToStringType(Type* type)
   char* result;
   switch (type->kind)
   {
-    case T_ATOM:
-      result = ToStringScalarType(type->atom);
+    case T_SCALAR:
+      result = ToStringScalarType(type->scalar);
       break;
     case T_PROC:
       result = ToStringProcType(type->proc);
@@ -67,8 +67,8 @@ bool EqualTypes(Type* t1, Type* t2)
   bool result = false;
   switch (t1->kind)
   {
-    case T_ATOM:
-      if (t2->kind == T_ATOM)
+    case T_SCALAR:
+      if (t2->kind == T_SCALAR)
         result = EqualScalarTypes((ScalarType*)t1, (ScalarType*)t2);
       break;
 

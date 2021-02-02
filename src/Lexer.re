@@ -3,24 +3,21 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "StringInterner.h"
+
 #include "PinkError.h"
 #include "Token.h"
 #include "Location.h"
 #include "Lexer.h"
 
 
-Lexer* CreateLexer(StringInterner* Iids, StringInterner* Iops)
+Lexer* CreateLexer()
 {
-  Lexer* lxr = (Lexer*)malloc(sizeof(Lexer));
-  memset(lxr->buf, 0, LEXER_BUF_SZ + 1);
+  Lexer* lxr = (Lexer*)calloc(1, sizeof(Lexer));
+  lxr->buf      = NULL;
   lxr->yych     = 0;
-  lxr->end      = lxr->cursor = lxr->token = lxr->marker = lxr->buf + LEXER_BUF_SZ;
+  lxr->end      = lxr->cursor = lxr->token = lxr->marker = lxr->buf;
   lxr->yyaccept = 0;
   lxr->state    = -1;
-  lxr->interned_ids = Iids;
-  lxr->interned_ops = Iops;
-
   return lxr;
 }
 
@@ -36,14 +33,10 @@ void DestroyLexer(Lexer* lexer)
 
 void yySetBuffer(Lexer* lexer, char* text, int len)
 {
-    if (len > LEXER_BUF_SZ)
-        FatalError("cannot buffer input text", __FILE__, __LINE__);
-
-    memset(lexer->buf, 0, LEXER_BUF_SZ);
-    memcpy(lexer->buf, text, len);
-
+    lexer->buf    = (char*)realloc(lexer->buf, sizeof(char) * len);
+    lexer->buf    = strncpy(lexer->buf, text, len);
     lexer->cursor = lexer->marker = lexer->mrkctx = lexer->token = lexer->buf;
-    lexer->end = lexer->buf + len;
+    lexer->end    = lexer->buf + len;
 }
 
 // god why isn't strndup a stdlib procedure?
@@ -86,7 +79,7 @@ void updatelloc(Location* llocp, char* token, int len)
 /*!re2c
     identifier = [a-zA-Z_][a-zA-Z0-9_]*;
     integer    = [0-9]+;
-    operator   = [+\-*/%<>:=&@!~|$\^]+;
+    operator   = [+\-*/%<>:=&@!~|$^]+;
 */
 
 #define YYPEEK() *lexer->cursor

@@ -8,8 +8,7 @@
 // TOP of the heirarchy.
 
 
-#include "StringLocation.h"
-#include "Environment.h"
+#include "Location.h"
 #include "Variable.h"
 #include "Application.h"
 #include "Assignment.h"
@@ -20,6 +19,8 @@
 #include "Iteration.h"
 #include "Object.h"
 #include "TypeJudgement.h"
+
+struct Environment;
 
 typedef enum AstKind
 {
@@ -40,7 +41,7 @@ typedef enum AstKind
 typedef struct Ast
 {
   AstKind kind;
-  StringLocation loc;
+  Location loc;
   union {
     Variable    *var;
     Application *app;
@@ -69,7 +70,7 @@ char* ToStringAst(Ast* term);
 
 // returns the type of the term passed in,
 // or a description of the error that was found.
-TypeJudgement getype(Ast* term, Environment* env);
+TypeJudgement getype(Ast* term, struct Environment* env);
 
 // EvalJudgement evaluate(Ast* term, Environment* env);
 

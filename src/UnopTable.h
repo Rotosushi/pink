@@ -6,8 +6,6 @@
 #include <stdlib.h>
 
 #include "StringInterner.h"
-#include "Type.h"
-#include "Ast.h"
 #include "UnopEliminators.h"
 
 typedef struct UTElem

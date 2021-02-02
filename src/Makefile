@@ -1,12 +1,16 @@
 CC = clang
 CARGS = -fstandalone-debug -fexceptions -g -std=c11
 
-pink: DataStructures SymbolicComputation Types Objects Frontend Utilities
-	${CC} ${CARGS} -o pink StringInterner.o SymbolTable.o BinopEliminators.o
-	BinopTable.o BinopPrecedence.o UnopEliminators.o UnopTable.o
-	Application.o Variable.o Bind.o Assignment.o Conditional.o Iteration.o
-	Binop.o Unop.o ScalarType.o ProcType.o Type.o Nil.o Integer.o
-	Boolean.o Lambda.o Object.o PinkError.o
+LINK_STEP = Application.o Assignment.o Conditional.o Iteration.o \
+StringInterner.o Variable.o Bind.o Binop.o Unop.o BinopEliminators.o \
+UnopEliminators.o BinopPrecedence.o BinopTable.o UnopTable.o Nil.o \
+Integer.o Boolean.o Lambda.o ScalarType.o ProcType.o Type.o Object.o \
+Ast.o TypeInterner.o Environment.o SymbolTable.o PinkError.o Token.o \
+Lexer.o Parser.o PinkKernel.o Repl.o Pink.o -o pink
+
+
+pink: Types Objects DataStructures SymbolicComputation Frontend Utilities Main
+	${CC} ${CARGS} ${LINK_STEP}
 
 clean:
 	rm -f *.o pink
@@ -14,10 +18,13 @@ clean:
 debug: pink
 	gdb -tui pink
 
-DataStructures: StringInterner SymbolTable BinopEliminators BinopTable BinopPrecedence UnopEliminators UnopTable Environment
+DataStructures: StringInterner TypeInterner SymbolTable BinopEliminators BinopTable BinopPrecedence UnopEliminators UnopTable Environment
 
 StringInterner:
 	${CC} ${CARGS} -c StringInterner.c -o StringInterner.o
+
+TypeInterner:
+	${CC} ${CARGS} -c TypeInterner.c -o TypeInterner.o
 
 SymbolTable:
 	${CC} ${CARGS} -c SymbolTable.c -o SymbolTable.o
@@ -38,9 +45,9 @@ UnopTable:
 	${CC} ${CARGS} -c UnopTable.c -o UnopTable.o
 
 Environment:
-	${CC} ${CARGS} -c Environment.c -o Environemnt.o
+	${CC} ${CARGS} -c Environment.c -o Environment.o
 
-SymbolicComputation: Application Variable Bind Assignment Conditional Iteration Binop Unop
+SymbolicComputation: Application Variable Bind Assignment Conditional Iteration Binop Unop Ast
 
 Application:
 	${CC} ${CARGS} -c Application.c -o Application.o
@@ -66,6 +73,8 @@ Binop:
 Unop:
 	${CC} ${CARGS} -c Unop.c -o Unop.o
 
+Ast:
+	${CC} ${CARGS} -c Ast.c -o Ast.o
 
 Types: Type ScalarType ProcType
 
@@ -111,7 +120,16 @@ re2c: Lexer.re
 Parser:
 	${CC} ${CARGS} -c Parser.c -o Parser.o
 
-Utilities: PinkError
+Utilities: PinkError PinkKernel Repl
 
 PinkError:
 	${CC} ${CARGS} -c PinkError.c -o PinkError.o
+
+PinkKernel:
+	${CC} ${CARGS} -c PinkKernel.c -o PinkKernel.o
+
+Repl:
+	${CC} ${CARGS} -c Repl.c -o Repl.o
+
+Main:
+	${CC} ${CARGS} -c Pink.c -o Pink.o

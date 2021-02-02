@@ -2,8 +2,9 @@
 #define SYMBOLTABLE_H
 #include <stdint.h>
 
-#include "Ast.h"
 #include "StringInterner.h"
+
+struct Ast;
 
 // this is a classical hash map
 // scheme, with an array of buckets

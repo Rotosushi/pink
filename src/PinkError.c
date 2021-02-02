@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "Location.h"
-
+#include "PinkError.h"
 
 /*
   https://www.clear.rice.edu/comp506/Labs/IBM-Note.pdf
@@ -10,6 +11,14 @@
 */
 void PrintError(FILE* out, PinkError* perr, char* errtxt)
 {
+  if (!out)
+    FatalError("NULL ouput file", __FILE__, __LINE__);
+
+  if (!perr)
+    FatalError("NULL error", __FILE__, __LINE__);
+
+  if (!errtxt)
+    FatalError("NULL erroroneous text", __FILE__, __LINE__);
   // this procedure really only makes sense if
   // the errtxt doesn't itself contain a newline
   // but i don't wuite know how to handle that,
@@ -27,7 +36,7 @@ void PrintError(FILE* out, PinkError* perr, char* errtxt)
   // adding. instead of simply doubling the final value, which
   // while "safe" uses way more space than nesessary.
   int txtlen = strlen(errtxt);
-  int length = (txtlen * 2) + strlen(err->dsc) + 1;
+  int length = (txtlen * 2) + strlen(perr->dsc) + 5;
 
   char* restxt = (char*)calloc(sizeof(char), (length + 1));
 
@@ -35,15 +44,16 @@ void PrintError(FILE* out, PinkError* perr, char* errtxt)
   strcat(restxt, "\n");
   for (int i = 0; i < txtlen; i++)
   {
-    if (i < err->loc.first_column)
+    if (i < perr->loc.first_column)
       strcat(restxt, "-");
-    else if (i > err->loc.last_column)
+    else if (i > perr->loc.last_column)
       strcat(restxt, "-");
     else
       strcat(restxt, "^");
   }
   strcat(restxt, "\n");
-  strcat(restxt, err->dsc);
+  strcat(restxt, perr->dsc);
+  strcat(restxt, "\n");
 
   fprintf(out, "%s", restxt);
 }

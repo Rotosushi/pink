@@ -32,11 +32,11 @@ UnopEliminator* InsertPrimitiveUnopEliminator(UnopEliminatorList* UElist, Type* 
 
   if (!result)
   {
-    UElist->size += 1;
-    UElist->list = (UnopEliminator*)realloc(UElist->list, sizeof(UnopEliminator) * UElist->size);
-    result = &(UElist->list[UElist->size - 1]);
-    result->rtype = rtype;
-    result->restype = restype;
+    UElist->size      += 1;
+    UElist->list       = (UnopEliminator*)realloc(UElist->list, sizeof(UnopEliminator) * UElist->size);
+    result             = &(UElist->list[UElist->size - 1]);
+    result->rtype      = rtype;
+    result->restype    = restype;
     result->eliminator = eliminator;
   }
 

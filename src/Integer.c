@@ -7,7 +7,7 @@
 Integer* CreateInteger(int i)
 {
   Integer* result = (Integer*)malloc(sizeof(Integer));
-  result->value   = i
+  result->value   = i;
   return result;
 }
 

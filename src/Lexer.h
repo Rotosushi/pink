@@ -5,9 +5,7 @@
 
 
 #include "Location.h"
-#include "StringInterner.h"
 
-#define LEXER_BUF_SZ 4096
 
 /*
 	this is a buffered scanner,
@@ -20,7 +18,7 @@
 
 */
 typedef struct Lexer {
-	char  buf[LEXER_BUF_SZ + 1];
+	char* buf;
   char* end;
   char* cursor;
 	char* marker;
@@ -30,12 +28,10 @@ typedef struct Lexer {
 	int state;
 	char  yych;
 	Location yylloc;
-	StringInterner* interned_ids;
-	StringInterner* interned_ops;
 } Lexer;
 
 
-Lexer*   CreateLexer(StringInterner* Iids, StringInterner* Iops);
+Lexer*   CreateLexer();
 void     DestroyLexer(Lexer* lexer);
 void     yySetBuffer(Lexer* lexer, char* text, int len);
 char*    yyText(Lexer* lexer);

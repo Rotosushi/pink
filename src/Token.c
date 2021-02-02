@@ -8,6 +8,8 @@ char* ToStringToken(Token tok)
   {
     case T_ERR:
       return "T_ERR";
+    case T_EOF:
+      return "T_EOF";
     case T_END:
       return "T_END";
     case T_OPERATOR:
@@ -36,6 +38,8 @@ char* ToStringToken(Token tok)
       return "T_EQRARROW";
     case T_RARROW:
       return "T_RARROW";
+    case T_LARROW:
+      return "T_LARROW";
     case T_COLONEQ:
       return "T_COLONEQ";
     case T_LPAREN:

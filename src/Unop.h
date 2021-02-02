@@ -11,6 +11,8 @@ typedef struct Unop
   struct Ast* rhs;
 } Unop;
 
+Unop* CreateUnop(InternedString op, struct Ast* rhs);
+
 void DestroyUnop(Unop* unp);
 
 Unop* CloneUnop(Unop* unp);
