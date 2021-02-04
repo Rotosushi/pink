@@ -7,8 +7,13 @@
 #include "Environment.h"
 #include "Repl.h"
 
+// acts like GNU getline. but without tying us to
+// the OS. (even though i could absolutely #include
+// the requisite file to get the library version of
+// getline.)
 size_t getline(char** buffer, size_t* length, FILE* in)
 {
+  static int resize_factor = 1;
   size_t charsRead = 0;
   *buffer = (char*)realloc(*buffer, sizeof(char) * (*length));
 
@@ -18,8 +23,10 @@ size_t getline(char** buffer, size_t* length, FILE* in)
 
     if ((i + 1) >= (*length))
     {
-      (*length) += 10;
-      *buffer    = (char*)realloc(*buffer, sizeof(char) * (*length));
+      (*length)     += 10 * resize_factor;
+      if (resize_factor < 100)
+        resize_factor *= 10;
+      *buffer        = (char*)realloc(*buffer, sizeof(char) * (*length));
     }
 
     if (current == '\n' || current == EOF)
@@ -52,6 +59,8 @@ void Repl(FILE* in, FILE* out, Environment* env)
     if (parsejdgmt.success == true)
     {
       fprintf(out, "%s\n", ToStringAst(parsejdgmt.term));
+
+      
     }
     else
     {

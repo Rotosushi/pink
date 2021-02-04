@@ -53,7 +53,7 @@ UnopEliminator* FindUnopEliminator(UnopEliminatorList* UElist, Type* rtype)
   for (int i = 0; i < UElist->size; i++)
   {
     result = &(UElist->list[i]);
-    if (EqualTypes(result->rtype, rtype))
+    if (result->rtype == rtype)
     {
       return result;
     }

@@ -1,7 +1,9 @@
 #ifndef ASSIGNMENT_H
 #define ASSIGNMENT_H
 
+#include "Typejudgement.h"
 struct Ast;
+struct Environment;
 
 typedef struct Assignment
 {
@@ -16,5 +18,7 @@ void DestroyAssignment(Assignment* ass);
 Assignment* CloneAssignment(Assignment* ass);
 
 char* ToStringAssignment(Assignment* ass);
+
+TypeJudgement GetypeAssignment(Assignment* ass, Environment* env);
 
 #endif // !ASSIGNMENT_H

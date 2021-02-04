@@ -33,6 +33,7 @@ typedef enum AstKind
   A_CND,
   A_ITR,
   A_OBJ,
+  A_TYP,
 } AstKind;
 
 // the kinds of Ast represent the
@@ -52,6 +53,7 @@ typedef struct Ast
     Conditional *cnd;
     Iteration   *itr;
     Object      *obj;
+    Type        *typ;
   };
 } Ast;
 
@@ -70,8 +72,8 @@ char* ToStringAst(Ast* term);
 
 // returns the type of the term passed in,
 // or a description of the error that was found.
-TypeJudgement getype(Ast* term, struct Environment* env);
+TypeJudgement Getype(Ast* term, struct Environment* env);
 
-// EvalJudgement evaluate(Ast* term, Environment* env);
+// EvalJudgement Evaluate(Ast* term, Environment* env);
 
 #endif // !AST_H

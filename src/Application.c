@@ -2,6 +2,8 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "TypeJudgement.h"
+#include "Environment.h"
 #include "Application.h"
 
 Application* CreateApplication(struct Ast* left, struct Ast* right)
@@ -45,5 +47,64 @@ char* ToStringApplication(Application* app)
   strcat(result, spc);
   strcat(result, right);
   strcat(result, rparen);
+  return result;
+}
+
+/*
+   ENV |- lhs : t1 -> t2, rhs : t1
+   --------------------------------------------
+           ENV |- lhs rhs : t2
+*/
+TypeJudgement GetypeApplication(Application* app, struct Environment* env)
+{
+  if (!app || !env)
+    FatalError("Bad Getype Call", __FILE__, __LINE__);
+
+
+  TypeJudgement result;
+
+  TypeJudgement lhsjdgmt = Getype(app->lhs, env);
+
+  if (lhsjdgmt.success == true)
+  {
+    Type *lhstype = lhsjdgmt.type;
+
+    if (lhstype->kind == T_PROC)
+    {
+      ProcType *pt = lhstype.proc;
+      Type     *t1 = pt->lhs, *t2 = pt->rhs;
+
+      TypeJudgement rhsjdgmt = Getype(app->rhs, env);
+
+      if (rhsjdgmt.success == true)
+      {
+        Type* t3 = rhsjdgmt.type;
+
+        if (t1 == t3)
+        {
+          result.success = true;
+          result.type    = t2;
+        }
+        else
+        {
+          // TODO: better error messages.
+          result.success   = false;
+          result.error.dsc = "Type mismatch between formal and actual parameters";
+          result.error.loc = app->loc;
+        }
+      }
+      else
+        result = rhsjdgmt;
+    }
+    else
+    {
+      result.success   = false;
+      result.error.dsc = "Cannot apply non-procedure lhs type";
+      result.error.loc = app->lhs->loc;
+    }
+  }
+  else
+    result = lhsjdgmt;
+
   return result;
 }

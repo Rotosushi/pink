@@ -43,3 +43,37 @@ char* ToStringAssignment(Assignment* ass)
   strcat(result, right);
   return result;
 }
+
+/*
+   ENV |- lhs : T, rhs : T
+------------------------------
+   ENV |- lhs '<-' rhs : T
+*/
+TypeJudgement GetypeAssignment(Assignment* ass, Environment* env)
+{
+  TypeJudgement result;
+  TypeJudgement lhsjdgmt = Getype(ass->lhs, env);
+
+  if (lhsjdgmt.success == true)
+  {
+    TypeJudgement rhsjdgmt = Getype(ass->rhs, env);
+
+    if (rhsjdgmt.success == true)
+    {
+      if (lhsjdgmt.type == rhsjdgmt.type)
+        result = lhsjdgmt;
+      else
+      {
+        result.success   = false;
+        result.error.dsc = "Type mismatch between lhs and rhs";
+        result.error.loc = ass->loc;
+      }
+    }
+    else
+      result = rhsjdgmt;
+  }
+  else
+    result = lhsjdgmt;
+
+  return result;
+}

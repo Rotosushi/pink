@@ -6,7 +6,6 @@
 #include "Integer.h"
 #include "Boolean.h"
 #include "Lambda.h"
-#include "Type.h"
 #include "Object.h"
 
 void DestroyObject(Object* obj)
@@ -24,9 +23,6 @@ void DestroyObject(Object* obj)
       break;
     case O_LAMB:
       DestroyLambda(obj->lambda);
-      break;
-    case O_TYPE:
-      DestroyType(obj->type);
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
@@ -55,9 +51,6 @@ Object* CloneObject(Object* obj)
     case O_LAMB:
       result->lambda = CloneLambda(obj->lambda);
       break;
-    case O_TYPE:
-      result->type = CloneType(obj->type);
-      break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
       break;
@@ -81,9 +74,6 @@ char* ToStringObject(Object* obj)
       break;
     case O_LAMB:
       result = ToStringLambda(obj->lambda);
-      break;
-    case O_TYPE:
-      result = ToStringType(obj->type);
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);

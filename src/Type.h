@@ -2,7 +2,6 @@
 #define TYPE_H
 #include <stdbool.h>
 
-
 #include "ScalarType.h"
 #include "ProcType.h"
 

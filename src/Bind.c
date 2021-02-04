@@ -42,3 +42,26 @@ char* ToStringBind(Bind* bnd)
   strcat(result, right);
   return result;
 }
+
+
+TypeJudgement GetypeBind(Bind* bnd, Environment* env)
+{
+  TypeJudgement result;
+  Ast* bound_term = lookup_in_local_scope(env->scope, bnd->id);
+
+  if (bound_term == NULL)
+  {
+    TypeJudgement rhsjdgmt = Getype(bnd->rhs, env);
+    // when we add a sequence (';') grapheme, we need to
+    // bind to the type of the rhs to properly
+    // typecheck terms in our grammar.
+    result = rhsjdgmt;
+  }
+  else
+  {
+    result.success = false;
+    result.error.dsc = "Id is already bound in scope";
+    result.error.loc = bnd->loc;
+  }
+  return result;
+}

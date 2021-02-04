@@ -28,6 +28,7 @@ BinopEliminator* InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, Typ
   BElist->size += 1;
   BElist->list = (BinopEliminator*)realloc(BElist->list, sizeof(BinopEliminator) * BElist->size);
   BinopEliminator* result = &(BElist->list[BElist->size - 1]);
+  // or: (BElist->list[BElist->size - 1]).ltype = ltype;
   result->ltype = ltype;
   result->rtype = rtype;
   result->restype = restype;
@@ -44,7 +45,7 @@ BinopEliminator* FindBinopEliminator(BinopEliminatorList* BElist, Type *ltype, T
   for (int i = 0; i < BElist->size; i++)
   {
     cur = &(BElist->list[i]);
-    if (EqualTypes(ltype, cur->ltype) && EqualTypes(rtype, cur->rtype))
+    if (ltype == cur->ltype && rtype == cur->rtype)
       return cur;
   }
 

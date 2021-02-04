@@ -13,7 +13,6 @@ typedef enum ObjKind
   O_INT,
   O_BOOL,
   O_LAMB,
-  O_TYPE,
 } ObjKind;
 
 typedef struct Object
@@ -24,7 +23,6 @@ typedef struct Object
     Integer *integer;
     Boolean *boolean;
     Lambda  *lambda;
-    Type    *type;
   };
 } Object;
 

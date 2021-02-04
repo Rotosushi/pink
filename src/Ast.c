@@ -10,6 +10,7 @@
 #include "Conditional.h"
 #include "Iteration.h"
 #include "Object.h"
+#include "Type.h"
 #include "Ast.h"
 
 // this shall deallocate all memory associated
@@ -53,6 +54,10 @@ void DestroyAst(Ast* term)
 
     case A_OBJ:
       DestroyObject(term->obj);
+      break;
+
+    case A_TYP:
+      DestroyType(term->typ);
       break;
 
     default:
@@ -109,6 +114,9 @@ Ast* CloneAst(Ast* term)
       result->obj = CloneObject(term->obj);
       break;
 
+    case A_TYP:
+      result->typ = CloneType(term->typ);
+
     default:
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
       break;
@@ -159,9 +167,65 @@ char* ToStringAst(Ast* term)
       result = ToStringObject(term->obj);
       break;
 
+    case A_TYP:
+      result = ToStringType(term->typ);
+      break;
+
     default:
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
       break;
+  }
+  return result;
+}
+
+TypeJudgement Getype(Ast* term, struct Environment* env)
+{
+  TypeJudgement result;
+  switch(term->kind)
+  {
+    case A_VAR:
+      result = GetypeVariable(term->var, env);
+      break;
+
+    case A_APP:
+      result = GetypeApplication(term->app, env);
+      break;
+
+    case A_ASS:
+      result = GetypeAssignment(term->ass, env);
+      break;
+
+    case A_BND:
+      result = GetypeBind(term->bnd, env);
+      break;
+
+    case A_BOP:
+      result = GetypeBinop(term->bop, env);
+      break;
+
+    case A_UOP:
+      result = GetypeUnop(term->uop, env);
+      break;
+
+    case A_CND:
+      result = GetypeConditional(term->cnd, env);
+      break;
+
+    case A_ITR:
+      result = GetypeIteration(term->itr, env);
+      break;
+
+    case A_OBJ:
+      result = GetypeObject(term->obj, env);
+      break;
+
+    case A_TYP:
+      result.success = true;
+      result.type    = term->typ;
+      break;
+
+    default
+      FatalError("Bad Ast Kind", __FILE__, __LINE__);
   }
   return result;
 }

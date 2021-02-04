@@ -13,19 +13,23 @@
   primary := primitive
            | primitive primitive
 
-  primitive := type
-             | atom
+  primitive := atom
              | unop atom
 
   atom := identifier
-        | identifier := term
+        // should we allow binding types?
+        // if yes: why not also allow type susbtitution?
+        // aka: procedures abstracting over type expressions?
+        // TL;DR: identifier := affix OR identifier := term ???
+        // currently it is:
+        | identifier := affix
         | nil
         | [0-9]+
         | true
         | false
-        | \ identifier (: term)? => term
-        | 'if' term 'then' term 'else' term
-        | 'while' term 'do' term
+        | \ identifier (: term)? => affix
+        | 'if' affix 'then' affix 'else' affix
+        | 'while' affix 'do' affix
         | '(' affix ')'
 
   type := "Nil"
@@ -446,10 +450,10 @@ ParseJudgement ParseTerm(Parser* p)
 }
 
 /*
-affix := application
+affix := type
+       | application
        | application operator application
        | application "<-" affix
-       | application "->" affix
        // | application "." affix
 */
 ParseJudgement ParseAffix(Parser* p)
@@ -495,6 +499,10 @@ ParseJudgement ParseAffix(Parser* p)
           return rhsjdgmt;
       }
     }
+  }
+  else if (is_type_primary(curtok(p)))
+  {
+    lhsjdgmt = ParseType(p);
   }
 
 
@@ -580,15 +588,15 @@ ParseJudgement ParsePrimitive(Parser* p)
 
 /*
 atom := identifier
-      | identifier := term
+      | identifier := affix
       | nil
       | [0-9]+
       | true
       | false
-      | \ identifier (: term)? => term
-      | 'if' term 'then' term 'else' term
-      | 'while' term 'do' term
-      | '(' term ')'
+      | \ identifier (: type)? => affix
+      | 'if' affix 'then' affix 'else' affix
+      | 'while' affix 'do' affix
+      | '(' affix ')'
 */
 ParseJudgement ParseAtom(Parser* p)
 {
@@ -856,12 +864,9 @@ ParseJudgement ParseType(Parser* p)
 
   if (typejdgmt.success == true)
   {
-    Object* obj    = (Object*)malloc(sizeof(Object));
-    obj->kind      = O_TYPE;
-    obj->type      = typejdgmt.type;
     Ast* ast       = (Ast*)malloc(sizeof(Ast));
-    ast->kind      = A_OBJ;
-    ast->obj       = obj;
+    ast->kind      = A_TYP;
+    ast->typ       = typejdgmt.type;
     result.success = true;
     result.term    = ast;
   }
@@ -1125,6 +1130,8 @@ ParseJudgement ParseLambda(Parser* p)
   ast->loc.last_line    = rhsloc->first_line;
   ast->loc.last_column  = rhsloc->first_column;
   ast->obj              = obj;
+  result.success        = true;
+  result.term           = ast;
   return result;
 }
 
@@ -1246,6 +1253,6 @@ ParseJudgement Parse(Parser* p, char* input)
   filltok(p, 1);
 
   // enter into the top of the parser.
-  ParseJudgement result = ParseTerm(p);
+  ParseJudgement result = ParseAffix(p);
   return result;
 }

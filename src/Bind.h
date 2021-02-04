@@ -19,4 +19,6 @@ Bind* CloneBind(Bind* bnd);
 
 char* ToStringBind(Bind* bnd);
 
+TypeJudgement GetypeBind(Bind* bnd, Environment* env);
+
 #endif // !BIND_H
