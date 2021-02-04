@@ -51,7 +51,7 @@ BinopEliminatorList* InsertBinop(BinopTable* BOPTable, InternedString op, BinopE
 
   // prepend to list
   cur->next = head;
-  head = cur;
+  BOPTable->table[hash] = cur;
 
   return cur->data;
 }

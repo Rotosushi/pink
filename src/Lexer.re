@@ -23,17 +23,16 @@ Lexer* CreateLexer()
 
 void DestroyLexer(Lexer* lexer)
 {
-    // this is only safe because the
-    // lexer is defined as holding a
-    // static sized array, meaning no
-    // dynamic-allocation occurs
-    // within the lexer.
+    free(lexer->buf);
     free(lexer);
 }
 
+
 void yySetBuffer(Lexer* lexer, char* text, int len)
 {
-    lexer->buf    = (char*)realloc(lexer->buf, sizeof(char) * len);
+    if (lexer->buf != NULL)
+        free(lexer->buf);
+    lexer->buf    = (char*)calloc(sizeof(char), len);
     lexer->buf    = strncpy(lexer->buf, text, len);
     lexer->cursor = lexer->marker = lexer->mrkctx = lexer->token = lexer->buf;
     lexer->end    = lexer->buf + len;
@@ -42,9 +41,8 @@ void yySetBuffer(Lexer* lexer, char* text, int len)
 // god why isn't strndup a stdlib procedure?
 char* dupstr(char* str, int len)
 {
-    char* result = (char*)malloc(sizeof(char) * len + 1);
+    char* result = (char*)calloc(sizeof(char), len + 1);
     result = strncpy(result, str, len);
-    result[len-1] = '\0';
     return result;
 }
 
@@ -79,7 +77,7 @@ void updatelloc(Location* llocp, char* token, int len)
 /*!re2c
     identifier = [a-zA-Z_][a-zA-Z0-9_]*;
     integer    = [0-9]+;
-    operator   = [+\-*/%<>:=&@!~|$^]+;
+    operator   = [+\-*/%<>=:&@!~|$^]+;
 */
 
 #define YYPEEK() *lexer->cursor
@@ -102,8 +100,6 @@ int yyLex(Lexer* lexer)
         *          { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_ERR; }
         $          { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_EOF; }
         [ \t\n]    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); goto LOOP; }
-        operator   { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_OPERATOR; }
-        identifier { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_IDENTIFIER; }
         "nil"      { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_NIL; }
         "Nil"      { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_TYPE_NIL; }
         "true"     { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_TRUE; }
@@ -126,6 +122,8 @@ int yyLex(Lexer* lexer)
         "while"    { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_WHILE; }
         "do"       { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_DO; }
         "end"      { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_END; }
+        operator   { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_OPERATOR; }
+        identifier { updatelloc(&(lexer->yylloc), lexer->token, lexer->cursor - lexer->token); return T_IDENTIFIER; }
 
     */
 }

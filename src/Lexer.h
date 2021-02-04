@@ -33,6 +33,7 @@ typedef struct Lexer {
 
 Lexer*   CreateLexer();
 void     DestroyLexer(Lexer* lexer);
+void     ResetLexer(Lexer* lexer);
 void     yySetBuffer(Lexer* lexer, char* text, int len);
 char*    yyText(Lexer* lexer);
 Location*  yyLloc(Lexer* lexer);

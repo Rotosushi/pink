@@ -107,21 +107,13 @@ void bind(SymbolTable* table, InternedString name, Ast* term)
   hash %= table->num_buckets;
 
   // find the bucket to look in
-  Symbol* cursor = table->table[hash];
-  // look through the bucket (list)
-  if (cursor != NULL)
-  {
-    while (cursor->next != NULL)
-    {
-      cursor = cursor->next;
-    }
-    cursor = cursor->next;
-  }
+  Symbol* head = table->table[hash];
 
-  cursor       = (Symbol*)malloc(sizeof(Symbol));
-  cursor->id   = name;
-  cursor->term = term;
-  cursor->next = NULL;
+  Symbol* elem = (Symbol*)malloc(sizeof(Symbol));
+  elem->id     = name;
+  elem->term   = term;
+  elem->next   = head; // prepend to the bucket, for speed.
+  table->table[hash] = elem;
   table->num_elements++;
 }
 
@@ -140,11 +132,11 @@ void unbind(SymbolTable* table, InternedString name)
       prev->next = cursor->next;
       DestroyAst(cursor->term);
       free(cursor);
+      table->num_elements--;
       break;
     }
 
     prev   = cursor;
     cursor = cursor->next;
   }
-  table->num_elements--;
 }

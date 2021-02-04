@@ -5,9 +5,8 @@
 
 char* duplicatestring(char* str, int len)
 {
-    char* result = (char*)malloc(sizeof(char) * len + 1);
+    char* result = (char*)calloc(sizeof(char), len + 1);
     result = strncpy(result, str, len);
-    result[len-1] = '\0';
     return result;
 }
 

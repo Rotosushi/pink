@@ -75,28 +75,15 @@ BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString
   int hash = (int)(op);
   hash %= BPtbl->num_buckets;
 
+  // so, pointers act like aliases, not copies.
   BPElem *head = BPtbl->table[hash];
 
-  if (head != NULL)
-  {
-    BPElem* elem = (BPElem*)malloc(sizeof(BPElem));
-    elem->data.op = op;
-    elem->data.precedence = prec;
-    elem->data.associativity = assoc;
-    elem->next = head->next;
-    head = elem; // prepend the new node to the list.
-    BPtbl->num_elements++;
-    return &(head->data);
-  }
-  else
-  {
-    // insert into empty bucket
-    head = (BPElem*)malloc(sizeof(BPElem));
-    head->data.op = op;
-    head->data.precedence = prec;
-    head->data.associativity = assoc;
-    head->next = NULL;
-    BPtbl->num_elements++;
-    return &(head->data);
-  }
+  BPElem* elem = (BPElem*)malloc(sizeof(BPElem));
+  elem->data.op = op;
+  elem->data.precedence = prec;
+  elem->data.associativity = assoc;
+  elem->next = head;
+  BPtbl->table[hash] = elem; // prepend the new node to the list.
+  BPtbl->num_elements++;
+  return &(elem->data);
 }
