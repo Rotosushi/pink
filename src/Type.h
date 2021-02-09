@@ -15,15 +15,15 @@ typedef struct Type
 {
   TypeKind kind;
   union {
-    ScalarType *scalar;
-    ProcType *proc;
+    ScalarType scalar;
+    ProcType   proc;
     // RefType ref;
   };
 } Type;
 
 void DestroyType(Type* type);
 
-Type* CloneType(Type* type);
+void CloneType(Type* destination, Type* source);
 
 char* ToStringType(Type* type);
 

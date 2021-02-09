@@ -15,14 +15,23 @@ typedef enum ObjKind
   O_LAMB,
 } ObjKind;
 
+// it is essentially possible to
+// modify this code such that
+// object is the union of all of
+// the types directly. (and the
+// same goes for Ast as well)
+// however, that has deep implications
+// within the entirety of the
+// program I just wrote. so i won't
+// be doing that.
 typedef struct Object
 {
   ObjKind kind;
   union {
-    Nil     *nil;
-    Integer *integer;
-    Boolean *boolean;
-    Lambda  *lambda;
+    Nil     nil;
+    Integer integer;
+    Boolean boolean;
+    Lambda  lambda;
   };
 } Object;
 

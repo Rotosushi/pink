@@ -3,24 +3,19 @@
 
 #include "ScalarType.h"
 
-ScalarType* CreateScalarType(ScalarKind kind)
+void InitializeScalarType(ScalarType* scalar, ScalarKind kind)
 {
-  ScalarType* result = (ScalarType*)malloc(sizeof(ScalarType));
-  result->kind       = kind;
-  return result;
+  scalar->kind = kind;
 }
 
 void DestroyScalarType(ScalarType* scalar)
 {
-  free(scalar);
-  scalar = NULL;
+  return;
 }
 
-ScalarType* CloneScalarType(ScalarType* scalar)
+void CloneScalarType(ScalarType* destination, ScalarType* source)
 {
-  ScalarType* result = (ScalarType*)malloc(sizeof(ScalarType));
-  result->kind       = scalar->kind;
-  return result;
+  destination->kind = source->kind;
 }
 
 char* ToStringScalarType(ScalarType* scalar)

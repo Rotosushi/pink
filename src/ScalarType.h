@@ -16,13 +16,13 @@ typedef struct ScalarType
   ScalarKind kind;
 } ScalarType;
 
-ScalarType* CreateScalarType(ScalarKind kind);
+void InitializeScalarType(ScalarType* scalar, ScalarKind kind);
 
-void DestroyScalarType(ScalarType* type);
+void DestroyScalarType(ScalarType* scalar);
 
-ScalarType* CloneScalarType(ScalarType* type);
+void CloneScalarType(ScalarType* destination, ScalarType* source);
 
-char* ToStringScalarType(ScalarType* type);
+char* ToStringScalarType(ScalarType* source);
 
 bool EqualScalarTypes(ScalarType* t1, ScalarType* t2);
 

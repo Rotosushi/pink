@@ -6,28 +6,22 @@
 #include "Environment.h"
 #include "Application.h"
 
-Application* CreateApplication(struct Ast* left, struct Ast* right)
+void InitializeApplication(Application* app, struct Ast* left, struct Ast* right)
 {
-  Application* result = (Application*)malloc(sizeof(Application));
-  result->lhs = left;
-  result->rhs = right;
-  return result;
+  app->lhs = left;
+  app->rhs = right;
 }
 
 void DestroyApplication(Application* app)
 {
   DestroyAst(app->lhs);
   DestroyAst(app->rhs);
-  free(app);
-  app = NULL;
 }
 
-Application* CloneApplication(Application* app)
+void CloneApplication(Application* destination, Application* source)
 {
-  Application* result = (Application*)malloc(sizeof(Application));
-  result->lhs = CloneAst(app->lhs);
-  result->rhs = CloneAst(app->rhs);
-  return result;
+  CloneAst(&(destination->lhs), source->lhs);
+  CloneAst(&(destination->rhs), source->rhs);
 }
 
 char* ToStringApplication(Application* app)

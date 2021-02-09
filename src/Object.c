@@ -13,23 +13,21 @@ void DestroyObject(Object* obj)
   switch(obj->kind)
   {
     case O_NIL:
-      DestroyNil(obj->nil);
+      DestroyNil(&(obj->nil));
       break;
     case O_INT:
-      DestroyInteger(obj->integer);
+      DestroyInteger(&(obj->integer));
       break;
     case O_BOOL:
-      DestroyBoolean(obj->boolean);
+      DestroyBoolean(&(obj->boolean));
       break;
     case O_LAMB:
-      DestroyLambda(obj->lambda);
+      DestroyLambda(&(obj->lambda));
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
       break;
   }
-  free(obj);
-  obj = NULL;
 }
 
 Object* CloneObject(Object* obj)
@@ -40,16 +38,16 @@ Object* CloneObject(Object* obj)
   switch(result->kind)
   {
     case O_NIL:
-      result->nil = CloneNil(obj->nil);
+      CloneNil(&(result->nil), &(obj->nil));
       break;
     case O_INT:
-      result->integer = CloneInteger(obj->integer);
+      CloneInteger(&(result->integer), &(obj->integer));
       break;
     case O_BOOL:
-      result->boolean = CloneBoolean(obj->boolean);
+      CloneBoolean(&(result->integer), &(obj->boolean));
       break;
     case O_LAMB:
-      result->lambda = CloneLambda(obj->lambda);
+      CloneLambda(&(result->lambda), &(obj->lambda));
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
@@ -64,16 +62,16 @@ char* ToStringObject(Object* obj)
   switch (obj->kind)
   {
     case O_NIL:
-      result = ToStringNil(obj->nil);
+      result = ToStringNil(&(obj->nil));
       break;
     case O_INT:
-      result = ToStringInteger(obj->integer);
+      result = ToStringInteger(&(obj->integer));
       break;
     case O_BOOL:
-      result = ToStringBoolean(obj->boolean);
+      result = ToStringBoolean(&(obj->boolean));
       break;
     case O_LAMB:
-      result = ToStringLambda(obj->lambda);
+      result = ToStringLambda(&(obj->lambda));
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);

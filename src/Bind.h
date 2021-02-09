@@ -11,11 +11,11 @@ typedef struct Bind
   struct Ast*    rhs;
 } Bind;
 
-Bind* CreateBind(InternedString id, struct Ast* right);
+void InitializeBind(Bind* bind, InternedString id, struct Ast* right);
 
 void DestroyBind(Bind* bnd);
 
-Bind* CloneBind(Bind* bnd);
+void CloneBind(Bind* destination, Bind* source);
 
 char* ToStringBind(Bind* bnd);
 

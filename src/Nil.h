@@ -1,16 +1,18 @@
 #ifndef NIL_H
 #define NIL_H
 
+struct Object;
+
 typedef struct Nil
 {
   void* value;
 } Nil;
 
-Nil* CreateNil();
+void InitializeNil(Nil* nil);
 
 void DestroyNil(Nil* nil);
 
-Nil* CloneNil(Nil* nil);
+void CloneNil(Nil* destination, Nil* source);
 
 char* ToStringNil(Nil* nil);
 

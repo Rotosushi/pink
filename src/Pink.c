@@ -1,4 +1,20 @@
 /*
+
+  There is no such thing as a hard problem,
+   only problems which have yet to be
+   deconstructed into the proper series of
+   easy problems.
+
+
+  Failure is just another known path we take.
+
+  Failure is just as important as Success.
+
+
+
+
+
+
   something i am noticing from this
   rewrite, much of the benefiets that
   come from c++ can be had by simply
@@ -48,9 +64,6 @@ int main (int argc, char** argv)
 
   RegisterPrimitiveBinops(environment);
   RegisterPrimitiveUnops(environment);
-
-  //cout << "Welcome to Pink! v0.0.2\n"
-  //     << "press ctrl+c to exit.\n";
 
   Repl(stdin, stdout, environment);
 

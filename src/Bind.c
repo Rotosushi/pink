@@ -5,27 +5,21 @@
 #include "StringInterner.h"
 #include "Bind.h"
 
-Bind* CreateBind(InternedString id, struct Ast* right)
+void InitializeBind(Bind* bind, InternedString id, struct Ast* right)
 {
-  Bind* result = (Bind*)malloc(sizeof(Bind));
-  result->id   = id;
-  result->rhs  = right;
-  return result;
+  bind->id  = id;
+  bind->rhs = right;
 }
 
-void DestroyBind(Bind* bnd)
+void DestroyBind(Bind* bind)
 {
-  DestroyAst(bnd->rhs);
-  free(bnd);
-  bnd = NULL;
+  DestroyAst(bind->rhs);
 }
 
-Bind* CloneBind(Bind* bnd)
+void CloneBind(Bind* destination, Bind* source)
 {
-  Bind* result = (Bind*)malloc(sizeof(Bind));
-  result->id   = bnd->id;
-  result->rhs  = CloneAst(bnd->rhs);
-  return result;
+  destination->id = source->id;
+  CloneAst(&(destination->rhs), source->rhs);
 }
 
 char* ToStringBind(Bind* bnd)
@@ -34,6 +28,7 @@ char* ToStringBind(Bind* bnd)
   clneq = " := "; // 4 + 1 = 5
   right = ToStringAst(bnd->rhs);
 
+  // string interning is so, so, so clever. :)
   int sz = strlen((char*)bnd->id) + strlen(right) + 5;
   result = (char*)calloc(sz, sizeof(char));
 
@@ -55,6 +50,9 @@ TypeJudgement GetypeBind(Bind* bnd, Environment* env)
     // when we add a sequence (';') grapheme, we need to
     // bind to the type of the rhs to properly
     // typecheck terms in our grammar.
+    // because we handle the sequence via recursion.
+    // sequence has essentially the same storage pattern as
+    // application, assignment, bind, and iteration.
     result = rhsjdgmt;
   }
   else

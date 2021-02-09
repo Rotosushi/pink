@@ -8,12 +8,12 @@ typedef struct Boolean
   bool value;
 } Boolean;
 
-Boolean* CreateBoolean(bool b);
+void InitializeBoolean(Boolean* boolean, bool value);
 
-void DestroyBoolean(Boolean* b);
+void DestroyBoolean(Boolean* boolean);
 
-Boolean* CloneBoolean(Boolean* b);
+void CloneBoolean(Boolean* destination, Boolean* source);
 
-char* ToStringBoolean(Boolean* b);
+char* ToStringBoolean(Boolean* boolean);
 
 #endif // !BOOLEAN_H

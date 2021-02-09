@@ -13,6 +13,29 @@
 #include "Type.h"
 #include "Ast.h"
 
+Ast* CreateVariable(InternedString id, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_VAR;
+  ast->loc  = *loc;
+  return ast;
+}
+
+Ast* CreateApplication(Ast* left, Ast* right, Location* loc);
+Ast* CreateAssignment(Ast* left, Ast* right, Location* loc);
+Ast* CreateBind(InternedString id, Ast* right, Location* loc);
+Ast* CreateBinop(InternedString op, Ast* left, Ast* right, Location* loc);
+Ast* CreateUnop(InternedString op, Ast* right, Location* loc);
+Ast* CreateConditional(Ast* condition, Ast* first_alternative, Ast* second_alternative, Location* loc);
+Ast* CreateIteration(Ast* condition, Ast* body, Location* loc);
+Ast* CreateNil(Location* loc);
+Ast* CreateInteger(int  value, Location* loc);
+Ast* CreateBoolean(bool value, Location* loc);
+Ast* CreateLambda(InternedString arg_id, Type* arg_type, Ast* body, Location* loc);
+Ast* CreateType(Type* type, Location* loc);
+Ast* CreateScalarType(ScalarKind kind, struct TypeInterner* interned_types, Location* loc);
+Ast* CreateProcType(Type* left, Type* right, struct TypeInterner* interned_types, Location* loc);
+
 // this shall deallocate all memory associated
 // with term, such that after this procedure
 // returns term is null.
@@ -21,43 +44,43 @@ void DestroyAst(Ast* term)
   switch(term->kind)
   {
     case A_VAR:
-      DestroyVariable(term->var);
+      DestroyVariable(&(term->var));
       break;
 
     case A_APP:
-      DestroyApplication(term->app);
+      DestroyApplication(&(term->app));
       break;
 
     case A_ASS:
-      DestroyAssignment(term->ass);
+      DestroyAssignment(&(term->ass));
       break;
 
     case A_BND:
-      DestroyBind(term->bnd);
+      DestroyBind(&(term->bnd));
       break;
 
     case A_BOP:
-      DestroyBinop(term->bop);
+      DestroyBinop(&(term->bop));
       break;
 
     case A_UOP:
-      DestroyUnop(term->uop);
+      DestroyUnop(&(term->uop));
       break;
 
     case A_CND:
-      DestroyConditional(term->cnd);
+      DestroyConditional(&(term->cnd));
       break;
 
     case A_ITR:
-      DestroyIteration(term->itr);
+      DestroyIteration(&(term->itr));
       break;
 
     case A_OBJ:
-      DestroyObject(term->obj);
+      DestroyObject(&(term->obj));
       break;
 
     case A_TYP:
-      DestroyType(term->typ);
+      DestroyType(&(term->typ));
       break;
 
     default:
@@ -68,54 +91,55 @@ void DestroyAst(Ast* term)
   term = NULL;
 }
 
-// constructs a new tree exaclty the same as the
+// constructs a new tree exactly the same as the
 // passed tree.
-Ast* CloneAst(Ast* term)
+void CloneAst(Ast** destination, Ast* source);
 {
-  Ast* result  = (Ast*)malloc(sizeof(Ast));
-  result->kind = term->kind;
-  result->loc  = term->loc;
+  if ((*destination) == NULL)
+    (*destination) = (Ast*)malloc(sizeof(Ast));
+  (*destination)->kind = source->kind;
+  (*destination)->loc  = source->loc;
 
-  switch(result->kind)
+  switch(source->kind)
   {
     case A_VAR:
-      result->var = CloneVariable(term->var);
+      CloneVariable(&((*destination)->var), &(source->var));
       break;
 
     case A_APP:
-      result->app = CloneApplication(term->app);
+      CloneApplication(&((*destination)->app), &(source->app));
       break;
 
     case A_ASS:
-      result->ass = CloneAssignment(term->ass);
+      CloneAssignment(&((*destination)->ass), &(source->ass));
       break;
 
     case A_BND:
-      result->bnd = CloneBind(term->bnd);
+      CloneBind(&((*destination)->bnd), &(source->bnd));
       break;
 
     case A_BOP:
-      result->bop = CloneBinop(term->bop);
+      CloneBinop(&((*destination)->bop), &(source->bop));
       break;
 
     case A_UOP:
-      result->uop = CloneUnop(term->uop);
+      CloneUnop(&((*destination)->uop), &(source->uop));
       break;
 
     case A_CND:
-      result->cnd = CloneConditional(term->cnd);
+      CloneConditional(&((*destination)->cnd), &(source->cnd));
       break;
 
     case A_ITR:
-      result->itr = CloneIteration(term->itr);
+      CloneIteration(&((*destination)->itr), &(source->itr));
       break;
 
     case A_OBJ:
-      result->obj = CloneObject(term->obj);
+      CloneObject(&((*destination)->obj), &(source->obj));
       break;
 
     case A_TYP:
-      result->typ = CloneType(term->typ);
+      CloneType(&((*destination)->typ), &(source->typ));
 
     default:
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
@@ -132,43 +156,43 @@ char* ToStringAst(Ast* term)
   switch(term->kind)
   {
     case A_VAR:
-      result = ToStringVariable(term->var);
+      result = ToStringVariable(&(term->var));
       break;
 
     case A_APP:
-      result = ToStringApplication(term->app);
+      result = ToStringApplication(&(term->app));
       break;
 
     case A_ASS:
-      result = ToStringAssignment(term->ass);
+      result = ToStringAssignment(&(term->ass));
       break;
 
     case A_BND:
-      result = ToStringBind(term->bnd);
+      result = ToStringBind(&(term->bnd));
       break;
 
     case A_BOP:
-      result = ToStringBinop(term->bop);
+      result = ToStringBinop(&(term->bop));
       break;
 
     case A_UOP:
-      result = ToStringUnop(term->uop);
+      result = ToStringUnop(&(term->uop));
       break;
 
     case A_CND:
-      result = ToStringConditional(term->cnd);
+      result = ToStringConditional(&(term->cnd));
       break;
 
     case A_ITR:
-      result = ToStringIteration(term->itr);
+      result = ToStringIteration(&(term->itr));
       break;
 
     case A_OBJ:
-      result = ToStringObject(term->obj);
+      result = ToStringObject(&(term->obj));
       break;
 
     case A_TYP:
-      result = ToStringType(term->typ);
+      result = ToStringType(&(term->typ));
       break;
 
     default:
@@ -184,39 +208,39 @@ TypeJudgement Getype(Ast* term, struct Environment* env)
   switch(term->kind)
   {
     case A_VAR:
-      result = GetypeVariable(term->var, env);
+      result = GetypeVariable(&(term->var), env);
       break;
 
     case A_APP:
-      result = GetypeApplication(term->app, env);
+      result = GetypeApplication(&(term->app), env);
       break;
 
     case A_ASS:
-      result = GetypeAssignment(term->ass, env);
+      result = GetypeAssignment(&(term->ass), env);
       break;
 
     case A_BND:
-      result = GetypeBind(term->bnd, env);
+      result = GetypeBind(&(term->bnd), env);
       break;
 
     case A_BOP:
-      result = GetypeBinop(term->bop, env);
+      result = GetypeBinop(&(term->bop), env);
       break;
 
     case A_UOP:
-      result = GetypeUnop(term->uop, env);
+      result = GetypeUnop(&(term->uop), env);
       break;
 
     case A_CND:
-      result = GetypeConditional(term->cnd, env);
+      result = GetypeConditional(&(term->cnd), env);
       break;
 
     case A_ITR:
-      result = GetypeIteration(term->itr, env);
+      result = GetypeIteration(&(term->itr), env);
       break;
 
     case A_OBJ:
-      result = GetypeObject(term->obj, env);
+      result = GetypeObject(&(term->obj), env);
       break;
 
     case A_TYP:

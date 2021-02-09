@@ -3,6 +3,7 @@
 
 #include "StringInterner.h"
 
+struct Environment;
 struct Ast;
 
 typedef struct Unop
@@ -11,12 +12,14 @@ typedef struct Unop
   struct Ast* rhs;
 } Unop;
 
-Unop* CreateUnop(InternedString op, struct Ast* rhs);
+void InitializeUnop(Unop* unop, InternedString op, struct Ast* rhs);
 
 void DestroyUnop(Unop* unp);
 
-Unop* CloneUnop(Unop* unp);
+void CloneUnop(Unop* destination, Unop* source);
 
 char* ToStringUnop(Unop* unp);
+
+TypeJudgement GetypeUnop(Unop* uop, struct Environment* env);
 
 #endif // !UNOP_H

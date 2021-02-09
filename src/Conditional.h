@@ -1,6 +1,7 @@
 #ifndef CONDITIONAL_H
 #define CONDITIONAL_H
 
+struct Environment;
 struct Ast;
 
 typedef struct Conditional
@@ -10,10 +11,14 @@ typedef struct Conditional
   struct Ast* snd;
 } Conditional;
 
+void InitializeConditional(Conditional* cond, struct Ast* cnd, struct Ast* fst, struct Ast* snd);
+
 void DestroyConditional(Conditional* cond);
 
-Conditional* CloneConditional(Conditional* cond);
+void CloneConditional(Conditional* destination, Conditional* source);
 
 char* ToStringConditional(Conditional* cond);
+
+TypeJudgement GetypeConditional(Conditional* conditional, struct Environment* env);
 
 #endif // !CONDITIONAL_H

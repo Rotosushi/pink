@@ -75,7 +75,6 @@ BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString
   int hash = (int)(op);
   hash %= BPtbl->num_buckets;
 
-  // so, pointers act like aliases, not copies.
   BPElem *head = BPtbl->table[hash];
 
   BPElem* elem = (BPElem*)malloc(sizeof(BPElem));

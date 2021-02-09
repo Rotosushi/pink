@@ -11,11 +11,11 @@ typedef struct Application
   struct Ast* rhs;
 } Application;
 
-Application* CreateApplication(struct Ast* left, struct Ast* right);
+void InitializeApplication(Application* app, struct Ast* lhs, struct Ast* rhs);
 
 void DestroyApplication(Application* app);
 
-Application* CloneApplication(Application* app);
+void CloneApplication(Application* app, Application* app);
 
 char* ToStringApplication(Application* app);
 

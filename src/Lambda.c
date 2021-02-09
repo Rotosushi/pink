@@ -7,23 +7,28 @@
 #include "SymbolTable.h"
 #include "Lambda.h"
 
-void DestroyLambda(Lambda* lam)
+void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Type* arg_type, struct Ast* body, struct SymbolTable* scope)
 {
-  DestroyType(lam->arg_type);
-  DestroyAst(lam->body);
-  DestroySymbolTable(lam->scope);
-  free(lam);
-  lam = NULL;
+  lambda->arg_id   = arg_id;
+  lambda->arg_type = arg_type;
+  lambda->body     = body;
+  lambda->scope    = scope;
 }
 
-Lambda* CloneLambda(Lambda* lam)
+void DestroyLambda(Lambda* lam)
 {
-  Lambda* result   = (Lambda*)malloc(sizeof(Lambda));
-  result->arg_id   = lam->arg_id;
-  result->arg_type = CloneType(lam->arg_type);
-  result->body     = CloneAst(lam->body);
-  result->scope    = CloneSymbolTable(lam->scope);
-  return result;
+  DestroyAst(lam->body);
+  DestroySymbolTable(lam->scope);
+}
+
+void CloneLambda(Lambda* destination, Lambda* source)
+{
+  destination->arg_id   = source->arg_id
+  destination->arg_type = source->arg_type;
+
+  CloneAst(&(destination->body), source->body);
+
+  CloneSymbolTable(&(destination->scope), source->scope);
 }
 
 char* ToStringLambda(Lambda* lam)
@@ -46,5 +51,14 @@ char* ToStringLambda(Lambda* lam)
   strcat(result, argtype);
   strcat(result, eqrarrow);
   strcat(result, body);
+  return result;
+}
+
+TypeJudgement Getype(Lambda* lam, Environment* env)
+{
+  TypeJudgement result;
+
+  
+
   return result;
 }

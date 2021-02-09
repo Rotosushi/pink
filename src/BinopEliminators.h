@@ -25,7 +25,7 @@ typedef struct BinopEliminator
 typedef struct BinopEliminatorList
 {
   BinopEliminator* list;
-  int     size;
+  int              size;
 } BinopEliminatorList;
 
 BinopEliminatorList* CreateBinopEliminatorList();

@@ -4,28 +4,22 @@
 #include "Type.h"
 #include "ProcType.h"
 
-ProcType* CreateProcType(struct Type* left, struct Type* right)
+void InitializeProcType(ProcType* proc, struct Type* left, struct Type* right)
 {
-  ProcType* result = (ProcType*)malloc(sizeof(ProcType));
-  result->lhs = left;
-  result->rhs = right;
-  return result;
+  proc->lhs = left;
+  proc->rhs = right;
 }
 
 void DestroyProcType(ProcType* proc)
 {
   DestroyType(proc->lhs);
   DestroyType(proc->rhs);
-  free(proc);
-  proc = NULL;
 }
 
-ProcType* CloneProcType(ProcType* proc)
+void CloneProcType(ProcType* destination, ProcType* source)
 {
-  ProcType* result = (ProcType*)malloc(sizeof(ProcType));
-  result->lhs = CloneType(proc->lhs);
-  result->rhs = CloneType(proc->rhs);
-  return result;
+  CloneType(destination->lhs, source->lhs);
+  CloneType(destination->rhs, source->rhs);
 }
 
 char* ToStringProcType(ProcType* proc)

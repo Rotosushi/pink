@@ -6,12 +6,12 @@ typedef struct Integer
   int value;
 } Integer;
 
-Integer* CreateInteger(int i);
+void InitializeInteger(Integer* integer, int value);
 
-void DestroyInteger(Integer* i);
+void DestroyInteger(Integer* integer);
 
-Integer* CloneInteger(Integer* i);
+void CloneInteger(Integer* destination, Integer* source);
 
-char* ToStringInteger(Integer* i);
+char* ToStringInteger(Integer* integer);
 
 #endif // !INTEGER_H

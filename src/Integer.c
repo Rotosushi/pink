@@ -4,24 +4,19 @@
 
 #include "Integer.h"
 
-Integer* CreateInteger(int i)
+void InitializeInteger(Integer* integer, int i)
 {
-  Integer* result = (Integer*)malloc(sizeof(Integer));
-  result->value   = i;
-  return result;
+  integer->value = i;
 }
 
 void DestroyInteger(Integer* i)
 {
-  free(i);
-  i = NULL;
+  return;
 }
 
-Integer* CloneInteger(Integer* i)
+void CloneInteger(Integer* destination, Integer* source)
 {
-  Integer* result = (Integer*)malloc(sizeof(Integer));
-  result->value   = i->value;
-  return result;
+  destination->value = source->value;
 }
 
 char* ToStringInteger(Integer* i)

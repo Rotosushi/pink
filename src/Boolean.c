@@ -4,28 +4,25 @@
 
 #include "Boolean.h"
 
-Boolean* CreateBoolean(bool b)
+void InitializeBoolean(Boolean* boolean, bool value)
 {
-  Boolean* result = (Boolean*)malloc(sizeof(Boolean));
-  result->value = b;
-  return result;
+  boolean->value = value;
 }
 
-void DestroyBoolean(Boolean* b)
+void DestroyBoolean(Boolean* boolean)
 {
-  free(b);
-  b = NULL;
+  return;
 }
 
-Boolean* CloneBoolean(Boolean* b)
+void CloneBoolean(Boolean* destination, Boolean* source)
 {
-  Boolean* result = (Boolean*)malloc(sizeof(Boolean));
-  result->value   = b->value;
-  return result;
+  destination->value = source->value;
 }
 
-char* ToStringBoolean(Boolean* b)
+// maybe we sould make this procedure
+// allocate new memory for the
+char* ToStringBoolean(Boolean* boolean)
 {
-  char* result = ((b->value == false) ? "false" : "true");
+  char*  result = ((b->value == false) ? "false" : "true");
   return result;
 }

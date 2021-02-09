@@ -4,22 +4,25 @@
 #include "Ast.h"
 #include "Conditional.h"
 
+void InitializeConditional(Conditional* cond, struct Ast* cnd, struct Ast* fst, struct Ast* snd)
+{
+  cond->cnd = cnd;
+  cond->fst = fst;
+  cond->snd = snd;
+}
+
 void DestroyConditional(Conditional* cond)
 {
   DestroyAst(cond->cnd);
   DestroyAst(cond->fst);
   DestroyAst(cond->snd);
-  free(cond);
-  cond = NULL;
 }
 
-Conditional* CloneConditional(Conditional* cond)
+void CloneConditional(Conditional* destination, Conditional* source)
 {
-  Conditional* result = (Conditional*)malloc(sizeof(Conditional));
-  result->cnd = CloneAst(cond->cnd);
-  result->fst = CloneAst(cond->fst);
-  result->snd = CloneAst(cond->snd);
-  return result;
+  CloneAst(&(destination->cnd), cond->cnd);
+  CloneAst(&(destination->fst), cond->fst);
+  CloneAst(&(destination->snd), cond->snd);
 }
 
 char* ToStringConditional(Conditional* cond)
@@ -43,5 +46,62 @@ char* ToStringConditional(Conditional* cond)
   strcat(result, firsttxt);
   strcat(result, elsetxt);
   strcat(result, secondtxt);
+  return result;
+}
+
+// the condition has to have type Bool.
+// the alternatives must have equal types.
+// the result type is the type of the alternatives
+TypeJudgement GetypeConditional(Conditional* conditional, struct Environment* env)
+{
+  Type* booleanType = GetBooleanType(env->interned_types);
+  TypeJudgement result;
+  TypeJudgement cndjdgmt = Getype(conditional->cnd, env);
+
+  if (cndjdgmt.success == true)
+  {
+    if (cndjdgmt.type == booleanType)
+    {
+      TypeJudgement fstjdgmt = Getype(conditional->fst, env);
+
+      if (fstjdgmt.success == true)
+      {
+        TypeJudgement sndjdgmt = Getype(conditional->snd, env);
+
+        if (sndjdgmt.success == true)
+        {
+          if (fstjdgmt.type == sndjdgmt.type)
+          {
+            result.success = true;
+            result.type    = fstjdgmt.type;
+          }
+          else
+          {
+            result.success   = false;
+            result.error.dsc = "alternative expressions must have the same type";
+            result.error.loc = conditional->fst->loc;
+          }
+        }
+        else
+        {
+          result = sndjdgmt;
+        }
+      }
+      else
+      {
+        result = fstjdgmt;
+      }
+    }
+    else
+    {
+      result.success   = false;
+      result.error.dsc = "conditional expression must have boolean type";
+      result.error.loc = conditional->cnd->loc;
+    }
+  }
+  else
+  {
+    result = cndjdgmt;
+  }
   return result;
 }

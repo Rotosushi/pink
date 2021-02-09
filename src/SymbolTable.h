@@ -32,7 +32,7 @@ typedef struct SymbolTable
 } SymbolTable;
 
 SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope);
-SymbolTable* CloneSymbolTable(SymbolTable* other);
+void CloneSymbolTable(SymbolTable **destination, SymbolTable* source);
 void DestroySymbolTable(SymbolTable* table);
 
 struct Ast* lookup(SymbolTable* table, InternedString name);

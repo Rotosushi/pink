@@ -13,19 +13,18 @@ void DestroyType(Type* type)
   switch (type->kind)
   {
     case T_SCALAR:
-      DestroyScalarType(type->scalar);
+      DestroyScalarType(&(type->scalar));
       break;
     case T_PROC:
-      DestroyProcType(type->proc);
+      DestroyProcType(&(type->proc));
       break;
     default:
       FatalError("Bad Type Kind", __FILE__, __LINE__);
       break;
   }
-  free(type);
 }
 
-Type* CloneType(Type* type)
+void CloneType(Type* destination, Type* source)
 {
   Type* result = (Type*)malloc(sizeof(Type));
   result->kind = type->kind;

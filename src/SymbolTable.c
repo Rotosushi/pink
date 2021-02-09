@@ -20,23 +20,23 @@ SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope)
   return result;
 }
 
-SymbolTable* CloneSymbolTable(SymbolTable* other)
+void CloneSymbolTable(SymbolTable** destination, SymbolTable* source)
 {
-  SymbolTable* result     = (SymbolTable*)malloc(sizeof(SymbolTable));
-  result->num_buckets     = other->num_buckets;
-  result->enclosing_scope = other->enclosing_scope;
-  result->table           = (Symbol**)malloc(other->num_buckets * sizeof(Symbol*));
-  for (int i = 0; i < other->num_buckets; i++)
+  if ((*destination) == NULL)
+    (*destination) = (SymbolTable*)malloc(sizeof(SymbolTable));
+  (*destination)->num_buckets     = source->num_buckets;
+  (*destination)->enclosing_scope = source->enclosing_scope;
+  (*destination)->table           = (Symbol**)malloc(source->num_buckets * sizeof(Symbol*));
+  for (int i = 0; i < source->num_buckets; i++)
   {
-    Symbol* cursor = other->table[i];
+    Symbol* cursor = source->table[i];
 
     while (cursor != NULL)
     {
-      bind(result, cursor->id, cursor->term);
+      bind((*destination), cursor->id, cursor->term);
       cursor = cursor->next;
     }
   }
-  return result;
 }
 
 void DestroySymbolTable(SymbolTable* table)
