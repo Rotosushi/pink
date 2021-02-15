@@ -2,7 +2,9 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Environment.h"
 #include "StringInterner.h"
+#include "UnopEliminators.h"
 #include "Unop.h"
 
 void InitializeUnop(Unop* unop, InternedString op, struct Ast* rhs)
@@ -18,7 +20,7 @@ void DestroyUnop(Unop* unop)
 
 void CloneUnop(Unop* destination, Unop* source)
 {
-  result->op = unop->op;
+  destination->op = source->op;
   CloneAst(&(destination->rhs), source->rhs);
 }
 
@@ -34,13 +36,14 @@ char* ToStringUnop(Unop* unop)
   strcat(result, (char*)unop->op);
   strcat(result, spc);
   strcat(result, right);
+  free(right);
   return result;
 }
 
-TypeJudgement GetypeUnop(Unop* uop, Environment* env)
+TypeJudgement GetypeUnop(struct Ast* node, Environment* env)
 {
   TypeJudgement result;
-
+  Unop* uop = &(node->uop);
   UnopEliminatorList* eliminators = FindUnop(env->unops, uop->op);
 
   if (eliminators != NULL)

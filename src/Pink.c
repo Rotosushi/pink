@@ -13,6 +13,16 @@
 
 
 
+  execution is innermost first, and strict.
+
+  because that is how the information flows
+  from the perspective of C.
+
+  (and from most assembly langauges as well)
+
+  also, destination is on the left.
+  just because, and consistency is important.
+  so, there, it's decided.
 
 
   something i am noticing from this
@@ -66,7 +76,6 @@ int main (int argc, char** argv)
   RegisterPrimitiveUnops(environment);
 
   Repl(stdin, stdout, environment);
-
 
   return 0;
 }

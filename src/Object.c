@@ -2,6 +2,8 @@
 #include <string.h>
 
 #include "PinkError.h"
+#include "Ast.h"
+#include "Environment.h"
 #include "Nil.h"
 #include "Integer.h"
 #include "Boolean.h"
@@ -30,30 +32,28 @@ void DestroyObject(Object* obj)
   }
 }
 
-Object* CloneObject(Object* obj)
+void CloneObject(Object* dest, Object* source)
 {
-  Object* result = (Object*)malloc(sizeof(Object));
-  result->kind = obj->kind;
+  dest->kind = source->kind;
 
-  switch(result->kind)
+  switch(source->kind)
   {
     case O_NIL:
-      CloneNil(&(result->nil), &(obj->nil));
+      CloneNil(&(dest->nil), &(source->nil));
       break;
     case O_INT:
-      CloneInteger(&(result->integer), &(obj->integer));
+      CloneInteger(&(dest->integer), &(source->integer));
       break;
     case O_BOOL:
-      CloneBoolean(&(result->integer), &(obj->boolean));
+      CloneBoolean(&(dest->boolean), &(source->boolean));
       break;
     case O_LAMB:
-      CloneLambda(&(result->lambda), &(obj->lambda));
+      CloneLambda(&(dest->lambda), &(source->lambda));
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
       break;
   }
-  return result;
 }
 
 char* ToStringObject(Object* obj)
@@ -76,6 +76,44 @@ char* ToStringObject(Object* obj)
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
       break;
+  }
+  return result;
+}
+
+TypeJudgement GetypeObject(Ast* node, Environment* env)
+{
+  TypeJudgement result;
+  switch (node->obj.kind)
+  {
+    case O_NIL:
+    {
+      result = GetypeNil(node, env);
+      break;
+    }
+
+    case O_INT:
+    {
+      result = GetypeInteger(node, env);
+      break;
+    }
+
+    case O_BOOL:
+    {
+      result = GetypeBoolean(node, env);
+      break;
+    }
+
+    case O_LAMB:
+    {
+      result = GetypeLambda(node, env);
+      break;
+    }
+
+    default:
+    {
+      FatalError("Bad Object Kind", __FILE__, __LINE__);
+      break;
+    }
   }
   return result;
 }

@@ -13,129 +13,105 @@
 Ast* BinopPlusAddInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
-    FatalError("Cannot Negate NULL left term", __FILE__, __LINE__);
+    FatalError("Cannot Add NULL left term", __FILE__, __LINE__);
 
   if (rval == NULL)
-    FatalError("Cannot Negate NULL right term", __FILE__, __LINE__);
+    FatalError("Cannot Add NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object left term", __FILE__, __LINE__);
+    FatalError("Cannot Add non-Object left term", __FILE__, __LINE__);
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object right term", __FILE__, __LINE__);
+    FatalError("Cannot Add non-Object right term", __FILE__, __LINE__);
 
-  if (lval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer left Object", __FILE__, __LINE__);
+  if (lval->obj.kind != O_INT)
+    FatalError("Cannot Add non-Integer left Object", __FILE__, __LINE__);
 
-  if (rval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer right Object", __FILE__, __LINE__);
+  if (rval->obj.kind != O_INT)
+    FatalError("Cannot Add non-Integer right Object", __FILE__, __LINE__);
 
-  int left = lval->obj->integer->value, right = rval->obj->integer->value;
+  int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Integer* integer = CreateInteger(left + right);
-  Object*  object  = (Object*)malloc(sizeof(Object));
-  object->kind     = O_INT;
-  object->integer  = integer;
-  Ast*     term    = (Ast*)malloc(sizeof(Ast));
-  term->kind       = A_OBJ;
-  term->obj        = object;
-  return term;
+  Ast* ast = CreateInteger(left + right, &(lval->loc));
+  return ast;
 }
 
 Ast* BinopHyphenMinusInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
-    FatalError("Cannot Negate NULL left term", __FILE__, __LINE__);
+    FatalError("Cannot Subtract NULL left term", __FILE__, __LINE__);
 
   if (rval == NULL)
-    FatalError("Cannot Negate NULL right term", __FILE__, __LINE__);
+    FatalError("Cannot Subtract NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object left term", __FILE__, __LINE__);
+    FatalError("Cannot Subtract non-Object left term", __FILE__, __LINE__);
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object right term", __FILE__, __LINE__);
+    FatalError("Cannot Subtract non-Object right term", __FILE__, __LINE__);
 
-  if (lval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer left Object", __FILE__, __LINE__);
+  if (lval->obj.kind != O_INT)
+    FatalError("Cannot Subtract non-Integer left Object", __FILE__, __LINE__);
 
-  if (rval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer right Object", __FILE__, __LINE__);
+  if (rval->obj.kind != O_INT)
+    FatalError("Cannot Subtract non-Integer right Object", __FILE__, __LINE__);
 
-  int left = lval->obj->integer->value, right = rval->obj->integer->value;
+  int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Integer* integer = CreateInteger(left - right);
-  Object*  object  = (Object*)malloc(sizeof(Object));
-  object->kind     = O_INT;
-  object->integer  = integer;
-  Ast*     term    = (Ast*)malloc(sizeof(Ast));
-  term->kind       = A_OBJ;
-  term->obj        = object;
-  return term;
+  Ast* ast = CreateInteger(left - right, &(lval->loc));
+  return ast;
 }
 
 Ast* BinopStarMultiplyInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
-    FatalError("Cannot Negate NULL left term", __FILE__, __LINE__);
+    FatalError("Cannot Multiply NULL left term", __FILE__, __LINE__);
 
   if (rval == NULL)
-    FatalError("Cannot Negate NULL right term", __FILE__, __LINE__);
+    FatalError("Cannot Multiply NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object left term", __FILE__, __LINE__);
+    FatalError("Cannot Multiply non-Object left term", __FILE__, __LINE__);
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object right term", __FILE__, __LINE__);
+    FatalError("Cannot Multiply non-Object right term", __FILE__, __LINE__);
 
-  if (lval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer left Object", __FILE__, __LINE__);
+  if (lval->obj.kind != O_INT)
+    FatalError("Cannot Multiply non-Integer left Object", __FILE__, __LINE__);
 
-  if (rval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer right Object", __FILE__, __LINE__);
+  if (rval->obj.kind != O_INT)
+    FatalError("Cannot Multiply non-Integer right Object", __FILE__, __LINE__);
 
-  int left = lval->obj->integer->value, right = rval->obj->integer->value;
+  int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Integer* integer = CreateInteger(left * right);
-  Object*  object  = (Object*)malloc(sizeof(Object));
-  object->kind     = O_INT;
-  object->integer  = integer;
-  Ast*     term    = (Ast*)malloc(sizeof(Ast));
-  term->kind       = A_OBJ;
-  term->obj        = object;
-  return term;
+  Ast* ast = CreateInteger(left * right, &(lval->loc));
+  return ast;
 }
 
 Ast* BinopFslashDivideInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
-    FatalError("Cannot Negate NULL left term", __FILE__, __LINE__);
+    FatalError("Cannot Divide NULL left term", __FILE__, __LINE__);
 
   if (rval == NULL)
-    FatalError("Cannot Negate NULL right term", __FILE__, __LINE__);
+    FatalError("Cannot Divide NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object left term", __FILE__, __LINE__);
+    FatalError("Cannot Divide non-Object left term", __FILE__, __LINE__);
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object right term", __FILE__, __LINE__);
+    FatalError("Cannot Divide non-Object right term", __FILE__, __LINE__);
 
-  if (lval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer left Object", __FILE__, __LINE__);
+  if (lval->obj.kind != O_INT)
+    FatalError("Cannot Divide non-Integer left Object", __FILE__, __LINE__);
 
-  if (rval->obj->kind != O_INT)
-    FatalError("Cannot Negate non-Integer right Object", __FILE__, __LINE__);
+  if (rval->obj.kind != O_INT)
+    FatalError("Cannot Divide non-Integer right Object", __FILE__, __LINE__);
 
-  int left = lval->obj->integer->value, right = rval->obj->integer->value;
+  int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Integer* integer = CreateInteger(left / right);
-  Object*  object  = (Object*)malloc(sizeof(Object));
-  object->kind     = O_INT;
-  object->integer  = integer;
-  Ast*     term    = (Ast*)malloc(sizeof(Ast));
-  term->kind       = A_OBJ;
-  term->obj        = object;
-  return term;
+  Ast* ast = CreateInteger(left / right, &(lval->loc));
+  return ast;
 }
 
 Ast* UnopHyphenNegateInteger(Ast* rval)
@@ -146,16 +122,10 @@ Ast* UnopHyphenNegateInteger(Ast* rval)
   if (rval->kind != A_OBJ)
     FatalError("Cannot Negate non-Object term", __FILE__, __LINE__);
 
-  if (rval->obj->kind != O_INT)
+  if (rval->obj.kind != O_INT)
     FatalError("Cannot Negate non-Integer Object", __FILE__, __LINE__);
 
-  Integer* integer = CreateInteger(-(rval->obj->integer->value));
-  Object*  obj = (Object*)malloc(sizeof(Object));
-  obj->kind    = O_INT;
-  obj->integer = integer;
-  Ast* ast     = (Ast*)malloc(sizeof(Ast));
-  ast->kind    = A_OBJ;
-  ast->obj     = obj;
+  Ast* ast = CreateInteger(-(rval->obj.integer.value), &(rval->loc));
   return ast;
 }
 
@@ -167,16 +137,11 @@ Ast* UnopBangNegateBoolean(Ast* rval)
   if (rval->kind != A_OBJ)
     FatalError("Cannot Negate non-Object term", __FILE__, __LINE__);
 
-  if (rval->obj->kind != O_BOOL)
+  if (rval->obj.kind != O_BOOL)
     FatalError("Cannot Negate non-Boolean Object", __FILE__, __LINE__);
 
-  Boolean* boolean = CreateBoolean(!(rval->obj->boolean->value));
-  Object*  obj = (Object*)malloc(sizeof(Object));
-  obj->kind    = O_INT;
-  obj->boolean = boolean;
-  Ast* ast     = (Ast*)malloc(sizeof(Ast));
-  ast->kind    = A_OBJ;
-  ast->obj     = obj;
+
+  Ast* ast = CreateBoolean(!(rval->obj.boolean.value), &(rval->loc));
   return ast;
 }
 

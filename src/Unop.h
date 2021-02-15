@@ -20,6 +20,6 @@ void CloneUnop(Unop* destination, Unop* source);
 
 char* ToStringUnop(Unop* unp);
 
-TypeJudgement GetypeUnop(Unop* uop, struct Environment* env);
+TypeJudgement GetypeUnop(struct Ast* uop, struct Environment* env);
 
 #endif // !UNOP_H

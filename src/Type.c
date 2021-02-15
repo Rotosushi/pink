@@ -26,21 +26,19 @@ void DestroyType(Type* type)
 
 void CloneType(Type* destination, Type* source)
 {
-  Type* result = (Type*)malloc(sizeof(Type));
-  result->kind = type->kind;
-  switch (result->kind)
+  destination->kind = source->kind;
+  switch (source->kind)
   {
     case T_SCALAR:
-      result->scalar = CloneScalarType(type->scalar);
+      CloneScalarType(&(destination->scalar), &(source->scalar));
       break;
     case T_PROC:
-      result->proc = CloneProcType(type->proc);
+      CloneProcType(&(destination->proc), &(source->proc));
       break;
     default:
       FatalError("Bad Type Kind", __FILE__, __LINE__);
       break;
   }
-  return result;
 }
 
 char* ToStringType(Type* type)
@@ -49,10 +47,10 @@ char* ToStringType(Type* type)
   switch (type->kind)
   {
     case T_SCALAR:
-      result = ToStringScalarType(type->scalar);
+      result = ToStringScalarType(&(type->scalar));
       break;
     case T_PROC:
-      result = ToStringProcType(type->proc);
+      result = ToStringProcType(&(type->proc));
       break;
     default:
       FatalError("Bad Type Kind", __FILE__, __LINE__);

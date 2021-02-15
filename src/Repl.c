@@ -24,12 +24,19 @@ size_t getline(char** buffer, size_t* length, FILE* in)
   for (size_t i = 0; i < (*length); i++)
   {
     char current = fgetc(in);
-
+    charsRead++;
+    // if the buffer is too small to hold the next
+    // character we add more memory to the buffer.
     if ((i + 1) >= (*length))
     {
+      // first we add ten more slots,
+      // then 100, then 1000. then
+      // we just keep adding thousands.
       (*length) += 10 * resize_factor;
+
       if (resize_factor <= 100)
         resize_factor *= 10;
+
       *buffer = (char*)realloc(*buffer, sizeof(char) * (*length));
     }
 
@@ -62,29 +69,31 @@ void Repl(FILE* in, FILE* out, Environment* env)
 
     if (parsejdgmt.success == true)
     {
-      fprintf(out, "parsed:[%s]\n", ToStringAst(parsejdgmt.term));
+      char* termtxt = ToStringAst(parsejdgmt.term);
+      fprintf(out, "parsed:[%s]\n", termtxt);
+      free(termtxt);
 
       TypeJudgement typejdgmt = Getype(parsejdgmt.term, env);
 
       if (typejdgmt.success == true)
       {
         fprintf(out, "type:[%s]\n", ToStringType(typejdgmt.type));
-
-        DestroyType(typejdgmt.type);
       }
       else
       {
         PrintError(out, &(typejdgmt.error), buffer);
       }
 
-      DestroyAst(parsejdgmt.term);
     }
     else
     {
       PrintError(out, &(parsejdgmt.error), buffer);
     }
-
-    free(buffer);
+    if (buffer)
+    {
+      free(buffer);
+      buffer = NULL;
+    }
     buffer = (char*)malloc(sizeof(char) * 100);
     length = 100;
   }

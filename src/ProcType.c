@@ -12,8 +12,15 @@ void InitializeProcType(ProcType* proc, struct Type* left, struct Type* right)
 
 void DestroyProcType(ProcType* proc)
 {
-  DestroyType(proc->lhs);
-  DestroyType(proc->rhs);
+  // we don't wan't this to dispatch
+  // to scalar types, as the exact
+  // same scalar types are used as
+  // the values of all type expressions.
+  if (proc->lhs->kind != T_SCALAR)
+    DestroyType(proc->lhs);
+
+  if (proc->rhs->kind != T_SCALAR)
+    DestroyType(proc->rhs);
 }
 
 void CloneProcType(ProcType* destination, ProcType* source)
@@ -35,6 +42,8 @@ char* ToStringProcType(ProcType* proc)
   strcat(result, left);
   strcat(result, rarrow);
   strcat(result, right);
+  free(left);
+  free(right);
   return result;
 }
 

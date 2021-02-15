@@ -1,27 +1,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Utilities.h"
+#include "TypeJudgement.h"
+#include "Ast.h"
+#include "Environment.h"
 #include "Nil.h"
 
-Nil* CreateNil()
+void InitializeNil(Nil* nil)
 {
-  Nil* result = (Nil*)malloc(sizeof(Nil));
-  result->value = NULL;
-  return result;
+  nil->value = NULL;
 }
 
 void DestroyNil(Nil* nil)
 {
-  free(nil);
-  nil = NULL;
+  return;
 }
 
-Nil* CloneNil(Nil* nil)
+void CloneNil(Nil* dest, Nil* source)
 {
-  return nil;
+  dest->value = source->value;
 }
 
 char* ToStringNil(Nil* nil)
 {
-  return "nil";
+  return dupnstr("nil", 3);
+}
+
+TypeJudgement GetypeNil(Ast* node, Environment* env)
+{
+  TypeJudgement result;
+  result.success = true;
+  result.type    = GetNilType(env->interned_types);
+  return result;
 }

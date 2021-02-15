@@ -20,10 +20,44 @@ SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope)
   return result;
 }
 
+/*
+  if you generate the address of a local variable
+  or member of some structure, that is always a
+  non-null ptr. if the procedure gets called then
+  the memory has already been allocated on the stack
+  frame for the local data, and the address of that
+  variable on the stack is known and not NULL.
+
+  if you pass the address of a null pointer, we can point
+  it to dynamic data via malloc.
+  so this procedure can be used safely with dynamic
+  memory OR stack memory, or if you are evil,
+  global memory.
+
+  though, as i think about it, we now cannot destroy the
+  table safely on both assumptions (stack v. dynamic)
+*/
 void CloneSymbolTable(SymbolTable** destination, SymbolTable* source)
 {
   if ((*destination) == NULL)
     (*destination) = (SymbolTable*)malloc(sizeof(SymbolTable));
+  else
+  {
+    for (int i = 0; i < (*destination)->num_buckets; i++)
+    {
+      while ((*destination)->table[i] != NULL)
+      {
+        // get the first symbol in the bucket. (head)
+        Symbol* cursor = (*destination)->table[i];
+        // make the symbol after the first the new head
+        (*destination)->table[i] = cursor->next;
+        // free the previous head.
+        DestroyAst(cursor->term);
+        free(cursor);
+      }
+    }
+  }
+
   (*destination)->num_buckets     = source->num_buckets;
   (*destination)->enclosing_scope = source->enclosing_scope;
   (*destination)->table           = (Symbol**)malloc(source->num_buckets * sizeof(Symbol*));
@@ -129,6 +163,8 @@ void unbind(SymbolTable* table, InternedString name)
   {
     if (name == cursor->id)
     {
+      // link the list around the node
+      // we want to remove (cursor).
       prev->next = cursor->next;
       DestroyAst(cursor->term);
       free(cursor);

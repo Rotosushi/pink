@@ -1,6 +1,7 @@
 #ifndef BIND_H
 #define BIND_H
 
+#include "Location.h"
 #include "StringInterner.h"
 
 struct Ast;
@@ -19,6 +20,6 @@ void CloneBind(Bind* destination, Bind* source);
 
 char* ToStringBind(Bind* bnd);
 
-TypeJudgement GetypeBind(Bind* bnd, Environment* env);
+TypeJudgement GetypeBind(struct Ast* bnd, struct Environment* env);
 
 #endif // !BIND_H

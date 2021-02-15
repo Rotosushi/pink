@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-
+#include "Utilities.h"
 #include "PinkError.h"
 #include "Token.h"
 #include "Location.h"
@@ -38,17 +38,10 @@ void yySetBuffer(Lexer* lexer, char* text, int len)
     lexer->end    = lexer->buf + len;
 }
 
-// god why isn't strndup a stdlib procedure?
-char* dupstr(char* str, int len)
-{
-    char* result = (char*)calloc(sizeof(char), len + 1);
-    result = strncpy(result, str, len);
-    return result;
-}
 
 char* yyText(Lexer* lexer)
 {
-    return dupstr(lexer->token, lexer->cursor - lexer->token);
+    return dupnstr(lexer->token, lexer->cursor - lexer->token);
 }
 
 Location* yyLloc(Lexer* lexer)

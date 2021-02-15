@@ -6,7 +6,7 @@
 #include "Environment.h"
 #include "Binop.h"
 
-void CreateBinop(Binop* binop, InternedString op, struct Ast* left, struct Ast* right)
+void InitializeBinop(Binop* binop, InternedString op, struct Ast* left, struct Ast* right)
 {
   binop->op  = op;
   binop->lhs = left;
@@ -22,8 +22,8 @@ void DestroyBinop(Binop* binop)
 void CloneBinop(Binop* destination, Binop* source)
 {
   destination->op = source->op;
-  CloneAst((*destination)->lhs, source->lhs);
-  CloneAst((*destination)->rhs, source->rhs);
+  CloneAst(&(destination->lhs), source->lhs);
+  CloneAst(&(destination->rhs), source->rhs);
 }
 
 char* ToStringBinop(Binop* binop)
@@ -44,6 +44,8 @@ char* ToStringBinop(Binop* binop)
   strcat(result, (char*)binop->op);
   strcat(result, spc);
   strcat(result, right);
+  free(left);
+  free(right);
   return result;
 }
 
@@ -53,9 +55,10 @@ char* ToStringBinop(Binop* binop)
 // types of the left and right hand sides, we can type
 // the entire expression as the result type of the
 // given eliminator.
-TypeJudgement GetypeBinop(Binop* binop, Environment* env)
+TypeJudgement GetypeBinop(Ast* node, Environment* env)
 {
   TypeJudgement result;
+  Binop* binop = &(node->bop);
   BinopEliminatorList* eliminators = FindBinop(env->binops, binop->op);
 
   if (eliminators != NULL)
@@ -68,7 +71,7 @@ TypeJudgement GetypeBinop(Binop* binop, Environment* env)
 
       if (rhsjdgmt.success == true)
       {
-        BinopEliminator* eliminator = FindBinopEliminator(env->eliminators, lhsjdgmt.type, rhsjdgmt.type);
+        BinopEliminator* eliminator = FindBinopEliminator(eliminators, lhsjdgmt.type, rhsjdgmt.type);
 
         if (eliminator != NULL)
         {

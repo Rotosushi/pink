@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Environment.h"
 #include "Conditional.h"
 
 void InitializeConditional(Conditional* cond, struct Ast* cnd, struct Ast* fst, struct Ast* snd)
@@ -20,9 +21,9 @@ void DestroyConditional(Conditional* cond)
 
 void CloneConditional(Conditional* destination, Conditional* source)
 {
-  CloneAst(&(destination->cnd), cond->cnd);
-  CloneAst(&(destination->fst), cond->fst);
-  CloneAst(&(destination->snd), cond->snd);
+  CloneAst(&(destination->cnd), source->cnd);
+  CloneAst(&(destination->fst), source->fst);
+  CloneAst(&(destination->snd), source->snd);
 }
 
 char* ToStringConditional(Conditional* cond)
@@ -46,16 +47,20 @@ char* ToStringConditional(Conditional* cond)
   strcat(result, firsttxt);
   strcat(result, elsetxt);
   strcat(result, secondtxt);
+  free(condtxt);
+  free(firsttxt);
+  free(secondtxt);
   return result;
 }
 
 // the condition has to have type Bool.
 // the alternatives must have equal types.
 // the result type is the type of the alternatives
-TypeJudgement GetypeConditional(Conditional* conditional, struct Environment* env)
+TypeJudgement GetypeConditional(Ast* node, Environment* env)
 {
   Type* booleanType = GetBooleanType(env->interned_types);
   TypeJudgement result;
+  Conditional* conditional = &(node->cnd);
   TypeJudgement cndjdgmt = Getype(conditional->cnd, env);
 
   if (cndjdgmt.success == true)

@@ -37,6 +37,8 @@ void DestroyUnopTable(UnopTable* ut)
   }
   free(ut->table);
   ut->table = NULL;
+  ut->num_buckets = 0;
+  ut->num_elements = 0;
   free(ut);
   ut = NULL;
 }
@@ -51,7 +53,7 @@ UnopEliminatorList* InsertUnop(UnopTable* ut, InternedString op, UnopEliminatorL
   cur->data = UElist;
 
   cur->next = head;
-  head = cur;
+  ut->table[hash] = cur;
 
   return cur->data;
 }

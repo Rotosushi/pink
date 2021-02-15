@@ -15,10 +15,14 @@ struct Type;
   a lot of basic primitive types,
   which could be stored and accessd
   directly, skipping any sort of
-  array access. the type that needs
+  array access. the type that -must-
   to be interned as a dynamic list
   of types is exclusively ProcType
   given the current langauge support.
+  though i suspect structures and unions
+  will similarly need to be stored as a
+  set of known definitions according to
+  some internal pattern,
 
   also also, this can be refactored
   into an LLVM interface at some later
@@ -37,6 +41,12 @@ typedef struct TypeInterner
 TypeInterner* CreateTypeInterner();
 void          DestroyTypeInterner(TypeInterner* Ity);
 
+// again, a lot of the benefiets of OOP
+// is coming from choices I could be making
+// in a C-like langauge.
+// not all of them, I still can't define
+// overloaded procedures or polymorphic 
+// procedures.
 struct Type* GetNilType(TypeInterner* Ity);
 struct Type* GetIntegerType(TypeInterner* Ity);
 struct Type* GetBooleanType(TypeInterner* Ity);

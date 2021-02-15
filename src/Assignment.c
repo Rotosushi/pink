@@ -2,30 +2,25 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Environment.h"
 #include "Assignment.h"
 
-Assignment* CreateAssignment(struct Ast* left, struct Ast* right)
+void InitializeAssignment(Assignment* ass, struct Ast* left, struct Ast* right)
 {
-  Assignment* result = (Assignment*)malloc(sizeof(Assignment));
-  result->lhs = left;
-  result->rhs = right;
-  return result;
+  ass->lhs = left;
+  ass->rhs = right;
 }
 
 void DestroyAssignment(Assignment* ass)
 {
   DestroyAst(ass->lhs);
   DestroyAst(ass->rhs);
-  free(ass);
-  ass = NULL;
 }
 
-Assignment* CloneAssignment(Assignment* ass)
+void CloneAssignment(Assignment* dest, Assignment* source)
 {
-  Assignment* result = (Assignment*)malloc(sizeof(Assignment));
-  result->lhs = CloneAst(ass->lhs);
-  result->rhs = CloneAst(ass->rhs);
-  return result;
+  CloneAst(&(dest->lhs), source->lhs);
+  CloneAst(&(dest->rhs), source->rhs);
 }
 
 char* ToStringAssignment(Assignment* ass)
@@ -41,6 +36,8 @@ char* ToStringAssignment(Assignment* ass)
   strcat(result, left);
   strcat(result, larrow);
   strcat(result, right);
+  free(left);
+  free(right);
   return result;
 }
 
@@ -49,9 +46,12 @@ char* ToStringAssignment(Assignment* ass)
 ------------------------------
    ENV |- lhs '<-' rhs : T
 */
-TypeJudgement GetypeAssignment(Assignment* ass, Environment* env)
+TypeJudgement GetypeAssignment(Ast* node, Environment* env)
 {
   TypeJudgement result;
+
+  Assignment* ass = &(node->ass);
+
   TypeJudgement lhsjdgmt = Getype(ass->lhs, env);
 
   if (lhsjdgmt.success == true)
@@ -66,7 +66,7 @@ TypeJudgement GetypeAssignment(Assignment* ass, Environment* env)
       {
         result.success   = false;
         result.error.dsc = "Type mismatch between lhs and rhs";
-        result.error.loc = ass->loc;
+        result.error.loc = node->loc;
       }
     }
     else

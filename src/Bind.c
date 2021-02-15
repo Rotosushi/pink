@@ -2,6 +2,8 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "SymbolTable.h"
+#include "Environment.h"
 #include "StringInterner.h"
 #include "Bind.h"
 
@@ -35,14 +37,18 @@ char* ToStringBind(Bind* bnd)
   strcat(result, (char*)bnd->id);
   strcat(result, clneq);
   strcat(result, right);
+  free(right);
   return result;
 }
 
 
-TypeJudgement GetypeBind(Bind* bnd, Environment* env)
+TypeJudgement GetypeBind(Ast* node, Environment* env)
 {
   TypeJudgement result;
-  Ast* bound_term = lookup_in_local_scope(env->scope, bnd->id);
+
+  Bind* bnd = &(node->bnd);
+
+  Ast* bound_term = lookup_in_local_scope(env->outer_scope, bnd->id);
 
   if (bound_term == NULL)
   {
@@ -59,7 +65,7 @@ TypeJudgement GetypeBind(Bind* bnd, Environment* env)
   {
     result.success = false;
     result.error.dsc = "Id is already bound in scope";
-    result.error.loc = bnd->loc;
+    result.error.loc = node->loc;
   }
   return result;
 }

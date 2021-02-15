@@ -18,15 +18,17 @@ TypeInterner* CreateTypeInterner()
 
 void DestroyTypeInterner(TypeInterner* Ity)
 {
-  DestroyType(Ity->nilType);
-  DestroyType(Ity->integerType);
-  DestroyType(Ity->booleanType);
+
   for (int i = 0; i < Ity->procTypesLength; i++)
   {
     DestroyType(Ity->procTypes[i]);
   }
   free(Ity->procTypes);
   Ity->procTypesLength = 0;
+
+  DestroyType(Ity->nilType);
+  DestroyType(Ity->integerType);
+  DestroyType(Ity->booleanType);
   free(Ity);
   Ity = NULL;
 }
@@ -35,10 +37,9 @@ Type* GetNilType(TypeInterner* Ity)
 {
   if (Ity->nilType == NULL)
   {
-    ScalarType* nilType  = CreateScalarType(S_NIL);
-    Ity->nilType         = (Type*)malloc(sizeof(Type));
-    Ity->nilType->kind   = T_SCALAR;
-    Ity->nilType->scalar = nilType;
+    Ity->nilType              = (Type*)malloc(sizeof(Type));
+    Ity->nilType->kind        = T_SCALAR;
+    Ity->nilType->scalar.kind = S_NIL;
   }
 
   return Ity->nilType;
@@ -48,10 +49,9 @@ Type* GetIntegerType(TypeInterner* Ity)
 {
   if (Ity->integerType == NULL)
   {
-    ScalarType* integerType  = CreateScalarType(S_INT);
-    Ity->integerType         = (Type*)malloc(sizeof(Type));
-    Ity->integerType->kind   = T_SCALAR;
-    Ity->integerType->scalar = integerType;
+    Ity->integerType              = (Type*)malloc(sizeof(Type));
+    Ity->integerType->kind        = T_SCALAR;
+    Ity->integerType->scalar.kind = S_INT;
   }
 
 
@@ -62,10 +62,9 @@ Type* GetBooleanType(TypeInterner* Ity)
 {
   if (Ity->booleanType == NULL)
   {
-    ScalarType* booleanType  = CreateScalarType(S_BOOL);
-    Ity->booleanType         = (Type*)malloc(sizeof(Type));
-    Ity->booleanType->kind   = T_SCALAR;
-    Ity->booleanType->scalar = booleanType;
+    Ity->booleanType              = (Type*)malloc(sizeof(Type));
+    Ity->booleanType->kind        = T_SCALAR;
+    Ity->booleanType->scalar.kind = S_BOOL;
   }
 
   return Ity->booleanType;
@@ -83,10 +82,9 @@ Type* GetProcedureType(TypeInterner* Ity, Type* l, Type* r)
   // otherwise insert the new type and
   // return it.
 
-  ProcType* possibleProcType = CreateProcType(l, r);
   Type* possibleType = (Type*)malloc(sizeof(Type));
   possibleType->kind = T_PROC;
-  possibleType->proc = possibleProcType;
+  InitializeProcType(&(possibleType->proc), l, r);
 
   for (int i = 0; i < Ity->procTypesLength; i++)
   {

@@ -38,14 +38,17 @@ char* ToStringIteration(Iteration* itr)
   strcat(result, condtxt);
   strcat(result, dotxt);
   strcat(result, bodytxt);
+  free(condtxt);
+  free(bodytxt);
   return result;
 }
 
 
-TypeJudgement GetypeIteration(Iteration* itr, struct Environment* env)
+TypeJudgement GetypeIteration(struct Ast* node, struct Environment* env)
 {
   Type* booleanType = GetBooleanType(env->interned_types);
   TypeJudgement result;
+  Iteration* itr = &(node->itr);
   TypeJudgement cndjdgmt = Getype(itr->cnd, env);
 
   if (cndjdgmt.success == true)

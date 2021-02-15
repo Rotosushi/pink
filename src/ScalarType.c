@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Utilities.h"
 #include "ScalarType.h"
 
 void InitializeScalarType(ScalarType* scalar, ScalarKind kind)
@@ -24,13 +25,13 @@ char* ToStringScalarType(ScalarType* scalar)
   switch(scalar->kind)
   {
     case S_NIL:
-      result = "Nil";
+      result = dupnstr("Nil", 3);
       break;
     case S_INT:
-      result = "Int";
+      result = dupnstr("Int", 3);
       break;
     case S_BOOL:
-      result = "Bool";
+      result = dupnstr("Bool", 4);
       break;
     default:
       break;

@@ -1,6 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+#include "Location.h"
 #include "Nil.h"
 #include "Integer.h"
 #include "Boolean.h"
@@ -23,7 +24,15 @@ typedef enum ObjKind
 // however, that has deep implications
 // within the entirety of the
 // program I just wrote. so i won't
-// be doing that.
+// be doing that. Just Kidding!
+// guess what my last refactor was lol.
+// anyways i might also be changing things
+// such that the member holds the location within
+// the union. this then gives us enough information
+// to connect the error to the location within
+// the tree, while also allowing a more direct
+// way to show how overloading in a c like
+// language could work.
 typedef struct Object
 {
   ObjKind kind;
@@ -37,8 +46,10 @@ typedef struct Object
 
 void DestroyObject(Object* obj);
 
-Object* CloneObject(Object* obj);
+void CloneObject(Object* dest, Object* source);
 
 char* ToStringObject(Object* obj);
+
+TypeJudgement GetypeObject(struct Ast* node, struct Environment* env);
 
 #endif // !OBJECT_H

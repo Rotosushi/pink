@@ -45,6 +45,8 @@ BinopEliminator* FindBinopEliminator(BinopEliminatorList* BElist, Type *ltype, T
   for (int i = 0; i < BElist->size; i++)
   {
     cur = &(BElist->list[i]);
+
+    // taking advantage of interned types here.
     if (ltype == cur->ltype && rtype == cur->rtype)
       return cur;
   }

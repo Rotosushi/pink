@@ -6,10 +6,10 @@ StringInterner.o Variable.o Bind.o Binop.o Unop.o BinopEliminators.o \
 UnopEliminators.o BinopPrecedence.o BinopTable.o UnopTable.o Nil.o \
 Integer.o Boolean.o Lambda.o ScalarType.o ProcType.o Type.o Object.o \
 Ast.o TypeInterner.o Environment.o SymbolTable.o PinkError.o Token.o \
-Lexer.o Parser.o PinkKernel.o Repl.o Pink.o -o pink
+Lexer.o Parser.o PinkKernel.o Repl.o Utilities.o Pink.o -o pink
 
 
-pink: Types Objects DataStructures SymbolicComputation Frontend Utilities Main
+pink: Types Objects DataStructures SymbolicComputation Frontend Aux Main
 	${CC} ${CARGS} ${LINK_STEP}
 
 clean:
@@ -120,7 +120,7 @@ re2c: Lexer.re
 Parser:
 	${CC} ${CARGS} -c Parser.c -o Parser.o
 
-Utilities: PinkError PinkKernel Repl
+Aux: PinkError PinkKernel Repl Utils
 
 PinkError:
 	${CC} ${CARGS} -c PinkError.c -o PinkError.o
@@ -130,6 +130,9 @@ PinkKernel:
 
 Repl:
 	${CC} ${CARGS} -c Repl.c -o Repl.o
+
+Utils:
+	${CC} ${CARGS} -c Utilities.c -o Utilities.o
 
 Main:
 	${CC} ${CARGS} -c Pink.c -o Pink.o

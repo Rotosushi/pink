@@ -1,14 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Utilities.h"
 #include "StringInterner.h"
 
-char* duplicatestring(char* str, int len)
-{
-    char* result = (char*)calloc(sizeof(char), len + 1);
-    result = strncpy(result, str, len);
-    return result;
-}
 
 StringInterner* CreateStringInterner()
 {
@@ -55,7 +50,7 @@ InternedString InternString(StringInterner* interner, char* string)
   // string into the set, and return that string as the
   // single instance of this string.
   // here realloc saves me from having to memcpy myself.
-  char* candidate = duplicatestring(string, strlen(string));
+  char* candidate = dupnstr(string, strlen(string));
   interner->length++;
   interner->interned_strings = (char**)realloc(interner->interned_strings, sizeof(char**) * interner->length);
 
@@ -66,13 +61,15 @@ InternedString InternString(StringInterner* interner, char* string)
 }
 
 // searches for the interned string by using the pointer values.
-// does not insert into the set if the string is not found,
+// if we find it we return the pointer, otherwise
 // this procedure simply returns null.
 InternedString FindInternedString(StringInterner* interner, InternedString string)
 {
   if (interner == NULL || string == NULL)
     return (InternedString)NULL;
 
+  // here is another possible place for optimizations,
+  // given the pointer comparisons maybe even SSA?
   for (int i = 0; i < interner->length; i++)
   {
     InternedString cur = (InternedString)((interner->interned_strings)[i]);
@@ -80,6 +77,7 @@ InternedString FindInternedString(StringInterner* interner, InternedString strin
     if (cur == string)
       return (InternedString)cur;
   }
+
   return (InternedString)NULL;
 }
 

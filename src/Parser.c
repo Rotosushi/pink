@@ -360,6 +360,7 @@ bool is_primary(Token t)
     case T_INTEGER:  case T_TRUE: case T_FALSE:
     case T_NIL:   case T_IDENTIFIER: case T_IF:
     case T_WHILE: case T_LPAREN: case T_BSLASH:
+    case T_OPERATOR:
       return true;
     default:
       return false;
@@ -482,21 +483,17 @@ ParseJudgement ParseAffix(Parser* p)
         if (rhsjdgmt.success == true)
         {
           Location*   rhsloc       = curloc(p);
-          Assignment* assignment   = CreateAssignment(lhsjdgmt.term, rhsjdgmt.term);
-
-          Ast*        result       = (Ast*)malloc(sizeof(Ast));
-          result->kind             = A_ASS;
-          result->loc.first_line   = lhsloc->first_line;
-          result->loc.first_column = lhsloc->first_column;
-          result->loc.last_line    = rhsloc->first_line;
-          result->loc.last_column  = rhsloc->first_column;
-          result->ass              = assignment;
-          lhsjdgmt.success         = true;
-          lhsjdgmt.term            = result;
+          Location    assignloc;
+          assignloc.first_line   = lhsloc->first_line;
+          assignloc.first_column = lhsloc->first_column;
+          assignloc.last_line    = rhsloc->first_line;
+          assignloc.last_column  = rhsloc->first_column;
+          lhsjdgmt.success       = true;
+          lhsjdgmt.term          = CreateAssignment(lhsjdgmt.term, rhsjdgmt.term, &assignloc);
           return lhsjdgmt;
         }
         else
-          return rhsjdgmt;
+          return rhsjdgmt; // leaks lhsjdgmt.term
       }
     }
   }
@@ -527,20 +524,18 @@ ParseJudgement ParseApplication(Parser* p)
       if (rhsjdgmt.success == true)
       {
         Location*      rhsloc    = curloc(p);
-        Application*   app       = CreateApplication(lhsjdgmt.term, rhsjdgmt.term);
-        Ast*           result    = (Ast*)malloc(sizeof(Ast));
-        result->kind             = A_APP;
-        result->loc.first_line   = lhsloc->first_line;
-        result->loc.first_column = lhsloc->first_column;
-        result->loc.last_line    = rhsloc->last_line;
-        result->loc.last_column  = rhsloc->last_column;
-        result->app              = app;
+        Location       apploc;
+        apploc.first_line   = lhsloc->first_line;
+        apploc.first_column = lhsloc->first_column;
+        apploc.last_line    = rhsloc->last_line;
+        apploc.last_column  = rhsloc->last_column;
+
         lhsjdgmt.success         = true;
-        lhsjdgmt.term            = result;
+        lhsjdgmt.term            = CreateApplication(lhsjdgmt.term, rhsjdgmt.term, &apploc);
         return lhsjdgmt; // (1)
       }
       else
-        return rhsjdgmt;
+        return rhsjdgmt; // leaks lhsjdgmt.term
     }
     else
       return lhsjdgmt; // (2)
@@ -621,16 +616,14 @@ ParseJudgement ParseAtom(Parser* p)
         if (rhsjdgmt.success == true)
         {
           Location* rhsloc         = curloc(p);
-          Bind* bind               = CreateBind(id, rhsjdgmt.term);
-          Ast* result              = (Ast*)malloc(sizeof(Ast));
-          result->kind             = A_BND;
-          result->loc.first_line   = lhsloc->first_line;
-          result->loc.first_column = lhsloc->first_column;
-          result->loc.last_line    = rhsloc->first_line;
-          result->loc.last_column  = rhsloc->first_column;
-          result->bnd              = bind;
-          lhsjdgmt.success         = true;
-          lhsjdgmt.term            = result;
+          Location  bndloc;
+          bndloc.first_line   = lhsloc->first_line;
+          bndloc.first_column = lhsloc->first_column;
+          bndloc.last_line    = rhsloc->first_line;
+          bndloc.last_column  = rhsloc->first_column;
+
+          lhsjdgmt.success    = true;
+          lhsjdgmt.term       = CreateBind(id, rhsjdgmt.term, &bndloc);
           return lhsjdgmt;
         }
         else
@@ -638,13 +631,8 @@ ParseJudgement ParseAtom(Parser* p)
       }
       else
       {
-        Variable* variable = CreateVariable(id);
-        Ast* result        = (Ast*)malloc(sizeof(Ast));
-        result->kind       = A_VAR;
-        result->loc        = *lhsloc;
-        result->var        = variable;
         lhsjdgmt.success   = true;
-        lhsjdgmt.term      = result;
+        lhsjdgmt.term      = CreateVariable(id, lhsloc);
         return lhsjdgmt;
       }
       break;
@@ -652,67 +640,32 @@ ParseJudgement ParseAtom(Parser* p)
     case T_NIL:
     {
       nextok(p); // eat "nil"
-      Nil*    nil      = CreateNil();
-      Object* obj      = (Object*)malloc(sizeof(Object));
-      obj->kind        = O_NIL;
-      obj->nil         = nil;
-      Ast* result      = (Ast*)malloc(sizeof(Ast));
-      result->kind     = A_OBJ;
-      result->loc      = *lhsloc;
-      result->obj      = obj;
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = result;
+      lhsjdgmt.term    = CreateNil(lhsloc);
       return lhsjdgmt;
       break;
     }
     case T_INTEGER:
     {
-      Integer* integer = CreateInteger(atoi(curtxt(p)));
-      nextok(p); // eat Integer
-      Object*  obj     = (Object*)malloc(sizeof(Object));
-      obj->kind        = O_INT;
-      obj->integer     = integer;
-      Ast* result      = (Ast*)malloc(sizeof(Ast));
-      result->kind     = A_OBJ;
-      result->loc      = *lhsloc;
-      result->obj      = obj;
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = result;
+      lhsjdgmt.term    = CreateInteger(atoi(curtxt(p)), lhsloc);
+      nextok(p); // eat "integer"
       return lhsjdgmt;
       break;
     }
     case T_TRUE:
     {
       nextok(p); // eat "true"
-      Boolean* boolean = CreateBoolean(true);
-      Object*  obj     = (Object*)malloc(sizeof(Object));
-      // TODO: i am sure we can support a type polymorphic
-      // constructor procedure with the signature
-      // Create(Typename, ...);
-      obj->kind        = O_BOOL;
-      obj->boolean     = boolean;
-      Ast* result      = (Ast*)malloc(sizeof(Ast));
-      result->kind     = A_OBJ;
-      result->loc      = *lhsloc;
-      result->obj      = obj;
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = result;
+      lhsjdgmt.term    = CreateBoolean(true, lhsloc);
       return lhsjdgmt;
       break;
     }
     case T_FALSE:
     {
       nextok(p); // eat "false"
-      Boolean* boolean = CreateBoolean(false);
-      Object*  obj     = (Object*)malloc(sizeof(Object));
-      obj->kind        = O_BOOL;
-      obj->boolean     = boolean;
-      Ast* result      = (Ast*)malloc(sizeof(Ast));
-      result->kind     = A_OBJ;
-      result->loc      = *lhsloc;
-      result->obj      = obj;
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = result;
+      lhsjdgmt.term    = CreateBoolean(false, lhsloc);
       return lhsjdgmt;
       break;
     }
@@ -754,7 +707,7 @@ ParseJudgement ParseAtom(Parser* p)
     }
     default:
     {
-      Location*   errloc = curloc(p);
+      Location* errloc = curloc(p);
       lhsjdgmt.success   = false;
       lhsjdgmt.error.dsc = "unknown Atom token found";
       lhsjdgmt.error.loc = *errloc;
@@ -847,7 +800,7 @@ TypeJudgement ParseTypeComposite(Parser* p)
         return lhsjdgmt;
       }
       else
-        return rhsjdgmt;
+        return rhsjdgmt; // leaks lhsjdgmt.term
     }
     else
       return lhsjdgmt;
@@ -859,16 +812,19 @@ TypeJudgement ParseTypeComposite(Parser* p)
 ParseJudgement ParseType(Parser* p)
 {
   ParseJudgement result;
-
+  Location* lhsloc        = curloc(p);
   TypeJudgement typejdgmt = ParseTypeComposite(p);
+  Location* rhsloc        = curloc(p);
+  Location typeloc;
+  typeloc.first_line   = lhsloc->first_line;
+  typeloc.first_column = lhsloc->first_column;
+  typeloc.last_line    = rhsloc->last_line;
+  typeloc.last_column  = rhsloc->last_column;
 
   if (typejdgmt.success == true)
   {
-    Ast* ast       = (Ast*)malloc(sizeof(Ast));
-    ast->kind      = A_TYP;
-    ast->typ       = typejdgmt.type;
     result.success = true;
-    result.term    = ast;
+    result.term    = CreateType(typejdgmt.type, &typeloc);
   }
   else
   {
@@ -921,19 +877,14 @@ ParseJudgement ParseConditional(Parser* p)
             if (elsejdgmt.success == true)
             {
               Location* rhsloc = curloc(p);
-              Conditional* cndl = (Conditional*)malloc(sizeof(Conditional));
-              cndl->cnd = condjdgmt.term;
-              cndl->fst = thenjdgmt.term;
-              cndl->snd = elsejdgmt.term;
-              Ast* ast  = (Ast*)malloc(sizeof(Ast));
-              ast->kind = A_CND;
-              ast->loc.first_line   = lhsloc->first_line;
-              ast->loc.first_column = lhsloc->first_column;
-              ast->loc.last_line    = rhsloc->first_line;
-              ast->loc.last_column  = rhsloc->first_column;
-              ast->cnd  = cndl;
+              Location  cndloc;
+              cndloc.first_line   = lhsloc->first_line;
+              cndloc.first_column = lhsloc->first_column;
+              cndloc.last_line    = rhsloc->first_line;
+              cndloc.last_column  = rhsloc->first_column;
+
               result.success = true;
-              result.term = ast;
+              result.term = CreateConditional(condjdgmt.term, thenjdgmt.term, elsejdgmt.term, &cndloc);
             }
             else
               result = elsejdgmt;
@@ -1008,19 +959,14 @@ ParseJudgement ParseIteration(Parser* p)
     return bodyjdgmt;
 
   Location* rhsloc = curloc(p);
+  Location  itrloc;
+  itrloc.first_line   = lhsloc->first_line;
+  itrloc.first_column = lhsloc->first_column;
+  itrloc.last_line    = rhsloc->first_line;
+  itrloc.last_column  = rhsloc->first_column;
 
-  Iteration* itr = (Iteration*)malloc(sizeof(Iteration));
-  itr->cnd = condjdgmt.term;
-  itr->bdy = condjdgmt.term;
-  Ast* ast = (Ast*)malloc(sizeof(Ast));
-  ast->kind = A_ITR;
-  ast->loc.first_line   = lhsloc->first_line;
-  ast->loc.first_column = lhsloc->first_column;
-  ast->loc.last_line    = rhsloc->first_line;
-  ast->loc.last_column  = rhsloc->first_column;
-  ast->itr  = itr;
   result.success = true;
-  result.term    = ast;
+  result.term    = CreateIteration(condjdgmt.term, bodyjdgmt.term, &itrloc);
   return result;
 }
 
@@ -1114,24 +1060,14 @@ ParseJudgement ParseLambda(Parser* p)
 
   p->outer_scope = last_scope; // reset the outer scope to what it was before
   Location* rhsloc = curloc(p);
+  Location  lamloc;
+  lamloc.first_line   = lhsloc->first_line;
+  lamloc.first_column = lhsloc->first_column;
+  lamloc.last_line    = rhsloc->first_line;
+  lamloc.last_column  = rhsloc->first_column;
 
-  Lambda* lambda        = (Lambda*)malloc(sizeof(Lambda));
-  lambda->arg_id        = id;
-  lambda->arg_type      = typejdgmt.type;
-  lambda->body          = bodyjdgmt.term;
-  lambda->scope         = lambda_scope;
-  Object* obj           = (Object*)malloc(sizeof(Object));
-  obj->kind             = O_LAMB;
-  obj->lambda           = lambda;
-  Ast* ast              = (Ast*)malloc(sizeof(Ast));
-  ast->kind             = A_OBJ;
-  ast->loc.first_line   = lhsloc->first_line;
-  ast->loc.first_column = lhsloc->first_column;
-  ast->loc.last_line    = rhsloc->first_line;
-  ast->loc.last_column  = rhsloc->first_column;
-  ast->obj              = obj;
-  result.success        = true;
-  result.term           = ast;
+  result.success      = true;
+  result.term         = CreateLambda(id, typejdgmt.type, bodyjdgmt.term, lambda_scope, &lamloc);
   return result;
 }
 
@@ -1155,36 +1091,35 @@ ParseJudgement ParseUnop(Parser* p)
   if (rhsjdgmt.success == false)
     return rhsjdgmt;
 
-  Location* rhsloc       = curloc(p);
+  Location* rhsloc    = curloc(p);
+  Location  uoploc;
+  uoploc.first_line   = lhsloc->first_line;
+  uoploc.first_column = lhsloc->first_column;
+  uoploc.last_line    = rhsloc->first_line;
+  uoploc.last_column  = rhsloc->first_column;
+
   InternedString op      = InternString(p->interned_ops, optxt);
-  Unop* unop             = CreateUnop(op, rhsjdgmt.term);
-  Ast*  term             = (Ast*)malloc(sizeof(Ast));
-  term->kind             = A_UOP;
-  term->loc.first_line   = lhsloc->first_line;
-  term->loc.first_column = lhsloc->first_column;
-  term->loc.last_line    = rhsloc->first_line;
-  term->loc.last_column  = rhsloc->first_column;
-  term->uop              = unop;
+
   result.success         = true;
-  result.term            = term;
+  result.term            = CreateUnop(op, rhsjdgmt.term, &uoploc);
   return result;
 }
 
-ParseJudgement ParseInfix(Parser* p, ParseJudgement lhs, int min_prec)
+ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
 {
-  if (lhs.success == false)
-    return lhs;
+  if (left.success == false)
+    return left;
 
   Location* lhsloc = curloc(p);
   BinopPrecAssoc* lookahead = NULL;
 
   if (curtok(p) != T_OPERATOR)
   {
-    lhs.success   = false;
-    DestroyAst(lhs.term);
-    lhs.error.dsc = "unexpected missing operator";
-    lhs.error.loc = *lhsloc;
-    return lhs;
+    left.success   = false;
+    DestroyAst(left.term);
+    left.error.dsc = "unexpected missing operator";
+    left.error.loc = *lhsloc;
+    return left;
   }
 
   InternedString Iop;
@@ -1194,7 +1129,8 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement lhs, int min_prec)
   while ((Iop = InternString(p->interned_ops, curtxt(p)))
      && (lookahead = FindBinopPrecAssoc(p->precedence_table, Iop)) && lookahead->precedence >= min_prec)
   {
-    Location* lhsloc = curloc(p);
+
+    Location* lhsloc = curloc(p), *rhsloc;
 
     BinopPrecAssoc* operator = lookahead;
 
@@ -1215,7 +1151,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement lhs, int min_prec)
     // or we continue parsing
     if (curtok(p) == T_OPERATOR)
     {
-      Location* rhsloc = curloc(p);
+      rhsloc = curloc(p);
       InternedString Irop;
 
       while((Irop = InternString(p->interned_ops, curtxt(p)))
@@ -1230,18 +1166,16 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement lhs, int min_prec)
       }
     }
 
-    Binop* binop   = (Binop*)malloc(sizeof(Binop));
-    binop->op      = Iop;
-    // we do indeed assume that we are passed a valid term
-    binop->lhs     = lhs.term;
-    binop->rhs     = right.term;
-    Ast* ast       = (Ast*)malloc(sizeof(Ast));
-    ast->kind      = A_BOP;
-    ast->bop       = binop;
-    lhs.success    = true;
-    lhs.term       = ast;
+    Location boploc;
+    boploc.first_line   = lhsloc->first_line;
+    boploc.first_column = lhsloc->first_column;
+    boploc.last_line    = rhsloc->last_line;
+    boploc.last_column  = rhsloc->last_column;
+
+    left.success    = true;
+    left.term       = CreateBinop(Iop, left.term, right.term, &boploc);
   }
-  return lhs;
+  return left;
 }
 
 ParseJudgement Parse(Parser* p, char* input)

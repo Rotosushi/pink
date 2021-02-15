@@ -1,6 +1,7 @@
 #ifndef ITERATION_H
 #define ITERATION_H
 
+
 struct Environment;
 struct Ast;
 
@@ -18,6 +19,6 @@ void CloneIteration(Iteration* destination, Iteration* source);
 
 char* ToStringIteration(Iteration* itr);
 
-TypeJudgement GetypeIteration(Iteration* itr, struct Environment* env);
+TypeJudgement GetypeIteration(struct Ast* itr, struct Environment* env);
 
 #endif // !ITERATION_H

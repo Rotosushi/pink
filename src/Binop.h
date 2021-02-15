@@ -9,8 +9,8 @@ struct Ast;
 typedef struct Binop
 {
   InternedString op;
-  struct Ast* lhs;
-  struct Ast* rhs;
+  struct Ast*    lhs;
+  struct Ast*    rhs;
 } Binop;
 
 // the repetition within the names is the first thing
@@ -28,6 +28,6 @@ void CloneBinop(Binop* destination, Binop* source);
 
 char* ToStringBinop(Binop* binop);
 
-TypeJudgement GetypeBinop(Binop* binop, struct Environment* env);
+TypeJudgement GetypeBinop(struct Ast* binop, struct Environment* env);
 
 #endif // !BINOP_H

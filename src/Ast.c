@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "TypeJudgement.h"
+#include "Environment.h"
+#include "SymbolTable.h"
 #include "Variable.h"
 #include "Application.h"
 #include "Assignment.h"
@@ -18,23 +21,121 @@ Ast* CreateVariable(InternedString id, Location* loc)
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_VAR;
   ast->loc  = *loc;
+  InitializeVariable(&(ast->var), id);
   return ast;
 }
 
-Ast* CreateApplication(Ast* left, Ast* right, Location* loc);
-Ast* CreateAssignment(Ast* left, Ast* right, Location* loc);
-Ast* CreateBind(InternedString id, Ast* right, Location* loc);
-Ast* CreateBinop(InternedString op, Ast* left, Ast* right, Location* loc);
-Ast* CreateUnop(InternedString op, Ast* right, Location* loc);
-Ast* CreateConditional(Ast* condition, Ast* first_alternative, Ast* second_alternative, Location* loc);
-Ast* CreateIteration(Ast* condition, Ast* body, Location* loc);
-Ast* CreateNil(Location* loc);
-Ast* CreateInteger(int  value, Location* loc);
-Ast* CreateBoolean(bool value, Location* loc);
-Ast* CreateLambda(InternedString arg_id, Type* arg_type, Ast* body, Location* loc);
-Ast* CreateType(Type* type, Location* loc);
-Ast* CreateScalarType(ScalarKind kind, struct TypeInterner* interned_types, Location* loc);
-Ast* CreateProcType(Type* left, Type* right, struct TypeInterner* interned_types, Location* loc);
+Ast* CreateApplication(Ast* left, Ast* right, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_APP;
+  ast->loc  = *loc;
+  InitializeApplication(&(ast->app), left, right);
+  return ast;
+}
+
+Ast* CreateAssignment(Ast* left, Ast* right, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_ASS;
+  ast->loc  = *loc;
+  InitializeAssignment(&(ast->ass), left , right);
+  return ast;
+}
+
+Ast* CreateBind(InternedString id, Ast* right, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_BND;
+  ast->loc  = *loc;
+  InitializeBind(&(ast->bnd), id, right);
+  return ast;
+}
+
+Ast* CreateBinop(InternedString op, Ast* left, Ast* right, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_BOP;
+  ast->loc  = *loc;
+  InitializeBinop(&(ast->bop), op, left, right);
+  return ast;
+}
+
+Ast* CreateUnop(InternedString op, Ast* right, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_UOP;
+  ast->loc  = *loc;
+  InitializeUnop(&(ast->uop), op, right);
+  return ast;
+}
+
+Ast* CreateConditional(Ast* condition, Ast* first, Ast* second, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_CND;
+  ast->loc  = *loc;
+  InitializeConditional(&(ast->cnd), condition, first, second);
+  return ast;
+}
+
+Ast* CreateIteration(Ast* condition, Ast* body, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_ITR;
+  ast->loc  = *loc;
+  InitializeIteration(&(ast->itr), condition, body);
+  return ast;
+}
+
+Ast* CreateNil(Location* loc)
+{
+  Ast* ast           = (Ast*)malloc(sizeof(Ast));
+  ast->kind          = A_OBJ;
+  ast->loc           = *loc;
+  ast->obj.kind      = O_NIL;
+  InitializeNil(&(ast->obj.nil));
+  return ast;
+}
+
+Ast* CreateInteger(int value, Location* loc)
+{
+  Ast* ast               = (Ast*)malloc(sizeof(Ast));
+  ast->kind              = A_OBJ;
+  ast->loc               = *loc;
+  ast->obj.kind          = O_INT;
+  InitializeInteger(&(ast->obj.integer), value);
+  return ast;
+}
+
+Ast* CreateBoolean(bool value, Location* loc)
+{
+  Ast* ast               = (Ast*)malloc(sizeof(Ast));
+  ast->kind              = A_OBJ;
+  ast->loc               = *loc;
+  ast->obj.kind          = O_BOOL;
+  InitializeBoolean(&(ast->obj.boolean), value);
+  return ast;
+}
+
+Ast* CreateLambda(InternedString arg_id, Type* arg_type, Ast* body, SymbolTable* scope, Location* loc)
+{
+  Ast* ast = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_OBJ;
+  ast->loc  = *loc;
+  ast->obj.kind = O_LAMB;
+  InitializeLambda(&(ast->obj.lambda), arg_id, arg_type, body, scope);
+  return ast;
+}
+
+Ast* CreateType(Type* type, Location* loc)
+{
+  Ast* ast  = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_TYP;
+  ast->loc  = *loc;
+  ast->typ  = type;
+  return ast;
+}
 
 // this shall deallocate all memory associated
 // with term, such that after this procedure
@@ -80,7 +181,7 @@ void DestroyAst(Ast* term)
       break;
 
     case A_TYP:
-      DestroyType(&(term->typ));
+      // the type interner handles the memory representing types
       break;
 
     default:
@@ -93,7 +194,11 @@ void DestroyAst(Ast* term)
 
 // constructs a new tree exactly the same as the
 // passed tree.
-void CloneAst(Ast** destination, Ast* source);
+// and if we imagine passing the address of a
+// Ast allocated on the stack, we encounter
+// a non NULL destination ptr. so the
+// code still works! :)
+void CloneAst(Ast** destination, Ast* source)
 {
   if ((*destination) == NULL)
     (*destination) = (Ast*)malloc(sizeof(Ast));
@@ -139,13 +244,12 @@ void CloneAst(Ast** destination, Ast* source);
       break;
 
     case A_TYP:
-      CloneType(&((*destination)->typ), &(source->typ));
+      (*destination)->typ = source->typ;
 
     default:
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
       break;
   }
-  return result;
 }
 
 // constructs a string that represents the passed
@@ -192,7 +296,7 @@ char* ToStringAst(Ast* term)
       break;
 
     case A_TYP:
-      result = ToStringType(&(term->typ));
+      result = ToStringType(term->typ);
       break;
 
     default:
@@ -202,45 +306,50 @@ char* ToStringAst(Ast* term)
   return result;
 }
 
+// now you may say, why add in another function call
+// when you already known exactly what needs doing?
+// and for two reasons
+// A) it keeps this file from being >3000 lines
+// B) the compiler can still inline each procedure if it wants.
 TypeJudgement Getype(Ast* term, struct Environment* env)
 {
   TypeJudgement result;
   switch(term->kind)
   {
     case A_VAR:
-      result = GetypeVariable(&(term->var), env);
+      result = GetypeVariable(term, env);
       break;
 
     case A_APP:
-      result = GetypeApplication(&(term->app), env);
+      result = GetypeApplication(term, env);
       break;
 
     case A_ASS:
-      result = GetypeAssignment(&(term->ass), env);
+      result = GetypeAssignment(term, env);
       break;
 
     case A_BND:
-      result = GetypeBind(&(term->bnd), env);
+      result = GetypeBind(term, env);
       break;
 
     case A_BOP:
-      result = GetypeBinop(&(term->bop), env);
+      result = GetypeBinop(term, env);
       break;
 
     case A_UOP:
-      result = GetypeUnop(&(term->uop), env);
+      result = GetypeUnop(term, env);
       break;
 
     case A_CND:
-      result = GetypeConditional(&(term->cnd), env);
+      result = GetypeConditional(term, env);
       break;
 
     case A_ITR:
-      result = GetypeIteration(&(term->itr), env);
+      result = GetypeIteration(term, env);
       break;
 
     case A_OBJ:
-      result = GetypeObject(&(term->obj), env);
+      result = GetypeObject(term, env);
       break;
 
     case A_TYP:
@@ -248,7 +357,7 @@ TypeJudgement Getype(Ast* term, struct Environment* env)
       result.type    = term->typ;
       break;
 
-    default
+    default:
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
   }
   return result;

@@ -41,6 +41,8 @@ char* ToStringApplication(Application* app)
   strcat(result, spc);
   strcat(result, right);
   strcat(result, rparen);
+  free(left);
+  free(right);
   return result;
 }
 
@@ -49,11 +51,13 @@ char* ToStringApplication(Application* app)
    --------------------------------------------
            ENV |- lhs rhs : t2
 */
-TypeJudgement GetypeApplication(Application* app, struct Environment* env)
+TypeJudgement GetypeApplication(struct Ast* node, struct Environment* env)
 {
-  if (!app || !env)
+  if (!node || !env)
     FatalError("Bad Getype Call", __FILE__, __LINE__);
 
+  // pull out a pointer to the member data
+  Application* app = &(node->app);
 
   TypeJudgement result;
 
@@ -65,7 +69,7 @@ TypeJudgement GetypeApplication(Application* app, struct Environment* env)
 
     if (lhstype->kind == T_PROC)
     {
-      ProcType *pt = lhstype.proc;
+      ProcType *pt = &(lhstype->proc);
       Type     *t1 = pt->lhs, *t2 = pt->rhs;
 
       TypeJudgement rhsjdgmt = Getype(app->rhs, env);
@@ -84,7 +88,7 @@ TypeJudgement GetypeApplication(Application* app, struct Environment* env)
           // TODO: better error messages.
           result.success   = false;
           result.error.dsc = "Type mismatch between formal and actual parameters";
-          result.error.loc = app->loc;
+          result.error.loc = node->loc;
         }
       }
       else
