@@ -54,6 +54,7 @@ UnopEliminatorList* InsertUnop(UnopTable* ut, InternedString op, UnopEliminatorL
 
   cur->next = head;
   ut->table[hash] = cur;
+  ut->num_elements++;
 
   return cur->data;
 }

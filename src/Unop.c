@@ -26,15 +26,13 @@ void CloneUnop(Unop* destination, Unop* source)
 
 char* ToStringUnop(Unop* unop)
 {
-  char *result, *spc, *right;
-  spc   = " ";
+  char *result, *right;
   right = ToStringAst(unop->rhs);
 
-  int sz = strlen((char*)unop->op) + strlen(right) + 2;
+  int sz = strlen((char*)unop->op) + strlen(right) + 1;
   result = (char*)calloc(sz, sizeof(char));
 
   strcat(result, (char*)unop->op);
-  strcat(result, spc);
   strcat(result, right);
   free(right);
   return result;

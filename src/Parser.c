@@ -58,6 +58,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "Utilities.h"
 #include "Token.h"
 #include "SymbolTable.h"
 #include "StringInterner.h"
@@ -333,9 +334,14 @@ Location* curloc(Parser* p)
   return &(p->locbuf[p->idx]);
 }
 
-bool is_unop(Parser* p, InternedString input)
+bool is_unop(Parser* p, char* uop)
 {
-  UnopEliminatorList* possible = FindUnop(p->unops, input);
+  InternedString Iuop = InternString(p->interned_ops, uop);
+
+  if (Iuop == NULL)
+    return false;
+
+  UnopEliminatorList* possible = FindUnop(p->unops, Iuop);
 
   if (possible != NULL)
     return true;
@@ -343,9 +349,14 @@ bool is_unop(Parser* p, InternedString input)
     return false;
 }
 
-bool is_binop(Parser* p, InternedString input)
+bool is_binop(Parser* p, char* bop)
 {
-  BinopEliminatorList* possible = FindBinop(p->binops, input);
+  InternedString Ibop = InternString(p->interned_ops, bop);
+
+  if (Ibop == NULL)
+    return false;
+
+  BinopEliminatorList* possible = FindBinop(p->binops, Ibop);
 
   if (possible != NULL)
     return true;
@@ -395,7 +406,6 @@ bool is_ender(Token t)
 ParseJudgement ParseTerm(Parser* p);
 ParseJudgement ParseAffix(Parser* p);
 ParseJudgement ParseApplication(Parser* p);
-ParseJudgement ParsePrimitive(Parser* p);
 ParseJudgement ParseAtom(Parser* p);
 ParseJudgement ParseType(Parser* p);
 ParseJudgement ParseConditional(Parser* p);
@@ -403,52 +413,6 @@ ParseJudgement ParseIteration(Parser* p);
 ParseJudgement ParseLambda(Parser* p);
 ParseJudgement ParseUnop(Parser* p);
 ParseJudgement ParseInfix(Parser* p, ParseJudgement lhs, int min_prec);
-
-
-/*
-  term := type
-        | affix
-        | '(' term ')'
-*/
-ParseJudgement ParseTerm(Parser* p)
-{
-  Location* lhsloc = curloc(p);
-  ParseJudgement result;
-
-  if (is_primary(curtok(p)))
-  {
-    result = ParseAffix(p);
-  }
-  else if (is_type_primary(curtok(p)))
-  {
-    result = ParseType(p);
-  }
-  else if (curtok(p) == T_LPAREN)
-  {
-    nextok(p); // eat '('
-    result = ParseTerm(p);
-
-    // if the result was failure, we want to report that error,
-    // not this one, this one is probably not as useful
-    // if we failed to parse the previous term.
-    if (curtok(p) != T_RPAREN && result.success == true)
-    {
-      result.success = false;
-      DestroyAst(result.term);
-      result.error.dsc = "missing closing Right Parenthesis";
-      result.error.loc = *curloc(p);
-    }
-    nextok(p); // eat ')'
-  }
-  else
-  {
-    result.success   = false;
-    result.error.dsc = "Expecting an Affix expression or a Type expression.";
-    result.error.loc = *lhsloc;
-  }
-
-  return result;
-}
 
 /*
 affix := type
@@ -468,7 +432,7 @@ ParseJudgement ParseAffix(Parser* p)
 
     if (lhsjdgmt.success == true)
     {
-      if (curtok(p) == T_OPERATOR)
+      if (curtok(p) == T_OPERATOR && is_binop(p, curtxt(p)))
       {
         lhsjdgmt = ParseInfix(p, lhsjdgmt, 0);
       }
@@ -506,20 +470,97 @@ ParseJudgement ParseAffix(Parser* p)
   return lhsjdgmt;
 }
 
+
 /*
-application := primitive
-             | primitive application
+
+      should the next token be an operator, then
+      we need to distinguish between which kind of
+      operator it is, and where we could see it.
+      with unary operators, we want them to bind
+      tightly to the immediate next term, but
+      we do not want them to parse a full term
+      afterwards (as this leads to unintuitive
+      evaluation trees.)
+
+      from the beginning we wanted expressions like
+      a b c - f g h
+      to parse as
+      (a b c) - (f g h)
+
+      now i know this is necessary
+      to avoid the reverse case of parsing
+      [3 - 4] as [3 (-4)]
+      and yeah, you are reading that correctly,
+      it's a call expression...
+      and hence, does not allow the programmer
+      to even input an expression representing
+      [3 - 4]
+      all this means we cannot parse
+      a -b c -d
+      as
+      a (-b) c (-d)
+      we must parse it as
+      (a - b) (c - d)
+      so to apply unary operations within
+      a call expression, one must wrap
+      the operation within parenthesis.
+
+
+      as a direct result of the above
+      discussion we should recommend that
+      unary operators avoid symbolically
+      intersecting with binary operators.
+      if they do, be aware the grammar rules place
+      prefrence on the binary form of the operator.
+      this means that if the operator is both a unop
+      and a binop, the expression
+      a op b will always be the operation taking
+      arguments a and b,
+      and never the application of a taking as argument
+      the unop applied to b.
+
+      TLDR:
+      [a - b]
+      is never
+      [a (-b)]
+      it is always
+      [a - b]
+      this is also valid
+      [-a - -b]
+      as is
+      [-a - b]
+      this means that when the programmer
+      wants to apply an operation directly
+      to the argument to a procedure, they
+      -must- wrap that operation in parens
+      in order for the entire expression
+      to parse as a call expression, otherwise
+      we switch to parsing a binary operation,
+      however, this is only if the operator
+       itself is a binop and a unop. should the
+       operator only be defined as a unop then
+       the grammar will parse it as an application.
+    */
+/*
+application := atom
+             | atom application
 */
 ParseJudgement ParseApplication(Parser* p)
 {
   Location*      lhsloc   = curloc(p);
-  ParseJudgement lhsjdgmt = ParsePrimitive(p);
+  ParseJudgement lhsjdgmt = ParseAtom(p);
 
   if (lhsjdgmt.success == true)
   {
-    if (is_primary(curtok(p)))
+    // why not check for the positive?
+    // i.e. is_unop()?
+    // because we want to give precedence to every
+    // binop over any unop. to prevent unintuitive
+    // trees
+    while ((curtok(p) != T_OPERATOR && is_primary(curtok(p)))
+        || (curtok(p) == T_OPERATOR && !is_binop(p, curtxt(p))))
     {
-      ParseJudgement rhsjdgmt = ParseApplication(p);
+      ParseJudgement rhsjdgmt = ParseAtom(p);
 
       if (rhsjdgmt.success == true)
       {
@@ -537,8 +578,8 @@ ParseJudgement ParseApplication(Parser* p)
       else
         return rhsjdgmt; // leaks lhsjdgmt.term
     }
-    else
-      return lhsjdgmt; // (2)
+
+    return lhsjdgmt; // (2)
   }
   else
     return lhsjdgmt; // (3)
@@ -549,37 +590,6 @@ ParseJudgement ParseApplication(Parser* p)
   // legible.
 }
 
-/*
-primitive := atom
-           | unop atom
-*/
-ParseJudgement ParsePrimitive(Parser* p)
-{
-  switch (curtok(p))
-  {
-    // this is the complete set of tokens that predict atoms
-    case T_IDENTIFIER: case T_NIL: case T_INTEGER:
-    case T_TRUE: case T_FALSE: case T_BSLASH:
-    case T_IF: case T_WHILE: case T_LPAREN:
-      return ParseAtom(p);
-      break;
-
-    // an operator at this location predicts a unary operator.
-    case T_OPERATOR:
-      return ParseUnop(p);
-      break;
-
-    default:
-    {
-      Location*      errloc = curloc(p);
-      ParseJudgement result;
-      result.success   = false;
-      result.error.dsc = "unknown primitive token found";
-      result.error.loc = *errloc;
-      return result;
-    }
-  }
-}
 
 /*
 atom := identifier
@@ -591,6 +601,7 @@ atom := identifier
       | \ identifier (: type)? => affix
       | 'if' affix 'then' affix 'else' affix
       | 'while' affix 'do' affix
+      | operator atom
       | '(' affix ')'
 */
 ParseJudgement ParseAtom(Parser* p)
@@ -705,6 +716,14 @@ ParseJudgement ParseAtom(Parser* p)
       return lhsjdgmt;
       break;
     }
+
+    case T_OPERATOR:
+    {
+      lhsjdgmt = ParseUnop(p);
+      return lhsjdgmt;
+      break;
+    }
+
     default:
     {
       Location* errloc = curloc(p);
@@ -1081,12 +1100,22 @@ ParseJudgement ParseUnop(Parser* p)
     result.error.loc = *curloc(p);
     return result;
   }
+
+  if (!is_unop(p, curtxt(p)))
+  {
+    result.success   = false;
+    result.error.dsc = "unary operator not bound in environment.";
+    result.error.loc = *curloc(p);
+    return result;
+  }
+
   Location* lhsloc = curloc(p);
-  char*     optxt  = curtxt(p);
+  char*     copy   = curtxt(p);
+  char*     optxt  = dupnstr(copy, strlen(copy));
 
   nextok(p); // eat operator
 
-  ParseJudgement rhsjdgmt = ParseAffix(p);
+  ParseJudgement rhsjdgmt = ParseAtom(p);
 
   if (rhsjdgmt.success == false)
     return rhsjdgmt;
@@ -1105,6 +1134,9 @@ ParseJudgement ParseUnop(Parser* p)
   return result;
 }
 
+
+// this is an implementation of an operator precedence parser.
+//
 ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
 {
   if (left.success == false)
@@ -1118,6 +1150,15 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
     left.success   = false;
     DestroyAst(left.term);
     left.error.dsc = "unexpected missing operator";
+    left.error.loc = *lhsloc;
+    return left;
+  }
+
+  if (!is_binop(p, curtxt(p)))
+  {
+    left.success   = false;
+    DestroyAst(left.term);
+    left.error.dsc = "binary operator is not bound in environment";
     left.error.loc = *lhsloc;
     return left;
   }
@@ -1151,6 +1192,15 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
     // or we continue parsing
     if (curtok(p) == T_OPERATOR)
     {
+      if (!is_binop(p, curtxt(p)))
+      {
+        left.success   = false;
+        DestroyAst(left.term);
+        left.error.dsc = "binary operator is not bound in environment";
+        left.error.loc = *curloc(p);
+        return left;
+      }
+
       rhsloc = curloc(p);
       InternedString Irop;
 

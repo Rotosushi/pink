@@ -159,20 +159,34 @@ void unbind(SymbolTable* table, InternedString name)
   // find the bucket to look in
   Symbol* cursor = table->table[hash], *prev = NULL;
   // look through the bucket (list)
-  while (cursor != NULL)
-  {
-    if (name == cursor->id)
-    {
-      // link the list around the node
-      // we want to remove (cursor).
-      prev->next = cursor->next;
-      DestroyAst(cursor->term);
-      free(cursor);
-      table->num_elements--;
-      break;
-    }
 
-    prev   = cursor;
-    cursor = cursor->next;
+  // so we need to handle removing the head of the
+  // list different from removing any other member
+  if (name == cursor->id)
+  {
+    prev = cursor;
+    table->table[hash] = cursor->next;
+    DestroyAst(prev->term);
+    free(prev);
+    table->num_elements--;
+  }
+  else
+  {
+    while (cursor != NULL)
+    {
+      prev = cursor;
+      cursor = cursor->next;
+
+      if (name == cursor->id)
+      {
+        // link the list around the node
+        // we want to remove (cursor).
+        prev->next = cursor->next;
+        DestroyAst(cursor->term);
+        free(cursor);
+        table->num_elements--;
+        break;
+      }
+    }
   }
 }
