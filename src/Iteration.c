@@ -84,3 +84,13 @@ TypeJudgement GetypeIteration(Iteration* itr, struct Environment* env)
 
   return result;
 }
+
+EvalJudgement EvaluateIteration(Iteration* itr, struct Environment* env)
+{
+  EvalJudgement result;
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
+}

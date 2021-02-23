@@ -360,3 +360,44 @@ TypeJudgement Getype(Ast* term, struct Environment* env)
   }
   return result;
 }
+
+EvalJudgement Evaluate(Ast* ast, Environment* env)
+{
+  EvalJudgement result;
+
+  switch(ast->kind)
+  {
+    case A_VAR:
+      result = EvaluateVariable(&(ast->var), env);
+      break;
+    case A_APP:
+      result = EvaluateApplication(&(ast->app), env);
+      break;
+    case A_ASS:
+      result = EvaluateAssignment(&(ast->ass), env);
+      break;
+    case A_BND:
+      result = EvaluateBind(&(ast->bnd), env);
+      break;
+    case A_BOP:
+      result = EvaluateBinop(&(ast->bop), env);
+      break;
+    case A_UOP:
+      result = EvaluateUnop(&(ast->uop), env);
+      break;
+    case A_CND:
+      result = EvaluateConditional(&(ast->cnd), env);
+      break;
+    case A_ITR:
+      result = EvaluateIteration(&(ast->itr), env);
+      break;
+    case A_OBJ:
+      result.success = true;
+      result.term    = ast;
+      break;
+    default:
+      FatalError("Bas Ast Kind", __FILE__, __LINE__);
+  }
+
+  return result;
+}

@@ -44,7 +44,7 @@ bool EqualScalarTypes(ScalarType* t1, ScalarType* t2)
 {
   bool result = false;
 
-  if (t1->kind != t2->kind)
+  if (t1->kind == t2->kind)
     result = true;
 
   return result;

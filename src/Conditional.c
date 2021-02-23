@@ -114,3 +114,13 @@ TypeJudgement GetypeConditional(Conditional* conditional, Environment* env)
   }
   return result;
 }
+
+EvalJudgement EvaluateConditional(Conditional* cond, struct Environment* env)
+{
+  EvalJudgement result;
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
+}

@@ -1,103 +1,103 @@
-so a type in our language is a description of the 
-arrangement and interpretation of bytes, just like 
+so a type in our language is a description of the
+arrangement and interpretation of bytes, just like
 with the C language.
 
 we want to have two 'kinds' of types,
-atomic length types, primitives, which are useful 
+atomic length types, primitives, which are useful
 to the low-level program.
 
-as well as specific/dynamic length 
-composites which are formed by combining other 
+as well as specific/dynamic length
+composites which are formed by combining other
 primitive and composite types.
 
-so, what are the ways in which we can compose 
+so, what are the ways in which we can compose
 types together?
-well, thinking about it a little bit, we can 
-already observe a composite type within the 
-program, namely: [Type1 -> Type2] which is 
+well, thinking about it a little bit, we can
+already observe a composite type within the
+program, namely: [Type1 -> Type2] which is
 the type of a procedure which receives a
-value of Type1 as an argument and returns a 
-value of Type2 as it's result. this type is 
+value of Type1 as an argument and returns a
+value of Type2 as it's result. this type is
 quite literally composed of other types already.
-we need other types present before we can even 
-consider doing something useful. now, this 
-type composite is our fundamental operation as 
+we need other types present before we can even
+consider doing something useful. now, this
+type composite is our fundamental operation as
 a programming language, as it provides abstraction.
-and abstraction is the reason for languages existance 
+and abstraction is the reason for languages existance
 in the first place.
 
-from the perspective of what is being stored, since we 
-are adopting the c-style monotonic procedure call, we 
+from the perspective of what is being stored, since we
+are adopting the c-style monotonic procedure call, we
 may assume that 'receiving a value of Type1 as argument'
-means that the data will be allocated on the stack frame 
+means that the data will be allocated on the stack frame
 of the callee by the caller by-value.
-the callee may then access that data by means of static offsets 
+the callee may then access that data by means of static offsets
 with respect to the known size of the stack frame at invokation.
-and with the same perspective we could allocate space on 
-the stack for both the caller and callee agree that the 
-value for the return type are written there. perhaps 
-as the first (or very last) 'argument' we push onto the 
-new stack frame is designated the return value and the callee 
+and with the same perspective we could allocate space on
+the stack for both the caller and callee agree that the
+value for the return type are written there. perhaps
+as the first (or very last) 'argument' we push onto the
+new stack frame is designated the return value and the callee
 writes it's 'return value' into that designated memory area.
-then both procedures can agree on where the data is, and 
-since we already can connect storing and retrieving values 
-with symbolic manipulation we can connect return values 
-along those lines. a valid function call occurs with a valid 
+then both procedures can agree on where the data is, and
+since we already can connect storing and retrieving values
+with symbolic manipulation we can connect return values
+along those lines. a valid function call occurs with a valid
 stack frame allocation.
 
-thus, returning a closure can be supported through the return 
-type being the closure itself. (probably most usefully implied 
-via the type of the last expression being a partially applied 
-procedure) alongside the implication that a closure can later be 
-fully applied and at the point the stack frame is allocated and 
-each value is written into it for the invokation to be carried 
+thus, returning a closure can be supported through the return
+type being the closure itself. (probably most usefully implied
+via the type of the last expression being a partially applied
+procedure) alongside the implication that a closure can later be
+fully applied and at the point the stack frame is allocated and
+each value is written into it for the invokation to be carried
 out.
 
-so, back to composite types. 
-namely the two really useful ones, record/sum and union/product. 
+so, back to composite types.
+namely the two really useful ones, record/sum and union/product.
 
 records are composed by concatenating the data of each type together,
-into one composite type. there is a distinction between two further 
-kinds of records, and it is in how the subfields/members are addressed 
-within the record. either numbering or labels can be used, with 
-numbering often resulting in something called tuples. and 
-labels being referred to as records/structures. truly we could 
-use numbering with labelled records, but this would require knowledge 
-of the types and order of the inner members, and some programs 
+into one composite type. there is a distinction between two further
+kinds of records, and it is in how the subfields/members are addressed
+within the record. either numbering or labels can be used, with
+numbering often resulting in something called tuples. and
+labels being referred to as records/structures. truly we could
+use numbering with labelled records, but this would require knowledge
+of the types and order of the inner members, and some programs
 want to engage in information hiding.
 
 unions are composed by superimposing each member type atop one another,
-and maintaining a small datum which labels which member is currently 
-active within the union. we cannot have two objects residing within 
+and maintaining a small datum which labels which member is currently
+active within the union. we cannot have two objects residing within
 the same physical space, that is against the laws of existance.
 
 
 
-and so, the inner members are thusly read from or written to based upon 
-thier type, and so on, recursively through the type structure until 
-either a primitive type is reached, or the member required has been 
+and so, the inner members are thusly read from or written to based upon
+thier type, and so on, recursively through the type structure until
+either a primitive type is reached, or the member required has been
 reached
 
 now what is the most common case for a union?
-in my mind, it is to represent something which 
-can represent many different things, and we need to 
-register a set of actions which are unique for each 
-subtype, but taken together we can then conceptually 
-think of the union type as being able to engage in 
-that 'action' regardless of which member is currently 
-engaged by the union, and the calling code also need 
+in my mind, it is to represent something which
+can represent many different things, and we need to
+register a set of actions which are unique for each
+subtype, but taken together we can then conceptually
+think of the union type as being able to engage in
+that 'action' regardless of which member is currently
+engaged by the union, and the calling code also need
 not be aware of which member is active within the union.
 
-this allows the programmer to conviently forget that a switch 
+this allows the programmer to conviently forget that a switch
 statement needs to be generated to dispatch between each alternative.
 
 to give an example:
 
 if we imagine the structure of our Object union
 
-union Object is TypeLiteral | Nil | Integer | Boolean | Lambda; 
+union Object is TypeLiteral | Nil | Integer | Boolean | Lambda;
 
-we then can imagine implementing a strict typing algorithm as 
+we then can imagine implementing a strict typing algorithm as
 an overloaded procedure providing a single body per case.
 
 proc getype(TypeLiteral, Environment);
@@ -111,49 +111,59 @@ proc getype(Boolean, Environment);
 proc getype(Lambda, Environment);
 
 and we can allocate a variable of type Object,
-and then evaluate the expression 
+and then evaluate the expression
 
 objtype := getype(obj, env);
 
-by invoking a procedure which dispatches between 
+by invoking a procedure which dispatches between
 which active member is held within the union type.
 
-similarly for our Ast structure 
+similarly for our Ast structure
 
-union Ast is Application 
+union Ast is Application
            | Variable
-           | Assignment 
+           | Assignment
            | Bind
-           | Conditional 
-           | Iteration 
-           | Binop 
-           | Unop 
-           | Object 
-           
- we can easily imagine implementing each 
- typing algorithm as an instance of an 
+           | Conditional
+           | Iteration
+           | Binop
+           | Unop
+           | Object
+
+ we can easily imagine implementing each
+ typing algorithm as an instance of an
  overloaded procedure, as above,
  and when a programmer calls said
- getype procedure passing in a 
- variable with type Ast, we actually 
- call a dispatch procedure to 
+ getype procedure passing in a
+ variable with type Ast, we actually
+ call a dispatch procedure to
  the correct monotonic procedure
-           
+
 
 now, what about evaluation?
-in terms of the evaluation procedure 
-the entry point is actually being used 
+in terms of the evaluation procedure
+the entry point is actually being used
 to perform work before we dispatch.
-so how do we reconcile this with our 
-current plans to not have to write the 
+so how do we reconcile this with our
+current plans to not have to write the
 dispatch procedure ourselves?
 
-well, given that evaluation needs to continue 
-until an object is reached, why not recur 
-to the dispatch as the end point to every 
-evaluation body except Object, which simply 
+well, given that evaluation needs to continue
+until an object is reached, why not recur
+to the dispatch as the end point to every
+evaluation body except Object, which simply
 returns.
+this in effect means that until the tree reduces to
+a single Object we will evaluate indefinitely. 
 
+it also changes the call graph while we evaluate 
+some given term, instead of returning the 
+result term pointer up to the evaluation context 
+of the last Evaluate(Ast, Env) procedure that was 
+called and then calling another procedure, we simply 
+call Evaluate again on the resulting term of our single 
+step of evaluation, which either halts and returns an 
+Object, or continues evaluation of the tree. 
 
 
 
@@ -174,4 +184,3 @@ returns.
 
 
 ------
-

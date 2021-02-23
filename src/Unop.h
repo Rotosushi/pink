@@ -2,6 +2,8 @@
 #define UNOP_H
 
 #include "StringInterner.h"
+#include "TypeJudgement.h"
+#include "EvalJudgement.h"
 #include "Location.h"
 struct Environment;
 struct Ast;
@@ -22,5 +24,7 @@ void CloneUnop(Unop* destination, Unop* source);
 char* ToStringUnop(Unop* unp);
 
 TypeJudgement GetypeUnop(Unop* uop, struct Environment* env);
+
+EvalJudgement EvaluateUnop(Unop* uop, struct Environment* env);
 
 #endif // !UNOP_H

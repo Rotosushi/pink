@@ -70,3 +70,13 @@ TypeJudgement GetypeBind(Bind* bnd, Environment* env)
   }
   return result;
 }
+
+EvalJudgement EvaluateBind(Bind* bnd, struct Environment* env)
+{
+  EvalJudgement result;
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
+}

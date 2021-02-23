@@ -3,6 +3,11 @@
 
 struct Type;
 
+typedef struct TLelem
+{
+  struct Type*   type;
+  struct TLelem* next;
+} TLelem;
 
 /*
   okay, so a super basic version of
@@ -20,7 +25,7 @@ struct Type;
   of types is exclusively ProcType
   given the current langauge support.
   though i suspect structures and unions
-  will similarly need to be stored as a
+  will similarly  need to be stored as a
   set of known definitions according to
   some internal pattern,
 
@@ -34,8 +39,7 @@ typedef struct TypeInterner
   struct Type*  nilType;
   struct Type*  integerType;
   struct Type*  booleanType;
-  struct Type** procTypes;
-  int           procTypesLength;
+  TLelem*       procTypes;
 } TypeInterner;
 
 TypeInterner* CreateTypeInterner();

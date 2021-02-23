@@ -154,6 +154,7 @@ typedef struct Ast
 #include "TypeLiteral.h"
 #include "Object.h"
 #include "TypeJudgement.h"
+#include "EvalJudgement.h"
 
 struct SymbolTable;
 struct Environment;
@@ -239,6 +240,6 @@ char* ToStringAst(Ast* ast);
 // or a description of the error that was found.
 TypeJudgement Getype(Ast* ast, struct Environment* env);
 
-// EvalJudgement Evaluate(Ast* ast, Environment* env);
+EvalJudgement Evaluate(Ast* ast, struct Environment* env);
 
 #endif // !AST_H

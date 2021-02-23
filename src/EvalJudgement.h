@@ -2,15 +2,15 @@
 #define EVALJUDGEMENT_H
 #include <stdbool.h>
 
-#include "Ast.h"
-#include "EvalError.h"
+struct Ast;
+#include "PinkError.h"
 
 typedef struct EvalJudgement
 {
   bool success;
   union {
-    Ast*      term;
-    EvalError error;
+    struct Ast*      term;
+    PinkError error;
   };
 } EvalJudgement;
 

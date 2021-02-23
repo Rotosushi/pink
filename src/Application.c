@@ -99,11 +99,24 @@ TypeJudgement GetypeApplication(Application* app, struct Environment* env)
     {
       result.success   = false;
       result.error.dsc = "Cannot apply non-procedure lhs type";
-      result.error.loc = GetAstLocation(app->lhs);
+      result.error.loc = *GetAstLocation(app->lhs);
     }
   }
   else
     result = lhsjdgmt;
 
   return result;
+}
+
+
+EvalJudgement EvaluateApplication(Application* app, Environment* env)
+{
+  EvalJudgement result;
+
+  // evaluate the application
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
 }

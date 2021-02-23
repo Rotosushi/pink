@@ -72,3 +72,13 @@ TypeJudgement GetypeVariable(Variable* var, Environment* env)
 
   return result;
 }
+
+EvalJudgement EvaluateVariable(Variable* var, struct Environment* env)
+{
+  EvalJudgement result;
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
+}

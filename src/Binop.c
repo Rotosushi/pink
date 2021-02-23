@@ -107,3 +107,13 @@ TypeJudgement GetypeBinop(Binop* binop, Environment* env)
 
   return result;
 }
+
+EvalJudgement EvaluateBinop(Binop* binop, struct Environment* env)
+{
+  EvalJudgement result;
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
+}

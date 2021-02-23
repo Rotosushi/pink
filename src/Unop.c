@@ -81,3 +81,13 @@ TypeJudgement GetypeUnop(Unop* uop, Environment* env)
 
   return result;
 }
+
+EvalJudgement EvaluateUnop(Unop* uop, struct Environment* env)
+{
+  EvalJudgement result;
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
+}

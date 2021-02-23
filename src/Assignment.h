@@ -3,6 +3,7 @@
 
 #include "Location.h"
 #include "TypeJudgement.h"
+#include "EvalJudgement.h"
 struct Ast;
 struct Environment;
 
@@ -22,5 +23,7 @@ void CloneAssignment(Assignment* dest, Assignment* source);
 char* ToStringAssignment(Assignment* ass);
 
 TypeJudgement GetypeAssignment(Assignment* ass, struct Environment* env);
+
+EvalJudgement EvaluateAssignment(Assignment* ass, struct Environment* env);
 
 #endif // !ASSIGNMENT_H

@@ -29,4 +29,6 @@ char* ToStringApplication(Application* app);
 // not dispatch here were it not so.)
 TypeJudgement GetypeApplication(Application* app, struct Environment* env);
 
+EvalJudgement EvaluateApplication(Application* app, struct Environment* env);
+
 #endif // !APPLICATION_H

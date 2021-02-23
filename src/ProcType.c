@@ -33,16 +33,36 @@ void CloneProcType(ProcType* destination, ProcType* source)
 char* ToStringProcType(ProcType* proc)
 {
   char *result, *rarrow, *left, *right, *ctx;
+  char *lprn, *rprn;
   rarrow = " -> "; // 4
+  lprn   = "(";    // 1
+  rprn   = ")";    // 1
   left   = ToStringType(proc->lhs);
   right  = ToStringType(proc->rhs);
 
-  int sz = strlen(left) + strlen(right) + 5;
-  result = (char*)calloc(sz, sizeof(char));
+  if (proc->lhs->kind == T_PROC)
+  {
+    // surround the lhs with parenthesis
+    // to denote the function type.
+    int sz = strlen(left) + strlen(right) + 7;
+    result = (char*)calloc(sz, sizeof(char));
 
-  strkat(result, left,   &ctx);
-  strkat(NULL,   rarrow, &ctx);
-  strkat(NULL,   right,  &ctx);
+    strkat(result, lprn,   &ctx);
+    strkat(NULL,   left,   &ctx);
+    strkat(NULL,   rprn,   &ctx);
+    strkat(NULL,   rarrow, &ctx);
+    strkat(NULL,   right,  &ctx);
+  }
+  else
+  {
+    int sz = strlen(left) + strlen(right) + 5;
+    result = (char*)calloc(sz, sizeof(char));
+
+    strkat(result, left,   &ctx);
+    strkat(NULL,   rarrow, &ctx);
+    strkat(NULL,   right,  &ctx);
+  }
+
   free(left);
   free(right);
   return result;

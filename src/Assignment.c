@@ -79,3 +79,15 @@ TypeJudgement GetypeAssignment(Assignment* ass, Environment* env)
 
   return result;
 }
+
+EvalJudgement EvaluateAssignment(Assignment* ass, Environment* env)
+{
+  EvalJudgement result;
+
+  // evaluate the assignment
+
+  if (result.success == true)
+    return Evaluate(result.term, env);
+  else
+    return result;
+}

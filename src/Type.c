@@ -66,12 +66,12 @@ bool EqualTypes(Type* t1, Type* t2)
   {
     case T_SCALAR:
       if (t2->kind == T_SCALAR)
-        result = EqualScalarTypes((ScalarType*)t1, (ScalarType*)t2);
+        result = EqualScalarTypes(&(t1->scalar), &(t2->scalar));
       break;
 
     case T_PROC:
       if (t2->kind == T_PROC)
-        result = EqualProcTypes((ProcType*)t1, (ProcType*)t2);
+        result = EqualProcTypes(&(t1->proc), &(t2->proc));
       break;
 
     default:
