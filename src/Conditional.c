@@ -2,11 +2,14 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Utilities.h"
+#include "Location.h"
 #include "Environment.h"
 #include "Conditional.h"
 
-void InitializeConditional(Conditional* cond, struct Ast* cnd, struct Ast* fst, struct Ast* snd)
+void InitializeConditional(Conditional* cond, struct Ast* cnd, struct Ast* fst, struct Ast* snd, Location* loc)
 {
+  cond->loc = *loc;
   cond->cnd = cnd;
   cond->fst = fst;
   cond->snd = snd;
@@ -21,6 +24,7 @@ void DestroyConditional(Conditional* cond)
 
 void CloneConditional(Conditional* destination, Conditional* source)
 {
+  destination->loc = source->loc;
   CloneAst(&(destination->cnd), source->cnd);
   CloneAst(&(destination->fst), source->fst);
   CloneAst(&(destination->snd), source->snd);
@@ -28,7 +32,7 @@ void CloneConditional(Conditional* destination, Conditional* source)
 
 char* ToStringConditional(Conditional* cond)
 {
-  char *result, *iftxt, *condtxt, *thentxt;
+  char *result, *iftxt, *condtxt, *thentxt, *ctx;
   char *firsttxt, *elsetxt, *secondtxt;
   iftxt     = "if "; // 3
   thentxt   = " then "; // 6
@@ -41,12 +45,12 @@ char* ToStringConditional(Conditional* cond)
   int sz = strlen(condtxt) + strlen(firsttxt) + strlen(secondtxt) + 16;
   result = (char*)calloc(sz, sizeof(char));
 
-  strcat(result, iftxt);
-  strcat(result, condtxt);
-  strcat(result, thentxt);
-  strcat(result, firsttxt);
-  strcat(result, elsetxt);
-  strcat(result, secondtxt);
+  strkat(result, iftxt,   &ctx);
+  strkat(NULL, condtxt,   &ctx);
+  strkat(NULL, thentxt,   &ctx);
+  strkat(NULL, firsttxt,  &ctx);
+  strkat(NULL, elsetxt,   &ctx);
+  strkat(NULL, secondtxt, &ctx);
   free(condtxt);
   free(firsttxt);
   free(secondtxt);
@@ -56,11 +60,11 @@ char* ToStringConditional(Conditional* cond)
 // the condition has to have type Bool.
 // the alternatives must have equal types.
 // the result type is the type of the alternatives
-TypeJudgement GetypeConditional(Ast* node, Environment* env)
+TypeJudgement GetypeConditional(Conditional* conditional, Environment* env)
 {
   Type* booleanType = GetBooleanType(env->interned_types);
   TypeJudgement result;
-  Conditional* conditional = &(node->cnd);
+
   TypeJudgement cndjdgmt = Getype(conditional->cnd, env);
 
   if (cndjdgmt.success == true)
@@ -84,7 +88,7 @@ TypeJudgement GetypeConditional(Ast* node, Environment* env)
           {
             result.success   = false;
             result.error.dsc = "alternative expressions must have the same type";
-            result.error.loc = conditional->fst->loc;
+            result.error.loc = *GetAstLocation(conditional->fst);
           }
         }
         else
@@ -101,7 +105,7 @@ TypeJudgement GetypeConditional(Ast* node, Environment* env)
     {
       result.success   = false;
       result.error.dsc = "conditional expression must have boolean type";
-      result.error.loc = conditional->cnd->loc;
+      result.error.loc = *GetAstLocation(conditional->cnd);
     }
   }
   else

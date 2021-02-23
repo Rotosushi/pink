@@ -2,12 +2,15 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Utilities.h"
+#include "Location.h"
 #include "TypeJudgement.h"
 #include "Environment.h"
 #include "Application.h"
 
-void InitializeApplication(Application* app, struct Ast* left, struct Ast* right)
+void InitializeApplication(Application* app, struct Ast* left, struct Ast* right, Location* loc)
 {
+  app->loc = *loc;
   app->lhs = left;
   app->rhs = right;
 }
@@ -20,13 +23,14 @@ void DestroyApplication(Application* app)
 
 void CloneApplication(Application* destination, Application* source)
 {
+  destination->loc = source->loc;
   CloneAst(&(destination->lhs), source->lhs);
   CloneAst(&(destination->rhs), source->rhs);
 }
 
 char* ToStringApplication(Application* app)
 {
-  char *result, *lparen, *rparen, *spc, *left, *right;
+  char *result, *lparen, *rparen, *spc, *left, *right, *ctx;
   lparen = "(";
   rparen = ")";
   spc    = " "; // 3 characters, plus the nullchar at the end makes 4
@@ -36,11 +40,11 @@ char* ToStringApplication(Application* app)
   int sz = strlen(left) + strlen(right) + 4;
   result = (char*)calloc(sz, sizeof(char));
 
-  strcat(result, lparen);
-  strcat(result, left);
-  strcat(result, spc);
-  strcat(result, right);
-  strcat(result, rparen);
+  strkat(result, lparen, &ctx);
+  strkat(result, left,   &ctx);
+  strkat(result, spc,    &ctx);
+  strkat(result, right,  &ctx);
+  strkat(result, rparen, &ctx);
   free(left);
   free(right);
   return result;
@@ -51,13 +55,10 @@ char* ToStringApplication(Application* app)
    --------------------------------------------
            ENV |- lhs rhs : t2
 */
-TypeJudgement GetypeApplication(struct Ast* node, struct Environment* env)
+TypeJudgement GetypeApplication(Application* app, struct Environment* env)
 {
-  if (!node || !env)
+  if (!app || !env)
     FatalError("Bad Getype Call", __FILE__, __LINE__);
-
-  // pull out a pointer to the member data
-  Application* app = &(node->app);
 
   TypeJudgement result;
 
@@ -88,7 +89,7 @@ TypeJudgement GetypeApplication(struct Ast* node, struct Environment* env)
           // TODO: better error messages.
           result.success   = false;
           result.error.dsc = "Type mismatch between formal and actual parameters";
-          result.error.loc = node->loc;
+          result.error.loc = app->loc;
         }
       }
       else
@@ -98,7 +99,7 @@ TypeJudgement GetypeApplication(struct Ast* node, struct Environment* env)
     {
       result.success   = false;
       result.error.dsc = "Cannot apply non-procedure lhs type";
-      result.error.loc = app->lhs->loc;
+      result.error.loc = GetAstLocation(app->lhs);
     }
   }
   else

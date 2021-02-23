@@ -4,16 +4,17 @@
 #include <stdbool.h>
 
 #include "TypeJudgement.h"
-
+#include "Location.h"
 struct Ast;
 struct Environment;
 
 typedef struct Boolean
 {
-  bool value;
+  Location loc;
+  bool     value;
 } Boolean;
 
-void InitializeBoolean(Boolean* boolean, bool value);
+void InitializeBoolean(Boolean* boolean, bool value, Location* loc);
 
 void DestroyBoolean(Boolean* boolean);
 
@@ -21,6 +22,6 @@ void CloneBoolean(Boolean* destination, Boolean* source);
 
 char* ToStringBoolean(Boolean* boolean);
 
-TypeJudgement GetypeBoolean(struct Ast* node, struct Environment* env);
+TypeJudgement GetypeBoolean(Boolean* node, struct Environment* env);
 
 #endif // !BOOLEAN_H

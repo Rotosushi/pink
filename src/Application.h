@@ -3,16 +3,18 @@
 
 
 #include "TypeJudgement.h"
+#include "Location.h"
 struct Ast;
 struct Environment;
 
 typedef struct Application
 {
+  Location    loc;
   struct Ast* lhs;
   struct Ast* rhs;
 } Application;
 
-void InitializeApplication(Application* app, struct Ast* lhs, struct Ast* rhs);
+void InitializeApplication(Application* app, struct Ast* lhs, struct Ast* rhs, Location* loc);
 
 void DestroyApplication(Application* app);
 
@@ -25,6 +27,6 @@ char* ToStringApplication(Application* app);
 // and the Application term data. (we can assume we are
 // passed an application node however, the code will
 // not dispatch here were it not so.)
-TypeJudgement GetypeApplication(struct Ast* node, struct Environment* env);
+TypeJudgement GetypeApplication(Application* app, struct Environment* env);
 
 #endif // !APPLICATION_H

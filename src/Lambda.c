@@ -2,14 +2,17 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Location.h"
+#include "Utilities.h"
 #include "Type.h"
 #include "StringInterner.h"
 #include "Environment.h"
 #include "SymbolTable.h"
 #include "Lambda.h"
 
-void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Type* arg_type, struct Ast* body, struct SymbolTable* scope)
+void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Type* arg_type, struct Ast* body, struct SymbolTable* scope, Location* loc)
 {
+  lambda->loc      = *loc;
   lambda->arg_id   = arg_id;
   lambda->arg_type = arg_type;
   lambda->body     = body;
@@ -24,6 +27,7 @@ void DestroyLambda(Lambda* lam)
 
 void CloneLambda(Lambda* destination, Lambda* source)
 {
+  destination->loc      = source->loc;
   destination->arg_id   = source->arg_id;
   destination->arg_type = source->arg_type;
 
@@ -34,46 +38,38 @@ void CloneLambda(Lambda* destination, Lambda* source)
 
 char* ToStringLambda(Lambda* lam)
 {
-  char *result, *argtype, *body;
-  char *bslsh, *cln, *eqrarrow;
+  char *result = NULL, *argtype = NULL, *body = NULL, *ctx = NULL;
+  char *bslsh = NULL, *cln = NULL, *eqrarrow = NULL;
   bslsh    = "\\"; // 1
   cln      = ": "; // 2
   eqrarrow = " => "; // 4
   argtype  = ToStringType(lam->arg_type);
   body     = ToStringAst(lam->body);
 
+
   // 7 extra characters and a null terminator walk into a string...
   int sz = strlen(argtype) + strlen(body) + 8;
   result = (char*)calloc(sz, sizeof(char));
 
-  strcat(result, bslsh);
-  strcat(result, (char*)lam->arg_id);
-  strcat(result, cln);
-  strcat(result, argtype);
-  strcat(result, eqrarrow);
-  strcat(result, body);
+  strkat(result, bslsh,             &ctx);
+  strkat(NULL,  (char*)lam->arg_id, &ctx);
+  strkat(NULL,  cln,                &ctx);
+  strkat(NULL,  argtype,            &ctx);
+  strkat(NULL,  eqrarrow,           &ctx);
+  strkat(NULL,  body,               &ctx);
   free(argtype);
   free(body);
   return result;
 }
-
 // given that the argument has type Ta
 // and we can type the body as having
 // type Tb, then we can conclude that
 // the procedure has type Ta -> Tb
-TypeJudgement GetypeLambda(Ast* node, Environment* env)
+TypeJudgement GetypeLambda(Lambda* lam, Environment* env)
 {
   TypeJudgement result;
-  Lambda* lam = &(node->obj.lambda);
 
-  // in order to get the body to typecheck
-  // we must provide some way to type the
-  // binding that is supposed to be created
-  // by calling a procedure. this is accomplished
-  // by binding the name to a type literal just
-  // as long as it takes to typecheck the body
-  // tree.
-  Ast* type_literal = CreateType(lam->arg_type, &(node->loc));
+  Ast* type_literal = CreateType(lam->arg_type, &(lam->loc));
 
   SymbolTable* last_scope = env->outer_scope; // when we enter the body
                                         // of the lambda we also

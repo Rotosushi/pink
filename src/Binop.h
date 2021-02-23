@@ -2,12 +2,13 @@
 #define BINOP_H
 
 #include "StringInterner.h"
-
+#include "Location.h"
 struct Environment;
 struct Ast;
 
 typedef struct Binop
 {
+  Location       loc;
   InternedString op;
   struct Ast*    lhs;
   struct Ast*    rhs;
@@ -20,14 +21,14 @@ typedef struct Binop
 // it lives in the implementation of an overloaded procedure,
 // and the implementation of a polymorphic procedure.
 // a pointer to either, is a pointer to the dispatch procedure.
-void InitializeBinop(Binop* binop, InternedString op, struct Ast* left, struct Ast* right);
+void InitializeBinop(Binop* binop, InternedString op, struct Ast* left, struct Ast* right, Location* loc);
 
-void DestroyBinop(Binop* bnp);
+void DestroyBinop(Binop* binop);
 
 void CloneBinop(Binop* destination, Binop* source);
 
 char* ToStringBinop(Binop* binop);
 
-TypeJudgement GetypeBinop(struct Ast* binop, struct Environment* env);
+TypeJudgement GetypeBinop(Binop* binop, struct Environment* env);
 
 #endif // !BINOP_H

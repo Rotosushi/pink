@@ -8,19 +8,21 @@
 #include "SymbolTable.h"
 #include "Variable.h"
 
-void InitializeVariable(Variable* variable, InternedString id)
+void InitializeVariable(Variable* variable, InternedString id, Location* loc)
 {
-  variable->id = id;
+  variable->loc = *loc;
+  variable->id  = id;
 }
 
 void DestroyVariable(Variable* var)
 {
-  free(var);
+  return;
 }
 
 void CloneVariable(Variable* dest, Variable* source)
 {
-  dest->id = source->id;
+  dest->loc = source->loc;
+  dest->id  = source->id;
 }
 
 // you might ask, why are you returning a copy
@@ -51,11 +53,9 @@ char* ToStringVariable(Variable* var)
 // the type of a variable is the type
 // of whatever the variable is currently
 // bound to.
-TypeJudgement GetypeVariable(Ast* node, Environment* env)
+TypeJudgement GetypeVariable(Variable* var, Environment* env)
 {
   TypeJudgement result;
-
-  Variable* var = &(node->var);
 
   Ast* bound_term = lookup(env->outer_scope, var->id);
 
@@ -67,7 +67,7 @@ TypeJudgement GetypeVariable(Ast* node, Environment* env)
   {
     result.success   = false;
     result.error.dsc = "variable not defined within scope";
-    result.error.loc = node->loc;
+    result.error.loc = var->loc;
   }
 
   return result;

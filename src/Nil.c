@@ -7,8 +7,9 @@
 #include "Environment.h"
 #include "Nil.h"
 
-void InitializeNil(Nil* nil)
+void InitializeNil(Nil* nil, Location* loc)
 {
+  nil->loc   = *loc;
   nil->value = NULL;
 }
 
@@ -19,6 +20,7 @@ void DestroyNil(Nil* nil)
 
 void CloneNil(Nil* dest, Nil* source)
 {
+  dest->loc   = source->loc;
   dest->value = source->value;
 }
 
@@ -27,7 +29,7 @@ char* ToStringNil(Nil* nil)
   return dupnstr("nil", 3);
 }
 
-TypeJudgement GetypeNil(Ast* node, Environment* env)
+TypeJudgement GetypeNil(Nil* node, Environment* env)
 {
   TypeJudgement result;
   result.success = true;

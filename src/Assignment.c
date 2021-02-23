@@ -2,11 +2,14 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Utilities.h"
+#include "Location.h"
 #include "Environment.h"
 #include "Assignment.h"
 
-void InitializeAssignment(Assignment* ass, struct Ast* left, struct Ast* right)
+void InitializeAssignment(Assignment* ass, struct Ast* left, struct Ast* right, Location* loc)
 {
+  ass->loc = *loc;
   ass->lhs = left;
   ass->rhs = right;
 }
@@ -19,13 +22,14 @@ void DestroyAssignment(Assignment* ass)
 
 void CloneAssignment(Assignment* dest, Assignment* source)
 {
+  dest->loc = source->loc;
   CloneAst(&(dest->lhs), source->lhs);
   CloneAst(&(dest->rhs), source->rhs);
 }
 
 char* ToStringAssignment(Assignment* ass)
 {
-  char *result, *larrow, *left, *right;
+  char *result, *larrow, *left, *right, *ctx;
   larrow = " <- "; // 4 chars here, plus the null terminator makes 5
   left   = ToStringAst(ass->lhs);
   right  = ToStringAst(ass->rhs);
@@ -33,9 +37,9 @@ char* ToStringAssignment(Assignment* ass)
   int sz = strlen(left) + strlen(right) + 5;
   result = (char*)calloc(sz, sizeof(char));
 
-  strcat(result, left);
-  strcat(result, larrow);
-  strcat(result, right);
+  strkat(result, left,   &ctx);
+  strkat(result, larrow, &ctx);
+  strkat(result, right,  &ctx);
   free(left);
   free(right);
   return result;
@@ -46,11 +50,9 @@ char* ToStringAssignment(Assignment* ass)
 ------------------------------
    ENV |- lhs '<-' rhs : T
 */
-TypeJudgement GetypeAssignment(Ast* node, Environment* env)
+TypeJudgement GetypeAssignment(Assignment* ass, Environment* env)
 {
   TypeJudgement result;
-
-  Assignment* ass = &(node->ass);
 
   TypeJudgement lhsjdgmt = Getype(ass->lhs, env);
 
@@ -66,7 +68,7 @@ TypeJudgement GetypeAssignment(Ast* node, Environment* env)
       {
         result.success   = false;
         result.error.dsc = "Type mismatch between lhs and rhs";
-        result.error.loc = node->loc;
+        result.error.loc = ass->loc;
       }
     }
     else

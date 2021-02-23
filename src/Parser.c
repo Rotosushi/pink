@@ -148,25 +148,25 @@ void DestroyParser(Parser* p)
 void ResetParser(Parser* p)
 {
 
-  if (p->markstack)
+  if (p->markstack != NULL)
   {
       free(p->markstack);
       p->markstack = NULL;
   }
 
-  if (p->tokbuf)
+  if (p->tokbuf != NULL)
   {
     free(p->tokbuf);
     p->tokbuf = NULL;
   }
 
-  if (p->locbuf)
+  if (p->locbuf != NULL)
   {
     free(p->locbuf);
     p->locbuf = NULL;
   }
 
-  if (p->txtbuf)
+  if (p->txtbuf != NULL)
   {
     for(int i = 0; i < p->bufsz; i++)
     {
@@ -326,12 +326,13 @@ char* curtxt(Parser* p)
   return p->txtbuf[p->idx];
 }
 
-Location* curloc(Parser* p)
+Location curloc(Parser* p)
 {
+  Location loc;
   if (p->locbuf == NULL)
-    return NULL;
+    return loc;
 
-  return &(p->locbuf[p->idx]);
+  return p->locbuf[p->idx];
 }
 
 bool is_unop(Parser* p, char* uop)
@@ -423,7 +424,7 @@ affix := type
 */
 ParseJudgement ParseAffix(Parser* p)
 {
-  Location*      lhsloc = curloc(p);
+  Location       lhsloc = curloc(p);
   ParseJudgement lhsjdgmt;
 
   if (is_primary(curtok(p)))
@@ -446,12 +447,12 @@ ParseJudgement ParseAffix(Parser* p)
 
         if (rhsjdgmt.success == true)
         {
-          Location*   rhsloc       = curloc(p);
+          Location    rhsloc       = curloc(p);
           Location    assignloc;
-          assignloc.first_line   = lhsloc->first_line;
-          assignloc.first_column = lhsloc->first_column;
-          assignloc.last_line    = rhsloc->first_line;
-          assignloc.last_column  = rhsloc->first_column;
+          assignloc.first_line   = lhsloc.first_line;
+          assignloc.first_column = lhsloc.first_column;
+          assignloc.last_line    = rhsloc.first_line;
+          assignloc.last_column  = rhsloc.first_column;
           lhsjdgmt.success       = true;
           lhsjdgmt.term          = CreateAssignment(lhsjdgmt.term, rhsjdgmt.term, &assignloc);
           return lhsjdgmt;
@@ -547,7 +548,7 @@ application := atom
 */
 ParseJudgement ParseApplication(Parser* p)
 {
-  Location*      lhsloc   = curloc(p);
+  Location       lhsloc   = curloc(p);
   ParseJudgement lhsjdgmt = ParseAtom(p);
 
   if (lhsjdgmt.success == true)
@@ -564,12 +565,12 @@ ParseJudgement ParseApplication(Parser* p)
 
       if (rhsjdgmt.success == true)
       {
-        Location*      rhsloc    = curloc(p);
+        Location       rhsloc    = curloc(p);
         Location       apploc;
-        apploc.first_line   = lhsloc->first_line;
-        apploc.first_column = lhsloc->first_column;
-        apploc.last_line    = rhsloc->last_line;
-        apploc.last_column  = rhsloc->last_column;
+        apploc.first_line   = lhsloc.first_line;
+        apploc.first_column = lhsloc.first_column;
+        apploc.last_line    = rhsloc.last_line;
+        apploc.last_column  = rhsloc.last_column;
 
         lhsjdgmt.success         = true;
         lhsjdgmt.term            = CreateApplication(lhsjdgmt.term, rhsjdgmt.term, &apploc);
@@ -606,7 +607,7 @@ atom := identifier
 */
 ParseJudgement ParseAtom(Parser* p)
 {
-  Location* lhsloc = curloc(p);
+  Location       lhsloc = curloc(p);
   ParseJudgement lhsjdgmt;
 
   switch(curtok(p))
@@ -626,12 +627,12 @@ ParseJudgement ParseAtom(Parser* p)
 
         if (rhsjdgmt.success == true)
         {
-          Location* rhsloc         = curloc(p);
+          Location  rhsloc    = curloc(p);
           Location  bndloc;
-          bndloc.first_line   = lhsloc->first_line;
-          bndloc.first_column = lhsloc->first_column;
-          bndloc.last_line    = rhsloc->first_line;
-          bndloc.last_column  = rhsloc->first_column;
+          bndloc.first_line   = lhsloc.first_line;
+          bndloc.first_column = lhsloc.first_column;
+          bndloc.last_line    = rhsloc.first_line;
+          bndloc.last_column  = rhsloc.first_column;
 
           lhsjdgmt.success    = true;
           lhsjdgmt.term       = CreateBind(id, rhsjdgmt.term, &bndloc);
@@ -643,7 +644,7 @@ ParseJudgement ParseAtom(Parser* p)
       else
       {
         lhsjdgmt.success   = true;
-        lhsjdgmt.term      = CreateVariable(id, lhsloc);
+        lhsjdgmt.term      = CreateVariable(id, &lhsloc);
         return lhsjdgmt;
       }
       break;
@@ -652,14 +653,14 @@ ParseJudgement ParseAtom(Parser* p)
     {
       nextok(p); // eat "nil"
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateNil(lhsloc);
+      lhsjdgmt.term    = CreateNil(&lhsloc);
       return lhsjdgmt;
       break;
     }
     case T_INTEGER:
     {
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateInteger(atoi(curtxt(p)), lhsloc);
+      lhsjdgmt.term    = CreateInteger(atoi(curtxt(p)), &lhsloc);
       nextok(p); // eat "integer"
       return lhsjdgmt;
       break;
@@ -668,7 +669,7 @@ ParseJudgement ParseAtom(Parser* p)
     {
       nextok(p); // eat "true"
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateBoolean(true, lhsloc);
+      lhsjdgmt.term    = CreateBoolean(true, &lhsloc);
       return lhsjdgmt;
       break;
     }
@@ -676,7 +677,7 @@ ParseJudgement ParseAtom(Parser* p)
     {
       nextok(p); // eat "false"
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateBoolean(false, lhsloc);
+      lhsjdgmt.term    = CreateBoolean(false, &lhsloc);
       return lhsjdgmt;
       break;
     }
@@ -707,10 +708,9 @@ ParseJudgement ParseAtom(Parser* p)
       if (lhsjdgmt.success == true && curtok(p) != T_RPAREN)
       {
         DestroyAst(lhsjdgmt.term);
-        Location* errloc   = curloc(p);
         lhsjdgmt.success   = false;
         lhsjdgmt.error.dsc = "unexpected missing ')'";
-        lhsjdgmt.error.loc = *errloc;
+        lhsjdgmt.error.loc = curloc(p);
       }
 
       return lhsjdgmt;
@@ -726,10 +726,9 @@ ParseJudgement ParseAtom(Parser* p)
 
     default:
     {
-      Location* errloc = curloc(p);
       lhsjdgmt.success   = false;
       lhsjdgmt.error.dsc = "unknown Atom token found";
-      lhsjdgmt.error.loc = *errloc;
+      lhsjdgmt.error.loc = curloc(p);
       return lhsjdgmt;
     }
   }
@@ -747,7 +746,7 @@ type := "Nil"
 */
 TypeJudgement ParseTypeAtom(Parser* p)
 {
-  Location*      lhsloc = curloc(p);
+  Location       lhsloc = curloc(p);
   TypeJudgement  result;
   switch (curtok(p))
   {
@@ -784,7 +783,7 @@ TypeJudgement ParseTypeAtom(Parser* p)
         result.success = false;
         DestroyType(result.type);
         result.error.dsc = "unexpected missing ')'";
-        result.error.loc = *curloc(p);
+        result.error.loc = curloc(p);
       }
       nextok(p);
     }
@@ -793,7 +792,7 @@ TypeJudgement ParseTypeAtom(Parser* p)
     {
       result.success   = false;
       result.error.dsc = "unknown Scalar Type token found";
-      result.error.loc = *lhsloc;
+      result.error.loc = lhsloc;
       break;
     }
   }
@@ -802,7 +801,7 @@ TypeJudgement ParseTypeAtom(Parser* p)
 
 TypeJudgement ParseTypeComposite(Parser* p)
 {
-  Location* lhsloc = curloc(p);
+  Location      lhsloc   = curloc(p);
   TypeJudgement lhsjdgmt = ParseTypeAtom(p);
 
   if (lhsjdgmt.success == true)
@@ -831,14 +830,14 @@ TypeJudgement ParseTypeComposite(Parser* p)
 ParseJudgement ParseType(Parser* p)
 {
   ParseJudgement result;
-  Location* lhsloc        = curloc(p);
-  TypeJudgement typejdgmt = ParseTypeComposite(p);
-  Location* rhsloc        = curloc(p);
-  Location typeloc;
-  typeloc.first_line   = lhsloc->first_line;
-  typeloc.first_column = lhsloc->first_column;
-  typeloc.last_line    = rhsloc->last_line;
-  typeloc.last_column  = rhsloc->last_column;
+  Location       lhsloc        = curloc(p);
+  TypeJudgement  typejdgmt     = ParseTypeComposite(p);
+  Location       rhsloc        = curloc(p);
+  Location       typeloc;
+  typeloc.first_line   = lhsloc.first_line;
+  typeloc.first_column = lhsloc.first_column;
+  typeloc.last_line    = rhsloc.last_line;
+  typeloc.last_column  = rhsloc.last_column;
 
   if (typejdgmt.success == true)
   {
@@ -869,7 +868,7 @@ ParseJudgement ParseType(Parser* p)
 */
 ParseJudgement ParseConditional(Parser* p)
 {
-  Location* lhsloc = curloc(p);
+  Location       lhsloc = curloc(p);
   ParseJudgement result;
   if (curtok(p) == T_IF)
   {
@@ -895,12 +894,12 @@ ParseJudgement ParseConditional(Parser* p)
 
             if (elsejdgmt.success == true)
             {
-              Location* rhsloc = curloc(p);
+              Location  rhsloc    = curloc(p);
               Location  cndloc;
-              cndloc.first_line   = lhsloc->first_line;
-              cndloc.first_column = lhsloc->first_column;
-              cndloc.last_line    = rhsloc->first_line;
-              cndloc.last_column  = rhsloc->first_column;
+              cndloc.first_line   = lhsloc.first_line;
+              cndloc.first_column = lhsloc.first_column;
+              cndloc.last_line    = rhsloc.first_line;
+              cndloc.last_column  = rhsloc.first_column;
 
               result.success = true;
               result.term = CreateConditional(condjdgmt.term, thenjdgmt.term, elsejdgmt.term, &cndloc);
@@ -912,7 +911,7 @@ ParseJudgement ParseConditional(Parser* p)
           {
             result.success = false;
             result.error.dsc = "unexpected missing 'else'";
-            result.error.loc = *(curloc(p));
+            result.error.loc = curloc(p);
           }
         }
         else
@@ -922,7 +921,7 @@ ParseJudgement ParseConditional(Parser* p)
       {
         result.success = false;
         result.error.dsc = "unexpected missing 'then'";
-        result.error.loc = *(curloc(p));
+        result.error.loc = curloc(p);
       }
     }
     else
@@ -932,21 +931,21 @@ ParseJudgement ParseConditional(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing 'if'";
-    result.error.loc = *(curloc(p));
+    result.error.loc = curloc(p);
   }
   return result;
 }
 
 ParseJudgement ParseIteration(Parser* p)
 {
-  Location* lhsloc = curloc(p);
+  Location       lhsloc = curloc(p);
   ParseJudgement result;
 
   if (curtok(p) != T_WHILE)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing while";
-    result.error.loc = *(curloc(p));
+    result.error.loc = curloc(p);
     // I could factor out the early returns by
     // assigning to result, and then using GOTOs
     // to jump straight to the 'common' return
@@ -967,7 +966,7 @@ ParseJudgement ParseIteration(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing 'do'";
-    result.error.loc = *(curloc(p));
+    result.error.loc = curloc(p);
     return result;
   }
   nextok(p); // eat 'do'
@@ -977,12 +976,12 @@ ParseJudgement ParseIteration(Parser* p)
   if (bodyjdgmt.success == false)
     return bodyjdgmt;
 
-  Location* rhsloc = curloc(p);
+  Location  rhsloc = curloc(p);
   Location  itrloc;
-  itrloc.first_line   = lhsloc->first_line;
-  itrloc.first_column = lhsloc->first_column;
-  itrloc.last_line    = rhsloc->first_line;
-  itrloc.last_column  = rhsloc->first_column;
+  itrloc.first_line   = lhsloc.first_line;
+  itrloc.first_column = lhsloc.first_column;
+  itrloc.last_line    = rhsloc.first_line;
+  itrloc.last_column  = rhsloc.first_column;
 
   result.success = true;
   result.term    = CreateIteration(condjdgmt.term, bodyjdgmt.term, &itrloc);
@@ -991,14 +990,14 @@ ParseJudgement ParseIteration(Parser* p)
 
 ParseJudgement ParseLambda(Parser* p)
 {
-  Location* lhsloc = curloc(p);
+  Location       lhsloc = curloc(p);
   ParseJudgement result;
 
   if (curtok(p) != T_BSLASH)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing '\\'";
-    result.error.loc = *lhsloc;
+    result.error.loc = lhsloc;
     return result;
   }
   nextok(p); // eat '\'
@@ -1007,7 +1006,7 @@ ParseJudgement ParseLambda(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing identifier";
-    result.error.loc = *curloc(p);
+    result.error.loc = curloc(p);
     return result;
   }
 
@@ -1029,7 +1028,7 @@ ParseJudgement ParseLambda(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing ':'";
-    result.error.loc = *curloc(p);
+    result.error.loc = curloc(p);
     return result;
   }
 
@@ -1048,7 +1047,7 @@ ParseJudgement ParseLambda(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "unexpected missing '=>'";
-    result.error.loc = *(curloc(p));
+    result.error.loc = curloc(p);
     return result;
   }
   nextok(p);
@@ -1077,13 +1076,13 @@ ParseJudgement ParseLambda(Parser* p)
   if (bodyjdgmt.success == false)
     return bodyjdgmt; // TODO: if we actually take this path we gonna leak!
 
-  p->outer_scope = last_scope; // reset the outer scope to what it was before
-  Location* rhsloc = curloc(p);
+  p->outer_scope      = last_scope; // reset the outer scope to what it was before
+  Location  rhsloc    = curloc(p);
   Location  lamloc;
-  lamloc.first_line   = lhsloc->first_line;
-  lamloc.first_column = lhsloc->first_column;
-  lamloc.last_line    = rhsloc->first_line;
-  lamloc.last_column  = rhsloc->first_column;
+  lamloc.first_line   = lhsloc.first_line;
+  lamloc.first_column = lhsloc.first_column;
+  lamloc.last_line    = rhsloc.first_line;
+  lamloc.last_column  = rhsloc.first_column;
 
   result.success      = true;
   result.term         = CreateLambda(id, typejdgmt.type, bodyjdgmt.term, lambda_scope, &lamloc);
@@ -1097,7 +1096,7 @@ ParseJudgement ParseUnop(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "Unexpected missing operator for Unary expression";
-    result.error.loc = *curloc(p);
+    result.error.loc = curloc(p);
     return result;
   }
 
@@ -1105,11 +1104,11 @@ ParseJudgement ParseUnop(Parser* p)
   {
     result.success   = false;
     result.error.dsc = "unary operator not bound in environment.";
-    result.error.loc = *curloc(p);
+    result.error.loc = curloc(p);
     return result;
   }
 
-  Location* lhsloc = curloc(p);
+  Location  lhsloc = curloc(p);
   char*     copy   = curtxt(p);
   char*     optxt  = dupnstr(copy, strlen(copy));
 
@@ -1120,12 +1119,12 @@ ParseJudgement ParseUnop(Parser* p)
   if (rhsjdgmt.success == false)
     return rhsjdgmt;
 
-  Location* rhsloc    = curloc(p);
+  Location  rhsloc    = curloc(p);
   Location  uoploc;
-  uoploc.first_line   = lhsloc->first_line;
-  uoploc.first_column = lhsloc->first_column;
-  uoploc.last_line    = rhsloc->first_line;
-  uoploc.last_column  = rhsloc->first_column;
+  uoploc.first_line   = lhsloc.first_line;
+  uoploc.first_column = lhsloc.first_column;
+  uoploc.last_line    = rhsloc.first_line;
+  uoploc.last_column  = rhsloc.first_column;
 
   InternedString op      = InternString(p->interned_ops, optxt);
 
@@ -1142,7 +1141,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
   if (left.success == false)
     return left;
 
-  Location* lhsloc = curloc(p);
+  Location        lhsloc    = curloc(p);
   BinopPrecAssoc* lookahead = NULL;
 
   if (curtok(p) != T_OPERATOR)
@@ -1150,7 +1149,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
     left.success   = false;
     DestroyAst(left.term);
     left.error.dsc = "unexpected missing operator";
-    left.error.loc = *lhsloc;
+    left.error.loc = lhsloc;
     return left;
   }
 
@@ -1159,7 +1158,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
     left.success   = false;
     DestroyAst(left.term);
     left.error.dsc = "binary operator is not bound in environment";
-    left.error.loc = *lhsloc;
+    left.error.loc = lhsloc;
     return left;
   }
 
@@ -1171,7 +1170,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
      && (lookahead = FindBinopPrecAssoc(p->precedence_table, Iop)) && lookahead->precedence >= min_prec)
   {
 
-    Location* lhsloc = curloc(p), *rhsloc;
+    Location lhsloc = curloc(p), rhsloc;
 
     BinopPrecAssoc* operator = lookahead;
 
@@ -1197,11 +1196,11 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
         left.success   = false;
         DestroyAst(left.term);
         left.error.dsc = "binary operator is not bound in environment";
-        left.error.loc = *curloc(p);
+        left.error.loc = curloc(p);
         return left;
       }
 
-      rhsloc = curloc(p);
+
       InternedString Irop;
 
       while((Irop = InternString(p->interned_ops, curtxt(p)))
@@ -1214,13 +1213,15 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
         if (right.success == false)
           return right;
       }
+
+      rhsloc = curloc(p);
     }
 
     Location boploc;
-    boploc.first_line   = lhsloc->first_line;
-    boploc.first_column = lhsloc->first_column;
-    boploc.last_line    = rhsloc->last_line;
-    boploc.last_column  = rhsloc->last_column;
+    boploc.first_line   = lhsloc.first_line;
+    boploc.first_column = lhsloc.first_column;
+    boploc.last_line    = rhsloc.last_line;
+    boploc.last_column  = rhsloc.last_column;
 
     left.success    = true;
     left.term       = CreateBinop(Iop, left.term, right.term, &boploc);

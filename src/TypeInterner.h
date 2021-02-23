@@ -35,7 +35,7 @@ typedef struct TypeInterner
   struct Type*  integerType;
   struct Type*  booleanType;
   struct Type** procTypes;
-  int    procTypesLength;
+  int           procTypesLength;
 } TypeInterner;
 
 TypeInterner* CreateTypeInterner();
@@ -45,7 +45,7 @@ void          DestroyTypeInterner(TypeInterner* Ity);
 // is coming from choices I could be making
 // in a C-like langauge.
 // not all of them, I still can't define
-// overloaded procedures or polymorphic 
+// overloaded procedures or polymorphic
 // procedures.
 struct Type* GetNilType(TypeInterner* Ity);
 struct Type* GetIntegerType(TypeInterner* Ity);

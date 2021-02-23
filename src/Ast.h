@@ -1,6 +1,65 @@
 #ifndef AST_H
 #define AST_H
 
+/*
+
+typedef struct Ast
+{
+  AstKind kind;
+  Location loc; // if we shift the Location struct into the member
+                // objects then
+                // A) the size of the Ast struct doesn't change,
+                //    each member only has one location, same as before.
+                //    proof by induction on c-style union storage rules
+                // B) we no longer need to have the type of Getype*
+                //    procedures be uniformly Ast*, instead we can
+                //    truly pass in a "inner" type pointer, which
+                //    allows a language like mine, with procedures
+                //    being overloadable on argument type, with
+                //    runtime dispatching to define a procedure which
+                //    is overloaded over every member type, and the
+                //    parent union type to correctly associate a
+                //    body with a member of each type.
+                //    the call graph could look like:
+                //    we call the Ast* getype which simply dispatches to
+                //    each member types getype depending upon which type
+                //    is live within the union at the time of calling?
+                //    hmmm....
+                //    does the programmer even get to define the Ast* typed
+                //    procedure if we want the compiler to infer the
+                //    dispatch procedure, freeing us from having to remember
+                //    to check every case because the compiler can know
+                //    if we miss to handle one.
+  union {
+    // nothing is storing anthing
+    // except pointers, so, modulus
+    // padding, ast structs are about
+    // sizeof(enum AstKind)
+    // + sizeof(4* sizeof(int)) // sizeof(Location)
+    // + sizeof(Object) // the largest member
+    // big.
+    // Object is the largest member because
+    // it holds another enum for it's union, and
+    // sizeof(Lambda) is about 4 pointers.
+    // every other construct holds less than
+    // 4 pointers.
+    Variable    var; // {char*}
+    Application app; // {Ast*, Ast*}
+    Assignment  ass; // {Ast*, Ast*}
+    Bind        bnd; // {char*, Ast*}
+    Binop       bop; // {char*, Ast*, Ast*}
+    Unop        uop; // {char*, Ast*}
+    Conditional cnd; // {Ast*, Ast*, Ast*}
+    Iteration   itr; // {Ast*, Ast*}
+    Object      obj; // {enum ObjKind, union:{ nil      // {void*}
+                                             , integer  // {int}
+                                             , boolean  // {bool}
+                                             , lambda   // {char*, Type*, Ast*, SymbolTable*}
+                                            }}
+    Type       *typ; // ewwwwww... (wait no, thanks to interning, pointers -are- the type literal)
+  };
+} Ast;
+*/
 // Ast sits at the bottom of an
 // upside-down information pyramid
 // however, notice that in OOP,
@@ -26,6 +85,9 @@
 // allocated the memory representing the innards of
 // the node in another page of memory. something
 // we have no control over when it happens.
+// (and given a program running long enough using
+// some large (n) amount of memory, we would see
+// some nodes which would invoke this behavior.)
 // so, in spite of the fact that we are allocating more
 // memory per node, we are going to run faster (HYPOTHESIS),
 // because the data we want is always directly stored
@@ -34,7 +96,14 @@
 // slightly more expensive is lessened by the fact
 // that we are working with significantly more
 // memory than ever was imagined by early
-// computer scientists.
+// computer scientists. gigabytes in a desktop/server
+// environment, more than the kilobytes that used to be
+// considered large. though, for the usecase of the
+// language we will be providing at most the ability
+// to invoke an interpretive environment. I would
+// like this langauge to write programs that can fit
+// in 1kb of storage, with less working memory.
+// and we can grow that sort of program
 
 // TL;DR:
 // ast nodes used to look like
@@ -62,6 +131,15 @@
 // though, so, mostly pointers anyways, especially now
 // that identifiers, operators, and types are interned.)
 
+// we need the location information
+// of the node, but we simultaneously
+// want to write the code to switch
+// over type at the procedure level.
+// but if we pass in a view to the
+// union member only we no longer
+// have a reference to the location
+// data of that member.
+
 
 #include "Location.h"
 #include "Variable.h"
@@ -73,6 +151,7 @@
 #include "Conditional.h"
 #include "Iteration.h"
 #include "Type.h"
+#include "TypeLiteral.h"
 #include "Object.h"
 #include "TypeJudgement.h"
 
@@ -91,7 +170,6 @@ typedef enum AstKind
   A_CND,
   A_ITR,
   A_OBJ,
-  A_TYP,
 } AstKind;
 
 // the kinds of Ast represent the
@@ -100,20 +178,7 @@ typedef enum AstKind
 typedef struct Ast
 {
   AstKind kind;
-  Location loc;
   union {
-    // nothing is storing anthing
-    // except pointers, so, modulus
-    // padding, ast structs are about
-    // sizeof(enum AstKind)
-    // + sizeof(4* sizeof(int)) // sizeof(Location)
-    // + sizeof(Object) // the largest member
-    // big.
-    // Object is the largest member because
-    // it holds another enum for it's union, and
-    // sizeof(Lambda) is about 4 pointers.
-    // every other construct holds less than
-    // 4 pointers.
     Variable    var;
     Application app;
     Assignment  ass;
@@ -123,7 +188,6 @@ typedef struct Ast
     Conditional cnd;
     Iteration   itr;
     Object      obj;
-    Type       *typ; // ewwwwww... (wait no, thanks to interning, pointers -are- the type literal)
   };
 } Ast;
 
@@ -153,6 +217,11 @@ Ast* CreateBoolean(bool value, Location* loc);
 Ast* CreateLambda(InternedString arg_id, Type* arg_type, Ast* body, struct SymbolTable* scope, Location* loc);
 Ast* CreateType(Type* type, Location* loc);
 
+// returns a reference to the location data
+// held within the member of the ast.
+// switching based upon the active member.
+Location* GetAstLocation(Ast* ast);
+
 // this shall deallocate all memory associated
 // with the ast.
 void DestroyAst(Ast* ast);
@@ -162,7 +231,8 @@ void DestroyAst(Ast* ast);
 void CloneAst(Ast** destination, Ast* source);
 
 // constructs a string that represents the passed
-// in tree.
+// in tree. the caller is responsible for managing
+// the string passed back.
 char* ToStringAst(Ast* ast);
 
 // returns the type of the tree passed in,

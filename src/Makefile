@@ -1,10 +1,10 @@
 CC = clang
-CARGS = -fstandalone-debug -fexceptions -g -std=c11
+CARGS = -g -std=c11
 
 LINK_STEP = Application.o Assignment.o Conditional.o Iteration.o \
 StringInterner.o Variable.o Bind.o Binop.o Unop.o BinopEliminators.o \
 UnopEliminators.o BinopPrecedence.o BinopTable.o UnopTable.o Nil.o \
-Integer.o Boolean.o Lambda.o ScalarType.o ProcType.o Type.o Object.o \
+Integer.o Boolean.o Lambda.o ScalarType.o ProcType.o Type.o TypeLiteral.o Object.o \
 Ast.o TypeInterner.o Environment.o SymbolTable.o PinkError.o Token.o \
 Lexer.o Parser.o PinkKernel.o Repl.o Utilities.o Pink.o -o pink
 
@@ -76,7 +76,7 @@ Unop:
 Ast:
 	${CC} ${CARGS} -c Ast.c -o Ast.o
 
-Types: Type ScalarType ProcType
+Types: Type ScalarType ProcType TypeLiteral
 
 Type:
 	${CC} ${CARGS} -c Type.c -o Type.o
@@ -87,6 +87,8 @@ ScalarType:
 ProcType:
 	${CC} ${CARGS} -c ProcType.c -o ProcType.o
 
+TypeLiteral:
+	${CC} ${CARGS} -c TypeLiteral.c -o TypeLiteral.o
 
 Objects: Nil Integer Boolean Lambda Object
 

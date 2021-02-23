@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "Type.h"
+#include "Utilities.h"
 #include "ProcType.h"
 
 void InitializeProcType(ProcType* proc, struct Type* left, struct Type* right)
@@ -31,7 +32,7 @@ void CloneProcType(ProcType* destination, ProcType* source)
 
 char* ToStringProcType(ProcType* proc)
 {
-  char *result, *rarrow, *left, *right;
+  char *result, *rarrow, *left, *right, *ctx;
   rarrow = " -> "; // 4
   left   = ToStringType(proc->lhs);
   right  = ToStringType(proc->rhs);
@@ -39,9 +40,9 @@ char* ToStringProcType(ProcType* proc)
   int sz = strlen(left) + strlen(right) + 5;
   result = (char*)calloc(sz, sizeof(char));
 
-  strcat(result, left);
-  strcat(result, rarrow);
-  strcat(result, right);
+  strkat(result, left,   &ctx);
+  strkat(NULL,   rarrow, &ctx);
+  strkat(NULL,   right,  &ctx);
   free(left);
   free(right);
   return result;

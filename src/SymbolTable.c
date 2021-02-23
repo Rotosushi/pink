@@ -157,7 +157,7 @@ void unbind(SymbolTable* table, InternedString name)
   hash %= table->num_buckets;
 
   // find the bucket to look in
-  Symbol* cursor = table->table[hash], *prev = NULL;
+  Symbol *cursor = table->table[hash], *prev = NULL;
   // look through the bucket (list)
 
   // so we need to handle removing the head of the

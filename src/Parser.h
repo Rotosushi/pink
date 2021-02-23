@@ -15,6 +15,7 @@
 
 typedef struct Parser
 {
+  
   int*            markstack; // we can rewind through the array of tokens as many times as we want,
                              //  this stack keeps track of each 'last-valid-position' as we venture
                              //  deeper into unknown tokens, gathering them into terms.

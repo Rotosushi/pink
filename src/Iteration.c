@@ -2,11 +2,13 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Utilities.h"
 #include "Environment.h"
 #include "Iteration.h"
 
-void InitializeIteration(Iteration* itr, struct Ast* cnd, struct Ast* bdy)
+void InitializeIteration(Iteration* itr, struct Ast* cnd, struct Ast* bdy, Location* loc)
 {
+  itr->loc = *loc;
   itr->cnd = cnd;
   itr->bdy = bdy;
 }
@@ -19,13 +21,14 @@ void DestroyIteration(Iteration* itr)
 
 void CloneIteration(Iteration* destination, Iteration* source)
 {
+  destination->loc = source->loc;
   CloneAst(&(destination->cnd), source->cnd);
   CloneAst(&(destination->cnd), source->bdy);
 }
 
 char* ToStringIteration(Iteration* itr)
 {
-  char *result, *condtxt, *bodytxt, *whiletxt, *dotxt;
+  char *result, *condtxt, *bodytxt, *whiletxt, *dotxt, *ctx;
   whiletxt = "while "; // 6
   dotxt    = " do ";   // 4
   condtxt  = ToStringAst(itr->cnd);
@@ -34,21 +37,21 @@ char* ToStringIteration(Iteration* itr)
   int sz = strlen(condtxt) + strlen(bodytxt) + 11;
   result = (char*)calloc(sz, sizeof(char));
 
-  strcat(result, whiletxt);
-  strcat(result, condtxt);
-  strcat(result, dotxt);
-  strcat(result, bodytxt);
+  strkat(result, whiletxt, &ctx);
+  strkat(NULL,   condtxt,  &ctx);
+  strkat(NULL,   dotxt,    &ctx);
+  strkat(NULL,   bodytxt,  &ctx);
   free(condtxt);
   free(bodytxt);
   return result;
 }
 
 
-TypeJudgement GetypeIteration(struct Ast* node, struct Environment* env)
+TypeJudgement GetypeIteration(Iteration* itr, struct Environment* env)
 {
   Type* booleanType = GetBooleanType(env->interned_types);
   TypeJudgement result;
-  Iteration* itr = &(node->itr);
+
   TypeJudgement cndjdgmt = Getype(itr->cnd, env);
 
   if (cndjdgmt.success == true)
@@ -71,7 +74,7 @@ TypeJudgement GetypeIteration(struct Ast* node, struct Environment* env)
     {
       result.success   = false;
       result.error.dsc = "condition must have type:[Bool]";
-      result.error.loc = itr->cnd->loc;
+      result.error.loc = *GetAstLocation(itr->cnd);
     }
   }
   else

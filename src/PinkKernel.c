@@ -32,7 +32,7 @@ Ast* BinopPlusAddInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left + right, &(lval->loc));
+  Ast* ast = CreateInteger(left + right, GetAstLocation(lval));
   return ast;
 }
 
@@ -58,7 +58,7 @@ Ast* BinopHyphenMinusInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left - right, &(lval->loc));
+  Ast* ast = CreateInteger(left - right, GetAstLocation(lval));
   return ast;
 }
 
@@ -84,7 +84,7 @@ Ast* BinopStarMultiplyInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left * right, &(lval->loc));
+  Ast* ast = CreateInteger(left * right, GetAstLocation(lval));
   return ast;
 }
 
@@ -110,7 +110,7 @@ Ast* BinopFslashDivideInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left / right, &(lval->loc));
+  Ast* ast = CreateInteger(left / right, GetAstLocation(lval));
   return ast;
 }
 
@@ -125,7 +125,7 @@ Ast* UnopHyphenNegateInteger(Ast* rval)
   if (rval->obj.kind != O_INT)
     FatalError("Cannot Negate non-Integer Object", __FILE__, __LINE__);
 
-  Ast* ast = CreateInteger(-(rval->obj.integer.value), &(rval->loc));
+  Ast* ast = CreateInteger(-(rval->obj.integer.value), GetAstLocation(rval));
   return ast;
 }
 
@@ -141,7 +141,7 @@ Ast* UnopBangNegateBoolean(Ast* rval)
     FatalError("Cannot Negate non-Boolean Object", __FILE__, __LINE__);
 
 
-  Ast* ast = CreateBoolean(!(rval->obj.boolean.value), &(rval->loc));
+  Ast* ast = CreateBoolean(!(rval->obj.boolean.value), GetAstLocation(rval));
   return ast;
 }
 

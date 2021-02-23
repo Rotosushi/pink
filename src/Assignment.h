@@ -8,11 +8,12 @@ struct Environment;
 
 typedef struct Assignment
 {
+  Location    loc;
   struct Ast* lhs;
   struct Ast* rhs;
 } Assignment;
 
-void InitializeAssignment(Assignment* ass, struct Ast* left, struct Ast* right);
+void InitializeAssignment(Assignment* ass, struct Ast* left, struct Ast* right, Location* loc);
 
 void DestroyAssignment(Assignment* ass);
 
@@ -20,6 +21,6 @@ void CloneAssignment(Assignment* dest, Assignment* source);
 
 char* ToStringAssignment(Assignment* ass);
 
-TypeJudgement GetypeAssignment(struct Ast* node, struct Environment* env);
+TypeJudgement GetypeAssignment(Assignment* ass, struct Environment* env);
 
 #endif // !ASSIGNMENT_H

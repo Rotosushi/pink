@@ -1,0 +1,97 @@
+/* pointer arithmetic is not black magic!
+// 1 number per char, regardless of the
+// upper bound, the bytes between cursor
+// (a.k.a. the end of the token.) and
+// token (a.k.a. the beginning of the token)
+// is the number of characters between
+// the two, a.k.a the length of the token.
+// [-] is one byte [----] is a word
+// "---- ---- ---- ----" is some string of
+// length 15, but this works with any length (n).
+// (held within 16 bytes.)
+//      "---- ---- ---- ----"
+//          ^        ^
+//          t        c
+// if we count the number of chars between (t, c)
+// we get 8. now, given our knowledge that a pointer
+// is the address of some character. (because it's a
+// character pointer) we know that our pointers contain
+// some integer value which can be used as an index into
+// memory to retrieve some value of type char. (which has
+// size one remember, and 4 chars make a word, and machines
+// are word addressed.) much like the idea of our pointer
+// as an index into the character array, the physical
+// representation of this index into a character array is
+// the exact same physical representation as an index
+// into our memory space.
+// so, what do you get when you
+// subtract the two indexes from eachother (t, c)?
+// you get the distance between the two, in terms of
+// the underlying type. (char is easy because it is
+// quite literally defined to be both length 1, w.r.t
+// the size of everything in a C program, and to be
+// the length of one byte of memory, on essentially
+// all modern machines, because of the nice tricks it allows.)
+// so truly the question we need to ask to ensure we don't
+// get a negative length is which pointer is the smaller number?
+// luckily we read the documentation of re2c
+// and so we know that cursor is the seeking pointer, i.e. it
+// is bumped along the string as we lex each character,
+// and we know that token is the beginning of our current token.
+// hence, cursor is always greater than or equal to token.
+// all you need to know more than this about pointer arithmetic
+// is that all of this is in terms of n elements of size m.
+// where char is our anchor/bridge between the machine and
+// our type system.
+// we think arrays and pointers into arrays as
+// offsets, however we multiply by the size of each element
+// first, to convert from byte indexing to element indexing.
+//
+// notice how this is essentially the same thing as scale conversion!
+// we talk about the size of every type in terms of how many bytes
+// it takes to store an object/entity of that type. (where char is
+// the bridge between bytes and the type system.)
+//
+// if that is confusing, thing of some magical struct
+// of size 10, (in bytes remember), if we want an array of
+// ten of these how much memory do we need?
+// 10 (size of struct) * 10 (number of elements) = 100 (bytes)
+// and, where is the sixth struct within the array?
+// 10 (size of struct) * 6  (which element we want/index) = 60 (th byte)
+// hence, the array derefrence operator is exactly the same as
+// adding some number to a pointer to construct a new pointer.
+// and, the dot operator is also pointer arithmetic in disguise.
+// if a struct is ten bytes, composed of five members each of
+// size two bytes, then to access the third member means accessing
+// the two bytes immediately following the first four bytes of the structure.
+
+notice how sizeof just sort of pops out of this as the exact same 
+recursive traversal of the tree like type structure until we 
+reach a known set of primitive types which are all represented 
+by a integer size value in terms of how many chars/bytes it takes 
+to store the structure.
+
+also also,
+sum types sizes are the sum of all of their members,
+	because they hold them all simultaneously.
+	in a sequence, one after another.
+product types sizes are the size of the largest member
+	and we simply treat the same segment of memory 
+	as different types. however, we are going to be 
+	nicer than c in enforcing an enumeration value 
+	which stores which member type is currently 
+	active within the product/union
+
+with the slight caveat that since the machine is word addressable 
+instead of just being able to create a single byte sized structure variable and then 
+another single byte sized structure variable where both are stored directly adjacent 
+to one another, to be exact a whole word is reserved for a byte sized variable 
+because there is no other valid way of reaching the variable within the machine.
+(at least as far as i'm aware, valid x86 instructions have to be
+word aligned (a multiple of four, or two in some cases), and pointers 
+do as well. so some amount of padding must be added to structures to 
+bring their size up to a multiple of four, this is why it can be hard 
+to tell exactly how big some structure type will be when the c program 
+has been compiled.)
+
+*/
