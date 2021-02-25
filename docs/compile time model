@@ -1,0 +1,335 @@
+so, okay, we want to compile programs
+written in pink to compile to machine
+code. not efficiently at first, but
+we aren't aiming for inefficient either.
+
+so, since we purport to be a small footprint
+language like C, why did we pick a high level
+of abstraction language like the lambda calculus?
+well, because I want the conception of functions
+to be as complete as possible for a low-ish level
+programming language. certainly I am going to have
+more of a runtime than C. But no larger than a
+runtime in C++ imo. and i think with a more functional
+starting point, we will shore up some problems with
+C, rather than just adding more and not really fixing
+things, cough cough C++.
+
+
+so anyways, what do i mean, more of a runtime?
+
+well, C lacks a complete conception of functions,
+this isn't really debatable, they are monotonic.
+we cannot 'pass' procedures, nor may we return
+them. their names may not be overloaded, nor
+can we define new procedures polymorphically.
+to my mind, C++ proves we can add these things
+with enough effort and ingenuity, and looking
+at how functional languages have been implemented
+in the past, i think i have a good execution model
+with a balance between speed and power.
+
+We are borrowing a lot of ideas which originated in
+LISP, and Scheme. which are the other languages
+first based upon the lambda calculus. now,
+many of these languages are 'interpreted' at least
+at first, nowadays you can find many optimizing
+compilers for LISP and Scheme dialects. and as such
+many techniques have already been thought of for
+implementing the particular semantics implied by
+the lambda calculus.
+
+so, the main problems with the lambda calculus from
+the perspective of C arises from three use cases of
+procedures which are not directly supported in C.
+- passing procedures as values, either downwards through
+arguments/parameters, or upwards through return values.
+
+- coroutines: throwing and returning control at will between two procedures,
+effectively dictating the transfer of control between two
+procedures whose lifetimes are now simultaneous.
+(which raises the issue of, there is only one stack frame
+active, with one set of bindings, at a time, how can we
+maintain the bindings of two separate call stacks
+in the same place at the same time? moreover, potentially
+-any- two procedures defined within the program.)
+
+- the use of assignment in the presence of popular
+functions-as-values implementations.
+(as we usually copy and restore the stack which
+by definition copies the variable into potentially
+arbitrarily many positions in memory, which makes
+updating accross all these positions difficult.)
+
+
+the first and most obvious strategy is to fully disconnect
+the storage of procedure data from a stack allocation
+strategy altogether. which simple, understandable, and
+very well-trodden, this strategy has one major downside.
+now, we require the use of a garbage collector, a data
+structure which has a bad habit of inserting a few
+cache-misses into every procedure call. this is
+completely unacceptable from multiple angles in an
+embedded environment.
+1) the garbage collector is both a source of
+  unknown time delays and a lot of memory overhead
+  in bookkeeping, this is too much time and space
+  overhead during the regular operation of a program
+  to write something as potentially low-level as an
+  operating system, or a hardware driver.
+  with C, you can write hardware emulating software
+  through the use of interrupts and clever usage of
+  inline assembly. this kind of timing consistency
+  is not possible in a garbage collected environment.
+2) given that all procedures are dynamically allocated,
+    every possible procedure call is hindered, just to
+    support a language feature that many programs will
+    never use. coroutines are very useful, but they
+    are also rarely used in day to day code, and I actually
+    agree with C++'s motto of "don't pay for what you
+    don't use." here. so forcing programs to pay for
+    what they don't use is not good.
+
+so, to skip to something that I think has a good shot
+of being fast, and still supporting advanced programming
+techniques, is a hybrid stack/heap approach.
+
+so, thinking about the first issue, closures:
+
+we only use the heap when we are forced to by the
+semantics of the language, and try and be as fast about
+it as we can. so, for starters, what is the
+usual compiled program execution model? (this refers to other
+static typed, strict execution, functions aren't first class languages.)
+
+well, to simplify a lot, they use a stack of activation records
+to represent each procedure's active data during invokation/execution.
+this approach actually already natively supports passing
+procedures in a downwards manner, as an argument, because when
+the procedure is called within the lower environment, any bindings
+which are free within the procedure will still be active on
+the stack frame.
+
+to proceed with the easy example, we start with the downwards case:
+
+procedure f1 (x: Int, y: Int) => x + y
+
+procedure f2 (f: Int -> Int -> Int, g: Int, h: Int) => f g h
+
+procedure main () => f2 f1 2 5
+
+evaluating main pushes it's stack frame and then jumps
+to the code representing the body, when we evaluate the
+application we first attempt to evaluate each argument,
+since each is an Object directly, nothing needs to be done,
+then we push f1's address into the first parameter,
+we push two and five as the next two parameters, remember, by-value.
+then we jump to the body of procedure f2.
+then we can use the address passed through the first parameter,
+(or the address held within the closure structure passed within
+the first parameter) to jump to procedure f1, pushing the
+arguments we received through positions 2, 3, into the first
+and second arguments to applying the procedure passed through
+the first argument.
+there is no difference between this and the C code
+
+typedef int (*funcp)(int, int);
+
+int f1 (int x, int y)
+{
+  return x + y;
+}
+
+int f2 (funcp f, int g, int h)
+{
+  return f (g, h);
+}
+
+int main (void)
+{
+  return f2(f1, 2, 5);
+}
+
+which is some hint as to how we can implement this.
+
+so to the contravening case:
+
+procedure difficult () =>
+  foo := 42;
+  (\z:Nil => foo)
+
+procedure main () =>
+  closure := difficult ();
+  print closure ()
+
+by the previous execution model,
+when difficult is invoked by main
+the binding 'foo' and subsequently
+the value 42 is stored on the stack
+frame, then when the lambda is defined
+in the current frame, the binding is alive
+only until difficult returns. so,
+when main goes to invoke 'closure' which
+holds the lambda returned by difficult,
+the reference to 'foo' is invalid, and
+accessing it is undefined behavior.
+(depends on the precise state of the
+currently running system, which is not
+knownable a-priori)
+
+the first solution solves this by the fact
+that activation records for procedures are
+allocated on the heap, and thus the reference
+to a variable in another procedures activation
+record is always pointing to an alive and
+valid binding. this approach is often combined
+with a garbage collector so that activation
+records can be cleaned up at some point after usage.
+
+so the only real way to give the same semantics
+is to follow suit and allocate space for closed
+over values in the heap, and silently use those
+bindings during evaluation of the returned procedure.
+
+this is the basic insight for following the hybrid
+stack/heap approach. essentially, closures are
+not super necessary, but when they come in handy they
+are invaluable, and the same for coroutines, and yet
+to support these features we should not have to compromise
+on the speed of our standard operation, namely
+invoking monotonic procedures.
+
+I propose that for the first version we disallow
+passing a procedure up the stack if it closes over a
+free variable. if the inner procedure only uses names
+which are passed as argument, then it is free to be
+passed around to any environment, because it's behavior
+is independent of the environment.
+this should allow me to get a working system standing
+up quicker, while still allowing me to upgrade the
+system to fully support procedures later.
+
+additionally a few more rules would allow even greater
+flexibility, namely, every binding is immutable by default
+and must be declared mutable explicitly by the programmer.
+this allows the compiler to be assured that no assignments
+will be done to this value, either directly or by reference.
+this allows the compiler to store all immutable bindings
+directly in the activation record. and when we implement
+coroutines, and we save/restore the state of the stack
+between two procedures, (up/down or horizontally), any
+immutable binding is always the same value through the save/restore
+process, even though there is (potentially) technically multiple by-value
+copies sitting in the programs address space. to provide
+support for a mutable variable within a coroutine, we must
+store that value on the heap.
+just as above with the case of a procedure closing over it's
+surrounding environment and then referencing it at a later point
+in execution, when it has potentially already been deallocated by
+the defining scope returning, we need to copy each value referenced
+into the heap, and a pointer kept in the structure representing the
+by-value version of the procedure.
+
+if we imagine a generator procedure which produces many different
+closures, maybe each closing over a different value, but the
+procedure is identical, what can happen to support this is
+many closure objects are allocated at the return site, which
+simply combine a function pointer to the same body,
+and the pointer to the free variables which it references stored in the heap.
+each of which is allocated at the time of creation of the closure.
+for immutable values, a by-value copy suffices.
+this only needs to happen when the inner procedure actually closes
+over free data.
+a closure can support assignment to an inner by-value
+object in the same way that a regular procedure can support a regular
+variable being assigned. allocation on the stack, and assignment
+to the stack.
+
+a closure cannot support assignment to a mutable free variable,
+as the lifetime may end before the closure is invoked. so a
+mutable free variable referenced within the closure must be stored
+on the heap.
+
+a coroutine cannot support mutable values living on it's stack either.
+because the only way to truly support coroutines is to maintain
+multiple stacks. (e.g. execution environments) by way of copying
+and restoring full or partial stack(s) to the heap.
+
+if we want a coroutine to modify a variable within it's scope,
+then the only way to accomplish this without extreme overhead
+is to allocate the variable on the heap and make all named instances
+read/write to the heap.
+this in effect now means that all coroutines which
+share visibility of the same mutable free variable
+would share the exact same memory.
+
+so, in effect a mutable variable can only be stored in the
+activation record of a procedure if and only only if it
+never appears free in a closure or coroutine. if we explicitly
+pass the mutable variable as a argument, well we pass by-value.
+so, either the callee can subsequently update a copy or
+we pass a reference, (i suppose a mutable reference to maintain the
+semantics), in which case the callee can modify the exact same object.
+(except this time the programmer has to be explicit about the pass by
+reference).
+
+if all modifications to a mutable cell occur within it's defining
+context, and it's value is no longer required after returning from
+it's execution context, then that variable is free to be stored on
+the stack. (I don't know how answerable those questions are in a
+general sense though.)
+common examples are index variables for iterating through an
+array imperatively.
+
+for (int i = 0; i < length; i++)
+{ array[i] = func(array[i]); }
+
+this integer (i) can absolutely be stored on the stack frame of
+it's enclosing scope, because we only ever use it as an argument.
+even if func itself is a closure around some data, i is not
+participating in that discussion, because it is not used by
+func in any way. even if we passed i directly we still would
+have no issues, because i would be passed by-value to func.
+which would retain at most a local copy. (and unless marked
+as mutable in the argument list, wouldn't be writable.)
+and if we pass a reference to i such that func could modify
+i directly, i still think it's okay, because i is a valid memory
+location, alive within the stack frame for the entire execution
+of func, by definition the body of the for loop encompases the
+entire call/return sequence for func, so unless it exist abnormally,
+we can expect to return to this point of execution. so i can be
+written to at any point within func, and if func calls a procedure
+which takes i by reference again, the same argument holds. we expect that
+the body of func itself encompases the call/return sequence for
+the inner call. and as such i is alive on the stack for the entire
+sequence.
+
+it is only when two conditions are broken that we are forced into
+allocating memory on the heap, when the lifetime of the closure in
+question outlives it's defining scope, and the closure itself
+contains a mutable free variable. (immutable variables can be handled by-value)
+this mutable free variable must now be allocated on the heap
+and a reference to this stored within the closure. i think it makes
+sense that if the defining context of the closure contains the mutable free
+variable, we capture it by value onto the heap, then when the closure
+attempts to write to this mutable value, it would be a separate mutable
+value from a closure that was created at a later point in execution.
+or would we -want- the closures to share the same exact memory?
+i guess if we bind a free variable that is itself a reference
+to some memory on the heap we can achieve those semantics,
+because the by-value copies of the reference would achieve
+the sharing across all instances, even though it is always
+handled in the assembly as a by-value copy into the heap.
+this does add another layer of indirection when accessing that
+value however.
+
+so a choice of, immutable by default makes sense here, as the
+default style will not run into the above issues. only when
+the programmer explicitly asks for it, will they have to pay
+the overhead. and with particular implementations we find no
+overhead for usual monotonic procedure application.
+
+
+
+
+----
