@@ -37,14 +37,32 @@ char* ToStringApplication(Application* app)
   left   = ToStringAst(app->lhs);
   right  = ToStringAst(app->rhs);
 
-  int sz = strlen(left) + strlen(right) + 4;
-  result = (char*)calloc(sz, sizeof(char));
+  if (app->lhs->kind == A_OBJ) // then it's the lambda literal directly,
+  {                            // and it looks like the argument is part
+                               // of the lambda's body when we print unless
+                               // we are explicit about where the lambda ends
+    int sz = strlen(left) + strlen(right) + 6;
+    result = (char*)calloc(sz, sizeof(char));
 
-  strkat(result, lparen, &ctx);
-  strkat(result, left,   &ctx);
-  strkat(result, spc,    &ctx);
-  strkat(result, right,  &ctx);
-  strkat(result, rparen, &ctx);
+    strkat(result, lparen, &ctx);
+    strkat(NULL,   lparen, &ctx);
+    strkat(NULL,   left,   &ctx);
+    strkat(NULL,   rparen, &ctx);
+    strkat(NULL,   spc,    &ctx);
+    strkat(NULL,   right,  &ctx);
+    strkat(NULL,   rparen, &ctx);
+  }
+  else
+  {
+    int sz = strlen(left) + strlen(right) + 4;
+    result = (char*)calloc(sz, sizeof(char));
+
+    strkat(result, lparen, &ctx);
+    strkat(NULL,   left,   &ctx);
+    strkat(NULL,   spc,    &ctx);
+    strkat(NULL,   right,  &ctx);
+    strkat(NULL,   rparen, &ctx);
+  }
   free(left);
   free(right);
   return result;
@@ -71,7 +89,7 @@ TypeJudgement GetypeApplication(Application* app, struct Environment* env)
     if (lhstype->kind == T_PROC)
     {
       ProcType *pt = &(lhstype->proc);
-      Type     *t1 = pt->lhs, *t2 = pt->rhs;
+      Type     *t1 = pt->lhs->obj.type.literal, *t2 = pt->rhs->obj.type.literal;
 
       TypeJudgement rhsjdgmt = Getype(app->rhs, env);
 
@@ -115,6 +133,7 @@ EvalJudgement EvaluateApplication(Application* app, Environment* env)
 
   // evaluate the application
 
+  // so, after much research, this is similar to a continuation.
   if (result.success == true)
     return Evaluate(result.term, env);
   else

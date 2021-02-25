@@ -24,7 +24,7 @@ typedef struct BinopPrecedenceTable
   int num_elements;
 } BinopPrecedenceTable;
 
-BinopPrecedenceTable* CreateBinopPrecedenceTable();
+BinopPrecedenceTable* CreateAstBinopPrecedenceTable();
 void                  DestroyBinopPrecedenceTable(BinopPrecedenceTable* BPtbl);
 BinopPrecAssoc* FindBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op);
 BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, int prec, Associativity assoc);

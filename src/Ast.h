@@ -196,7 +196,7 @@ typedef struct Ast
 // these cannot be represented as simply a
 // overload set, as Application, Assignment and Iteration
 // share the exact same parameter lists.
-// so do, CreateBind and CreateBinop
+// so do, CreateAstBind and CreateAstBinop
 // this might say something towards what semantics
 // we can give a type system built directly upon
 // C semantics. maybe we supply the constructor
@@ -204,24 +204,30 @@ typedef struct Ast
 // to switch over? OOP uses a Type record with a
 // pointer to the proper constructor procedure.
 // one of which is a vararg procedure.
-Ast* CreateVariable(InternedString id, Location* loc);
-Ast* CreateApplication(Ast* left, Ast* right, Location* loc);
-Ast* CreateAssignment(Ast* left, Ast* right, Location* loc);
-Ast* CreateBind(InternedString id, Ast* right, Location* loc);
-Ast* CreateBinop(InternedString op, Ast* left, Ast* right, Location* loc);
-Ast* CreateUnop(InternedString op, Ast* right, Location* loc);
-Ast* CreateConditional(Ast* condition, Ast* first, Ast* second, Location* loc);
-Ast* CreateIteration(Ast* condition, Ast* body, Location* loc);
-Ast* CreateNil(Location* loc);
-Ast* CreateInteger(int  value, Location* loc);
-Ast* CreateBoolean(bool value, Location* loc);
-Ast* CreateLambda(InternedString arg_id, Type* arg_type, Ast* body, struct SymbolTable* scope, Location* loc);
-Ast* CreateType(Type* type, Location* loc);
+Ast* CreateAstVariable(InternedString id, Location* loc);
+Ast* CreateAstApplication(Ast* left, Ast* right, Location* loc);
+Ast* CreateAstAssignment(Ast* left, Ast* right, Location* loc);
+Ast* CreateAstBind(InternedString id, Ast* right, Location* loc);
+Ast* CreateAstBinop(InternedString op, Ast* left, Ast* right, Location* loc);
+Ast* CreateAstUnop(InternedString op, Ast* right, Location* loc);
+Ast* CreateAstConditional(Ast* condition, Ast* first, Ast* second, Location* loc);
+Ast* CreateAstIteration(Ast* condition, Ast* body, Location* loc);
+Ast* CreateAstNil(Location* loc);
+Ast* CreateAstInteger(int  value, Location* loc);
+Ast* CreateAstBoolean(bool value, Location* loc);
+Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, struct SymbolTable* scope, Location* loc);
+Ast* CreateAstType(Type* type, Location* loc);
 
 // returns a reference to the location data
 // held within the member of the ast.
 // switching based upon the active member.
 Location* GetAstLocation(Ast* ast);
+
+// I don't know what to call this,
+// but it's for convienence to
+// pull the Type* out of an Ast
+// not to try and type the expression
+Type* GetLiteralTypePtr(Ast* ast);
 
 // this shall deallocate all memory associated
 // with the ast.

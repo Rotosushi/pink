@@ -372,18 +372,8 @@ bool is_primary(Token t)
     case T_INTEGER:  case T_TRUE: case T_FALSE:
     case T_NIL:   case T_IDENTIFIER: case T_IF:
     case T_WHILE: case T_LPAREN: case T_BSLASH:
-    case T_OPERATOR:
-      return true;
-    default:
-      return false;
-  }
-}
-
-bool is_type_primary(Token t)
-{
-  switch(t)
-  {
-    case T_TYPE_NIL: case T_TYPE_INT: case T_TYPE_BOOL:
+    case T_OPERATOR: case T_TYPE_INT:
+    case T_TYPE_NIL: case T_TYPE_BOOL:
       return true;
     default:
       return false;
@@ -408,16 +398,23 @@ ParseJudgement ParseTerm(Parser* p);
 ParseJudgement ParseAffix(Parser* p);
 ParseJudgement ParseApplication(Parser* p);
 ParseJudgement ParseAtom(Parser* p);
-ParseJudgement ParseType(Parser* p);
 ParseJudgement ParseConditional(Parser* p);
 ParseJudgement ParseIteration(Parser* p);
 ParseJudgement ParseLambda(Parser* p);
 ParseJudgement ParseUnop(Parser* p);
 ParseJudgement ParseInfix(Parser* p, ParseJudgement lhs, int min_prec);
 
+bool is_type_literal(Ast* ast)
+{
+  bool result = false;
+  if (ast->kind == A_OBJ)
+    if (ast->obj.kind == O_TYPE)
+      result = true;
+  return result;
+}
+
 /*
-affix := type
-       | application
+affix := application
        | application operator application
        | application "<-" affix
        // | application "." affix
@@ -433,6 +430,9 @@ ParseJudgement ParseAffix(Parser* p)
 
     if (lhsjdgmt.success == true)
     {
+      // parse statements which are composed
+      // of two terms separated by a symbol.
+
       if (curtok(p) == T_OPERATOR && is_binop(p, curtxt(p)))
       {
         lhsjdgmt = ParseInfix(p, lhsjdgmt, 0);
@@ -447,27 +447,57 @@ ParseJudgement ParseAffix(Parser* p)
 
         if (rhsjdgmt.success == true)
         {
-          Location    rhsloc       = curloc(p);
+          Location    rhsloc     = curloc(p);
           Location    assignloc;
           assignloc.first_line   = lhsloc.first_line;
           assignloc.first_column = lhsloc.first_column;
           assignloc.last_line    = rhsloc.first_line;
           assignloc.last_column  = rhsloc.first_column;
           lhsjdgmt.success       = true;
-          lhsjdgmt.term          = CreateAssignment(lhsjdgmt.term, rhsjdgmt.term, &assignloc);
-          return lhsjdgmt;
+          lhsjdgmt.term          = CreateAstAssignment(lhsjdgmt.term, rhsjdgmt.term, &assignloc);
+        }
+        else
+          return rhsjdgmt; // leaks lhsjdgmt.term
+      }
+      else if (curtok(p) == T_RARROW)
+      {
+        nextok(p); // eat '->'
+
+        ParseJudgement rhsjdgmt = ParseAffix(p);
+
+        if (rhsjdgmt.success == true)
+        {
+          Location    rhsloc     = curloc(p);
+          Location    typeloc;
+          typeloc.first_line   = lhsloc.first_line;
+          typeloc.first_column = lhsloc.first_column;
+          typeloc.last_line    = rhsloc.first_line;
+          typeloc.last_column  = rhsloc.first_column;
+
+          if (is_type_literal(lhsjdgmt.term) && is_type_literal(rhsjdgmt.term))
+          {
+
+            lhsjdgmt.success = true;
+            lhsjdgmt.term = CreateAstType(GetProcedureType(p->interned_types, lhsjdgmt.term, rhsjdgmt.term), &typeloc);
+          }
+          else
+          {
+            lhsjdgmt.success = false;
+            lhsjdgmt.error.loc = typeloc;
+            lhsjdgmt.error.dsc = "cannot create a type from non type literals";
+          }
         }
         else
           return rhsjdgmt; // leaks lhsjdgmt.term
       }
     }
   }
-  else if (is_type_primary(curtok(p)))
+  else
   {
-    lhsjdgmt = ParseType(p);
+    lhsjdgmt.success = false;
+    lhsjdgmt.error.loc = curloc(p);
+    lhsjdgmt.error.dsc = "expected primary term.";
   }
-
-
   return lhsjdgmt;
 }
 
@@ -503,7 +533,7 @@ ParseJudgement ParseAffix(Parser* p)
       we must parse it as
       (a - b) (c - d)
       so to apply unary operations within
-      a call expression, one must wrap
+      a call expression, one -must- wrap
       the operation within parenthesis.
 
 
@@ -528,8 +558,6 @@ ParseJudgement ParseAffix(Parser* p)
       [a - b]
       this is also valid
       [-a - -b]
-      as is
-      [-a - b]
       this means that when the programmer
       wants to apply an operation directly
       to the argument to a procedure, they
@@ -543,8 +571,8 @@ ParseJudgement ParseAffix(Parser* p)
        the grammar will parse it as an application.
     */
 /*
-application := atom
-             | atom application
+application := primary
+             | primary application
 */
 ParseJudgement ParseApplication(Parser* p)
 {
@@ -553,15 +581,18 @@ ParseJudgement ParseApplication(Parser* p)
 
   if (lhsjdgmt.success == true)
   {
+    // this first check makes total sense,
+    // either we see more application expression
+    // or we see an operator, but
     // why not check for the positive?
     // i.e. is_unop()?
     // because we want to give precedence to every
     // binop over any unop. to prevent unintuitive
-    // trees
+    // trees.
     while ((curtok(p) != T_OPERATOR && is_primary(curtok(p)))
         || (curtok(p) == T_OPERATOR && !is_binop(p, curtxt(p))))
     {
-      ParseJudgement rhsjdgmt = ParseAtom(p);
+      ParseJudgement rhsjdgmt = ParsePrimary(p);
 
       if (rhsjdgmt.success == true)
       {
@@ -573,27 +604,18 @@ ParseJudgement ParseApplication(Parser* p)
         apploc.last_column  = rhsloc.last_column;
 
         lhsjdgmt.success         = true;
-        lhsjdgmt.term            = CreateApplication(lhsjdgmt.term, rhsjdgmt.term, &apploc);
-        return lhsjdgmt; // (1)
+        lhsjdgmt.term            = CreateAstApplication(lhsjdgmt.term, rhsjdgmt.term, &apploc);
       }
       else
         return rhsjdgmt; // leaks lhsjdgmt.term
     }
-
-    return lhsjdgmt; // (2)
   }
-  else
-    return lhsjdgmt; // (3)
-
-  // (1, 2, 3) could all be removed and replaced with:
-  // return lhsjdgmt;
-  // right here, and i think the code would be less
-  // legible.
+  return lhsjdgmt;
 }
 
 
 /*
-atom := identifier
+primary := identifier
       | identifier := affix
       | nil
       | [0-9]+
@@ -605,7 +627,7 @@ atom := identifier
       | operator atom
       | '(' affix ')'
 */
-ParseJudgement ParseAtom(Parser* p)
+ParseJudgement ParsePrimary(Parser* p)
 {
   Location       lhsloc = curloc(p);
   ParseJudgement lhsjdgmt;
@@ -620,12 +642,24 @@ ParseJudgement ParseAtom(Parser* p)
       InternedString id = InternString(p->interned_ids, curtxt(p));
       nextok(p); // eat T_IDENTIFIER
 
+      // I can tell the future!
+      // T_COLONEQ is not long for this world!
+      // we do want to allow an optional type
+      // annotation between the Colon and the
+      // Eq here, for the astute programmer :)
+      // so we must modify the parser, and thus
+      // the lexer eventually to recognize the
+      // two symbols separately, and code within
+      // the getype for binding which double
+      // checks the correctness.
+      // it's exactly an extra constraint the
+      // programmer can add to the expression.
       if (curtok(p) == T_COLONEQ)
       {
         nextok(p); // eat T_COLONEQ
-        ParseJudgement rhsjdgmt = ParseAffix(p);
+        lhsjdgmt = ParseAffix(p);
 
-        if (rhsjdgmt.success == true)
+        if (lhsjdgmt.success == true)
         {
           Location  rhsloc    = curloc(p);
           Location  bndloc;
@@ -635,17 +669,15 @@ ParseJudgement ParseAtom(Parser* p)
           bndloc.last_column  = rhsloc.first_column;
 
           lhsjdgmt.success    = true;
-          lhsjdgmt.term       = CreateBind(id, rhsjdgmt.term, &bndloc);
-          return lhsjdgmt;
+          lhsjdgmt.term       = CreateAstBind(id, lhsjdgmt.term, &bndloc);
         }
         else
-          return rhsjdgmt;
+          return lhsjdgmt;
       }
       else
       {
         lhsjdgmt.success   = true;
-        lhsjdgmt.term      = CreateVariable(id, &lhsloc);
-        return lhsjdgmt;
+        lhsjdgmt.term      = CreateAstVariable(id, &lhsloc);
       }
       break;
     }
@@ -653,74 +685,98 @@ ParseJudgement ParseAtom(Parser* p)
     {
       nextok(p); // eat "nil"
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateNil(&lhsloc);
-      return lhsjdgmt;
+      lhsjdgmt.term    = CreateAstNil(&lhsloc);
+      break;
+    }
+    case T_TYPE_NIL:
+    {
+      nextok(p); // eat 'Nil'
+      lhsjdgmt.success = true;
+      lhsjdgmt.term    = CreateAstType(GetNilType(p->interned_types), &lhsloc);
       break;
     }
     case T_INTEGER:
     {
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateInteger(atoi(curtxt(p)), &lhsloc);
-      nextok(p); // eat "integer"
-      return lhsjdgmt;
+      lhsjdgmt.term    = CreateAstInteger(atoi(curtxt(p)), &lhsloc);
+      nextok(p); // eat "integer" -after- converting the text
+      break;
+    }
+    case T_TYPE_INT:
+    {
+      nextok(p); // eat 'Int'
+      lhsjdgmt.success = true;
+      lhsjdgmt.term    = CreateAstType(GetIntegerType(p->interned_types), &lhsloc);
       break;
     }
     case T_TRUE:
     {
       nextok(p); // eat "true"
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateBoolean(true, &lhsloc);
-      return lhsjdgmt;
+      lhsjdgmt.term    = CreateAstBoolean(true, &lhsloc);
       break;
     }
     case T_FALSE:
     {
       nextok(p); // eat "false"
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateBoolean(false, &lhsloc);
-      return lhsjdgmt;
+      lhsjdgmt.term    = CreateAstBoolean(false, &lhsloc);
+      break;
+    }
+    case T_TYPE_BOOL:
+    {
+      nextok(p); // eat 'Bool'
+      lhsjdgmt.success = true;
+      lhsjdgmt.term    = CreateAstType(GetBooleanType(p->interned_types), &lhsloc);
       break;
     }
     case T_BSLASH:
     {
       lhsjdgmt = ParseLambda(p);
-      return lhsjdgmt;
       break;
     }
     case T_IF:
     {
       lhsjdgmt = ParseConditional(p);
-      return lhsjdgmt;
       break;
     }
     case T_WHILE:
     {
       lhsjdgmt = ParseIteration(p);
-      return lhsjdgmt;
       break;
     }
     case T_LPAREN:
     {
-      nextok(p);
+      nextok(p); // eat '('
 
-      lhsjdgmt = ParseAffix(p);
+      if (is_primary(curtok(p)))
+      {
+        lhsjdgmt = ParseAffix(p);
+      }
+      else
+      {
+        lhsjdgmt.success   = false;
+        lhsjdgmt.error.loc = curloc(p);
+        lhsjdgmt.error.dsc = "unexpected token following '(', expected primary term.";
+      }
 
-      if (lhsjdgmt.success == true && curtok(p) != T_RPAREN)
+      if ((lhsjdgmt.success == true) && (curtok(p) == T_RPAREN))
+      {
+          nextok(p); // eat ')'
+      }
+      else if ((lhsjdgmt.success == true) && (curtok(p) != T_RPAREN))
       {
         DestroyAst(lhsjdgmt.term);
         lhsjdgmt.success   = false;
         lhsjdgmt.error.dsc = "unexpected missing ')'";
         lhsjdgmt.error.loc = curloc(p);
       }
-
-      return lhsjdgmt;
       break;
     }
 
     case T_OPERATOR:
     {
       lhsjdgmt = ParseUnop(p);
-      return lhsjdgmt;
       break;
     }
 
@@ -729,127 +785,10 @@ ParseJudgement ParseAtom(Parser* p)
       lhsjdgmt.success   = false;
       lhsjdgmt.error.dsc = "unknown Atom token found";
       lhsjdgmt.error.loc = curloc(p);
-      return lhsjdgmt;
-    }
-  }
-}
-
-
-TypeJudgement ParseTypeComposite(Parser* p);
-/*
-type := "Nil"
-      | "Int"
-      | "Bool"
-    //  | "Poly"
-    //  | "Ref" type
-      | type -> type
-*/
-TypeJudgement ParseTypeAtom(Parser* p)
-{
-  Location       lhsloc = curloc(p);
-  TypeJudgement  result;
-  switch (curtok(p))
-  {
-    case T_TYPE_INT:
-    {
-      nextok(p);
-      result.success = true;
-      result.type    = GetIntegerType(p->interned_types);
-      break;
-    }
-    case T_TYPE_NIL:
-    {
-      nextok(p);
-      result.success = true;
-      result.type    = GetNilType(p->interned_types);
-      break;
-    }
-
-    case T_TYPE_BOOL:
-    {
-      nextok(p);
-      result.success = true;
-      result.type    = GetBooleanType(p->interned_types);
-      break;
-    }
-
-    case T_LPAREN:
-    {
-      nextok(p);
-      result = ParseTypeComposite(p);
-
-      if (curtok(p) != T_RPAREN && result.success == true)
-      {
-        result.success = false;
-        DestroyType(result.type);
-        result.error.dsc = "unexpected missing ')'";
-        result.error.loc = curloc(p);
-      }
-      nextok(p);
-    }
-
-    default:
-    {
-      result.success   = false;
-      result.error.dsc = "unknown Scalar Type token found";
-      result.error.loc = lhsloc;
       break;
     }
   }
-  return result;
-}
-
-TypeJudgement ParseTypeComposite(Parser* p)
-{
-  Location      lhsloc   = curloc(p);
-  TypeJudgement lhsjdgmt = ParseTypeAtom(p);
-
-  if (lhsjdgmt.success == true)
-  {
-    if (curtok(p) == T_RARROW)
-    {
-      nextok(p);
-      TypeJudgement rhsjdgmt = ParseTypeComposite(p);
-
-      if (rhsjdgmt.success == true)
-      {
-        lhsjdgmt.success = true;
-        lhsjdgmt.type = GetProcedureType(p->interned_types, lhsjdgmt.type, rhsjdgmt.type);
-        return lhsjdgmt;
-      }
-      else
-        return rhsjdgmt; // leaks lhsjdgmt.term
-    }
-    else
-      return lhsjdgmt;
-  }
-  else
-    return lhsjdgmt;
-}
-
-ParseJudgement ParseType(Parser* p)
-{
-  ParseJudgement result;
-  Location       lhsloc        = curloc(p);
-  TypeJudgement  typejdgmt     = ParseTypeComposite(p);
-  Location       rhsloc        = curloc(p);
-  Location       typeloc;
-  typeloc.first_line   = lhsloc.first_line;
-  typeloc.first_column = lhsloc.first_column;
-  typeloc.last_line    = rhsloc.last_line;
-  typeloc.last_column  = rhsloc.last_column;
-
-  if (typejdgmt.success == true)
-  {
-    result.success = true;
-    result.term    = CreateType(typejdgmt.type, &typeloc);
-  }
-  else
-  {
-    result.success = false;
-    result.error   = typejdgmt.error;
-  }
-  return result;
+  return lhsjdgmt;
 }
 
 /*
@@ -902,7 +841,7 @@ ParseJudgement ParseConditional(Parser* p)
               cndloc.last_column  = rhsloc.first_column;
 
               result.success = true;
-              result.term = CreateConditional(condjdgmt.term, thenjdgmt.term, elsejdgmt.term, &cndloc);
+              result.term = CreateAstConditional(condjdgmt.term, thenjdgmt.term, elsejdgmt.term, &cndloc);
             }
             else
               result = elsejdgmt;
@@ -984,7 +923,7 @@ ParseJudgement ParseIteration(Parser* p)
   itrloc.last_column  = rhsloc.first_column;
 
   result.success = true;
-  result.term    = CreateIteration(condjdgmt.term, bodyjdgmt.term, &itrloc);
+  result.term    = CreateAstIteration(condjdgmt.term, bodyjdgmt.term, &itrloc);
   return result;
 }
 
@@ -1024,6 +963,7 @@ ParseJudgement ParseLambda(Parser* p)
   // until we add PolyLambda's, which
   // take over the idea of writing in an
   // annotation free style.
+  // (bindings are already annotation free baby B^) )
   if (curtok(p) != T_COLON)
   {
     result.success   = false;
@@ -1034,12 +974,18 @@ ParseJudgement ParseLambda(Parser* p)
 
   nextok(p); // eat ':'
 
-  TypeJudgement typejdgmt = ParseTypeComposite(p);
+  ParseJudgement typejdgmt = ParseAffix(p);
 
   if (typejdgmt.success == false)
   {
+    result = typejdgmt;
+    return result;
+  }
+  else if (!is_type_literal(typejdgmt.term))
+  {
     result.success = false;
-    result.error   = typejdgmt.error;
+    result.error.loc = *GetAstLocation(typejdgmt.term);
+    result.error.dsc = "missing type annotation";
     return result;
   }
 
@@ -1067,6 +1013,8 @@ ParseJudgement ParseLambda(Parser* p)
   // we can handle loops and conditionals having
   // their own scope, they hold a scope, and we
   // connect it to the outer scope.
+  // this is maintaining the static link between
+  // all living activation records essentially.
   SymbolTable* lambda_scope = CreateSymbolTable(p->outer_scope);
   SymbolTable* last_scope   = p->outer_scope;
   p->outer_scope            = lambda_scope;
@@ -1085,7 +1033,7 @@ ParseJudgement ParseLambda(Parser* p)
   lamloc.last_column  = rhsloc.first_column;
 
   result.success      = true;
-  result.term         = CreateLambda(id, typejdgmt.type, bodyjdgmt.term, lambda_scope, &lamloc);
+  result.term         = CreateAstLambda(id, typejdgmt.term, bodyjdgmt.term, lambda_scope, &lamloc);
   return result;
 }
 
@@ -1129,7 +1077,7 @@ ParseJudgement ParseUnop(Parser* p)
   InternedString op      = InternString(p->interned_ops, optxt);
 
   result.success         = true;
-  result.term            = CreateUnop(op, rhsjdgmt.term, &uoploc);
+  result.term            = CreateAstUnop(op, rhsjdgmt.term, &uoploc);
   return result;
 }
 
@@ -1206,7 +1154,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
       while((Irop = InternString(p->interned_ops, curtxt(p)))
          && (lookahead = FindBinopPrecAssoc(p->precedence_table, Irop))
          && (lookahead->precedence > operator->precedence
-         || (lookahead->precedence == operator->precedence && lookahead->associativity == A_RIGHT)))
+           || (lookahead->precedence == operator->precedence && lookahead->associativity == A_RIGHT)))
       {
         right = ParseInfix(p, right, lookahead->precedence);
 
@@ -1224,7 +1172,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
     boploc.last_column  = rhsloc.last_column;
 
     left.success    = true;
-    left.term       = CreateBinop(Iop, left.term, right.term, &boploc);
+    left.term       = CreateAstBinop(Iop, left.term, right.term, &boploc);
   }
   return left;
 }

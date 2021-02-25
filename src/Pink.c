@@ -58,8 +58,8 @@ int main (int argc, char** argv)
   StringInterner*       interned_ops     = CreateStringInterner();
   TypeInterner*         interned_types   = CreateTypeInterner();
   SymbolTable*          global_scope     = CreateSymbolTable((SymbolTable*)NULL);
-  BinopPrecedenceTable* precedence_table = CreateBinopPrecedenceTable();
-  BinopTable*           binops           = CreateBinopTable();
+  BinopPrecedenceTable* precedence_table = CreateAstBinopPrecedenceTable();
+  BinopTable*           binops           = CreateAstBinopTable();
   UnopTable*            unops            = CreateUnopTable();
   Parser*               parser           = CreateParser(global_scope, interned_ids, interned_ops, interned_types, precedence_table, binops, unops);
   Environment*   environment             = (Environment*)malloc(sizeof(Environment));

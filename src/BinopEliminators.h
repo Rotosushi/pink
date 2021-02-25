@@ -28,7 +28,7 @@ typedef struct BinopEliminatorList
   int              size;
 } BinopEliminatorList;
 
-BinopEliminatorList* CreateBinopEliminatorList();
+BinopEliminatorList* CreateAstBinopEliminatorList();
 void                 DestroyBinopEliminatorList(BinopEliminatorList* BElist);
 BinopEliminator*     InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, struct Type *ltype, struct Type *rtype, struct Type *restype, PrimitiveBinopEliminator PrimElim);
 //

@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Ast.h"
 #include "Type.h"
 #include "Utilities.h"
 #include "ProcType.h"
 
-void InitializeProcType(ProcType* proc, struct Type* left, struct Type* right)
+void InitializeProcType(ProcType* proc, struct Ast* left, struct Ast* right)
 {
   proc->lhs = left;
   proc->rhs = right;
@@ -13,21 +14,30 @@ void InitializeProcType(ProcType* proc, struct Type* left, struct Type* right)
 
 void DestroyProcType(ProcType* proc)
 {
-  // we don't wan't this to dispatch
-  // to scalar types, as the exact
-  // same scalar types are used as
-  // the values of all type expressions.
-  if (proc->lhs->kind != T_SCALAR)
-    DestroyType(proc->lhs);
-
-  if (proc->rhs->kind != T_SCALAR)
-    DestroyType(proc->rhs);
+  DestroyAst(proc->lhs);
+  DestroyAst(proc->rhs);
 }
 
 void CloneProcType(ProcType* destination, ProcType* source)
 {
-  CloneType(destination->lhs, source->lhs);
-  CloneType(destination->rhs, source->rhs);
+  CloneAst(&(destination->lhs), source->lhs);
+  CloneAst(&(destination->rhs), source->rhs);
+}
+
+bool is_proc_type(Ast* ast)
+{
+  bool result = false;
+  if (ast->kind == A_OBJ)
+  {
+    if (ast->obj.kind == O_TYPE)
+    {
+      if (ast->obj.type.literal->kind == T_PROC)
+      {
+        result = true;
+      }
+    }
+  }
+  return result;
 }
 
 char* ToStringProcType(ProcType* proc)
@@ -37,10 +47,10 @@ char* ToStringProcType(ProcType* proc)
   rarrow = " -> "; // 4
   lprn   = "(";    // 1
   rprn   = ")";    // 1
-  left   = ToStringType(proc->lhs);
-  right  = ToStringType(proc->rhs);
+  left   = ToStringAst(proc->lhs);
+  right  = ToStringAst(proc->rhs);
 
-  if (proc->lhs->kind == T_PROC)
+  if (is_proc_type(proc->lhs))
   {
     // surround the lhs with parenthesis
     // to denote the function type.
@@ -68,10 +78,26 @@ char* ToStringProcType(ProcType* proc)
   return result;
 }
 
+Type* get_type_ptr(Ast* ast)
+{
+  Type* result = NULL;
+  if (ast->kind == A_OBJ)
+  {
+    if (ast->obj.kind == O_TYPE)
+    {
+      result = ast->obj.type.literal;
+    }
+  }
+  return result;
+}
+
 bool EqualProcTypes(ProcType* t1, ProcType* t2)
 {
   bool result = false;
-  Type *t1ltype = t1->lhs, *t1rtype = t1->rhs, *t2ltype = t2->lhs, *t2rtype = t2->rhs;
-  result = EqualTypes(t1ltype, t2ltype) || EqualTypes(t1rtype, t2rtype);
+  Type *t1lhs = get_type_ptr(t1->lhs), *t1rhs = get_type_ptr(t1->rhs);
+  Type *t2lhs = get_type_ptr(t2->lhs), *t2rhs = get_type_ptr(t2->rhs);
+
+  if (t1lhs && t1rhs && t2lhs && t2rhs)
+    result = EqualTypes(t1lhs, t2lhs) && EqualTypes(t1rhs, t2rhs);
   return result;
 }

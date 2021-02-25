@@ -10,7 +10,7 @@
 #include "SymbolTable.h"
 #include "Lambda.h"
 
-void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Type* arg_type, struct Ast* body, struct SymbolTable* scope, Location* loc)
+void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* scope, Location* loc)
 {
   lambda->loc      = *loc;
   lambda->arg_id   = arg_id;
@@ -29,10 +29,9 @@ void CloneLambda(Lambda* destination, Lambda* source)
 {
   destination->loc      = source->loc;
   destination->arg_id   = source->arg_id;
-  destination->arg_type = source->arg_type;
 
+  CloneAst(&(destination->arg_type), source->arg_type);
   CloneAst(&(destination->body), source->body);
-
   CloneSymbolTable(&(destination->scope), source->scope);
 }
 
@@ -43,7 +42,7 @@ char* ToStringLambda(Lambda* lam)
   bslsh    = "\\"; // 1
   cln      = ": "; // 2
   eqrarrow = " => "; // 4
-  argtype  = ToStringType(lam->arg_type);
+  argtype  = ToStringAst(lam->arg_type);
   body     = ToStringAst(lam->body);
 
 
@@ -68,8 +67,9 @@ char* ToStringLambda(Lambda* lam)
 TypeJudgement GetypeLambda(Lambda* lam, Environment* env)
 {
   TypeJudgement result;
+  Ast* dummy_binding = NULL;
 
-  Ast* type_literal = CreateType(lam->arg_type, &(lam->loc));
+  CloneAst(&(dummy_binding), lam->arg_type);
 
   SymbolTable* last_scope = env->outer_scope; // when we enter the body
                                         // of the lambda we also
@@ -79,7 +79,7 @@ TypeJudgement GetypeLambda(Lambda* lam, Environment* env)
                                         // as the bindings within
                                         // the current scope.
 
-  bind(env->outer_scope, lam->arg_id, type_literal); // the symbol table currently
+  bind(env->outer_scope, lam->arg_id, dummy_binding); // the symbol table currently
                                                // takes ownership of the Ast
                                                // tree's that it binds.
 
@@ -95,7 +95,7 @@ TypeJudgement GetypeLambda(Lambda* lam, Environment* env)
   if (bodyjdgmt.success == true)
   {
     result.success = true;
-    result.type    = GetProcedureType(env->interned_types, lam->arg_type, bodyjdgmt.type);
+    result.type    = GetProcedureType(env->interned_types, lam->arg_type, CreateAstType(bodyjdgmt.type, GetAstLocation(lam->body)));
   }
   else
     result = bodyjdgmt;

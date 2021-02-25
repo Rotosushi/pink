@@ -32,7 +32,7 @@ Ast* BinopPlusAddInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left + right, GetAstLocation(lval));
+  Ast* ast = CreateAstInteger(left + right, GetAstLocation(lval));
   return ast;
 }
 
@@ -58,7 +58,7 @@ Ast* BinopHyphenMinusInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left - right, GetAstLocation(lval));
+  Ast* ast = CreateAstInteger(left - right, GetAstLocation(lval));
   return ast;
 }
 
@@ -84,7 +84,7 @@ Ast* BinopStarMultiplyInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left * right, GetAstLocation(lval));
+  Ast* ast = CreateAstInteger(left * right, GetAstLocation(lval));
   return ast;
 }
 
@@ -110,7 +110,7 @@ Ast* BinopFslashDivideInteger(Ast* lval, Ast* rval)
 
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateInteger(left / right, GetAstLocation(lval));
+  Ast* ast = CreateAstInteger(left / right, GetAstLocation(lval));
   return ast;
 }
 
@@ -125,7 +125,7 @@ Ast* UnopHyphenNegateInteger(Ast* rval)
   if (rval->obj.kind != O_INT)
     FatalError("Cannot Negate non-Integer Object", __FILE__, __LINE__);
 
-  Ast* ast = CreateInteger(-(rval->obj.integer.value), GetAstLocation(rval));
+  Ast* ast = CreateAstInteger(-(rval->obj.integer.value), GetAstLocation(rval));
   return ast;
 }
 
@@ -141,7 +141,7 @@ Ast* UnopBangNegateBoolean(Ast* rval)
     FatalError("Cannot Negate non-Boolean Object", __FILE__, __LINE__);
 
 
-  Ast* ast = CreateBoolean(!(rval->obj.boolean.value), GetAstLocation(rval));
+  Ast* ast = CreateAstBoolean(!(rval->obj.boolean.value), GetAstLocation(rval));
   return ast;
 }
 
@@ -167,25 +167,25 @@ void RegisterPrimitiveBinops(Environment* env)
   Type* integerType = GetIntegerType(env->interned_types);
 
   InternedString plusOp = InternString(env->interned_ops, "+");
-  BinopEliminatorList* plusBinopElims = CreateBinopEliminatorList();
+  BinopEliminatorList* plusBinopElims = CreateAstBinopEliminatorList();
   InsertPrimitiveBinopEliminator(plusBinopElims, integerType, integerType, integerType, BinopPlusAddInteger);
   InsertBinopPrecAssoc(env->precedence_table, plusOp, 5, A_LEFT);
   InsertBinop(env->binops, plusOp, plusBinopElims);
 
   InternedString hyphenOp = InternString(env->interned_ops, "-");
-  BinopEliminatorList* hyphenBinopElims = CreateBinopEliminatorList();
+  BinopEliminatorList* hyphenBinopElims = CreateAstBinopEliminatorList();
   InsertPrimitiveBinopEliminator(hyphenBinopElims, integerType, integerType, integerType, BinopHyphenMinusInteger);
   InsertBinopPrecAssoc(env->precedence_table, hyphenOp, 5, A_LEFT);
   InsertBinop(env->binops, hyphenOp, hyphenBinopElims);
 
   InternedString starOp = InternString(env->interned_ops, "*");
-  BinopEliminatorList* starBinopElims = CreateBinopEliminatorList();
+  BinopEliminatorList* starBinopElims = CreateAstBinopEliminatorList();
   InsertPrimitiveBinopEliminator(starBinopElims, integerType, integerType, integerType, BinopStarMultiplyInteger);
   InsertBinopPrecAssoc(env->precedence_table, starOp, 6, A_LEFT);
   InsertBinop(env->binops, starOp, starBinopElims);
 
   InternedString fslashOp = InternString(env->interned_ops, "/");
-  BinopEliminatorList* fslashBinopElims = CreateBinopEliminatorList();
+  BinopEliminatorList* fslashBinopElims = CreateAstBinopEliminatorList();
   InsertPrimitiveBinopEliminator(fslashBinopElims, integerType, integerType, integerType, BinopFslashDivideInteger);
   InsertBinopPrecAssoc(env->precedence_table, fslashOp, 6, A_LEFT);
   InsertBinop(env->binops, fslashOp, fslashBinopElims);

@@ -1,6 +1,7 @@
 #ifndef TYPEINTERNER_H
 #define TYPEINTERNER_H
 
+struct Ast;
 struct Type;
 
 typedef struct TLelem
@@ -54,7 +55,7 @@ void          DestroyTypeInterner(TypeInterner* Ity);
 struct Type* GetNilType(TypeInterner* Ity);
 struct Type* GetIntegerType(TypeInterner* Ity);
 struct Type* GetBooleanType(TypeInterner* Ity);
-struct Type* GetProcedureType(TypeInterner* Ity, struct Type* l, struct Type* r);
+struct Type* GetProcedureType(TypeInterner* Ity, struct Ast* l, struct Ast* r);
 
 
 #endif // !TYPEINTERNER_H

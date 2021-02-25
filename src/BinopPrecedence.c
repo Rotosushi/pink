@@ -7,7 +7,7 @@
 
 #define BPATABLE_DEFAULT_NUM_BUCKETS 10
 
-BinopPrecedenceTable* CreateBinopPrecedenceTable()
+BinopPrecedenceTable* CreateAstBinopPrecedenceTable()
 {
   BinopPrecedenceTable* result = (BinopPrecedenceTable*)malloc(sizeof(BinopPrecedenceTable));
   result->table                = (BPElem**)malloc(sizeof(BPElem*) * BPATABLE_DEFAULT_NUM_BUCKETS);

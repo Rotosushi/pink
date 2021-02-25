@@ -1,5 +1,5 @@
 /* pointer arithmetic is not black magic!
-// 1 number per char, regardless of the
+// 1 number per char/byte, regardless of the
 // upper bound, the bytes between cursor
 // (a.k.a. the end of the token.) and
 // token (a.k.a. the beginning of the token)
@@ -65,33 +65,34 @@
 // size two bytes, then to access the third member means accessing
 // the two bytes immediately following the first four bytes of the structure.
 
-notice how sizeof just sort of pops out of this as the exact same 
-recursive traversal of the tree like type structure until we 
-reach a known set of primitive types which are all represented 
-by a integer size value in terms of how many chars/bytes it takes 
-to store the structure.
+notice how sizeof just sort of pops out of this as the exact same
+recursive traversal of the tree like type structure until we
+reach a known set of primitive types which are all represented
+by a integer size value in terms of how many chars/bytes it takes
+to store the structure. building up by summing sum types, and by
+dropping all but the largest size for product types.
 
 also also,
 sum types sizes are the sum of all of their members,
 	because they hold them all simultaneously.
 	in a sequence, one after another.
 product types sizes are the size of the largest member
-	and we simply treat the same segment of memory 
-	as different types. however, we are going to be 
-	nicer than c in enforcing an enumeration value 
-	which stores which member type is currently 
+	and we simply treat the same segment of memory
+	as different types. however, we are going to be
+	nicer than c in enforcing an enumeration value
+	which stores which member type is currently
 	active within the product/union
 
-with the slight caveat that since the machine is word addressable 
-instead of just being able to create a single byte sized structure variable and then 
-another single byte sized structure variable where both are stored directly adjacent 
-to one another, to be exact a whole word is reserved for a byte sized variable 
+with the slight caveat that since the machine is word addressable
+instead of just being able to create a single byte sized structure variable and then
+another single byte sized structure variable where both are stored directly adjacent
+to one another, to be exact a whole word is reserved for a byte sized variable
 because there is no other valid way of reaching the variable within the machine.
 (at least as far as i'm aware, valid x86 instructions have to be
-word aligned (a multiple of four, or two in some cases), and pointers 
-do as well. so some amount of padding must be added to structures to 
-bring their size up to a multiple of four, this is why it can be hard 
-to tell exactly how big some structure type will be when the c program 
+word aligned (a multiple of four, or two in some cases), and pointers
+do as well. so some amount of padding must be added to structures to
+bring their size up to a multiple of four, this is why it can be hard
+to tell exactly how big some structure type will be when the c program
 has been compiled.)
 
 */

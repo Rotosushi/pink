@@ -5,7 +5,7 @@
 #include "Type.h"
 #include "BinopEliminators.h"
 
-BinopEliminatorList* CreateBinopEliminatorList()
+BinopEliminatorList* CreateAstBinopEliminatorList()
 {
   BinopEliminatorList* result = (BinopEliminatorList*)malloc(sizeof(BinopEliminatorList));
   result->list = NULL;

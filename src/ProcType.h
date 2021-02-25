@@ -1,15 +1,15 @@
 #ifndef PROCTYPE_H
 #define PROCTYPE_H
 
-struct Type;
+struct Ast;
 
 typedef struct ProcType
 {
-  struct Type* lhs;
-  struct Type* rhs;
+  struct Ast* lhs;
+  struct Ast* rhs;
 } ProcType;
 
-void InitializeProcType(ProcType* proc, struct Type* left, struct Type* right);
+void InitializeProcType(ProcType* proc, struct Ast* left, struct Ast* right);
 
 void DestroyProcType(ProcType* proc);
 

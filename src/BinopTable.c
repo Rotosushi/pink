@@ -8,7 +8,7 @@
 
 #define BOPTABLE_DEFAULT_NUM_BUCKETS 10
 
-BinopTable* CreateBinopTable()
+BinopTable* CreateAstBinopTable()
 {
   BinopTable* result   = (BinopTable*)malloc(sizeof(BinopTable));
   result->table        = (BTElem**)malloc(sizeof(BTElem*) * BOPTABLE_DEFAULT_NUM_BUCKETS);

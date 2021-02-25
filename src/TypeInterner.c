@@ -2,6 +2,7 @@
 
 #include "ScalarType.h"
 #include "ProcType.h"
+#include "Ast.h"
 #include "Type.h"
 #include "TypeInterner.h"
 
@@ -84,7 +85,7 @@ Type* GetBooleanType(TypeInterner* Ity)
 // the more unique procedure types are defined.
 // however it also seems like a complete solution,
 // so this is absolutely a place for optimization.
-Type* GetProcedureType(TypeInterner* Ity, Type* l, Type* r)
+Type* GetProcedureType(TypeInterner* Ity, Ast* l, Ast* r)
 {
   if (Ity == NULL || l == NULL || r == NULL)
     return NULL;

@@ -22,7 +22,7 @@ typedef struct BinopTable
   int num_elements;
 } BinopTable;
 
-BinopTable* CreateBinopTable();
+BinopTable* CreateAstBinopTable();
 void        DestroyBinopTable(BinopTable* BOPTable);
 BinopEliminatorList* InsertBinop(BinopTable* BOPTable, InternedString op, BinopEliminatorList* BEList);
 BinopEliminatorList* FindBinop(BinopTable* BOPTable, InternedString op);

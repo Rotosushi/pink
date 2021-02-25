@@ -16,7 +16,7 @@
 #include "Type.h"
 #include "Ast.h"
 
-Ast* CreateVariable(InternedString id, Location* loc)
+Ast* CreateAstVariable(InternedString id, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_VAR;
@@ -24,7 +24,7 @@ Ast* CreateVariable(InternedString id, Location* loc)
   return ast;
 }
 
-Ast* CreateApplication(Ast* left, Ast* right, Location* loc)
+Ast* CreateAstApplication(Ast* left, Ast* right, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_APP;
@@ -32,7 +32,7 @@ Ast* CreateApplication(Ast* left, Ast* right, Location* loc)
   return ast;
 }
 
-Ast* CreateAssignment(Ast* left, Ast* right, Location* loc)
+Ast* CreateAstAssignment(Ast* left, Ast* right, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_ASS;
@@ -40,7 +40,7 @@ Ast* CreateAssignment(Ast* left, Ast* right, Location* loc)
   return ast;
 }
 
-Ast* CreateBind(InternedString id, Ast* right, Location* loc)
+Ast* CreateAstBind(InternedString id, Ast* right, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_BND;
@@ -48,7 +48,7 @@ Ast* CreateBind(InternedString id, Ast* right, Location* loc)
   return ast;
 }
 
-Ast* CreateBinop(InternedString op, Ast* left, Ast* right, Location* loc)
+Ast* CreateAstBinop(InternedString op, Ast* left, Ast* right, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_BOP;
@@ -56,7 +56,7 @@ Ast* CreateBinop(InternedString op, Ast* left, Ast* right, Location* loc)
   return ast;
 }
 
-Ast* CreateUnop(InternedString op, Ast* right, Location* loc)
+Ast* CreateAstUnop(InternedString op, Ast* right, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_UOP;
@@ -64,7 +64,7 @@ Ast* CreateUnop(InternedString op, Ast* right, Location* loc)
   return ast;
 }
 
-Ast* CreateConditional(Ast* condition, Ast* first, Ast* second, Location* loc)
+Ast* CreateAstConditional(Ast* condition, Ast* first, Ast* second, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_CND;
@@ -72,7 +72,7 @@ Ast* CreateConditional(Ast* condition, Ast* first, Ast* second, Location* loc)
   return ast;
 }
 
-Ast* CreateIteration(Ast* condition, Ast* body, Location* loc)
+Ast* CreateAstIteration(Ast* condition, Ast* body, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_ITR;
@@ -80,46 +80,46 @@ Ast* CreateIteration(Ast* condition, Ast* body, Location* loc)
   return ast;
 }
 
-Ast* CreateNil(Location* loc)
+Ast* CreateAstNil(Location* loc)
 {
-  Ast* ast           = (Ast*)malloc(sizeof(Ast));
-  ast->kind          = A_OBJ;
-  ast->obj.kind      = O_NIL;
+  Ast* ast      = (Ast*)malloc(sizeof(Ast));
+  ast->kind     = A_OBJ;
+  ast->obj.kind = O_NIL;
   InitializeNil(&(ast->obj.nil), loc);
   return ast;
 }
 
-Ast* CreateInteger(int value, Location* loc)
+Ast* CreateAstInteger(int value, Location* loc)
 {
-  Ast* ast               = (Ast*)malloc(sizeof(Ast));
-  ast->kind              = A_OBJ;
-  ast->obj.kind          = O_INT;
+  Ast* ast      = (Ast*)malloc(sizeof(Ast));
+  ast->kind     = A_OBJ;
+  ast->obj.kind = O_INT;
   InitializeInteger(&(ast->obj.integer), value, loc);
   return ast;
 }
 
-Ast* CreateBoolean(bool value, Location* loc)
+Ast* CreateAstBoolean(bool value, Location* loc)
 {
-  Ast* ast               = (Ast*)malloc(sizeof(Ast));
-  ast->kind              = A_OBJ;
-  ast->obj.kind          = O_BOOL;
+  Ast* ast      = (Ast*)malloc(sizeof(Ast));
+  ast->kind     = A_OBJ;
+  ast->obj.kind = O_BOOL;
   InitializeBoolean(&(ast->obj.boolean), value, loc);
   return ast;
 }
 
-Ast* CreateLambda(InternedString arg_id, Type* arg_type, Ast* body, SymbolTable* scope, Location* loc)
+Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, SymbolTable* scope, Location* loc)
 {
-  Ast* ast = (Ast*)malloc(sizeof(Ast));
-  ast->kind = A_OBJ;
+  Ast* ast      = (Ast*)malloc(sizeof(Ast));
+  ast->kind     = A_OBJ;
   ast->obj.kind = O_LAMB;
   InitializeLambda(&(ast->obj.lambda), arg_id, arg_type, body, scope, loc);
   return ast;
 }
 
-Ast* CreateType(Type* type, Location* loc)
+Ast* CreateAstType(Type* type, Location* loc)
 {
-  Ast* ast  = (Ast*)malloc(sizeof(Ast));
-  ast->kind = A_OBJ;
+  Ast* ast      = (Ast*)malloc(sizeof(Ast));
+  ast->kind     = A_OBJ;
   ast->obj.kind = O_TYPE;
   InitializeTypeLiteral(&(ast->obj.type), type, loc);
   return ast;
