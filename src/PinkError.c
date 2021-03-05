@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "Location.h"
+#include "Utilities.h"
 #include "PinkError.h"
 
 /*
@@ -21,10 +22,10 @@ void PrintError(FILE* out, PinkError* perr, char* errtxt)
     FatalError("NULL erroroneous text", __FILE__, __LINE__);
   // this procedure really only makes sense if
   // the errtxt doesn't itself contain a newline
-  // but i don't wuite know how to handle that,
+  // but i don't really know how to handle that,
   // and this is already fancyer than the bare minimum,
   // so handling that is left for the future reader of
-  // this comment :)
+  // this comment :) (you know, future me, that badass girl! :)
   // output:
   // some-line-of-input-text-which-failed
   // -------------^^^^^------------------
@@ -38,22 +39,22 @@ void PrintError(FILE* out, PinkError* perr, char* errtxt)
   int txtlen = strlen(errtxt);
   int length = (txtlen * 2) + strlen(perr->dsc) + 5;
 
-  char* restxt = (char*)calloc(sizeof(char), (length + 1));
+  char* restxt = (char*)calloc(sizeof(char), (length + 1)), *ctx;
 
-  strcat(restxt, errtxt);
-  strcat(restxt, "\n");
+  strkat(restxt, errtxt, &ctx);
+  strkat(restxt, "\n",   &ctx);
   for (int i = 0; i < txtlen; i++)
   {
     if (i < perr->loc.first_column)
-      strcat(restxt, "-");
+      strkat(restxt, "-", &ctx);
     else if (i > perr->loc.last_column)
-      strcat(restxt, "-");
+      strkat(restxt, "-", &ctx);
     else
-      strcat(restxt, "^");
+      strkat(restxt, "^", &ctx);
   }
-  strcat(restxt, "\n");
-  strcat(restxt, perr->dsc);
-  strcat(restxt, "\n");
+  strkat(restxt, "\n",      &ctx);
+  strkat(restxt, perr->dsc, &ctx);
+  strkat(restxt, "\n",      &ctx);
 
   fprintf(out, "%s", restxt);
 }

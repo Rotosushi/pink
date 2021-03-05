@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "Environment.h"
 #include "SymbolTable.h"
 #include "Variable.h"
@@ -123,6 +123,61 @@ Ast* CreateAstType(Type* type, Location* loc)
   ast->obj.kind = O_TYPE;
   InitializeTypeLiteral(&(ast->obj.type), type, loc);
   return ast;
+}
+
+Judgement Assign(Ast* dest, Ast* source)
+{
+  if (!left || !right)
+    FatalError("Bad Term Pointer(s).", __FILE__, __LINE__);
+
+    if (left->kind != A_OBJ)
+    {
+      result.success   = false;
+      result.error.loc = *GetAstLocation(left);
+      result.error.dsc = "Left term is not an Object! Cannot assign";
+      return result;
+    }
+
+    if (right->kind != A_OBJ)
+    {
+      result.success   = false;
+      result.error.loc = *GetAstLocation(right);
+      result.error.dsc = "Right term is not an Object! Cannot assign";
+      return result;
+    }
+
+    result = AssignObject(&(left->obj), &(right->obj));
+    return result;
+}
+
+Judgement Equals(Ast* left, Ast* right)
+{
+  if (!left)
+    FatalError("Bad Left Term Pointer.", __FILE__, __LINE__);
+
+  if (!right)
+    FatalError("Bad right term pointer.", __FILE__, __LINE__);
+
+  Judgement result;
+
+  if (left->kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(left);
+    result.error.dsc = "Left term is not an Object! Cannot compare equality";
+    return result;
+  }
+
+  if (right->kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(right);
+    result.error.dsc = "Right term is not an Object! Cannot compare equality";
+    return result;
+  }
+
+  result = EqualsObject(&(left->obj), &(right->obj));
+  return result;
 }
 
 Location* GetAstLocation(Ast* ast)
@@ -314,9 +369,9 @@ char* ToStringAst(Ast* term)
 // and for two reasons
 // A) it keeps this file from being >3000 lines
 // B) the compiler can still inline each procedure if it wants.
-TypeJudgement Getype(Ast* term, struct Environment* env)
+Judgement Getype(Ast* term, struct Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
   switch(term->kind)
   {
     case A_VAR:
@@ -361,9 +416,9 @@ TypeJudgement Getype(Ast* term, struct Environment* env)
   return result;
 }
 
-EvalJudgement Evaluate(Ast* ast, Environment* env)
+Judgement Evaluate(Ast* ast, Environment* env)
 {
-  EvalJudgement result;
+  Judgement result;
 
   switch(ast->kind)
   {

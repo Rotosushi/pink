@@ -47,34 +47,80 @@ char* ToStringIteration(Iteration* itr)
 }
 
 
-TypeJudgement GetypeIteration(Iteration* itr, struct Environment* env)
+Judgement GetypeIteration(Iteration* itr, struct Environment* env)
 {
-  Type* booleanType = GetBooleanType(env->interned_types);
-  TypeJudgement result;
+  Location dummy;
+  Ast* booleanType = CreateAstType(GetBooleanType(env->interned_types), &dummy);
+  Judgement result, eqcnd;
 
-  TypeJudgement cndjdgmt = Getype(itr->cnd, env);
+  Judgement cndjdgmt = Getype(itr->cnd, env);
 
   if (cndjdgmt.success == true)
   {
-    if (cndjdgmt.type == booleanType)
+    eqcnd = Equals(cndjdgmt.term, booleanType);
+    if (eqcnd.success == true)
     {
-      TypeJudgement bdyjdgmt = Getype(itr->bdy, env);
-
-      if (bdyjdgmt.success == true)
+      if (eqcnd.term->obj.boolean.value == true)
       {
-        result.success = true;
-        result.type    = GetNilType(env->interned_types);
+        Judgement bdyjdgmt = Getype(itr->bdy, env);
+
+        if (bdyjdgmt.success == true)
+        {
+          result.success = true;
+          result.term    = CreateAstType(GetNilType(env->interned_types), &itr->loc);
+        }
+        else
+        {
+          result = bdyjdgmt;
+        }
       }
       else
       {
-        result = bdyjdgmt;
+        result.success   = false;
+        result.error.dsc = "condition must have type:[Bool]";
+        result.error.loc = *GetAstLocation(itr->cnd);
       }
     }
     else
     {
-      result.success   = false;
-      result.error.dsc = "condition must have type:[Bool]";
-      result.error.loc = *GetAstLocation(itr->cnd);
+      // we couldn't compare for some reason,
+      // it's stored in eqcnd.
+      result = eqcnd;
+    }
+  }
+  else
+  {
+    result = cndjdgmt;
+  }
+  free(booleanType);
+  return result;
+}
+
+Judgement EvaluateIteration(Iteration* itr, struct Environment* env)
+{
+  Location dummy;
+  Judgement result, cndjdgmt = Evaluate(itr->cnd, env);
+
+  if (cndjdgmt.success == true)
+  {
+    if (cndjdgmt.term->obj.boolean.value == true)
+    {
+      do
+      {
+        result = Evaluate(itr->bdy, env);
+
+        if (result.success == false)
+          return result;
+
+        cndjdgmt = Evaluate(itr->cnd, env);
+
+        if (cndjdgmt.success == false)
+        {
+          result = cndjdgmt;
+          break;
+        }
+
+      } while (cndjdgmt.term->obj.boolean.value == true);
     }
   }
   else
@@ -82,15 +128,13 @@ TypeJudgement GetypeIteration(Iteration* itr, struct Environment* env)
     result = cndjdgmt;
   }
 
-  return result;
-}
-
-EvalJudgement EvaluateIteration(Iteration* itr, struct Environment* env)
-{
-  EvalJudgement result;
 
   if (result.success == true)
-    return Evaluate(result.term, env);
+  {
+      DestroyAst(result.term);
+      result.term = CreateAstNil(&dummy);
+      return result;
+  }
   else
     return result;
 }

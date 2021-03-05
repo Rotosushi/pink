@@ -19,7 +19,10 @@ void CloneTypeLiteral(TypeLiteral* dest, TypeLiteral* source);
 
 char* ToStringTypeLiteral(TypeLiteral* tl);
 
-TypeJudgement GetypeTypeLiteral(TypeLiteral* tl, struct Environment* env);
+Judgement GetypeTypeLiteral(TypeLiteral* tl, struct Environment* env);
 
+Judgement AssignTypeLiteral(TypeLiteral* dest, TypeLiteral* source);
+
+Judgement EqualsTypeLiteral(TypeLiteral* t1, TypeLiteral* t2);
 
 #endif // !TYPELITERAL_H

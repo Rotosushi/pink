@@ -2,8 +2,7 @@
 #define BIND_H
 
 #include "Location.h"
-#include "TypeJudgement.h"
-#include "EvalJudgement.h"
+#include "Judgement.h"
 #include "StringInterner.h"
 
 struct Ast;
@@ -23,8 +22,8 @@ void CloneBind(Bind* destination, Bind* source);
 
 char* ToStringBind(Bind* bnd);
 
-TypeJudgement GetypeBind(Bind* bnd, struct Environment* env);
+Judgement GetypeBind(Bind* bnd, struct Environment* env);
 
-EvalJudgement EvaluateBind(Bind* bnd, struct Environment* env);
+Judgement EvaluateBind(Bind* bnd, struct Environment* env);
 
 #endif // !BIND_H

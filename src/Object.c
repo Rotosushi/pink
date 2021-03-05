@@ -110,7 +110,7 @@ char* ToStringObject(Object* obj)
 }
 
 
-TypeJudgement GetypeObject(Object* obj, Environment* env)
+Judgement GetypeObject(Object* obj, Environment* env)
 {
   // again: "hey why aren't you just returning
   //         the type directly from this context
@@ -123,7 +123,7 @@ TypeJudgement GetypeObject(Object* obj, Environment* env)
   //          but how does that look exactly?
   //          and how does the union type
   //          factor into this?
-  TypeJudgement result;
+  Judgement result;
   switch (obj->kind)
   {
     case O_NIL:
@@ -145,5 +145,87 @@ TypeJudgement GetypeObject(Object* obj, Environment* env)
       FatalError("Bad Object Kind", __FILE__, __LINE__);
       break;
   }
+  return result;
+}
+
+Judgement AssignObject(Object* dest, Object* source)
+{
+  Judgement result;
+
+  if (dest->kind == source->kind)
+  {
+    switch(dest->kind)
+    {
+      case O_TYPE:
+        result = AssignTypeLiteral(&(dest->type), &(source->type));
+        break;
+      case O_NIL:
+        result = AssignNil(&(dest->nil), &(source->nil));
+        break;
+      case O_INT:
+        result = AssignInteger(&(dest->integer), &(source->integer));
+        break;
+      case O_BOOL:
+        result = AssignBoolean(&(dest->boolean), &(source->boolean));
+        break;
+      case O_LAMB: // this is a special case for now, however
+                   // once we turn on immutability by default
+                   // this case will be wrapped up that check.
+        result.success   = false;
+        result.error.loc = dest->lambda.loc;
+        result.error.dsc = "Lambda objects are immutable";
+        break;
+
+      // and later AssignRecord
+      //           AssignUnion
+      //           AssignReference
+      //  etc...
+      default:
+        FatalError("Bad Object Kind.", __FILE__, __LINE__);
+    }
+  }
+  else
+  {
+    result.success   = false;
+    result.error.loc = *GetObjLocation(dest);
+    result.error.dsc = "Object Types are not the same.";
+  }
+  return result;
+}
+
+Judgement EqualsObject(Object* obj1, Object* obj2)
+{
+  Judgement result;
+
+  if (obj1->kind == obj2->kind)
+  {
+    switch(obj1->kind)
+    {
+      case O_TYPE:
+        result = EqualsTypeLiteral(&(obj1->type), &(obj2->type));
+        break;
+      case O_NIL:
+        result = EqualsNil(&(obj1->nil), &(obj2->nil));
+        break;
+      case O_INT:
+        result = EqualsInteger(&(obj1->integer), &(obj2->integer));
+        break;
+      case O_BOOL:
+        result = EqualsBoolean(&(obj1->boolean), &(obj2->boolean));
+        break;
+      case O_LAMB:
+        result.success   = false;
+        result.error.loc = *(GetObjLocation(obj1));
+        result.error.dsc = "Lambdas cannot be compared";
+        break;
+    }
+  }
+  else
+  {
+    result.success   = false;
+    result.error.loc = *GetObjLocation(obj1);
+    result.error.dsc = "Object Types are not the same.";
+  }
+
   return result;
 }

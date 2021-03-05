@@ -3,11 +3,11 @@
 #include <stdlib.h>
 
 #include "StringInterner.h"
-
+#include "Judgement.h"
 struct Ast;
 struct Type;
 
-typedef struct Ast* (*PrimitiveBinopEliminator)(struct Ast* lval, struct Ast* rval);
+typedef struct Judgement (*PrimitiveBinopEliminator)(struct Ast* lval, struct Ast* rval);
 
 
 typedef struct BinopEliminator
@@ -28,7 +28,7 @@ typedef struct BinopEliminatorList
   int              size;
 } BinopEliminatorList;
 
-BinopEliminatorList* CreateAstBinopEliminatorList();
+BinopEliminatorList* CreateBinopEliminatorList();
 void                 DestroyBinopEliminatorList(BinopEliminatorList* BElist);
 BinopEliminator*     InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, struct Type *ltype, struct Type *rtype, struct Type *restype, PrimitiveBinopEliminator PrimElim);
 //

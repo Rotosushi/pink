@@ -41,15 +41,15 @@ char* ToStringUnop(Unop* unop)
   return result;
 }
 
-TypeJudgement GetypeUnop(Unop* uop, Environment* env)
+Judgement GetypeUnop(Unop* uop, Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
 
   UnopEliminatorList* eliminators = FindUnop(env->unops, uop->op);
 
   if (eliminators != NULL)
   {
-    TypeJudgement rhsjdgmt = Getype(uop->rhs, env);
+    Judgement rhsjdgmt = Getype(uop->rhs, env);
 
     if (rhsjdgmt.success == true)
     {
@@ -82,9 +82,43 @@ TypeJudgement GetypeUnop(Unop* uop, Environment* env)
   return result;
 }
 
-EvalJudgement EvaluateUnop(Unop* uop, struct Environment* env)
+Judgement EvaluateUnop(Unop* uop, struct Environment* env)
 {
-  EvalJudgement result;
+  Judgement result;
+
+  UnopEliminatorList* eliminators = FindUnop(env->unops, uop->op);
+
+  if (eliminators != NULL)
+  {
+    result = Getype(uop->rhs, env);
+
+    if (result.success == true)
+    {
+      UnopEliminator* eliminator = FindUnopEliminator(eliminators, result.type);
+
+      if (eliminator != NULL)
+      {
+        result.success = true;
+        result.type    = eliminator->restype;
+      }
+      else
+      {
+        result.success   = false;
+        result.error.dsc = "no member of unop found for actual type";
+        result.error.loc = *GetAstLocation(uop->rhs);
+      }
+    }
+    else
+    {
+      result = rhsjdgmt;
+    }
+  }
+  else
+  {
+    result.success   = false;
+    result.error.dsc = "unop not bound within the environment";
+    result.error.loc = uop->loc;
+  }
 
   if (result.success == true)
     return Evaluate(result.term, env);

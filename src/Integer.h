@@ -1,7 +1,7 @@
 #ifndef INTEGER_H
 #define INTEGER_H
 
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "Location.h"
 struct Ast;
 struct Environment;
@@ -20,6 +20,10 @@ void CloneInteger(Integer* destination, Integer* source);
 
 char* ToStringInteger(Integer* integer);
 
-TypeJudgement GetypeInteger(Integer* node, struct Environment* env);
+Judgement GetypeInteger(Integer* node, struct Environment* env);
+
+Judgement AssignInteger(Integer* dest, Integer* source);
+
+Judgement EqualsInteger(Integer* i1, Integer* i2);
 
 #endif // !INTEGER_H

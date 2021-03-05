@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "Ast.h"
-#include "ParseJudgement.h"
+#include "Judgement.h"
 #include "Parser.h"
 #include "Environment.h"
 #include "Repl.h"
@@ -65,7 +65,7 @@ void Repl(FILE* in, FILE* out, Environment* env)
     fprintf (out, "> ");
     size_t charsRead = getline(&buffer, &length, in);
 
-    ParseJudgement parsejdgmt = Parse(env->parser, buffer);
+    Judgement parsejdgmt = Parse(env->parser, buffer);
 
     if (parsejdgmt.success == true)
     {
@@ -73,7 +73,7 @@ void Repl(FILE* in, FILE* out, Environment* env)
       fprintf(out, "parsed:[%s]\n", termtxt);
       free(termtxt);
 
-      TypeJudgement typejdgmt = Getype(parsejdgmt.term, env);
+      Judgement typejdgmt = Getype(parsejdgmt.term, env);
 
       if (typejdgmt.success == true)
       {

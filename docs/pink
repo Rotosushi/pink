@@ -1,0 +1,133 @@
+
+
+it is my sneaking suspicion that
+assignment '<-'
+(or in c '=')
+
+and procedure abstraction
+  '->'
+
+are inverses of each other in the
+mathematical sense.
+
+if x is something (T),
+and (f x) is another thing (U)
+
+then (f x) is T -> U
+
+if x holds some T,
+and y holds another T
+
+then
+
+x <- y
+
+makes x equivalent to y.
+
+
+so, -> models change,
+and <- models the opposite, a movement towards homogeneity.
+
+and we can combine the forms to
+model a variable changing from T to U
+
+x <- f x;
+
+
+this is illegal given the current language rules
+surrounding assignment. (requires T '<-' T)
+I suppose we could allow
+an even more destructive form of assignment iff
+we could keep track of exactly the largest entity
+assigned to said variable through the lifetime of
+the stack frame, and allocate enough room for the
+largest as the size of said binding.
+(this is essentially the same rule as union/product
+of types) except that we know what type is held by
+which instructions occur before some other instructions.
+
+for example
+
+given
+
+procedure f1 x:Int, y:Int =>
+  x + y
+
+procedure f2 x:Int =>
+  x > 100
+
+procedure main =>
+  x := 5, y := 50;
+  x <- f1 x y; // before: x has type Int; after: x has type Int
+  x <- f2 x;   // before: x has type Int; after: x has type Bool
+  x <- f1 y (y + 1); // before: x has type Bool; after: x has type Int
+  x <- f2 x;   // before: x has type Int; after: x has type Bool
+
+the problem with this is not the compiler getting confused.
+it's the programmer. but, i don't know the actual cost/
+benefit to both sides of this, as i have never spent any
+serious time with a language that has these semantics.
+(Python for sure, i forget if Lisp/Scheme allows this with set!)
+
+
+
+
+
+----------------------------------------------------------------
+
+typedef identifier type-expression
+
+
+we allow two types to be equivalent by name or
+by structure. which each primitive and composite
+type being equal between two types.
+
+we have four type composites, References, Arrays,
+Records, and Unions.
+references have type : [ref T]
+  procedure references have type : [ref T -> T]
+    which is a type we can compose out of the two
+    composite types
+    two reference types can be considered equivalent
+    if their referent types are the same.
+
+arrays have type     : [array T]
+  there are two kinds of array in C,
+  what I mean is the basic static array, which is
+  built using a size, but has no size baked
+  into it's type. this is a debatable point at
+  the moment however, and i am considering it.
+  two array types can be considered equivalent
+  if they have the same type. if their length
+  were baked into the type would that cause issues?
+  if we wanted to pass them as parameters to procedures
+  most procedures which work with arrays don't care
+  that the array is any particular size. (we don't
+  want to have a stringlength procedure for each possible
+  length of array, that would mean a procedure definition
+  for each integer at a minimum, which is a huge program.)
+  they just care that the array has a knowable size.
+  in c arrays decompose into pointers. this I think is
+  by-and-large a good choice. we want to be able to talk
+  about an array on the stack, vs an array on the heap.
+
+  an array of five T's
+  array[5] T     // T my-array[5];
+
+  an array of T's whose length is implied
+  array[] ref T  // T my-array[];
+
+  an array of T's whose length is five
+  ref array[5] T  // T my-array[5];
+
+  an array of ref T's whose length is implied
+  ref array[] ref T // T* my-array[];
+
+  an array of ref T's whose length is five
+  ref array[5] ref T // T** my-array;
+
+
+Records have type    : [record {label-1:T1, label-2:T2, ... label-n:TN}]
+
+
+Unions  have type    : [union {active-label:TA, label-1:T1, label-2:T2, ... label-n:TN}]

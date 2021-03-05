@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "Utilities.h"
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "Ast.h"
 #include "Environment.h"
 #include "Nil.h"
@@ -29,10 +29,26 @@ char* ToStringNil(Nil* nil)
   return dupnstr("nil", 3);
 }
 
-TypeJudgement GetypeNil(Nil* node, Environment* env)
+Judgement GetypeNil(Nil* node, Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
   result.success = true;
-  result.type    = GetNilType(env->interned_types);
+  result.term    = CreateAstType(GetNilType(env->interned_types), &(node->loc));
+  return result;
+}
+
+Judgement AssignNil(Nil* dest, Nil* source)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = NULL;
+  return result;
+}
+
+Judgement EqualsNil(Nil* n1, Nil* n2)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = NULL;
   return result;
 }

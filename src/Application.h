@@ -2,7 +2,7 @@
 #define APPLICATION_H
 
 
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "Location.h"
 struct Ast;
 struct Environment;
@@ -27,8 +27,8 @@ char* ToStringApplication(Application* app);
 // and the Application term data. (we can assume we are
 // passed an application node however, the code will
 // not dispatch here were it not so.)
-TypeJudgement GetypeApplication(Application* app, struct Environment* env);
+Judgement GetypeApplication(Application* app, struct Environment* env);
 
-EvalJudgement EvaluateApplication(Application* app, struct Environment* env);
+Judgement EvaluateApplication(Application* app, struct Environment* env);
 
 #endif // !APPLICATION_H

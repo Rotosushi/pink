@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "Ast.h"
+#include "Judgement.h"
 #include "Utilities.h"
 #include "StringInterner.h"
 #include "Environment.h"
@@ -58,28 +59,29 @@ char* ToStringBinop(Binop* binop)
 // types of the left and right hand sides, we can type
 // the entire expression as the result type of the
 // given eliminator.
-TypeJudgement GetypeBinop(Binop* binop, Environment* env)
+Judgement GetypeBinop(Binop* binop, Environment* env)
 {
-  TypeJudgement result;
+  Location  dummy;
+  Judgement result;
 
   BinopEliminatorList* eliminators = FindBinop(env->binops, binop->op);
 
   if (eliminators != NULL)
   {
-    TypeJudgement lhsjdgmt = Getype(binop->lhs, env);
+    Judgement lhsjdgmt = Getype(binop->lhs, env);
 
     if (lhsjdgmt.success == true)
     {
-      TypeJudgement rhsjdgmt = Getype(binop->rhs, env);
+      Judgement rhsjdgmt = Getype(binop->rhs, env);
 
       if (rhsjdgmt.success == true)
       {
-        BinopEliminator* eliminator = FindBinopEliminator(eliminators, lhsjdgmt.type, rhsjdgmt.type);
+        BinopEliminator* eliminator = FindBinopEliminator(eliminators, lhsjdgmt.term, rhsjdgmt.term);
 
         if (eliminator != NULL)
         {
           result.success = true;
-          result.type    = eliminator->restype;
+          result.term    = CreateAstType(eliminator->restype, &dummy);
         }
         else
         {
@@ -108,9 +110,70 @@ TypeJudgement GetypeBinop(Binop* binop, Environment* env)
   return result;
 }
 
-EvalJudgement EvaluateBinop(Binop* binop, struct Environment* env)
+Judgement EvaluateBinop(Binop* binop, struct Environment* env)
 {
-  EvalJudgement result;
+  Judgement result;
+
+  BinopEliminatorList* eliminators = FindBinop(env->binops, binop->op);
+
+  if (eliminators != NULL)
+  {
+    Judgement lhsjdgmt = Evaluate(binop->lhs, env);
+
+    if (lhsjdgmt.success == true)
+    {
+      Judgement rhsjdgmt = Evaluate(binop->rhs, env);
+
+      if (rhsjdgmt.success == true)
+      {
+        Judgement lhstypejdgmt = Getype(lhsjdgmt.term, env);
+
+        if (lhstypejdgmt.success == false)
+        {
+          result = lhstypejdgmt;
+          return result;
+        }
+
+        Judgement rhstypejdgmt = Getype(rhsjdgmt.term, env);
+
+        if (rhstypejdgmt.success == false)
+        {
+          result = rhstypejdgmt;
+          return result;
+        }
+
+        Type *lhstype = lhstypejdgmt.term->obj.type.literal;
+        Type *rhstype = rhstypejdgmt.term->obj.type.literal;
+
+        BinopEliminator* eliminator = FindBinopEliminator(eliminators, lhstype, rhstype);
+
+        if (eliminator != NULL)
+        {
+          result = (eliminator->eliminator)(lhsjdgmt.term, rhsjdgmt.term);
+        }
+        else
+        {
+          result.success   = false;
+          result.error.dsc = "no implementation of binop found for actual types";
+          result.error.loc = binop->loc;
+        }
+      }
+      else
+      {
+        result = rhsjdgmt;
+      }
+    }
+    else
+    {
+      result = lhsjdgmt;
+    }
+  }
+  else
+  {
+    result.success = false;
+    result.error.dsc = "binop not bound within environment";
+    result.error.loc = binop->loc;
+  }
 
   if (result.success == true)
     return Evaluate(result.term, env);

@@ -4,6 +4,7 @@
 #include "Ast.h"
 #include "Utilities.h"
 #include "Location.h"
+#include "Judgement.h"
 #include "Environment.h"
 #include "Assignment.h"
 
@@ -50,25 +51,33 @@ char* ToStringAssignment(Assignment* ass)
 ------------------------------
    ENV |- lhs '<-' rhs : T
 */
-TypeJudgement GetypeAssignment(Assignment* ass, Environment* env)
+Judgement GetypeAssignment(Assignment* ass, Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
 
-  TypeJudgement lhsjdgmt = Getype(ass->lhs, env);
+  Judgement lhsjdgmt = Getype(ass->lhs, env);
 
   if (lhsjdgmt.success == true)
   {
-    TypeJudgement rhsjdgmt = Getype(ass->rhs, env);
+    Judgement rhsjdgmt = Getype(ass->rhs, env);
 
     if (rhsjdgmt.success == true)
     {
-      if (lhsjdgmt.type == rhsjdgmt.type)
-        result = lhsjdgmt;
+      Judgement eqjdgmt = Equals(lhsjdgmt.term, rhsjdgmt.term);
+      if (eqjdgmt.success == true)
+      {
+        if (eqjdgmt.term->obj.boolean.value == true)
+          result = lhsjdgmt;
+        else
+        {
+          result.success   = false;
+          result.error.dsc = "Type mismatch between lhs and rhs";
+          result.error.loc = ass->loc;
+        }
+      }
       else
       {
-        result.success   = false;
-        result.error.dsc = "Type mismatch between lhs and rhs";
-        result.error.loc = ass->loc;
+        result = eqjdgmt;
       }
     }
     else
@@ -80,14 +89,38 @@ TypeJudgement GetypeAssignment(Assignment* ass, Environment* env)
   return result;
 }
 
-EvalJudgement EvaluateAssignment(Assignment* ass, Environment* env)
+Judgement EvaluateAssignment(Assignment* ass, Environment* env)
 {
-  EvalJudgement result;
+  Judgement result, lhs, rhs;
 
   // evaluate the assignment
 
-  if (result.success == true)
-    return Evaluate(result.term, env);
+  lhs = Evaluate(ass->lhs, env);
+
+  if (lhs.success == true)
+  {
+    rhs = Evaluate(ass->rhs, env);
+
+    if (rhs.success == true)
+    {
+      // after evaluation, we have two objects.
+      // now, previously i could do pointer assignment
+      // here, which is easy and fast. however now.
+      // I have to come up with a new solution.
+      result = AssignObject(&(lhs.term->obj), &(rhs.term->obj));
+
+      // we want to preserve the error
+      // should it exist, otherwise
+      // AssignObject returned an empty
+      // term.
+      if (result.success == true)
+        result = rhs;
+    }
+    else
+      result = rhs;
+  }
   else
-    return result;
+    result = lhs;
+
+  return result;
 }

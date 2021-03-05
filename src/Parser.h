@@ -10,12 +10,12 @@
 #include "BinopTable.h"
 #include "BinopPrecedence.h"
 #include "UnopTable.h"
-#include "ParseJudgement.h"
+#include "Judgement.h"
 #include "Lexer.h"
 
 typedef struct Parser
 {
-  
+
   int*            markstack; // we can rewind through the array of tokens as many times as we want,
                              //  this stack keeps track of each 'last-valid-position' as we venture
                              //  deeper into unknown tokens, gathering them into terms.
@@ -43,12 +43,14 @@ typedef struct Parser
   managed above. this is because the lexer
   only ever needs to be known by the parser,
   otherwise it is wholly independant from
-  the rest of the program.
+  the rest of the program. this is only
+  communicable via comments in c. so
+  like, that's a space for improvement.
 */
 struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, TypeInterner* Itypes, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
 void    DestroyParser(struct Parser* p);
 void    ResetParser(struct Parser* p);
-ParseJudgement Parse(struct Parser* p, char* input);
+Judgement Parse(struct Parser* p, char* input);
 void    DumpTokens(struct Parser* p, FILE* out);
 
 

@@ -63,8 +63,8 @@
 #include "SymbolTable.h"
 #include "StringInterner.h"
 #include "Ast.h"
-#include "ParseJudgement.h"
-#include "TypeJudgement.h"
+#include "Judgement.h"
+#include "Judgement.h"
 #include "Type.h"
 #include "ScalarType.h"
 #include "ProcType.h"
@@ -191,7 +191,8 @@ void ResetParser(Parser* p)
 // however, the 'directionality' of the flow
 // of information is almost always good to
 // delegate to the caller. such as where to
-// write the output data.
+// write the output data. this can make a procedure
+// feel like it does more work.
 void DumpTokens(Parser* p, FILE* out)
 {
   for (int i = 0; i < p->bufsz; i++)
@@ -394,15 +395,15 @@ bool is_ender(Token t)
   }
 }
 
-ParseJudgement ParseTerm(Parser* p);
-ParseJudgement ParseAffix(Parser* p);
-ParseJudgement ParseApplication(Parser* p);
-ParseJudgement ParseAtom(Parser* p);
-ParseJudgement ParseConditional(Parser* p);
-ParseJudgement ParseIteration(Parser* p);
-ParseJudgement ParseLambda(Parser* p);
-ParseJudgement ParseUnop(Parser* p);
-ParseJudgement ParseInfix(Parser* p, ParseJudgement lhs, int min_prec);
+Judgement ParseTerm(Parser* p);
+Judgement ParseAffix(Parser* p);
+Judgement ParseApplication(Parser* p);
+Judgement ParsePrimary(Parser* p);
+Judgement ParseConditional(Parser* p);
+Judgement ParseIteration(Parser* p);
+Judgement ParseLambda(Parser* p);
+Judgement ParseUnop(Parser* p);
+Judgement ParseInfix(Parser* p, Judgement lhs, int min_prec);
 
 bool is_type_literal(Ast* ast)
 {
@@ -419,10 +420,10 @@ affix := application
        | application "<-" affix
        // | application "." affix
 */
-ParseJudgement ParseAffix(Parser* p)
+Judgement ParseAffix(Parser* p)
 {
   Location       lhsloc = curloc(p);
-  ParseJudgement lhsjdgmt;
+  Judgement lhsjdgmt;
 
   if (is_primary(curtok(p)))
   {
@@ -443,7 +444,7 @@ ParseJudgement ParseAffix(Parser* p)
         // this essentially means that '<-'
         // is a very high precedence binary
         // operator.
-        ParseJudgement rhsjdgmt = ParseAffix(p);
+        Judgement rhsjdgmt = ParseAffix(p);
 
         if (rhsjdgmt.success == true)
         {
@@ -463,7 +464,7 @@ ParseJudgement ParseAffix(Parser* p)
       {
         nextok(p); // eat '->'
 
-        ParseJudgement rhsjdgmt = ParseAffix(p);
+        Judgement rhsjdgmt = ParseAffix(p);
 
         if (rhsjdgmt.success == true)
         {
@@ -574,10 +575,10 @@ ParseJudgement ParseAffix(Parser* p)
 application := primary
              | primary application
 */
-ParseJudgement ParseApplication(Parser* p)
+Judgement ParseApplication(Parser* p)
 {
   Location       lhsloc   = curloc(p);
-  ParseJudgement lhsjdgmt = ParseAtom(p);
+  Judgement lhsjdgmt = ParsePrimary(p);
 
   if (lhsjdgmt.success == true)
   {
@@ -592,7 +593,7 @@ ParseJudgement ParseApplication(Parser* p)
     while ((curtok(p) != T_OPERATOR && is_primary(curtok(p)))
         || (curtok(p) == T_OPERATOR && !is_binop(p, curtxt(p))))
     {
-      ParseJudgement rhsjdgmt = ParsePrimary(p);
+      Judgement rhsjdgmt = ParsePrimary(p);
 
       if (rhsjdgmt.success == true)
       {
@@ -627,10 +628,10 @@ primary := identifier
       | operator atom
       | '(' affix ')'
 */
-ParseJudgement ParsePrimary(Parser* p)
+Judgement ParsePrimary(Parser* p)
 {
   Location       lhsloc = curloc(p);
-  ParseJudgement lhsjdgmt;
+  Judgement lhsjdgmt;
 
   switch(curtok(p))
   {
@@ -805,15 +806,15 @@ ParseJudgement ParsePrimary(Parser* p)
   if t1 do t2
 
 */
-ParseJudgement ParseConditional(Parser* p)
+Judgement ParseConditional(Parser* p)
 {
   Location       lhsloc = curloc(p);
-  ParseJudgement result;
+  Judgement result;
   if (curtok(p) == T_IF)
   {
     nextok(p); // eat 'if'
 
-    ParseJudgement condjdgmt = ParseAffix(p);
+    Judgement condjdgmt = ParseAffix(p);
 
     if (condjdgmt.success == true)
     {
@@ -821,7 +822,7 @@ ParseJudgement ParseConditional(Parser* p)
       {
         nextok(p); // eat 'then'
 
-        ParseJudgement thenjdgmt = ParseAffix(p);
+        Judgement thenjdgmt = ParseAffix(p);
 
         if (thenjdgmt.success == true)
         {
@@ -829,7 +830,7 @@ ParseJudgement ParseConditional(Parser* p)
           {
             nextok(p); // eat 'else'
 
-            ParseJudgement elsejdgmt = ParseAffix(p);
+            Judgement elsejdgmt = ParseAffix(p);
 
             if (elsejdgmt.success == true)
             {
@@ -875,10 +876,10 @@ ParseJudgement ParseConditional(Parser* p)
   return result;
 }
 
-ParseJudgement ParseIteration(Parser* p)
+Judgement ParseIteration(Parser* p)
 {
   Location       lhsloc = curloc(p);
-  ParseJudgement result;
+  Judgement result;
 
   if (curtok(p) != T_WHILE)
   {
@@ -896,7 +897,7 @@ ParseJudgement ParseIteration(Parser* p)
   }
   nextok(p); // eat 'while'
 
-  ParseJudgement condjdgmt = ParseAffix(p);
+  Judgement condjdgmt = ParseAffix(p);
 
   if (condjdgmt.success == false)
     return condjdgmt;
@@ -910,7 +911,7 @@ ParseJudgement ParseIteration(Parser* p)
   }
   nextok(p); // eat 'do'
 
-  ParseJudgement bodyjdgmt = ParseAffix(p);
+  Judgement bodyjdgmt = ParseAffix(p);
 
   if (bodyjdgmt.success == false)
     return bodyjdgmt;
@@ -927,10 +928,10 @@ ParseJudgement ParseIteration(Parser* p)
   return result;
 }
 
-ParseJudgement ParseLambda(Parser* p)
+Judgement ParseLambda(Parser* p)
 {
   Location       lhsloc = curloc(p);
-  ParseJudgement result;
+  Judgement result;
 
   if (curtok(p) != T_BSLASH)
   {
@@ -974,7 +975,7 @@ ParseJudgement ParseLambda(Parser* p)
 
   nextok(p); // eat ':'
 
-  ParseJudgement typejdgmt = ParseAffix(p);
+  Judgement typejdgmt = ParseAffix(p);
 
   if (typejdgmt.success == false)
   {
@@ -1019,10 +1020,11 @@ ParseJudgement ParseLambda(Parser* p)
   SymbolTable* last_scope   = p->outer_scope;
   p->outer_scope            = lambda_scope;
 
-  ParseJudgement bodyjdgmt = ParseAffix(p);
+  Judgement bodyjdgmt = ParseAffix(p);
 
   if (bodyjdgmt.success == false)
     return bodyjdgmt; // TODO: if we actually take this path we gonna leak!
+
 
   p->outer_scope      = last_scope; // reset the outer scope to what it was before
   Location  rhsloc    = curloc(p);
@@ -1037,9 +1039,9 @@ ParseJudgement ParseLambda(Parser* p)
   return result;
 }
 
-ParseJudgement ParseUnop(Parser* p)
+Judgement ParseUnop(Parser* p)
 {
-  ParseJudgement result;
+  Judgement result;
   if (curtok(p) != T_OPERATOR)
   {
     result.success   = false;
@@ -1062,7 +1064,7 @@ ParseJudgement ParseUnop(Parser* p)
 
   nextok(p); // eat operator
 
-  ParseJudgement rhsjdgmt = ParseAtom(p);
+  Judgement rhsjdgmt = ParsePrimary(p);
 
   if (rhsjdgmt.success == false)
     return rhsjdgmt;
@@ -1084,7 +1086,7 @@ ParseJudgement ParseUnop(Parser* p)
 
 // this is an implementation of an operator precedence parser.
 //
-ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
+Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
 {
   if (left.success == false)
     return left;
@@ -1127,7 +1129,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
     // to recurr into this procedure again, so we go up
     // to application, one step below where infix procedures can
     // be parsed.
-    ParseJudgement right = ParseApplication(p);
+    Judgement right = ParseApplication(p);
 
     if (right.success == false)
       return right;
@@ -1177,7 +1179,7 @@ ParseJudgement ParseInfix(Parser* p, ParseJudgement left, int min_prec)
   return left;
 }
 
-ParseJudgement Parse(Parser* p, char* input)
+Judgement Parse(Parser* p, char* input)
 {
   ResetParser(p);
 
@@ -1186,6 +1188,6 @@ ParseJudgement Parse(Parser* p, char* input)
   filltok(p, 1);
 
   // enter into the top of the parser.
-  ParseJudgement result = ParseAffix(p);
+  Judgement result = ParseAffix(p);
   return result;
 }

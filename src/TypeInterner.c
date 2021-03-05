@@ -90,16 +90,6 @@ Type* GetProcedureType(TypeInterner* Ity, Ast* l, Ast* r)
   if (Ity == NULL || l == NULL || r == NULL)
     return NULL;
 
-  /*
-    so l and r are some type pointer right?
-    given how we construct types, namely, either
-    we ask for a known primitive, or we are constructing
-    based upon the received type of some term.
-    in either case, we are passing into this procedure
-    A) a pointer to a primitive type, Nil, Int, Bool.
-    B) a pointer to another procedure type, itself stored within
-       this list of procedure types here.
-  */
 
   // search the buffer for a matching type,
   // otherwise insert the new type and

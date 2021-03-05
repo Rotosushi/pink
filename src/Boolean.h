@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "Location.h"
 struct Ast;
 struct Environment;
@@ -22,6 +22,10 @@ void CloneBoolean(Boolean* destination, Boolean* source);
 
 char* ToStringBoolean(Boolean* boolean);
 
-TypeJudgement GetypeBoolean(Boolean* node, struct Environment* env);
+Judgement GetypeBoolean(Boolean* node, struct Environment* env);
+
+Judgement AssignBoolean(Boolean* dest, Boolean* source);
+
+Judgement EqualsBoolean(Boolean* b1, Boolean* b2);
 
 #endif // !BOOLEAN_H

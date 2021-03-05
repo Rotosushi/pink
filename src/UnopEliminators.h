@@ -3,10 +3,11 @@
 #include <stdlib.h>
 
 #include "StringInterner.h"
+#include "Judgement.h"
 struct Ast;
 struct Type;
 
-typedef struct Ast* (*PrimitiveUnopEliminator)(struct Ast* rval);
+typedef struct Judgement (*PrimitiveUnopEliminator)(struct Ast* rval);
 
 typedef struct UnopEliminator
 {

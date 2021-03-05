@@ -10,7 +10,13 @@
 #include "UnopTable.h"
 #include "PinkKernel.h"
 
-Ast* BinopPlusAddInteger(Ast* lval, Ast* rval)
+Judgement BinopEquals(Ast* lval, Ast* rval)
+{
+  Judgement eqjdgmt = Equals(lval, rval);
+  return eqjdgmt;
+}
+
+Judgement BinopPlusAddInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
     FatalError("Cannot Add NULL left term", __FILE__, __LINE__);
@@ -19,24 +25,44 @@ Ast* BinopPlusAddInteger(Ast* lval, Ast* rval)
     FatalError("Cannot Add NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Add non-Object left term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Add non-Object left term";
+    return result;
+  }
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Add non-Object right term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Add non-Object right term";
+    return result;
+  }
 
   if (lval->obj.kind != O_INT)
-    FatalError("Cannot Add non-Integer left Object", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Add non-Integer left term";
+    return result;
+  }
 
-  if (rval->obj.kind != O_INT)
-    FatalError("Cannot Add non-Integer right Object", __FILE__, __LINE__);
-
+  if (rval->obj.kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Add non-Integer right term";
+    return result;
+  }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateAstInteger(left + right, GetAstLocation(lval));
-  return ast;
+  result.success = true;
+  result.term    = CreateAstInteger(left + right, GetAstLocation(lval));
+  return result;
 }
 
-Ast* BinopHyphenMinusInteger(Ast* lval, Ast* rval)
+Judgement BinopHyphenMinusInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
     FatalError("Cannot Subtract NULL left term", __FILE__, __LINE__);
@@ -45,24 +71,44 @@ Ast* BinopHyphenMinusInteger(Ast* lval, Ast* rval)
     FatalError("Cannot Subtract NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Subtract non-Object left term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Subtract non-Object left term";
+    return result;
+  }
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Subtract non-Object right term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Subtract non-Object right term";
+    return result;
+  }
 
   if (lval->obj.kind != O_INT)
-    FatalError("Cannot Subtract non-Integer left Object", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Subtract non-Integer left term";
+    return result;
+  }
 
-  if (rval->obj.kind != O_INT)
-    FatalError("Cannot Subtract non-Integer right Object", __FILE__, __LINE__);
-
+  if (rval->obj.kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Subtract non-Integer right term";
+    return result;
+  }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateAstInteger(left - right, GetAstLocation(lval));
-  return ast;
+  result.success = true;
+  result.term    = CreateAstInteger(left - right, GetAstLocation(lval));
+  return result;
 }
 
-Ast* BinopStarMultiplyInteger(Ast* lval, Ast* rval)
+Judgement BinopStarMultiplyInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
     FatalError("Cannot Multiply NULL left term", __FILE__, __LINE__);
@@ -71,24 +117,44 @@ Ast* BinopStarMultiplyInteger(Ast* lval, Ast* rval)
     FatalError("Cannot Multiply NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Multiply non-Object left term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Multiply non-Object left term";
+    return result;
+  }
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Multiply non-Object right term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Multiply non-Object right term";
+    return result;
+  }
 
   if (lval->obj.kind != O_INT)
-    FatalError("Cannot Multiply non-Integer left Object", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Multiply non-Integer left term";
+    return result;
+  }
 
-  if (rval->obj.kind != O_INT)
-    FatalError("Cannot Multiply non-Integer right Object", __FILE__, __LINE__);
-
+  if (rval->obj.kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Multiply non-Integer right term";
+    return result;
+  }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateAstInteger(left * right, GetAstLocation(lval));
-  return ast;
+  result.success = true;
+  result.term    = CreateAstInteger(left * right, GetAstLocation(lval));
+  return result;
 }
 
-Ast* BinopFslashDivideInteger(Ast* lval, Ast* rval)
+Judgement BinopFslashDivideInteger(Ast* lval, Ast* rval)
 {
   if (lval == NULL)
     FatalError("Cannot Divide NULL left term", __FILE__, __LINE__);
@@ -97,52 +163,95 @@ Ast* BinopFslashDivideInteger(Ast* lval, Ast* rval)
     FatalError("Cannot Divide NULL right term", __FILE__, __LINE__);
 
   if (lval->kind != A_OBJ)
-    FatalError("Cannot Divide non-Object left term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Divide non-Object left term";
+    return result;
+  }
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Divide non-Object right term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Divide non-Object right term";
+    return result;
+  }
 
   if (lval->obj.kind != O_INT)
-    FatalError("Cannot Divide non-Integer left Object", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(lval);
+    result.error.dsc = "Cannot Divide non-Integer left term";
+    return result;
+  }
 
-  if (rval->obj.kind != O_INT)
-    FatalError("Cannot Divide non-Integer right Object", __FILE__, __LINE__);
-
+  if (rval->obj.kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Divide non-Integer right term";
+    return result;
+  }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
 
-  Ast* ast = CreateAstInteger(left / right, GetAstLocation(lval));
-  return ast;
+  result.success = true;
+  result.term    = CreateAstInteger(left / right, GetAstLocation(lval));
+  return result;
 }
 
-Ast* UnopHyphenNegateInteger(Ast* rval)
+Judgement UnopHyphenNegateInteger(Ast* rval)
 {
+  Judgement result;
   if (rval == NULL)
     FatalError("Cannot Negate NULL term", __FILE__, __LINE__);
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Negate non-Object term";
+    return result;
+  }
 
   if (rval->obj.kind != O_INT)
-    FatalError("Cannot Negate non-Integer Object", __FILE__, __LINE__);
+  {
+    result.success = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Negate non-Integer Object";
+    return result;
+  }
 
-  Ast* ast = CreateAstInteger(-(rval->obj.integer.value), GetAstLocation(rval));
-  return ast;
+  result.success = true;
+  result.term    = CreateAstInteger(-(rval->obj.integer.value), GetAstLocation(rval));
+  return result;
 }
 
-Ast* UnopBangNegateBoolean(Ast* rval)
+Judgement UnopBangNegateBoolean(Ast* rval)
 {
+  Judgement result;
   if (rval == NULL)
     FatalError("Cannot Negate NULL term", __FILE__, __LINE__);
 
   if (rval->kind != A_OBJ)
-    FatalError("Cannot Negate non-Object term", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Negate non-Object term";
+    return result;
+  }
 
   if (rval->obj.kind != O_BOOL)
-    FatalError("Cannot Negate non-Boolean Object", __FILE__, __LINE__);
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(rval);
+    result.error.dsc = "Cannot Negate non-Boolean Object";
+    return result;
+  }
 
-
-  Ast* ast = CreateAstBoolean(!(rval->obj.boolean.value), GetAstLocation(rval));
-  return ast;
+  result.success = true;
+  result.term    = CreateAstBoolean(!(rval->obj.boolean.value), GetAstLocation(rval));
+  return result;
 }
 
 void RegisterPrimitiveUnops(Environment* env)
@@ -165,27 +274,36 @@ void RegisterPrimitiveBinops(Environment* env)
 {
   Type* booleanType = GetBooleanType(env->interned_types);
   Type* integerType = GetIntegerType(env->interned_types);
+  Type* nilType     = GetNilType(env->interned_types);
+
+  InternedString eqOp = InternString(env->interned_ops, "=");
+  BinopEliminatorList* eqBinopElims = CreateBinopEliminatorList();
+  InsertPrimitiveBinopEliminator(eqBinopElims, integerType, integerType, booleanType, BinopEquals);
+  InsertPrimitiveBinopEliminator(eqBinopElims, booleanType, booleanType, booleanType, BinopEquals);
+  InsertPrimitiveBinopEliminator(eqBinopElims, nilType,     nilType,     booleanType, BinopEquals);
+  InsertBinopPrecAssoc(env->precedence_table, eqOp, 1, A_LEFT);
+  InsertBinop(env->binops, eqOp, eqBinopElims);
 
   InternedString plusOp = InternString(env->interned_ops, "+");
-  BinopEliminatorList* plusBinopElims = CreateAstBinopEliminatorList();
+  BinopEliminatorList* plusBinopElims = CreateBinopEliminatorList();
   InsertPrimitiveBinopEliminator(plusBinopElims, integerType, integerType, integerType, BinopPlusAddInteger);
   InsertBinopPrecAssoc(env->precedence_table, plusOp, 5, A_LEFT);
   InsertBinop(env->binops, plusOp, plusBinopElims);
 
   InternedString hyphenOp = InternString(env->interned_ops, "-");
-  BinopEliminatorList* hyphenBinopElims = CreateAstBinopEliminatorList();
+  BinopEliminatorList* hyphenBinopElims = CreateBinopEliminatorList();
   InsertPrimitiveBinopEliminator(hyphenBinopElims, integerType, integerType, integerType, BinopHyphenMinusInteger);
   InsertBinopPrecAssoc(env->precedence_table, hyphenOp, 5, A_LEFT);
   InsertBinop(env->binops, hyphenOp, hyphenBinopElims);
 
   InternedString starOp = InternString(env->interned_ops, "*");
-  BinopEliminatorList* starBinopElims = CreateAstBinopEliminatorList();
+  BinopEliminatorList* starBinopElims = CreateBinopEliminatorList();
   InsertPrimitiveBinopEliminator(starBinopElims, integerType, integerType, integerType, BinopStarMultiplyInteger);
   InsertBinopPrecAssoc(env->precedence_table, starOp, 6, A_LEFT);
   InsertBinop(env->binops, starOp, starBinopElims);
 
   InternedString fslashOp = InternString(env->interned_ops, "/");
-  BinopEliminatorList* fslashBinopElims = CreateAstBinopEliminatorList();
+  BinopEliminatorList* fslashBinopElims = CreateBinopEliminatorList();
   InsertPrimitiveBinopEliminator(fslashBinopElims, integerType, integerType, integerType, BinopFslashDivideInteger);
   InsertBinopPrecAssoc(env->precedence_table, fslashOp, 6, A_LEFT);
   InsertBinop(env->binops, fslashOp, fslashBinopElims);

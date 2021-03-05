@@ -10,6 +10,14 @@
 #include "SymbolTable.h"
 #include "Lambda.h"
 
+bool is_lambda_term(Ast* term)
+{
+  bool result = false;
+  if (term->kind == A_OBJ && term->obj.kind == O_LAMB)
+    result = true;
+  return result;
+}
+
 void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* scope, Location* loc)
 {
   lambda->loc      = *loc;
@@ -17,6 +25,10 @@ void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_typ
   lambda->arg_type = arg_type;
   lambda->body     = body;
   lambda->scope    = scope;
+  if (is_lambda_term(body))
+    lambda->curryed = true;
+  else
+    lambda->curryed = false;
 }
 
 void DestroyLambda(Lambda* lam)
@@ -64,9 +76,9 @@ char* ToStringLambda(Lambda* lam)
 // and we can type the body as having
 // type Tb, then we can conclude that
 // the procedure has type Ta -> Tb
-TypeJudgement GetypeLambda(Lambda* lam, Environment* env)
+Judgement GetypeLambda(Lambda* lam, Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
   Ast* dummy_binding = NULL;
 
   CloneAst(&(dummy_binding), lam->arg_type);
@@ -78,15 +90,21 @@ TypeJudgement GetypeLambda(Lambda* lam, Environment* env)
                                         // active scope, as well
                                         // as the bindings within
                                         // the current scope.
+                                        // and since this is interpretation
+                                        // everything is heap allocated
+                                        // we can do easy pointer assignment.
 
   bind(env->outer_scope, lam->arg_id, dummy_binding); // the symbol table currently
                                                // takes ownership of the Ast
                                                // tree's that it binds.
+                                               // which is why we need to bind to
+                                               // a clone of the type term.
 
-  TypeJudgement bodyjdgmt = Getype(lam->body, env);
+  Judgement bodyjdgmt = Getype(lam->body, env); // Getype returns terms which
+                                                // represent type
 
-  unbind(env->outer_scope, lam->arg_id); // which means this line deallocates the
-                                   // memory associated with (type_literal)
+  unbind(env->outer_scope, lam->arg_id); // this line deallocates the
+                                   // memory associated with the interned string
                                    // ((not the 'type' though, we still
                                    //   intern types remember?))
 
@@ -95,7 +113,7 @@ TypeJudgement GetypeLambda(Lambda* lam, Environment* env)
   if (bodyjdgmt.success == true)
   {
     result.success = true;
-    result.type    = GetProcedureType(env->interned_types, lam->arg_type, CreateAstType(bodyjdgmt.type, GetAstLocation(lam->body)));
+    result.term    = CreateAstType(GetProcedureType(env->interned_types, lam->arg_type, bodyjdgmt.term), &(lam->loc));
   }
   else
     result = bodyjdgmt;

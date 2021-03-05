@@ -53,9 +53,9 @@ char* ToStringVariable(Variable* var)
 // the type of a variable is the type
 // of whatever the variable is currently
 // bound to.
-TypeJudgement GetypeVariable(Variable* var, Environment* env)
+Judgement GetypeVariable(Variable* var, Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
 
   Ast* bound_term = lookup(env->outer_scope, var->id);
 
@@ -73,12 +73,24 @@ TypeJudgement GetypeVariable(Variable* var, Environment* env)
   return result;
 }
 
-EvalJudgement EvaluateVariable(Variable* var, struct Environment* env)
+Judgement EvaluateVariable(Variable* var, struct Environment* env)
 {
-  EvalJudgement result;
+  Judgement result;
 
-  if (result.success == true)
-    return Evaluate(result.term, env);
+  Ast* bound_term = lookup(env->outer_scope, var->id);
+
+  if (bound_term != NULL)
+  {
+    result.success = true;
+    result.term    = bound_term;
+  }
   else
-    return result;
+  {
+    result.success = false;
+    result.error.dsc = "variable not bound within environment";
+    result.error.loc = var->loc;
+  }
+
+
+  return result;
 }

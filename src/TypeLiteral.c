@@ -1,8 +1,9 @@
 
+#include "Ast.h"
 #include "Location.h"
 #include "Environment.h"
 #include "Type.h"
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "TypeLiteral.h"
 
 
@@ -28,10 +29,35 @@ char* ToStringTypeLiteral(TypeLiteral* tl)
   return ToStringType(tl->literal);
 }
 
-TypeJudgement GetypeTypeLiteral(TypeLiteral* tl, struct Environment* env)
+Judgement GetypeTypeLiteral(TypeLiteral* tl, struct Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
   result.success = true;
-  result.type    = tl->literal;
+  // note: this feels inefficient, and like it is
+  //       a part of the problem of which memory is
+  //       ready to be deallocated that is a major
+  //       part of the problem of this kind of evaluation
+  //       strategy. but we need to convert a Type* into
+  //       and Ast* and the way we usually do that is wrapped
+  //       within an Ast term. but here it feels like a redundant
+  //       allocation.
+  result.term    = CreateAstType(tl->literal, &(tl->loc));
+  return result;
+}
+
+Judgement AssignTypeLiteral(TypeLiteral* dest, TypeLiteral* source)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = NULL;
+  dest->literal  = source->literal;
+  return result;
+}
+
+Judgement EqualsTypeLiteral(TypeLiteral* t1, TypeLiteral* t2)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = CreateAstBoolean(t1->literal == t2->literal, &t1->loc);
   return result;
 }

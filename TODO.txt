@@ -1,6 +1,6 @@
 1) finish Parser, Lexer, Environment,
   Binop and Unop Eliminators,
   Binop  Precedence and Associativity Table,
-  PolyLambda, EvalError and EvalJudgement
+  PolyLambda, EvalError and Judgement
   getype and evaluate,
   the REPL.

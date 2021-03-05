@@ -20,8 +20,8 @@ void CloneIteration(Iteration* destination, Iteration* source);
 
 char* ToStringIteration(Iteration* itr);
 
-TypeJudgement GetypeIteration(Iteration* itr, struct Environment* env);
+Judgement GetypeIteration(Iteration* itr, struct Environment* env);
 
-EvalJudgement EvaluateIteration(Iteration* itr, struct Environment* env);
+Judgement EvaluateIteration(Iteration* itr, struct Environment* env);
 
 #endif // !ITERATION_H

@@ -1,0 +1,69 @@
+// if the term is a constant object, then this is fine as
+// each branch of the tree has a reference to the same constant
+// all this means is we have saved on memory, as all constant
+// operations on constant objects are kosher.
+// when we are talking about a mutable object, then we have
+// two cases to consider, stack allocated or heap allocated.
+// (sorry, in the compiled sense, in the interpreted sense
+//  all objects are heap allocated, that's just the nature
+//  of the beast.)
+// (okay, i am starting to see why a reference counted garbage
+//  collector is so used within interpreters now. it is a really
+//  clean solution to the very messy problem of actually reclaiming
+//  memory properly within this tree rewriting system.
+//  the basic gist of this garbage collector is;
+//  if a mutable object is referenced by some term bound within
+//  the environment, that object is still in use, and is valid
+//  memory in a valid state. if we find that all terms which
+//  contain references to that memory are deleted, then we
+//  know for sure that memory is free to be reclaimed by the
+//  system.
+//
+//  however, most (all?) garbage collectors introduce
+//  a scaling amount of delay to a running program, introduced
+//  as more and more memory is allocated and deallocated.
+//
+//  and so, here i sit, thinking about shared pointers as the solution
+//  here. and truly, with constants, again we are assured of their
+//  lifetimes a-priori of the program running. we can hide them
+//  (or references to them) where necessary and not worry too much.
+//  dynamic memory allocated by the programmer, that is the true culprit.
+//  (aside: mutable local variables? i don't think we can have them when
+//   we enter into the domain of coroutines. (at least, passing references
+//   to them (when we generate their address as the stack is live, we
+//   generate a stack address, if another coroutine references that
+//   memory while the first stack is not active, then it is accessing
+//   whatever memory is currently allocated on the stack while a
+//   different thread of execution is living on the stack, hence
+//   undefined behavior.)))
+//  so for a programmer to request mutable memory, that they can pass
+//  around the programmer in a knowable manner, that memory -has- to
+//  be heap allocated.
+//)
+//  this is a separate problem from accessing memory mapped devices.
+//  that is the case of interpreting a specific segment of memory as
+//  a particular type. (in C the common strategies are either an integer-type
+//  if the device is the size of a single word. or a defined structure.
+//  usually a combination of a struct union with different fields being mapped
+//  to specific bit's within the structure. this is why C has bit-fields in
+//  structures, and that is a nesessary feature for defining an interface over
+//  a memory mapped device. in this case what we need is kindof exactly what
+//  C provides with it's loose interpretation of types. we need to say,
+//  interpret this segment of memory as if it were a valid object of this
+//  type. and then the programmer can specify reads and writes to specific
+//  fields. and the mapping of enums to integers is also helpful here in
+//  that commonly hardware device flags are handled by setting specific
+//  subfields of their device to one or the other pattern.
+//  in a UART device one field might hold the direction of the device,
+//  it could be a single bit, with one meaning receiver, and zero meaning
+//  transmitter. or it could be another field which is two bits with
+//  zero zero meaning no stop bits, with zero one meaning one stop bit
+//  with one zero meaning two stop bits, and one one being reserved with
+//  no meaning. this means that a memory mapped device can be described
+//  fully in terms of a singleton type, plus a set of access and update
+//  procedures, with the controll header being able to be manipulated
+//  at a higher level of abstraction. i.e. the programmer can specify
+//  operations with the mnemonics provided by the enum instead of
+//  magic numbers. and segments of the program accessing the module
+//  encapsulating the driver are fully shielded from the fact that
+//  the device is memory mapped.)

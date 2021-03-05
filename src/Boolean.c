@@ -50,10 +50,27 @@ char* ToStringBoolean(Boolean* boolean)
   return result;
 }
 
-TypeJudgement GetypeBoolean(Boolean* node, Environment* env)
+Judgement GetypeBoolean(Boolean* node, Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
   result.success = true;
-  result.type    = GetBooleanType(env->interned_types);
+  result.term    = CreateAstType(GetBooleanType(env->interned_types), &(node->loc));
+  return result;
+}
+
+Judgement AssignBoolean(Boolean* dest, Boolean* source)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = NULL;
+  dest->value    = source->value;
+  return result;
+}
+
+Judgement EqualsBoolean(Boolean* b1, Boolean* b2)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = CreateAstBoolean((b1->value == b2->value), &(b1->loc));
   return result;
 }

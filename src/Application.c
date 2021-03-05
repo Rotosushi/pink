@@ -4,7 +4,7 @@
 #include "Ast.h"
 #include "Utilities.h"
 #include "Location.h"
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "Environment.h"
 #include "Application.h"
 
@@ -73,34 +73,34 @@ char* ToStringApplication(Application* app)
    --------------------------------------------
            ENV |- lhs rhs : t2
 */
-TypeJudgement GetypeApplication(Application* app, struct Environment* env)
+Judgement GetypeApplication(Application* app, struct Environment* env)
 {
   if (!app || !env)
     FatalError("Bad Getype Call", __FILE__, __LINE__);
 
-  TypeJudgement result;
+  Judgement result;
 
-  TypeJudgement lhsjdgmt = Getype(app->lhs, env);
+  Judgement lhsjdgmt = Getype(app->lhs, env);
 
   if (lhsjdgmt.success == true)
   {
-    Type *lhstype = lhsjdgmt.type;
+    Type *lhstype = lhsjdgmt.term->obj.type.literal;
 
     if (lhstype->kind == T_PROC)
     {
       ProcType *pt = &(lhstype->proc);
       Type     *t1 = pt->lhs->obj.type.literal, *t2 = pt->rhs->obj.type.literal;
 
-      TypeJudgement rhsjdgmt = Getype(app->rhs, env);
+      Judgement rhsjdgmt = Getype(app->rhs, env);
 
       if (rhsjdgmt.success == true)
       {
-        Type* t3 = rhsjdgmt.type;
+        Type* t3 = rhsjdgmt.term->obj.type.literal;
 
         if (t1 == t3)
         {
           result.success = true;
-          result.type    = t2;
+          CloneAst(&(result.term), pt->rhs);
         }
         else
         {
@@ -126,10 +126,11 @@ TypeJudgement GetypeApplication(Application* app, struct Environment* env)
   return result;
 }
 
-
-EvalJudgement EvaluateApplication(Application* app, Environment* env)
+// TODO: bool appears_free(Ast*, InternedString)
+//
+Judgement EvaluateApplication(Application* app, Environment* env)
 {
-  EvalJudgement result;
+  Judgement result;
 
   // evaluate the application
 

@@ -60,67 +60,126 @@ char* ToStringConditional(Conditional* cond)
 // the condition has to have type Bool.
 // the alternatives must have equal types.
 // the result type is the type of the alternatives
-TypeJudgement GetypeConditional(Conditional* conditional, Environment* env)
+Judgement GetypeConditional(Conditional* conditional, Environment* env)
 {
-  Type* booleanType = GetBooleanType(env->interned_types);
-  TypeJudgement result;
+  Location dummy;
+  Ast* booleanType = CreateAstType(GetBooleanType(env->interned_types), &dummy);
+  Judgement result, eqcnd, fstjdgmt, sndjdgmt, eqalts;
 
-  TypeJudgement cndjdgmt = Getype(conditional->cnd, env);
+  Judgement cndjdgmt = Getype(conditional->cnd, env);
+
+  eqcnd = Equals(cndjdgmt.term, booleanType);
+
+  if (eqcnd.success == false)
+  {
+    free(booleanType);
+    result = eqcnd;
+    return result;
+  }
+
+  if (eqcnd.term->obj.boolean.value == false)
+  {
+    free(booleanType);
+    result.success   = false;
+    result.error.loc = *GetAstLocation(conditional->cnd);
+    result.error.dsc = "Conditional espression must have boolean type";
+    return result;
+  }
+
+  fstjdgmt = Getype(conditional->fst, env);
+
+  // if the typing failed, return the reason.
+  if (fstjdgmt.success == false)
+  {
+    free(booleanType);
+    result = fstjdgmt;
+    return result;
+  }
+
+  sndjdgmt = Getype(conditional->snd, env);
+
+  if (sndjdgmt.success == false)
+  {
+    free(booleanType);
+    result = sndjdgmt;
+    return result;
+  }
+
+  eqalts = Equals(fstjdgmt.term, sndjdgmt.term);
+
+  // if the comparison failed, return the reason.
+  if (eqalts.success == false)
+  {
+    free(booleanType);
+    result = eqalts;
+    return result;
+  }
+
+  // if the alternative expressions had equal types
+  // then we type the conditional expression as the
+  // type of the first alternative.
+  if (eqalts.term->obj.boolean.value == true)
+  {
+    result = fstjdgmt;
+  }
+  else
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(conditional->fst);
+    result.error.dsc = "Alternative expressions must have the same Type";
+  }
+  
+  free(booleanType);
+  return result;
+}
+
+Judgement EvaluateConditional(Conditional* cond, struct Environment* env)
+{
+  Judgement result, cndjdgmt;
+  Location dummy;
+  Ast* literalTrue = CreateAstBoolean(true, &dummy);
+
+  cndjdgmt = Evaluate(cond->cnd, env);
 
   if (cndjdgmt.success == true)
   {
-    if (cndjdgmt.type == booleanType)
+    Judgement truthjdgmt = Equals(cndjdgmt.term, literalTrue);
+    if (truthjdgmt.success)
     {
-      TypeJudgement fstjdgmt = Getype(conditional->fst, env);
-
-      if (fstjdgmt.success == true)
-      {
-        TypeJudgement sndjdgmt = Getype(conditional->snd, env);
-
-        if (sndjdgmt.success == true)
-        {
-          if (fstjdgmt.type == sndjdgmt.type)
-          {
-            result.success = true;
-            result.type    = fstjdgmt.type;
-          }
-          else
-          {
-            result.success   = false;
-            result.error.dsc = "alternative expressions must have the same type";
-            result.error.loc = *GetAstLocation(conditional->fst);
-          }
-        }
-        else
-        {
-          result = sndjdgmt;
-        }
-      }
+      if (truthjdgmt.term->obj.boolean.value == true)
+        result = Evaluate(cond->fst, env);
       else
-      {
-        result = fstjdgmt;
-      }
+        result = Evaluate(cond->snd, env);
     }
     else
     {
-      result.success   = false;
-      result.error.dsc = "conditional expression must have boolean type";
-      result.error.loc = *GetAstLocation(conditional->cnd);
+      result = truthjdgmt;
     }
   }
   else
   {
     result = cndjdgmt;
   }
-  return result;
-}
 
-EvalJudgement EvaluateConditional(Conditional* cond, struct Environment* env)
-{
-  EvalJudgement result;
+  free(literalTrue);
 
   if (result.success == true)
     return Evaluate(result.term, env);
   else
     return result;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//

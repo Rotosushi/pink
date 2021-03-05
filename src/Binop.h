@@ -2,8 +2,7 @@
 #define BINOP_H
 
 #include "StringInterner.h"
-#include "TypeJudgement.h"
-#include "EvalJudgement.h"
+#include "Judgement.h"
 #include "Location.h"
 struct Environment;
 struct Ast;
@@ -31,8 +30,8 @@ void CloneBinop(Binop* destination, Binop* source);
 
 char* ToStringBinop(Binop* binop);
 
-TypeJudgement GetypeBinop(Binop* binop, struct Environment* env);
+Judgement GetypeBinop(Binop* binop, struct Environment* env);
 
-EvalJudgement EvaluateBinop(Binop* binop, struct Environment* env);
+Judgement EvaluateBinop(Binop* binop, struct Environment* env);
 
 #endif // !BINOP_H

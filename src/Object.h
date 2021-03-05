@@ -6,7 +6,7 @@
 #include "Integer.h"
 #include "Boolean.h"
 #include "Lambda.h"
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "TypeLiteral.h"
 
 // so like, is this the place to store
@@ -65,6 +65,10 @@ void CloneObject(Object* dest, Object* source);
 
 char* ToStringObject(Object* obj);
 
-TypeJudgement GetypeObject(Object* obj, struct Environment* env);
+Judgement GetypeObject(Object* obj, struct Environment* env);
+
+Judgement AssignObject(Object* dest, Object* source);
+
+Judgement EqualsObject(Object* obj1, Object* obj2);
 
 #endif // !OBJECT_H

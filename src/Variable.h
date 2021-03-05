@@ -1,8 +1,8 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
-#include "TypeJudgement.h"
-#include "EvalJudgement.h"
+#include "Judgement.h"
+#include "Judgement.h"
 #include "StringInterner.h"
 #include "Location.h"
 struct Environment;
@@ -22,8 +22,8 @@ void CloneVariable(Variable* destination, Variable* source);
 
 char* ToStringVariable(Variable* var);
 
-TypeJudgement GetypeVariable(Variable* var, struct Environment* env);
+Judgement GetypeVariable(Variable* var, struct Environment* env);
 
-EvalJudgement EvaluateVariable(Variable* var, struct Environment* env);
+Judgement EvaluateVariable(Variable* var, struct Environment* env);
 
 #endif // !VARIABLE_H

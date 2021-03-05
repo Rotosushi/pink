@@ -153,8 +153,8 @@ typedef struct Ast
 #include "Type.h"
 #include "TypeLiteral.h"
 #include "Object.h"
-#include "TypeJudgement.h"
-#include "EvalJudgement.h"
+#include "Judgement.h"
+#include "Judgement.h"
 
 struct SymbolTable;
 struct Environment;
@@ -218,16 +218,15 @@ Ast* CreateAstBoolean(bool value, Location* loc);
 Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, struct SymbolTable* scope, Location* loc);
 Ast* CreateAstType(Type* type, Location* loc);
 
+
+Judgement Assign(Ast* dest, Ast* source);
+
+Judgement Equals(Ast* a1, Ast* a2);
+
 // returns a reference to the location data
 // held within the member of the ast.
 // switching based upon the active member.
 Location* GetAstLocation(Ast* ast);
-
-// I don't know what to call this,
-// but it's for convienence to
-// pull the Type* out of an Ast
-// not to try and type the expression
-Type* GetLiteralTypePtr(Ast* ast);
 
 // this shall deallocate all memory associated
 // with the ast.
@@ -244,8 +243,34 @@ char* ToStringAst(Ast* ast);
 
 // returns the type of the tree passed in,
 // or a description of the error that was found.
-TypeJudgement Getype(Ast* ast, struct Environment* env);
+Judgement Getype(Ast* ast, struct Environment* env);
 
-EvalJudgement Evaluate(Ast* ast, struct Environment* env);
+Judgement Evaluate(Ast* ast, struct Environment* env);
+
+// returns true if id can be found free
+// when searching the term.
+bool AppearsFree(Ast* term, InternedString id);
+
+// replaces all free instances of target with replacement,
+// if replacement is NULL, we create a new id, intern it
+// and use that as the replacement. new id's are of the
+// form, p0, p1, p2, ..., pn where the number is incremented
+// with each new id we generate.
+// this means we never generate
+// a new id which conflicts with a previously generated id.
+// although, to be fully consistent, i think calls of AppearsFree
+// will be required of generated names within the target term.
+// to be completely sure we aren't creating an error.
+// although, it would be in a case where the programmer
+// has named a variable p0 or p1 or so forth.
+void RenameBinding(Ast* term, InternedString target, InternedString replacement);
+
+// this performs a substitution upon the tree pointed to
+// by term. each instance of a variable leaf node containing
+// the matching id will be replaced by the -same- Ast ptr.
+// this may or may not cause weird bugs, i accept whatever
+// semantics arise from this, and am merely content to observe
+// them while i learn the lay of the land.
+void Substitute(Ast** term, InternedString id, Ast* value, struct Environment* env);
 
 #endif // !AST_H

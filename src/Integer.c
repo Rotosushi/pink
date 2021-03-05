@@ -4,7 +4,7 @@
 
 #include "Ast.h"
 #include "Location.h"
-#include "TypeJudgement.h"
+#include "Judgement.h"
 #include "TypeInterner.h"
 #include "Environment.h"
 #include "Integer.h"
@@ -36,10 +36,27 @@ char* ToStringInteger(Integer* i)
   return result;
 }
 
-TypeJudgement GetypeInteger(Integer* node, Environment* env)
+Judgement GetypeInteger(Integer* node, Environment* env)
 {
-  TypeJudgement result;
+  Judgement result;
   result.success = true;
-  result.type    = GetIntegerType(env->interned_types);
+  result.term    = CreateAstType(GetIntegerType(env->interned_types), &(node->loc));
+  return result;
+}
+
+Judgement AssignInteger(Integer* dest, Integer* source)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = NULL;
+  dest->value    = source->value;
+  return result;
+}
+
+Judgement EqualsInteger(Integer* i1, Integer* i2)
+{
+  Judgement result;
+  result.success = true;
+  result.term    = CreateAstBoolean((i1->value == i2->value), &(i1->loc));
   return result;
 }
