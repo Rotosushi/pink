@@ -50,7 +50,7 @@ char* ToStringIteration(Iteration* itr)
 Judgement GetypeIteration(Iteration* itr, struct Environment* env)
 {
   Location dummy;
-  Ast* booleanType = CreateAstType(GetBooleanType(env->interned_types), &dummy);
+  Ast* booleanType = GetBooleanType(env->interned_types, &dummy);
   Judgement result, eqcnd;
 
   Judgement cndjdgmt = Getype(itr->cnd, env);
@@ -67,7 +67,7 @@ Judgement GetypeIteration(Iteration* itr, struct Environment* env)
         if (bdyjdgmt.success == true)
         {
           result.success = true;
-          result.term    = CreateAstType(GetNilType(env->interned_types), &itr->loc);
+          result.term    = GetNilType(env->interned_types, &itr->loc);
         }
         else
         {
@@ -76,9 +76,15 @@ Judgement GetypeIteration(Iteration* itr, struct Environment* env)
       }
       else
       {
+        char* c0 = "Condition has Type:[";
+        char* c1 = "] must have type:[Bool]";
+        char* c  = ToStringAst(cndjdgmt.term);
+        char* i0 = appendstr(c0, c);
         result.success   = false;
-        result.error.dsc = "condition must have type:[Bool]";
+        result.error.dsc = appendstr(i0, c1);
         result.error.loc = *GetAstLocation(itr->cnd);
+        free(c);
+        free(i0);
       }
     }
     else
@@ -110,7 +116,7 @@ Judgement EvaluateIteration(Iteration* itr, struct Environment* env)
         result = Evaluate(itr->bdy, env);
 
         if (result.success == false)
-          return result;
+          break;
 
         cndjdgmt = Evaluate(itr->cnd, env);
 
@@ -137,4 +143,23 @@ Judgement EvaluateIteration(Iteration* itr, struct Environment* env)
   }
   else
     return result;
+}
+
+bool AppearsFreeIteration(Iteration* itr, InternedString id)
+{
+  bool c = AppearsFree(itr->cnd, id);
+  bool b = AppearsFree(itr->bdy, id);
+  return c || b;
+}
+
+void RenameBindingIteration(Iteration* itr, InternedString target, InternedString replacement)
+{
+  RenameBinding(itr->cnd, target, replacement);
+  RenameBinding(itr->bdy, target, replacement);
+}
+
+void SubstituteIteration(Iteration* itr, Ast** target, InternedString id, Ast* value, struct Environment* env)
+{
+  Substitute(itr->cnd, &(itr->cnd), id, value, env);
+  Substitute(itr->bdy, &(itr->bdy), id, value, env);
 }

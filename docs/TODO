@@ -1,0 +1,7 @@
+1) all error messages returned through the PinkError struct
+   need to be made into dynamic allocations, so we can uniformly
+   free them without possibly freeing static memory.
+
+2) finish Evaluate, AppearsFree, RenameBinding, and Substitute
+
+3) 

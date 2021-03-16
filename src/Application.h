@@ -31,4 +31,9 @@ Judgement GetypeApplication(Application* app, struct Environment* env);
 
 Judgement EvaluateApplication(Application* app, struct Environment* env);
 
+bool AppearsFreeApplication(Application* app, InternedString id);
+
+void RenameBindingApplication(Application* app, InternedString target, InternedString replacement);
+
+void SubstituteApplication(Application* app, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
 #endif // !APPLICATION_H

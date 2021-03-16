@@ -54,7 +54,7 @@ Judgement GetypeBoolean(Boolean* node, Environment* env)
 {
   Judgement result;
   result.success = true;
-  result.term    = CreateAstType(GetBooleanType(env->interned_types), &(node->loc));
+  result.term    = GetBooleanType(env->interned_types, &(node->loc));
   return result;
 }
 

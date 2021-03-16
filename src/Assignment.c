@@ -55,24 +55,39 @@ Judgement GetypeAssignment(Assignment* ass, Environment* env)
 {
   Judgement result;
 
-  Judgement lhsjdgmt = Getype(ass->lhs, env);
+  Judgement lhsjdgmt = Getype(ass->lhs, env); // dynamic result
 
   if (lhsjdgmt.success == true)
   {
-    Judgement rhsjdgmt = Getype(ass->rhs, env);
+    Judgement rhsjdgmt = Getype(ass->rhs, env); // free me
 
     if (rhsjdgmt.success == true)
     {
-      Judgement eqjdgmt = Equals(lhsjdgmt.term, rhsjdgmt.term);
+      Judgement eqjdgmt = Equals(lhsjdgmt.term, rhsjdgmt.term); // on success eqjdgmt.term == NULL
       if (eqjdgmt.success == true)
       {
         if (eqjdgmt.term->obj.boolean.value == true)
           result = lhsjdgmt;
         else
         {
+          char* t1  = "Type mismatch between lhs:[";
+          char* t2  = "] and rhs:[";
+          char* t3  = "]";
+          char* lhs = ToStringAst(lhsjdgmt.term);
+          char* rhs = ToStringAst(rhsjdgmt.term);
+          // t1 + lhs + t2 + rhs + t3
+          char* i0     = appendstr(t1, lhs);
+          char* i1     = appendstr(i0, t2);
+          char* i2     = appendstr(i1, rhs);
+          char* errtxt = appendstr(i2, t3);
           result.success   = false;
-          result.error.dsc = "Type mismatch between lhs and rhs";
+          result.error.dsc = errtxt;
           result.error.loc = ass->loc;
+          free(lhs);
+          free(rhs);
+          free(i0);
+          free(i1);
+          free(i2);
         }
       }
       else
@@ -107,6 +122,13 @@ Judgement EvaluateAssignment(Assignment* ass, Environment* env)
       // now, previously i could do pointer assignment
       // here, which is easy and fast. however now.
       // I have to come up with a new solution.
+      // the solution is essentially the overload set of
+      // '=' which is valid for expressions with the type
+      // TypeLiteral '=' TypeLiteral
+      // Nil '=' Nil
+      // Int '=' Int
+      // Bool '=' Bool
+      //
       result = AssignObject(&(lhs.term->obj), &(rhs.term->obj));
 
       // we want to preserve the error
@@ -114,7 +136,9 @@ Judgement EvaluateAssignment(Assignment* ass, Environment* env)
       // AssignObject returned an empty
       // term.
       if (result.success == true)
+      {
         result = rhs;
+      }
     }
     else
       result = rhs;
@@ -123,4 +147,23 @@ Judgement EvaluateAssignment(Assignment* ass, Environment* env)
     result = lhs;
 
   return result;
+}
+
+bool AppearsFreeAssignment(Assignment* ass, InternedString id)
+{
+  bool l = AppearsFree(ass->lhs, id);
+  bool r = AppearsFree(ass->rhs, id);
+  return l || r;
+}
+
+void RenameBindingAssignment(Assignment* ass, InternedString target, InternedString replacement)
+{
+  RenameBinding(ass->lhs, target, replacement);
+  RenameBinding(ass->rhs, target, replacement);
+}
+
+void SubstituteAssignment(Assignment* ass, Ast** target, InternedString id, Ast* value, Environment* env)
+{
+  Substitute(ass->lhs, &(ass->lhs), id, value, env);
+  Substitute(ass->rhs, &(ass->rhs), id, value, env);
 }

@@ -54,23 +54,16 @@
 // the interpretive setup.
 int main (int argc, char** argv)
 {
+  ScopeSet              global_scope     = 1;
   StringInterner*       interned_ids     = CreateStringInterner();
   StringInterner*       interned_ops     = CreateStringInterner();
   TypeInterner*         interned_types   = CreateTypeInterner();
-  SymbolTable*          global_scope     = CreateSymbolTable((SymbolTable*)NULL);
+  SymbolTable*          global_symbols   = CreateSymbolTable((SymbolTable*)NULL);
   BinopPrecedenceTable* precedence_table = CreateAstBinopPrecedenceTable();
   BinopTable*           binops           = CreateAstBinopTable();
   UnopTable*            unops            = CreateUnopTable();
-  Parser*               parser           = CreateParser(global_scope, interned_ids, interned_ops, interned_types, precedence_table, binops, unops);
-  Environment*   environment             = (Environment*)malloc(sizeof(Environment));
-  environment->parser      = parser;
-  environment->outer_scope = global_scope;
-  environment->interned_ids = interned_ids;
-  environment->interned_ops = interned_ops;
-  environment->interned_types = interned_types;
-  environment->precedence_table = precedence_table;
-  environment->binops = binops;
-  environment->unops  = unops;
+  Parser*               parser           = CreateParser(global_symbols, global_scope, interned_ids, interned_ops, interned_types, precedence_table, binops, unops);
+  Environment*          environment      = CreateEnvironment(parser, global_symbols, global_scope, interned_ids, interned_ops, interned_types, precedence_table, binops, unops);
 
   RegisterPrimitiveBinops(environment);
   RegisterPrimitiveUnops(environment);

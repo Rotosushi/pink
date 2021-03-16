@@ -27,4 +27,10 @@ Judgement GetypeUnop(Unop* uop, struct Environment* env);
 
 Judgement EvaluateUnop(Unop* uop, struct Environment* env);
 
+bool AppearsFreeUnop(Unop* uop, InternedString id);
+
+void RenameBindingUnop(Unop* uop, InternedString target, InternedString Replacement);
+
+void SubstituteUnop(Unop* uop, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
+
 #endif // !UNOP_H

@@ -69,12 +69,12 @@ want to engage in information hiding.
 unions are composed by superimposing each member type atop one another,
 and maintaining a small datum which labels which member is currently
 active within the union. we cannot have two objects residing within
-the same physical space, that is against the laws of existance.
+the same physical space, that is against the laws of existence.
 
 
 
 and so, the inner members are thusly read from or written to based upon
-thier type, and so on, recursively through the type structure until
+their type, and so on, recursively through the type structure until
 either a primitive type is reached, or the member required has been
 reached
 
@@ -113,6 +113,8 @@ proc getype(Lambda, Environment);
 and we can allocate a variable of type Object,
 and then evaluate the expression
 
+obj := Aquire(Integer, 0);
+
 objtype := getype(obj, env);
 
 by invoking a procedure which dispatches between
@@ -128,7 +130,8 @@ union Ast is Application
            | Iteration
            | Binop
            | Unop
-           | Object
+           | Object // dispatching to here, means invoking another dispatch procedure
+                    // precisely because Object in another union type.
 
  we can easily imagine implementing each
  typing algorithm as an instance of an
@@ -154,24 +157,22 @@ to the dispatch as the end point to every
 evaluation body except Object, which simply
 returns.
 this in effect means that until the tree reduces to
-a single Object we will evaluate indefinitely. 
+a single Object we will evaluate indefinitely.
 
-it also changes the call graph while we evaluate 
-some given term, instead of returning the 
-result term pointer up to the evaluation context 
-of the last Evaluate(Ast, Env) procedure that was 
-called and then calling another procedure, we simply 
-call Evaluate again on the resulting term of our single 
-step of evaluation, which either halts and returns an 
-Object, or continues evaluation of the tree. 
+(in fact, the only case where we weren't doing this
+already, by the nature of the typing rules was the
+application term. i think this was simply an error on
+part of the author of this program, me. lol)
 
-
-
-
-
-
-
-
+it also changes the call graph while we evaluate
+some given term, instead of returning the
+result term pointer up to the evaluation context
+of the last Evaluate(Ast, Env) procedure that was
+called and then calling another procedure, we simply
+call Evaluate again on the resulting term of our single
+step of evaluation, which either halts and returns an
+Object, or continues evaluation of the tree, because the
+body of the substitution was an evaluable term.
 
 
 
@@ -180,6 +181,393 @@ Object, or continues evaluation of the tree.
 
 
 
+
+
+
+--------
+
+what if array syntax, like with our implementation
+of references, was
+
+id : [10] Int;
+
+and this meant (in c)
+
+int[10] id;
+
+arrays are sort of tricky, because they can either
+have their length encoded or not. and with encoding
+comes clumsy procedure definitions. and with not
+encoding comes forcing the programmer to be explicit
+about storing the length. of course, this lets the
+programmer be in more explicit control over what
+exactly the layout of the data is in memory. however,
+any programmer working with arrays saves the length
+alongside the array. as soon as you want to share the
+array around this becomes the only reasonable solution.
+however, arrays having pass-by-reference semantics in
+c as opposed to literally every other value in the
+language is a sharp spot. so, i really want arrays of
+words to be just that, however, to work with the array
+means reserving the first bit of data for a length field.
+so, to me, the solution is to lift arrays to pass-by-value,
+however, we also specify mostly the same exact pointer-array
+shenanigans that C does, namely, the address of an array
+is a pointer to it's first member. force the programmer to
+specify pass-by-reference semantics consistently.
+
+&array-name
+
+is equivalent to the c term
+
+array-name
+
+which is equivalent to the c term
+
+&array-name[0]
+
+if you want the length, you say
+
+array-name.length
+
+which is essentially saying that arrays
+are pairs, a length descriptor paired
+with a c array. so, the statement
+
+array-name[0]
+
+is actually shorthand for
+
+array-name.members[0]
+
+
+so, then, arrays as parameters, can we just pass by value?
+and have the type of the parameter slot just be 'array' or
+'ref array', that is, not care about the exact length attribute
+held within a given array more than to determine exactly how
+much space will need to be allocated on the stack for the
+pass-by-value mechanism. though, this implies that each frame
+of the procedure would need to be a dynamic size based upon
+the dynamic size of the array passed in that argument slot.
+i suppose this means every Lookup of a name within the scope
+of a procedure taking an array by value would (given that we
+address via pointers) means we need to perform another instruction
+before we can perform the load, which is calculate the location relative
+to the size of the array.
+does this tie array construction and
+function application? a little bit, except, it is vastly
+easier to construct a hundred, or thousand element array, and
+passing that by value is never something you want to encourage.
+which is part of why, C went with decomposing arrays into
+references in all cases. you never pass arrays, every array T is
+passed as a ref T. this is 'unsafely' addressed as if it were an array,
+by simply adding an offset to the referent pointer and reading/writing
+there.
+ which means that for all intents and purposes
+arrays are pass by reference, this is inconsistent semantics,
+and requires the programmer to always handle arrays separately
+from other named objects. this introduces a little more inconsistency
+into the langauge, which when paired with the other idiosyncratic
+pieces of the language means that you need to hold a lot of excess
+information in your head to program in the language, all of this
+adds viscosity. now, i would like to reduce viscosity within the
+language as much as possible, which can be done by removing
+inconsistency, however, no choice comes without a tradeoff.
+and if we allow programmers to pass dynamically sized arrays
+around by value, then the allocated space for the procedure
+needs to vary dynamically. with respect to the actual parameters
+we may be able to work with that, if we could accept that we have
+to perform a calculation before we can read/write data from the stack.
+(calculate the bindings location within the activation record of the
+procedure at runtime essentially). this is not something we could allow
+in the return value slot at all. the return slot as far as i can tell is
+a special area of the stack which is allocated expressly for the purpose
+by the caller of the procedure. and then when the callee goes to return a
+value, it writes that data to the stack to exchange it with the caller.
+since this needs to be allocated within the caller, we need to know the
+exact size of the return type prior to the time at which we call the procedure.
+if the array has dynamic size, this is the precise thing we cannot do.
+(if the datatype is smaller than (size_t) we can pass it entirely within
+registers, both to the procedure and returning out of the procedure. this
+means we could simply make that the cutoff point. and have that be the
+case for a procedure with structure types by-value in either the actual
+parameter position or the return value position.)
+
+
+also when do you ever want an array without
+it's length? a ton of security flaws have arisen from C procedures
+working with arrays which do not accept a length parameter.
+(gets, strcpy, and the like). in all cases where you are
+processing an array you want to know it's size.
+C went with a 'small' standard of a consistent sentinel value,
+however this had a big impact, on the fact that string handling
+is the most consistent place for bugs in C programs. not allocating
+enough space for the NULL, forgetting to check for the NULL,
+not realizing that things like sprintf need to call strlen (which
+must walk the whole array to find the NULL before knowing the length)
+which means that repeated calls to sprintf on the same arguments still
+take O(n) processing time each time. with a length attribute stored directly
+in front of the data, it is now O(1) to observe the length.
+all of this is specific bugs stemming from the basic implementation not
+playing well with the definition of the language. this is not a failing
+on the part of the designers of C however, they fully aknowledge that
+the language abdicates a lot of the decisions one could be making to
+the programmer. they took on enough that a high enough language emerged.
+but i feel that the floor could be raised a little bit more.
+
+
+
+
+------
+
+the kernel of pink will be slightly larger than C. but not by much.
+
+Nil, Bool, Char, Text
+
+U128,
+U64,
+U32,
+U16,
+U8,
+I128
+I64,
+I32,
+I16,
+I8,
+F32,
+F64,
+
+[] T, Ref T, // arrays decompose into references
+
+id, // to allow for type aliasing, farenheit := Float
+
+id : T & id : T // to allow for type composition
+id : T | id : T // with pattern matching that slots in
+                // alongside of procedure overloading.
+
+type-a is alt-a: type-one | alt-b: type-two;
+
+we could allow casts from the outer typename to
+union alternative types. with runtime checking performed
+to ensure that the name is-a instance of the alternative type.
+
+y : type-a = type-one ...;
+
+z := y // z has type:[type-a]
+x := cast y to type-one; // x has type:[type-one]
+
+if instead we saw
+y : type-a = type-two ...;
+
+z := y // z has type:[type-a]
+x := cast y to type-one; // this cast expression fails at runtime
+
+then, a procedure that we mean to define for each of the alternative
+types can be provided as an overload for each alternative type.
+
+i want the compiler to infer the dispatch procedure gosh dangit.
+even though it is simply a switch statement.
+so there is a little idiosyncrasy in that, the programmer is
+going to declare variables that have the type of the outer
+composite. but the programmer is going to declare procedures
+taking the alternative types as parameters. but this corresponds
+to the type shortening that is going on, from the more general
+outer type, where all we know is that the variable is one of a
+set of alternative forms, to the specific alternative form, with
+it's corresponding payload of data. so, i suppose the programmer
+could be allowed to specify the dispatch procedure by defining
+a procedure which takes as argument the composite type.
+which would imply the existence of a switch expression
+to dispatch to different parts of the procedure, over each of the
+possible alternatives.
+
+a switch over an algebraic data type is the same dispatch code as
+an overloaded procedure body for each alternative within an algebraic data type.
+the switch is simply inferred from the number of alternative types are
+defined. (we could even make the same warnings when you start
+to write the full overload set, but don't have a choice for each in
+the adt, like when you write a direct switch over a value of the type
+of the Adt, where you provide a case for each alternative possible type.
+and within the alternatives you have access to the data held within the
+slots associated with the sum type.) the 'case for each alternative' is provided
+by the procedure body.
+if we imagine two distinct types, and a procedure that is overloaded between
+them. when we imagine an application of said overloaded procedure we are
+forced to provide a variable that has some concrete type. this is by the
+nature of our typing rules. this means that the compiler can know which of
+the two to call based upon the provided actual types, because these types
+must already be monotonic, by the other typing rules. so despite the overloading
+the concrete type of the variable can direct the compiler to the correct
+procedure to apply in any given monotonic procedure application.
+if for instance, one of those concrete types is composed of a series of alternative
+representations, then we would infer that the procedure could be called
+against every alternative type. which means we can infer a dispatch routine
+between each of the alternative representations, and a call to the procedure
+passing in the adt type would call this dispatch routine, which would select
+the correct body based upon which type was inhabiting the space at runtime.
+
+so the only runtime dispatch that needs to happen regarding an overloaded
+procedure within the context of a strongly and greedily typed langauge
+is when the type we are constructing a procedure body for is itself composed
+of a set of alternative types.
+
+this is distinct from, and related to the idea of a template procedure,
+which is a procedure which has the same exact body given different
+monotonic types. most often implementing data structures.
+ a template procedure has
+each of its monotonic bodies generated by the compiler, but again we observe
+mostly monotonic procedure application, even of template procedures. which
+means the compiler can know which generated body to apply at compile time.
+unless of course you specify one of a sequence of alternative types, in which
+case an actual parameter of the product/union type would be handled by instead providing a
+body for each of it's alternative representations which are dispatched between
+when passed a monotonic type of the overall adt type at runtime. which means
+that we can decompose a polymorphic procedure into an overload set, plus a
+template provided by the polymorph which is used if the overload set doesn't
+already contain an instance taking the actual type provided, the
+compiler attempts type substitution at this point, and we can or cannot
+type the new procedure.
+which obviously we should disallow new procedures
+from being created at runtime. which means we need to force polymorphic
+applications during compilation, at least up to inferring the concrete types
+provided. which, may or may not be possible.
+
+a short digression:
+
+a monotonic procedure applying a monotonic procedure within it's body is
+a monotonic procedure application.
+
+a monotonic procedure calling a polymorphic procedure must
+by definition be a monotonic procedure application,
+in order to type a monotonic procedure, all of the types
+must be known, for every declaration and argument within the
+procedure. which means we are providing monotonic types to
+the polymorphic procedure, which means that if the polymorph
+can construct a new instance given the types provided, we must
+by definition be able to distinctly select that procedure body
+from the overload set representing the polymorph.
+
+a polymorphic procedure calling a monotonic procedure within it's body
+is a monotonic procedure application, because to type
+the body, all of the constraints set by the monotonic
+procedure must be satisfied by any type attempting to
+inhabit the actual parameter of the polymorphic procedure,
+
+
+a polymorphic procedure calling another polymorphic procedure
+is a space in which we observe a polymorphic procedure application.
+however, the only way we ever evaluate a polymorphic procedure
+application is by transforming it into a monotonic procedure application
+of the instance that can be validly created when passed the requisite
+monotonic type. which again, is either monotonic, or a set of alternatives.
+so, we encounter a situation in which we can create a valid instance given
+the concrete type occuring in the actual parameter position in which case
+we are also in a situation in which we have a direct link to the monotonic
+procedure we need to call, or we provide the polymorphic procedure with a
+polymorphic type, which means that we must be within a declaration.
+because terms with polymorphic type are only ever created in the context of
+a polymorphic procedures definition.
+
+
+(\x=>x + x)
+// we aren't applying the binop '+' to x and x
+// until we are in a situation in which we have
+// already replaced the x by the actual argument via
+// substitution.
+
+
+(\f=>\x=>f x)
+// we aren't applying the 'polymorphic' procedure
+// f, until after it has been bound to some monotonic procedure,
+// and only then we still wait until after x has
+// been given a value. which again, is -after-
+// x has been bound to some concrete type.
+// the instance of (\x=>(f) x) where (f) has been
+// substituted for some procedure body, presents some
+// constraints upon what sort of types can inhabit (x).
+// those constraints are either a monotonic type directly,
+// or a polymorphic application again, in which case we a
+// attempting to see if the actual type provided within some
+// monotonic instance of ((f) (x)) where (f) is inhabited by
+// a polymorphic procedure, and (x) is inhabited by some monotonic
+// type, is a valid application, which look, fits one of the above
+// three cases. we ask the polymorphic procedure currently inhabiting (f)
+// if it can type an instance given the monotonic type of (x).
+//
+
+((\f=>\x=>f x) (\x=>x + x)) (2)
+
+                          application
+        application                      (2)
+(\f=>\x=>f x)  (\x=>x + x)
+
+to resolve the type of the application we first walk to the
+leftmost term, which is already an Object, so we
+then evaluate the rhs, which is also already an
+object, both have polymorphic type. and so it would seem that
+we cannot do anything further. and with the previous implementation
+we didn't do anything, however we want to ensure that we don't allow
+the programmer to go wrong. now, the usual solution makes a little more
+sense, we pull the constraints provided by the text of the procedure
+out and into a separate object, which is then asked if the newly provided
+concrete type satisfies those constraints.
+and templates also make more sense, we ask the programmer to provide
+the type which is to be inhabiting the variable at the application site.
+
+so, my thought was that the concrete type provided by the application site
+would be enough information, and it is, in every situation except when
+we are applying a polymorphic procedure with polymorphic arguments. in which
+case we have been delegating that type check to the evaluation context.
+where we are being provided with a fully realized type in all situations.
+(and truly, we just let polymorphic applications go for it, and subsequently
+present any type constraints they want on future variables which are going to
+be inhabiting the procedure)
+
+given that we want a static solution allowing the programmer to express
+functions in a more natural manner, we may go implement a more tradition
+style of type reconstruction.
+
+
+this from an informational perspective means that the
+compiler needs to evaluate expressions involving
+polymorphic applications before we can compile them
+to assembly. to force application of concrete types
+which forces a check of is this concrete type acceptable.
+
+this is in the compiled sense. with respect to the interpreter
+i think the solution works. because runtime and data-entry time
+are sequential and repeated.
+so to enforce the constraints we would need to run each procedure
+while we were picking up terms during compilation.
+(truly only when we encounter a polymorphic procedure being composed
+together with another polymorphic procedure.) and the issue is
+simple for every type except other polymorphic lambdas.
+
+
+
+however, i now feel that polymorphism itself
+is a feature that may be causing me to bite off more than I can chew.
+so I think for the first version, we are leaving polymorphism on the
+table, alonside coroutines or threads, and algebraic data types.
+
+I feel that a by-value statically typed langauge where the procedures
+are overloadable, and we provide a distinct mechanism for closures
+would be interesting enough in implementation challenges.
+
+then we can add more advanced features later.
+
+----------------
+
+strings are a basic data type, yes they are technically composite,
+however they are such part and parcel with user interaction that
+most systems that interact with the user do so with text.
+a string data type, composed of an array of characters (of course built
+atop the arrays specified earlier.) will be available.
+with an slightly extended set of basic string processing routines.
+(basically two additions, strapp (new string composed of two others),
+ and strdup (new copy of other string). (and maybe ranges? but later))
+conversion between data types and strings and back will be provided
+for lots of primitives.
 
 
 

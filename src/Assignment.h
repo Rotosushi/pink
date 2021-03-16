@@ -25,4 +25,10 @@ Judgement GetypeAssignment(Assignment* ass, struct Environment* env);
 
 Judgement EvaluateAssignment(Assignment* ass, struct Environment* env);
 
+bool AppearsFreeAssignment(Assignment* ass, InternedString id);
+
+void RenameBindingAssignment(Assignment* ass, InternedString target, InternedString replacement);
+
+void SubstituteAssignment(Assignment* ass, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
+
 #endif // !ASSIGNMENT_H

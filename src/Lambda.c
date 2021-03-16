@@ -18,13 +18,13 @@ bool is_lambda_term(Ast* term)
   return result;
 }
 
-void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* scope, Location* loc)
+void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* symbols, Location* loc)
 {
-  lambda->loc      = *loc;
-  lambda->arg_id   = arg_id;
-  lambda->arg_type = arg_type;
-  lambda->body     = body;
-  lambda->scope    = scope;
+  lambda->loc        = *loc;
+  lambda->arg_id     = arg_id;
+  lambda->arg_type   = arg_type;
+  lambda->body       = body;
+  lambda->symbols    = symbols;
   if (is_lambda_term(body))
     lambda->curryed = true;
   else
@@ -34,7 +34,7 @@ void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_typ
 void DestroyLambda(Lambda* lam)
 {
   DestroyAst(lam->body);
-  DestroySymbolTable(lam->scope);
+  DestroySymbolTable(lam->symbols);
 }
 
 void CloneLambda(Lambda* destination, Lambda* source)
@@ -44,7 +44,7 @@ void CloneLambda(Lambda* destination, Lambda* source)
 
   CloneAst(&(destination->arg_type), source->arg_type);
   CloneAst(&(destination->body), source->body);
-  CloneSymbolTable(&(destination->scope), source->scope);
+  CloneSymbolTable(&(destination->symbols), source->symbols);
 }
 
 char* ToStringLambda(Lambda* lam)
@@ -83,18 +83,21 @@ Judgement GetypeLambda(Lambda* lam, Environment* env)
 
   CloneAst(&(dummy_binding), lam->arg_type);
 
-  SymbolTable* last_scope = env->outer_scope; // when we enter the body
+  ScopeSet     lastscope   = env->scope;
+  SymbolTable* lastsymbols = env->symbols;
+                                        // when we enter the body
                                         // of the lambda we also
                                         // enter it's local scope.
-  env->outer_scope = lam->scope;              // so we save/restore the
-                                        // active scope, as well
+  env->symbols = lam->symbols;          // so we save/restore the
+  env->scope   = lam->scope;            // active scope, as well
                                         // as the bindings within
                                         // the current scope.
                                         // and since this is interpretation
                                         // everything is heap allocated
                                         // we can do easy pointer assignment.
 
-  bind(env->outer_scope, lam->arg_id, dummy_binding); // the symbol table currently
+  BindSymbol(env->symbols, lam->arg_id, localscope, dummy_binding);
+                                               // the symbol table currently
                                                // takes ownership of the Ast
                                                // tree's that it binds.
                                                // which is why we need to bind to
@@ -103,20 +106,95 @@ Judgement GetypeLambda(Lambda* lam, Environment* env)
   Judgement bodyjdgmt = Getype(lam->body, env); // Getype returns terms which
                                                 // represent type
 
-  unbind(env->outer_scope, lam->arg_id); // this line deallocates the
+  UnbindSymbol(env->symbols, lam->arg_id); // this line deallocates the
                                    // memory associated with the interned string
                                    // ((not the 'type' though, we still
                                    //   intern types remember?))
 
-  env->outer_scope = last_scope; // restore the previous scope.
+  env->symbols = lastsymbols; // restore the previous scope and symbols
+  env->scope   = lastscope;
 
   if (bodyjdgmt.success == true)
   {
     result.success = true;
-    result.term    = CreateAstType(GetProcedureType(env->interned_types, lam->arg_type, bodyjdgmt.term), &(lam->loc));
+    result.term    = GetProcedureType(env->interned_types, lam->arg_type, bodyjdgmt.term, &(lam->loc));
   }
   else
     result = bodyjdgmt;
 
   return result;
+}
+
+
+bool AppearsFreeLambda(Lambda* lam, InternedString id)
+{
+  // if the arg matches the id we are looking for,
+  // the name appears bound in the lower scope
+  // not free.
+  if (lam->arg_id == id)
+    return false;
+  else
+    return AppearsFree(lam->body, id);
+}
+
+void RenameBindingLambda(Lambda* lam, InternedString target, InternedString replacement)
+{
+  if (lam->arg_id == target)
+    return;
+  else
+    RenameBinding(lam->body, target, replacement);
+}
+
+void SubstituteLambda(Lambda* lam, Ast** target, InternedString id, Ast* value, struct Environment* env)
+{
+  // if this lambda term introduces a binding that
+  // matches within it's own scope, to substitute for
+  // that binding within that term is a mistake.
+  if (lam->arg_id == id)
+    return;
+
+  // this is now the old solution,
+  // now, when lookup occurs we use
+  // scopesets to disambiguate between
+  // references being substituted in.
+  // the binding being introduced by this
+  // lambda will have an additional scope
+  // associated with it, thus when the value
+  // is substituted in, the free variable will
+  // not be associated with the variable within
+  // the scope that the lambda introduces.
+  //  this means that the
+  // outer binding will be a better match for the
+  // free variable within the value being substituted.
+  // (can it be that the lambda captures
+  // a free variable introduced within a subscope, and
+  // thus the lookup would fail, were we to not close over
+  // those values at the time when we return the lambda?
+  // i beleive so yes.)
+  // if the binding that this lambda introduces appears
+  // free in the value we are substituting in, then
+  // we would introduce an unintentional binding by
+  // our substitution operation, and so we need to rename
+  // the conflicting binding within the lambda we are substituting
+  // into.
+  /*
+  else if (AppearsFree(value, lam->arg_id))
+  {
+    char* new_id = gensym(NULL);
+    InternedString old_name = lam->arg_id;
+    InternedString new_name = InternString(env->interned_ids, new_id);
+
+    // if we are calling substitute on a lambda term,
+    // we must be operating on a copy of the lambda
+    // term actually bound. to ensure we don't modify
+    // the bound term. because we must ensure we don't
+    // inadvertently bind the free name in the value
+    // to the bound name present in this lambda term.
+    lam->arg_id = new_name;
+    RenameBinding(lam->body, old_name, new_name);
+
+  }
+  */
+
+  Substitute(lam->body, &(lam->body), id, value, env);
 }

@@ -82,7 +82,7 @@
 #include "Boolean.h"
 #include "Parser.h"
 
-struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, TypeInterner* Itypes, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us)
+struct Parser* CreateParser(SymbolTable* symbols, ScopeSet scope, StringInterner* Iids, StringInterner* Iops, TypeInterner* Itypes, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us)
 {
   Parser* result    = (Parser*)malloc(sizeof(Parser));
   result->lexer     = CreateLexer();
@@ -93,7 +93,8 @@ struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, Str
   result->idx       = 0;
   result->mkstksz   = 0;
   result->bufsz     = 0;
-  result->outer_scope      = global_scope;
+  result->symbols   = symbols;
+  result->scope     = scope;
   result->interned_ids     = Iids;
   result->interned_ops     = Iops;
   result->interned_types   = Itypes;
@@ -422,7 +423,7 @@ affix := application
 */
 Judgement ParseAffix(Parser* p)
 {
-  Location       lhsloc = curloc(p);
+  Location  lhsloc = curloc(p);
   Judgement lhsjdgmt;
 
   if (is_primary(curtok(p)))
@@ -479,13 +480,28 @@ Judgement ParseAffix(Parser* p)
           {
 
             lhsjdgmt.success = true;
-            lhsjdgmt.term = CreateAstType(GetProcedureType(p->interned_types, lhsjdgmt.term, rhsjdgmt.term), &typeloc);
+            lhsjdgmt.term    = GetProcedureType(p->interned_types, lhsjdgmt.term, rhsjdgmt.term, &typeloc);
           }
           else
           {
+            char* c0 = "cannot create a type from non type literals [";
+            char* c1 = "[";
+            char* c2 = "]";
+            char* l  = ToStringAst(lhsjdgmt.term);
+            char* r  = ToStringAst(rhsjdgmt.term);
+            char* t0 = appendstr(c0, l);
+            char* t1 = appendstr(t0, c2);
+            char* t2 = appendstr(t1, c1);
+            char* t3 = appendstr(t2, r);
             lhsjdgmt.success = false;
             lhsjdgmt.error.loc = typeloc;
-            lhsjdgmt.error.dsc = "cannot create a type from non type literals";
+            lhsjdgmt.error.dsc = appendstr(t3, c2);
+            free(l);
+            free(r);
+            free(t0);
+            free(t1);
+            free(t2);
+            free(t3);
           }
         }
         else
@@ -495,9 +511,20 @@ Judgement ParseAffix(Parser* p)
   }
   else
   {
+    char* c0 = "expected primary token; instead saw token:[";
+    char* c1 = "] text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     lhsjdgmt.success = false;
     lhsjdgmt.error.loc = curloc(p);
-    lhsjdgmt.error.dsc = "expected primary term.";
+    lhsjdgmt.error.dsc = appendstr(t2, c2);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
   }
   return lhsjdgmt;
 }
@@ -604,6 +631,21 @@ Judgement ParseApplication(Parser* p)
         apploc.last_line    = rhsloc.last_line;
         apploc.last_column  = rhsloc.last_column;
 
+        // we want to count the number of arguments
+        // held within the call tree such that at
+        // each call node, you know how many call nodes
+        // are below you. then as we apply the procedure,
+        // if it stores that this particular application
+        // is curryed, then we should be able to build
+        // some logic that can construct a partial application
+        // term holding a tuple of values which are the already
+        // evaluated arguments, and a pointer to the procedure
+        // body taking those arguments. maybe both terms need a
+        // count, so that we can construct the partial with
+        // knowledge of how many more arguments are needed
+        // to complete the application. within the interpreter
+        // we need to do nothing to get partial application semantics.
+        // precisely because we are using tree style evaluation.
         lhsjdgmt.success         = true;
         lhsjdgmt.term            = CreateAstApplication(lhsjdgmt.term, rhsjdgmt.term, &apploc);
       }
@@ -678,7 +720,7 @@ Judgement ParsePrimary(Parser* p)
       else
       {
         lhsjdgmt.success   = true;
-        lhsjdgmt.term      = CreateAstVariable(id, &lhsloc);
+        lhsjdgmt.term      = CreateAstVariable(id, env->scope, &lhsloc);
       }
       break;
     }
@@ -693,7 +735,7 @@ Judgement ParsePrimary(Parser* p)
     {
       nextok(p); // eat 'Nil'
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateAstType(GetNilType(p->interned_types), &lhsloc);
+      lhsjdgmt.term    = GetNilType(p->interned_types, &lhsloc);
       break;
     }
     case T_INTEGER:
@@ -707,7 +749,7 @@ Judgement ParsePrimary(Parser* p)
     {
       nextok(p); // eat 'Int'
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateAstType(GetIntegerType(p->interned_types), &lhsloc);
+      lhsjdgmt.term    = GetIntegerType(p->interned_types, &lhsloc);
       break;
     }
     case T_TRUE:
@@ -728,7 +770,7 @@ Judgement ParsePrimary(Parser* p)
     {
       nextok(p); // eat 'Bool'
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = CreateAstType(GetBooleanType(p->interned_types), &lhsloc);
+      lhsjdgmt.term    = GetBooleanType(p->interned_types, &lhsloc);
       break;
     }
     case T_BSLASH:
@@ -756,9 +798,20 @@ Judgement ParsePrimary(Parser* p)
       }
       else
       {
+        char* c0 = "unexpected token:[";
+        char* c1 = "], text:[";
+        char* c2 = "] following '(', expected primary term.";
+        char* t  = ToStringToken(curtok(p));
+        char* t0 = appendstr(c0, t);
+        char* t1 = appendstr(t0, c1);
+        char* t2 = appendstr(t1, curtxt(p));
         lhsjdgmt.success   = false;
         lhsjdgmt.error.loc = curloc(p);
-        lhsjdgmt.error.dsc = "unexpected token following '(', expected primary term.";
+        lhsjdgmt.error.dsc = appendstr(t2, c2);
+        free(t);
+        free(t0);
+        free(t1);
+        free(t2);
       }
 
       if ((lhsjdgmt.success == true) && (curtok(p) == T_RPAREN))
@@ -767,10 +820,21 @@ Judgement ParsePrimary(Parser* p)
       }
       else if ((lhsjdgmt.success == true) && (curtok(p) != T_RPAREN))
       {
+        char* c0 = "unexpected missing ')'; instead saw token:[";
+        char* c1 = "], text:[";
+        char* c2 = "]";
+        char* t  = ToStringToken(curtok(p));
+        char* t0 = appendstr(c0, t);
+        char* t1 = appendstr(t0, c1);
+        char* t2 = appendstr(t1, curtxt(p));
         DestroyAst(lhsjdgmt.term);
         lhsjdgmt.success   = false;
-        lhsjdgmt.error.dsc = "unexpected missing ')'";
+        lhsjdgmt.error.dsc = appendstr(t2, c2);
         lhsjdgmt.error.loc = curloc(p);
+        free(t);
+        free(t0);
+        free(t1);
+        free(t2);
       }
       break;
     }
@@ -783,9 +847,20 @@ Judgement ParsePrimary(Parser* p)
 
     default:
     {
+      char* c0 = "unknown Atom token:[";
+      char* c1 = "], text:[";
+      char* c2 = "] found";
+      char* t  = ToStringToken(curtok(p));
+      char* t0 = appendstr(c0, t);
+      char* t1 = appendstr(t0, c1);
+      char* t2 = appendstr(t1, curtxt(p));
       lhsjdgmt.success   = false;
-      lhsjdgmt.error.dsc = "unknown Atom token found";
+      lhsjdgmt.error.dsc = appendstr(t2, c2);
       lhsjdgmt.error.loc = curloc(p);
+      free(t);
+      free(t0);
+      free(t1);
+      free(t2);
       break;
     }
   }
@@ -849,9 +924,20 @@ Judgement ParseConditional(Parser* p)
           }
           else
           {
-            result.success = false;
-            result.error.dsc = "unexpected missing 'else'";
+            char* c0 = "unexpected missing 'else'; instead saw token:[";
+            char* c1 = "], text:[";
+            char* c2 = "]";
+            char* t  = ToStringToken(curtok(p));
+            char* t0 = appendstr(c0, t);
+            char* t1 = appendstr(t0, c1);
+            char* t2 = appendstr(t1, curtxt(p));
+            result.success   = false;
+            result.error.dsc = appendstr(t2, c2);
             result.error.loc = curloc(p);
+            free(t);
+            free(t0);
+            free(t1);
+            free(t2);
           }
         }
         else
@@ -859,9 +945,20 @@ Judgement ParseConditional(Parser* p)
       }
       else
       {
-        result.success = false;
-        result.error.dsc = "unexpected missing 'then'";
+        char* c0 = "unexpected missing 'then'; instead saw token:[";
+        char* c1 = "], text:[";
+        char* c2 = "]";
+        char* t  = ToStringToken(curtok(p));
+        char* t0 = appendstr(c0, t);
+        char* t1 = appendstr(t0, c1);
+        char* t2 = appendstr(t1, curtxt(p));
+        result.success   = false;
+        result.error.dsc = appendstr(t2, c2);
         result.error.loc = curloc(p);
+        free(t);
+        free(t0);
+        free(t1);
+        free(t2);
       }
     }
     else
@@ -869,23 +966,45 @@ Judgement ParseConditional(Parser* p)
   }
   else
   {
+    char* c0 = "unexpected missing 'if'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unexpected missing 'if'";
+    result.error.dsc = appendstr(t2, c2);
     result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
   }
   return result;
 }
 
 Judgement ParseIteration(Parser* p)
 {
-  Location       lhsloc = curloc(p);
+  Location  lhsloc = curloc(p);
   Judgement result;
 
   if (curtok(p) != T_WHILE)
   {
+    char* c0 = "unexpected missing 'while'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unexpected missing while";
+    result.error.dsc = appendstr(t2, c2);
     result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     // I could factor out the early returns by
     // assigning to result, and then using GOTOs
     // to jump straight to the 'common' return
@@ -904,9 +1023,20 @@ Judgement ParseIteration(Parser* p)
 
   if (curtok(p) != T_DO)
   {
+    char* c0 = "unexpected missing 'do'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unexpected missing 'do'";
+    result.error.dsc = appendstr(t2, c2);
     result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     return result;
   }
   nextok(p); // eat 'do'
@@ -930,23 +1060,45 @@ Judgement ParseIteration(Parser* p)
 
 Judgement ParseLambda(Parser* p)
 {
-  Location       lhsloc = curloc(p);
+  Location  lhsloc = curloc(p);
   Judgement result;
 
   if (curtok(p) != T_BSLASH)
   {
+    char* c0 = "unexpected missing '\\'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unexpected missing '\\'";
-    result.error.loc = lhsloc;
+    result.error.dsc = appendstr(t2, c2);
+    result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     return result;
   }
   nextok(p); // eat '\'
 
   if (curtok(p) != T_IDENTIFIER)
   {
+    char* c0 = "unexpected missing 'identifier'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unexpected missing identifier";
+    result.error.dsc = appendstr(t2, c2);
     result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     return result;
   }
 
@@ -967,9 +1119,20 @@ Judgement ParseLambda(Parser* p)
   // (bindings are already annotation free baby B^) )
   if (curtok(p) != T_COLON)
   {
+    char* c0 = "unexpected missing ':'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unexpected missing ':'";
+    result.error.dsc = appendstr(t2, c2);
     result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     return result;
   }
 
@@ -984,17 +1147,34 @@ Judgement ParseLambda(Parser* p)
   }
   else if (!is_type_literal(typejdgmt.term))
   {
+    char* c0 = "Type annotation must be a Type literal, instead saw term:[";
+    char* c1 = "]";
+    char* t  = ToStringAst(typejdgmt.term);
+    char* t0 = appendstr(c0, t);
     result.success = false;
     result.error.loc = *GetAstLocation(typejdgmt.term);
-    result.error.dsc = "missing type annotation";
+    result.error.dsc = appendstr(t0, c1);
+    free(t);
+    free(t0);
     return result;
   }
 
   if (curtok(p) != T_EQRARROW)
   {
+    char* c0 = "unexpected missing '=>'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unexpected missing '=>'";
+    result.error.dsc = appendstr(t2, c2);
     result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     return result;
   }
   nextok(p);
@@ -1004,8 +1184,8 @@ Judgement ParseLambda(Parser* p)
   // while we parse the body of this procedure,
   // we need to point the outer scope to the
   // correct place, in order to make the name
-  // lookup rules work: we need to point the
-  // outer_scope to this lambda's symbol table
+  // Lookup rules work: we need to point the
+  // symbols to this lambda's symbol table
   // so that if a lambda is created within the
   // body of this lambda, the symbol tables
   // form a continuous chain from the
@@ -1016,17 +1196,22 @@ Judgement ParseLambda(Parser* p)
   // connect it to the outer scope.
   // this is maintaining the static link between
   // all living activation records essentially.
-  SymbolTable* lambda_scope = CreateSymbolTable(p->outer_scope);
-  SymbolTable* last_scope   = p->outer_scope;
-  p->outer_scope            = lambda_scope;
+  SymbolTable* localsymbols = CreateSymbolTable(p->symbols);
+  SymbolTable* lastsymbols  = p->symbols;
+  p->symbols                = localsymbols;
+
+  ScopeSet localscope = IntroduceNewScope(p->scope, p->scope);
+  ScopeSet lastscope  = p->scope;
+  p->scope            = localscope;
 
   Judgement bodyjdgmt = ParseAffix(p);
 
   if (bodyjdgmt.success == false)
     return bodyjdgmt; // TODO: if we actually take this path we gonna leak!
 
+  p->symbols      = lastsymbols; // reset the outer scope to what it was before
+  p->scope        = lastscope;
 
-  p->outer_scope      = last_scope; // reset the outer scope to what it was before
   Location  rhsloc    = curloc(p);
   Location  lamloc;
   lamloc.first_line   = lhsloc.first_line;
@@ -1035,7 +1220,7 @@ Judgement ParseLambda(Parser* p)
   lamloc.last_column  = rhsloc.first_column;
 
   result.success      = true;
-  result.term         = CreateAstLambda(id, typejdgmt.term, bodyjdgmt.term, lambda_scope, &lamloc);
+  result.term         = CreateAstLambda(id, typejdgmt.term, bodyjdgmt.term, localsymbols, localscope, &lamloc);
   return result;
 }
 
@@ -1044,17 +1229,32 @@ Judgement ParseUnop(Parser* p)
   Judgement result;
   if (curtok(p) != T_OPERATOR)
   {
+    char* c0 = "unexpected missing 'operator'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     result.success   = false;
-    result.error.dsc = "Unexpected missing operator for Unary expression";
+    result.error.dsc = appendstr(t2, c2);
     result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     return result;
   }
 
   if (!is_unop(p, curtxt(p)))
   {
+    char* c0 = "operator [";
+    char* c1 = "] not bound as unop within the environment";
+    char* t0 = appendstr(c0, curtxt(p));
     result.success   = false;
-    result.error.dsc = "unary operator not bound in environment.";
+    result.error.dsc = appendstr(t0, c1);
     result.error.loc = curloc(p);
+    free(t0);
     return result;
   }
 
@@ -1096,19 +1296,32 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
 
   if (curtok(p) != T_OPERATOR)
   {
+    char* c0 = "unexpected missing 'operator'; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
     left.success   = false;
-    DestroyAst(left.term);
-    left.error.dsc = "unexpected missing operator";
-    left.error.loc = lhsloc;
+    left.error.dsc = appendstr(t2, c2);
+    left.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
     return left;
   }
 
   if (!is_binop(p, curtxt(p)))
   {
+    char* c0 = "operator [";
+    char* c1 = "] is not bound as binop in environment";
+    char* t0 = appendstr(c0, curtxt(p));
     left.success   = false;
-    DestroyAst(left.term);
-    left.error.dsc = "binary operator is not bound in environment";
+    left.error.dsc = appendstr(t0, c1);
     left.error.loc = lhsloc;
+    free(t0);
     return left;
   }
 
@@ -1143,10 +1356,13 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
     {
       if (!is_binop(p, curtxt(p)))
       {
+        char* c0 = "operator [";
+        char* c1 = "] is not bound as binop in environment";
+        char* t0 = appendstr(c0, curtxt(p));
         left.success   = false;
-        DestroyAst(left.term);
-        left.error.dsc = "binary operator is not bound in environment";
+        left.error.dsc = appendstr(t0, c1);
         left.error.loc = curloc(p);
+        free(t0);
         return left;
       }
 
@@ -1173,8 +1389,8 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
     boploc.last_line    = rhsloc.last_line;
     boploc.last_column  = rhsloc.last_column;
 
-    left.success    = true;
-    left.term       = CreateAstBinop(Iop, left.term, right.term, &boploc);
+    left.success = true;
+    left.term    = CreateAstBinop(Iop, left.term, right.term, &boploc);
   }
   return left;
 }

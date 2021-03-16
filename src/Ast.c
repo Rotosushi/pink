@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Utilities.h"
+#include "ScopeSet.h"
 #include "Judgement.h"
 #include "Environment.h"
 #include "SymbolTable.h"
@@ -16,11 +18,11 @@
 #include "Type.h"
 #include "Ast.h"
 
-Ast* CreateAstVariable(InternedString id, Location* loc)
+Ast* CreateAstVariable(InternedString id, ScopeSet scope, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_VAR;
-  InitializeVariable(&(ast->var), id, loc);
+  InitializeVariable(&(ast->var), id, scope, loc);
   return ast;
 }
 
@@ -107,12 +109,12 @@ Ast* CreateAstBoolean(bool value, Location* loc)
   return ast;
 }
 
-Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, SymbolTable* scope, Location* loc)
+Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, SymbolTable* symbols, ScopeSet scope, Location* loc)
 {
   Ast* ast      = (Ast*)malloc(sizeof(Ast));
   ast->kind     = A_OBJ;
   ast->obj.kind = O_LAMB;
-  InitializeLambda(&(ast->obj.lambda), arg_id, arg_type, body, scope, loc);
+  InitializeLambda(&(ast->obj.lambda), arg_id, arg_type, body, symbols, scope, loc);
   return ast;
 }
 
@@ -127,27 +129,27 @@ Ast* CreateAstType(Type* type, Location* loc)
 
 Judgement Assign(Ast* dest, Ast* source)
 {
-  if (!left || !right)
+  if (!dest || !source)
     FatalError("Bad Term Pointer(s).", __FILE__, __LINE__);
-
-    if (left->kind != A_OBJ)
-    {
-      result.success   = false;
-      result.error.loc = *GetAstLocation(left);
-      result.error.dsc = "Left term is not an Object! Cannot assign";
-      return result;
-    }
-
-    if (right->kind != A_OBJ)
-    {
-      result.success   = false;
-      result.error.loc = *GetAstLocation(right);
-      result.error.dsc = "Right term is not an Object! Cannot assign";
-      return result;
-    }
-
-    result = AssignObject(&(left->obj), &(right->obj));
+  Judgement result;
+  if (dest->kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(dest);
+    result.error.dsc = dupstr("Left term is not an Object! Cannot assign");
     return result;
+  }
+
+  if (source->kind != A_OBJ)
+  {
+    result.success   = false;
+    result.error.loc = *GetAstLocation(source);
+    result.error.dsc = dupstr("Right term is not an Object! Cannot assign");
+    return result;
+  }
+
+  result = AssignObject(&(dest->obj), &(source->obj));
+  return result;
 }
 
 Judgement Equals(Ast* left, Ast* right)
@@ -164,7 +166,7 @@ Judgement Equals(Ast* left, Ast* right)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(left);
-    result.error.dsc = "Left term is not an Object! Cannot compare equality";
+    result.error.dsc = dupstr("Left term is not an Object! Cannot compare equality");
     return result;
   }
 
@@ -172,7 +174,7 @@ Judgement Equals(Ast* left, Ast* right)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(right);
-    result.error.dsc = "Right term is not an Object! Cannot compare equality";
+    result.error.dsc = dupstr("Right term is not an Object! Cannot compare equality");
     return result;
   }
 
@@ -264,7 +266,7 @@ void DestroyAst(Ast* term)
 // Ast allocated on the stack, we encounter
 // a non NULL destination ptr. so the
 // code still works! :)
-void CloneAst(Ast** destination, Ast* source)
+Ast* CloneAst(Ast** destination, Ast* source)
 {
   if ((*destination) == NULL)
     (*destination) = (Ast*)malloc(sizeof(Ast));
@@ -312,6 +314,7 @@ void CloneAst(Ast** destination, Ast* source)
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
       break;
   }
+  return (*destination);
 }
 
 // constructs a string that represents the passed
@@ -455,4 +458,114 @@ Judgement Evaluate(Ast* ast, Environment* env)
   }
 
   return result;
+}
+
+
+bool AppearsFree(Ast* term, InternedString id)
+{
+  bool result = false;
+  switch (term->kind)
+  {
+    case A_VAR:
+      result = AppearsFreeVariable(&(term->var), id);
+      break;
+    case A_APP:
+      result = AppearsFreeApplication(&(term->app), id);
+      break;
+    case A_ASS:
+      result = AppearsFreeAssignment(&(term->ass), id);
+      break;
+    case A_BND:
+      result = AppearsFreeBind(&(term->bnd), id);
+      break;
+    case A_BOP:
+      result = AppearsFreeBinop(&(term->bop), id);
+      break;
+    case A_UOP:
+      result = AppearsFreeUnop(&(term->uop), id);
+      break;
+    case A_CND:
+      result = AppearsFreeConditional(&(term->cnd), id);
+      break;
+    case A_ITR:
+      result = AppearsFreeIteration(&(term->itr), id);
+      break;
+    case A_OBJ:
+      result = AppearsFreeObject(&(term->obj), id);
+      break;
+    default:
+      FatalError("Bad Ast Kind", __FILE__, __LINE__);
+  }
+  return result;
+}
+
+void RenameBinding(Ast* term, InternedString target, InternedString replacement)
+{
+  switch(term->kind)
+  {
+    case A_VAR:
+      RenameBindingVariable(&(term->var), target, replacement);
+      break;
+    case A_APP:
+      RenameBindingApplication(&(term->app), target, replacement);
+      break;
+    case A_ASS:
+      RenameBindingAssignment(&(term->ass), target, replacement);
+      break;
+    case A_BND:
+      RenameBindingBind(&(term->bnd), target, replacement);
+      break;
+    case A_BOP:
+      RenameBindingBinop(&(term->bop), target, replacement);
+      break;
+    case A_UOP:
+      RenameBindingUnop(&(term->uop), target, replacement);
+      break;
+    case A_CND:
+      RenameBindingConditional(&(term->cnd), target, replacement);
+      break;
+    case A_ITR:
+      RenameBindingIteration(&(term->itr), target, replacement);
+      break;
+    case A_OBJ:
+      RenameBindingObject(&(term->obj), target, replacement);
+      break;
+    default:
+      FatalError("Bad Ast Kind", __FILE__, __LINE__);
+  }
+}
+
+// so, interestingly, only calls to Ast nodes that turn out
+// to be Variables ever need the Target pointer.
+void Substitute(Ast* term, Ast** target, InternedString id, Ast* value, Environment* env)
+{
+  switch(term->kind)
+  {
+    case A_VAR:
+      SubstituteVariable(&(term->var), target, id, value, env);
+      break;
+    case A_APP:
+      SubstituteApplication(&(term->app), target, id, value, env);
+      break;
+    case A_ASS:
+      SubstituteAssignment(&(term->ass), target, id, value, env);
+      break;
+    case A_BOP:
+      SubstituteBinop(&(term->bop), target, id, value, env);
+      break;
+    case A_UOP:
+      SubstituteUnop(&(term->uop), target, id, value, env);
+      break;
+    case A_CND:
+      SubstituteConditional(&(term->cnd), target, id, value, env);
+      break;
+    case A_ITR:
+      SubstituteIteration(&(term->itr), target, id, value, env);
+      break;
+    case A_OBJ:
+      SubstituteObject(&(term->obj), target, id, value, env);
+      break;
+    default:
+      FatalError("Bad Ast Kind", __FILE__, __LINE__);
+  }
 }

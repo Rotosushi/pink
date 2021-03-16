@@ -24,4 +24,12 @@ Judgement GetypeIteration(Iteration* itr, struct Environment* env);
 
 Judgement EvaluateIteration(Iteration* itr, struct Environment* env);
 
+bool AppearsFreeIteration(Iteration* itr, InternedString id);
+
+void RenameBindingIteration(Iteration* itr, InternedString target, InternedString replacement);
+
+void SubstituteIteration(Iteration* itr, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
+
+
+
 #endif // !ITERATION_H

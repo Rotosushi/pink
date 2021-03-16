@@ -26,4 +26,9 @@ Judgement GetypeBind(Bind* bnd, struct Environment* env);
 
 Judgement EvaluateBind(Bind* bnd, struct Environment* env);
 
+bool AppearsFreeBind(Bind* bnd, InternedString id);
+
+void RenameBindingBind(Bind* bnd, InternedString target, InternedString replacement);
+
+void SubstituteBind(Bind* bnd, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
 #endif // !BIND_H

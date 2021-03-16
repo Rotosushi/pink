@@ -44,8 +44,9 @@ void DestroyTypeInterner(TypeInterner* Ity)
   Ity = NULL;
 }
 
-Type* GetNilType(TypeInterner* Ity)
+Ast* GetNilType(TypeInterner* Ity, Location* loc)
 {
+  Location dummy;
   if (Ity->nilType == NULL)
   {
     Ity->nilType              = (Type*)malloc(sizeof(Type));
@@ -53,11 +54,15 @@ Type* GetNilType(TypeInterner* Ity)
     Ity->nilType->scalar.kind = S_NIL;
   }
 
-  return Ity->nilType;
+  if (loc != NULL)
+    return CreateAstType(Ity->nilType, loc);
+  else
+    return CreateAstType(Ity->nilType, &dummy);
 }
 
-Type* GetIntegerType(TypeInterner* Ity)
+Ast* GetIntegerType(TypeInterner* Ity, Location* loc)
 {
+  Location dummy;
   if (Ity->integerType == NULL)
   {
     Ity->integerType              = (Type*)malloc(sizeof(Type));
@@ -66,11 +71,15 @@ Type* GetIntegerType(TypeInterner* Ity)
   }
 
 
-  return Ity->integerType;
+  if (loc != NULL)
+    return CreateAstType(Ity->integerType, loc);
+  else
+    return CreateAstType(Ity->integerType, &dummy);
 }
 
-Type* GetBooleanType(TypeInterner* Ity)
+Ast* GetBooleanType(TypeInterner* Ity, Location* loc)
 {
+  Location dummy;
   if (Ity->booleanType == NULL)
   {
     Ity->booleanType              = (Type*)malloc(sizeof(Type));
@@ -78,27 +87,45 @@ Type* GetBooleanType(TypeInterner* Ity)
     Ity->booleanType->scalar.kind = S_BOOL;
   }
 
-  return Ity->booleanType;
+  if (loc != NULL)
+    return CreateAstType(Ity->booleanType, loc);
+  else
+    return CreateAstType(Ity->booleanType, &dummy);
+}
+
+Type* get_type_ptr(Ast* ast)
+{
+  Type* result = NULL;
+  if (ast->kind == A_OBJ)
+  {
+    if (ast->obj.kind == O_TYPE)
+    {
+      result = ast->obj.type.literal;
+    }
+  }
+  return result;
 }
 
 // this implementation seems worse and worse
 // the more unique procedure types are defined.
 // however it also seems like a complete solution,
 // so this is absolutely a place for optimization.
-Type* GetProcedureType(TypeInterner* Ity, Ast* l, Ast* r)
+Ast* GetProcedureType(TypeInterner* Ity, Ast* l, Ast* r, Location* loc)
 {
   if (Ity == NULL || l == NULL || r == NULL)
     return NULL;
 
-
   // search the buffer for a matching type,
   // otherwise insert the new type and
   // return it.
-
+  Location dummy;
+  Ast* result = NULL;
+  Type* lhstype = get_type_ptr(l);
+  Type* rhstype = get_type_ptr(r);
   Type* possibleType = (Type*)malloc(sizeof(Type));
   possibleType->kind = T_PROC;
-  possibleType->proc.lhs = l;
-  possibleType->proc.rhs = r;
+  possibleType->proc.lhs = lhstype;
+  possibleType->proc.rhs = rhstype;
 
 
   TLelem *cur = Ity->procTypes, *prv = NULL;
@@ -108,7 +135,10 @@ Type* GetProcedureType(TypeInterner* Ity, Ast* l, Ast* r)
     newproc->next  = NULL;
     newproc->type  = possibleType;
     Ity->procTypes = newproc;
-    return possibleType;
+    if (loc != NULL)
+      return CreateAstType(possibleType, loc);
+    else
+      return CreateAstType(possibleType, &dummy);
   }
   else
   {
@@ -124,9 +154,12 @@ Type* GetProcedureType(TypeInterner* Ity, Ast* l, Ast* r)
         // all other references to that primitive type
         // bad pointers which break when dereferenced.
         // so we rest assured that the passed in pointers
-        // are well formed, and that we do not own their memory.
+        // are well formed.
         free(possibleType);
-        return currentType;
+        if (loc != NULL)
+          return CreateAstType(currentType, loc);
+        else
+          return CreateAstType(currentType, &dummy);
       }
       cur = cur->next;
     }
@@ -136,6 +169,10 @@ Type* GetProcedureType(TypeInterner* Ity, Ast* l, Ast* r)
     newproc->next  = NULL;
     newproc->type  = possibleType;
     prv->next      = newproc;
-    return possibleType;
+
+    if (loc != NULL)
+      return CreateAstType(possibleType, loc);
+    else
+      return CreateAstType(possibleType, &dummy);
   }
 }

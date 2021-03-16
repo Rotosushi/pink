@@ -65,6 +65,8 @@ void Repl(FILE* in, FILE* out, Environment* env)
     fprintf (out, "> ");
     size_t charsRead = getline(&buffer, &length, in);
 
+    // this builds a tree represnting the text that
+    // was collected in the buffer.
     Judgement parsejdgmt = Parse(env->parser, buffer);
 
     if (parsejdgmt.success == true)
@@ -73,27 +75,49 @@ void Repl(FILE* in, FILE* out, Environment* env)
       fprintf(out, "parsed:[%s]\n", termtxt);
       free(termtxt);
 
+      // returns us new memory that represents the Type
+      // of the tree we parsed.
       Judgement typejdgmt = Getype(parsejdgmt.term, env);
 
       if (typejdgmt.success == true)
       {
-        fprintf(out, "type:[%s]\n", ToStringType(typejdgmt.type));
+        char* t0 = ToStringAst(typejdgmt.term);
+        fprintf(out, "type:[%s]\n", t0);
+        free(t0);
+
+        Judgement evaljdgmt = Evaluate(parsejdgmt.term, env);
+
+        if (evaljdgmt.success == true)
+        {
+          char* t0 = ToStringAst(evaljdgmt.term);
+          fprintf(out, "~> %s\n", t0);
+          free(t0);
+        }
+        else
+        {
+          PrintError(out, &(evaljdgmt.error), buffer);
+          free(evaljdgmt.error.dsc);
+        }
       }
       else
       {
         PrintError(out, &(typejdgmt.error), buffer);
+        free(typejdgmt.error.dsc);
       }
 
     }
     else
     {
       PrintError(out, &(parsejdgmt.error), buffer);
+      free(parsejdgmt.error.dsc);
     }
+
     if (buffer)
     {
       free(buffer);
       buffer = NULL;
     }
+
     buffer = (char*)malloc(sizeof(char) * 100);
     length = 100;
   }

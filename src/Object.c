@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "PinkError.h"
+#include "Utilities.h"
 #include "Ast.h"
 #include "Environment.h"
 #include "Nil.h"
@@ -173,7 +174,7 @@ Judgement AssignObject(Object* dest, Object* source)
                    // this case will be wrapped up that check.
         result.success   = false;
         result.error.loc = dest->lambda.loc;
-        result.error.dsc = "Lambda objects are immutable";
+        result.error.dsc = dupstr("Lambda objects are immutable");
         break;
 
       // and later AssignRecord
@@ -186,9 +187,22 @@ Judgement AssignObject(Object* dest, Object* source)
   }
   else
   {
+    char* c0 = "Cannot assign different Objects, lhs:[";
+    char* c1 = "] rhs:[";
+    char* c2 = "]";
+    char* l  = ToStringObject(dest);
+    char* r  = ToStringObject(source);
+    char* i0 = appendstr(c0, l);
+    char* i1 = appendstr(i0, c1);
+    char* i2 = appendstr(i1, r);
     result.success   = false;
     result.error.loc = *GetObjLocation(dest);
-    result.error.dsc = "Object Types are not the same.";
+    result.error.dsc = appendstr(i2, c2);
+    free(l);
+    free(r);
+    free(i0);
+    free(i1);
+    free(i2);
   }
   return result;
 }
@@ -216,16 +230,88 @@ Judgement EqualsObject(Object* obj1, Object* obj2)
       case O_LAMB:
         result.success   = false;
         result.error.loc = *(GetObjLocation(obj1));
-        result.error.dsc = "Lambdas cannot be compared";
+        result.error.dsc = dupstr("Lambda Objects cannot be compared");
         break;
+      default:
+        FatalError("Bad Object Kind.", __FILE__, __LINE__);
     }
   }
   else
   {
+    char* c0 = "Cannot compare different Objects, lhs:[";
+    char* c1 = "] rhs:[";
+    char* c2 = "]";
+    char* l  = ToStringObject(obj1);
+    char* r  = ToStringObject(obj2);
+    char* i0 = appendstr(c0, l);
+    char* i1 = appendstr(i0, c1);
+    char* i2 = appendstr(i1, r);
     result.success   = false;
     result.error.loc = *GetObjLocation(obj1);
-    result.error.dsc = "Object Types are not the same.";
+    result.error.dsc = appendstr(i2, c2);
+    free(l);
+    free(r);
+    free(i0);
+    free(i1);
+    free(i2);
   }
 
   return result;
+}
+
+bool AppearsFreeObject(Object* obj, InternedString id)
+{
+  switch (obj->kind)
+  {
+    case O_TYPE:
+      return false;
+    case O_NIL:
+      return false;
+    case O_INT:
+      return false;
+    case O_BOOL:
+      return false;
+    case O_LAMB:
+      return AppearsFreeLambda(&(obj->lambda), id);
+    default:
+      FatalError("Bad Object Kind", __FILE__, __LINE__);
+  }
+}
+
+void RenameBindingObject(Object* obj, InternedString target, InternedString replacement)
+{
+  switch (obj->kind)
+  {
+    case O_TYPE:
+      return;
+    case O_NIL:
+      return;
+    case O_INT:
+      return;
+    case O_BOOL:
+      return;
+    case O_LAMB:
+      return RenameBindingLambda(&(obj->lambda), target, replacement);
+    default:
+      FatalError("Bad Object Kind", __FILE__, __LINE__);
+  }
+}
+
+void SubstituteObject(Object* obj, struct Ast** target, InternedString id, Ast* value, struct Environment* env)
+{
+  switch (obj->kind)
+  {
+    case O_TYPE:
+      return;
+    case O_NIL:
+      return;
+    case O_INT:
+      return;
+    case O_BOOL:
+      return;
+    case O_LAMB:
+      return SubstituteLambda(&(obj->lambda), target, id, value, env);
+    default:
+      FatalError("Bad Object Kind", __FILE__, __LINE__);
+  }
 }

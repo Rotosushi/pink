@@ -2,6 +2,7 @@
 
 
 #include "Ast.h"
+#include "Utilities.h"
 #include "PinkError.h"
 #include "StringInterner.h"
 #include "UnopEliminators.h"
@@ -18,6 +19,7 @@ Judgement BinopEquals(Ast* lval, Ast* rval)
 
 Judgement BinopPlusAddInteger(Ast* lval, Ast* rval)
 {
+  Judgement result;
   if (lval == NULL)
     FatalError("Cannot Add NULL left term", __FILE__, __LINE__);
 
@@ -28,7 +30,7 @@ Judgement BinopPlusAddInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Add non-Object left term";
+    result.error.dsc = dupstr("Cannot Add non-Object left term");
     return result;
   }
 
@@ -36,7 +38,7 @@ Judgement BinopPlusAddInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Add non-Object right term";
+    result.error.dsc = dupstr("Cannot Add non-Object right term");
     return result;
   }
 
@@ -44,15 +46,15 @@ Judgement BinopPlusAddInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Add non-Integer left term";
+    result.error.dsc = dupstr("Cannot Add non-Integer left term");
     return result;
   }
 
-  if (rval->obj.kind != A_OBJ)
+  if (rval->obj.kind != O_INT)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Add non-Integer right term";
+    result.error.dsc = dupstr("Cannot Add non-Integer right term");
     return result;
   }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
@@ -64,6 +66,7 @@ Judgement BinopPlusAddInteger(Ast* lval, Ast* rval)
 
 Judgement BinopHyphenMinusInteger(Ast* lval, Ast* rval)
 {
+  Judgement result;
   if (lval == NULL)
     FatalError("Cannot Subtract NULL left term", __FILE__, __LINE__);
 
@@ -74,7 +77,7 @@ Judgement BinopHyphenMinusInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Subtract non-Object left term";
+    result.error.dsc = dupstr("Cannot Subtract non-Object left term");
     return result;
   }
 
@@ -82,7 +85,7 @@ Judgement BinopHyphenMinusInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Subtract non-Object right term";
+    result.error.dsc = dupstr("Cannot Subtract non-Object right term");
     return result;
   }
 
@@ -90,15 +93,15 @@ Judgement BinopHyphenMinusInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Subtract non-Integer left term";
+    result.error.dsc = dupstr("Cannot Subtract non-Integer left term");
     return result;
   }
 
-  if (rval->obj.kind != A_OBJ)
+  if (rval->obj.kind != O_INT)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Subtract non-Integer right term";
+    result.error.dsc = dupstr("Cannot Subtract non-Integer right term");
     return result;
   }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
@@ -110,6 +113,7 @@ Judgement BinopHyphenMinusInteger(Ast* lval, Ast* rval)
 
 Judgement BinopStarMultiplyInteger(Ast* lval, Ast* rval)
 {
+  Judgement result;
   if (lval == NULL)
     FatalError("Cannot Multiply NULL left term", __FILE__, __LINE__);
 
@@ -120,7 +124,7 @@ Judgement BinopStarMultiplyInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Multiply non-Object left term";
+    result.error.dsc = dupstr("Cannot Multiply non-Object left term");
     return result;
   }
 
@@ -128,7 +132,7 @@ Judgement BinopStarMultiplyInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Multiply non-Object right term";
+    result.error.dsc = dupstr("Cannot Multiply non-Object right term");
     return result;
   }
 
@@ -136,15 +140,15 @@ Judgement BinopStarMultiplyInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Multiply non-Integer left term";
+    result.error.dsc = dupstr("Cannot Multiply non-Integer left term");
     return result;
   }
 
-  if (rval->obj.kind != A_OBJ)
+  if (rval->obj.kind != O_INT)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Multiply non-Integer right term";
+    result.error.dsc = dupstr("Cannot Multiply non-Integer right term");
     return result;
   }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
@@ -156,6 +160,7 @@ Judgement BinopStarMultiplyInteger(Ast* lval, Ast* rval)
 
 Judgement BinopFslashDivideInteger(Ast* lval, Ast* rval)
 {
+  Judgement result;
   if (lval == NULL)
     FatalError("Cannot Divide NULL left term", __FILE__, __LINE__);
 
@@ -166,7 +171,7 @@ Judgement BinopFslashDivideInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Divide non-Object left term";
+    result.error.dsc = dupstr("Cannot Divide non-Object left term");
     return result;
   }
 
@@ -174,7 +179,7 @@ Judgement BinopFslashDivideInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Divide non-Object right term";
+    result.error.dsc = dupstr("Cannot Divide non-Object right term");
     return result;
   }
 
@@ -182,15 +187,15 @@ Judgement BinopFslashDivideInteger(Ast* lval, Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(lval);
-    result.error.dsc = "Cannot Divide non-Integer left term";
+    result.error.dsc = dupstr("Cannot Divide non-Integer left term");
     return result;
   }
 
-  if (rval->obj.kind != A_OBJ)
+  if (rval->obj.kind != O_INT)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Divide non-Integer right term";
+    result.error.dsc = dupstr("Cannot Divide non-Integer right term");
     return result;
   }
   int left = lval->obj.integer.value, right = rval->obj.integer.value;
@@ -210,7 +215,7 @@ Judgement UnopHyphenNegateInteger(Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Negate non-Object term";
+    result.error.dsc = dupstr("Cannot Negate non-Object term");
     return result;
   }
 
@@ -218,7 +223,7 @@ Judgement UnopHyphenNegateInteger(Ast* rval)
   {
     result.success = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Negate non-Integer Object";
+    result.error.dsc = dupstr("Cannot Negate non-Integer Object");
     return result;
   }
 
@@ -237,7 +242,7 @@ Judgement UnopBangNegateBoolean(Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Negate non-Object term";
+    result.error.dsc = dupstr("Cannot Negate non-Object term");
     return result;
   }
 
@@ -245,7 +250,7 @@ Judgement UnopBangNegateBoolean(Ast* rval)
   {
     result.success   = false;
     result.error.loc = *GetAstLocation(rval);
-    result.error.dsc = "Cannot Negate non-Boolean Object";
+    result.error.dsc = dupstr("Cannot Negate non-Boolean Object");
     return result;
   }
 
@@ -256,9 +261,10 @@ Judgement UnopBangNegateBoolean(Ast* rval)
 
 void RegisterPrimitiveUnops(Environment* env)
 {
-  Type* booleanType = GetBooleanType(env->interned_types);
-  Type* integerType = GetIntegerType(env->interned_types);
-
+  Ast*  booleanTypeLiteral = GetBooleanType(env->interned_types, NULL);
+  Ast*  integerTypeLiteral = GetIntegerType(env->interned_types, NULL);
+  Type* booleanType = booleanTypeLiteral->obj.type.literal;
+  Type* integerType = integerTypeLiteral->obj.type.literal;
   InternedString hyphenOp = InternString(env->interned_ops, "-");
   UnopEliminatorList* hyphenUnopElims = CreateUnopEliminatorList();
   InsertPrimitiveUnopEliminator(hyphenUnopElims, integerType, integerType, UnopHyphenNegateInteger);
@@ -272,9 +278,12 @@ void RegisterPrimitiveUnops(Environment* env)
 
 void RegisterPrimitiveBinops(Environment* env)
 {
-  Type* booleanType = GetBooleanType(env->interned_types);
-  Type* integerType = GetIntegerType(env->interned_types);
-  Type* nilType     = GetNilType(env->interned_types);
+  Ast*  btl         = GetBooleanType(env->interned_types, NULL);
+  Ast*  itl         = GetIntegerType(env->interned_types, NULL);
+  Ast*  ntl         = GetNilType(env->interned_types, NULL);
+  Type* booleanType = btl->obj.type.literal;
+  Type* integerType = itl->obj.type.literal;
+  Type* nilType     = ntl->obj.type.literal;
 
   InternedString eqOp = InternString(env->interned_ops, "=");
   BinopEliminatorList* eqBinopElims = CreateBinopEliminatorList();

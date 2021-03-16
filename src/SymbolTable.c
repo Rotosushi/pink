@@ -6,12 +6,12 @@
 
 #define SYMTABLE_DEFAULT_NUM_BUCKETS 10
 
-SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope)
+SymbolTable* CreateSymbolTable(SymbolTable* enclosing_table)
 {
   SymbolTable* result     = (SymbolTable*)malloc(sizeof(SymbolTable));
   result->num_buckets     = SYMTABLE_DEFAULT_NUM_BUCKETS;
   result->num_elements    = 0;
-  result->enclosing_scope = enclosing_scope;
+  result->enclosing_table = enclosing_table;
   result->table           = (Symbol**)malloc(result->num_buckets * sizeof(Symbol*));
   for (int i = 0; i < result->num_buckets; i++)
   {
@@ -59,7 +59,7 @@ void CloneSymbolTable(SymbolTable** destination, SymbolTable* source)
   }
 
   (*destination)->num_buckets     = source->num_buckets;
-  (*destination)->enclosing_scope = source->enclosing_scope;
+  (*destination)->enclosing_table = source->enclosing_table;
   (*destination)->table           = (Symbol**)malloc(source->num_buckets * sizeof(Symbol*));
   for (int i = 0; i < source->num_buckets; i++)
   {
@@ -67,7 +67,7 @@ void CloneSymbolTable(SymbolTable** destination, SymbolTable* source)
 
     while (cursor != NULL)
     {
-      bind((*destination), cursor->id, cursor->term);
+      BindSymbol((*destination), cursor->id, cursor->scope, cursor->term);
       cursor = cursor->next;
     }
   }
@@ -94,48 +94,124 @@ void DestroySymbolTable(SymbolTable* table)
   free(table);
 }
 
-Ast* lookup(SymbolTable* table, InternedString name)
+
+
+Judgement LookupSymbolHelper(SymbolTable* table, InternedString name, ScopeSet scope, Symbol* best)
 {
+  Location  dummy;
+  Judgement result;
   int hash = (int)(name);
   hash %= table->num_buckets;
 
-  // find the bucket to look in
   Symbol* cursor = table->table[hash];
-  // look through the bucket (list)
-  while (cursor != NULL)
-  {
-    // takin' advantage of interned strings here
-    if (name == cursor->id)
-      return cursor->term;
 
-    cursor = cursor->next;
+  if (cursor != NULL)
+  {
+    do {
+      // does the bound name match the name we are searching for?
+      if (cursor->name == name)
+      {
+        // if the bound identifier's Scope is a subset of
+        // the ScopeSet we are looking in, then we have found
+        // a possible binding.
+        ScopeSet s0 = Subset(cursor->scope, scope);
+
+        if (s0 && best == NULL)
+        {
+          best = cursor;
+          break;
+        }
+        else
+        {
+          // we already found a candidate match for this binding,
+          // but are currently looking for more possible bindings.
+          // should a binding we find have a larger subset than
+          // the current best match, the binding we found becomes
+          // the new best match.
+          ScopeSet s1 = Subset(cursor->scope, best->scope);
+          if (s0 == s1)
+          {
+            result.success   = false;
+            result.error.loc = dummy;
+            result.error.dsc = dupstr("Conflicting Bindings!");
+          }
+          else if (s0 > s1)
+          {
+            best = cursor;
+            result.success = true;
+            result.term    = best->term;
+          }
+          break;
+        }
+      }
+      cursor = cursor->next;
+    } while (cursor != NULL);
+
+    if (result.success == true)
+    {
+      return LookupSymbolHelper(table->enclosing_table, name, scope, best);
+    }
+    else
+    {
+      return result;
+    }
   }
-  // search the enclosing scope for the name
-  if (table->enclosing_scope != NULL)
-    return lookup(table->enclosing_scope, name);
   else
-    return (Ast*)NULL;
+  {
+    result.success = false;
+    result.error.loc = dummy;
+    result.error.dsc = dupstr("Failed to Find Binding!");
+    return result;
+  }
+
 }
 
-Ast* lookup_in_local_scope(SymbolTable* table, InternedString name)
+Judgement LookupSymbol(SymbolTable* table, InternedString name, ScopeSet scope)
 {
+  Judgement result;
+  result = LookupSymbolHelper(table, name, scope, NULL);
+  return result;
+}
+
+Judgement LookupLocal(SymbolTable* table, InternedString name)
+{
+  Location  dummy;
+  Judgement result;
   int hash = (int)(name);
   hash %= table->num_buckets;
 
   // find the bucket to look in
   Symbol* cursor = table->table[hash];
   // look through the bucket (list)
-  while (cursor != NULL)
+  if (cursor != NULL)
   {
-    if (name == cursor->id)
-      return cursor->term;
+    do {
+      // does the bound name match the name we are searching for?
+      if (cursor->name == name)
+      {
+        result.success = true;
+        result.term    = cursor->term;
+      }
+      cursor = cursor->next;
+    } while (cursor != NULL);
 
-    cursor = cursor->next;
+    if (cursor == NULL)
+    {
+      result.success = false;
+      result.error.loc = dummy;
+      result.error.dsc = dupstr("Failed to find Binding");
+    }
   }
-  return (Ast*)NULL;
+  else
+  {
+    result.success = false;
+    result.error.loc = dummy;
+    result.error.dsc = dupstr("Failed to find Binding");
+  }
+  return result;
 }
 
-void bind(SymbolTable* table, InternedString name, Ast* term)
+void BindSymbol(SymbolTable* table, InternedString name, ScopeSet scope, Ast* term)
 {
   int hash = (int)(name);
   hash %= table->num_buckets;
@@ -145,13 +221,14 @@ void bind(SymbolTable* table, InternedString name, Ast* term)
 
   Symbol* elem = (Symbol*)malloc(sizeof(Symbol));
   elem->id     = name;
+  elem->scope  = scope;
   elem->term   = term;
   elem->next   = head; // prepend to the bucket, for speed.
   table->table[hash] = elem;
   table->num_elements++;
 }
 
-void unbind(SymbolTable* table, InternedString name)
+void UnbindSymbol(SymbolTable* table, InternedString name)
 {
   int hash = (int)(name);
   hash %= table->num_buckets;

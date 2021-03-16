@@ -2,6 +2,8 @@
 #define SYMBOLTABLE_H
 #include <stdint.h>
 
+#include "Judgement.h"
+#include "ScopeSet.h"
 #include "StringInterner.h"
 
 struct Ast;
@@ -13,6 +15,9 @@ struct Ast;
 // same hash value.
 typedef struct Symbol
 {
+  // we could describe the symbol table as binding
+  // (identifier, scope) pairs to terms.
+  ScopeSet       scope;
   InternedString id;
   struct Ast*    term;
   struct Symbol* next;
@@ -27,17 +32,17 @@ typedef struct SymbolTable
   // a resize will require testing however.
   int num_buckets;
   int num_elements;
-  struct SymbolTable* enclosing_scope;
+  struct SymbolTable* enclosing_table;
   Symbol** table;
 } SymbolTable;
 
-SymbolTable* CreateSymbolTable(SymbolTable* enclosing_scope);
+SymbolTable* CreateSymbolTable(SymbolTable* enclosing_table);
 void CloneSymbolTable(SymbolTable **destination, SymbolTable* source);
 void DestroySymbolTable(SymbolTable* table);
 
-struct Ast* lookup(SymbolTable* table, InternedString name);
-struct Ast* lookup_in_local_scope(SymbolTable* table, InternedString name);
-void bind(SymbolTable* table, InternedString name, struct Ast* term);
-void unbind(SymbolTable* table, InternedString name);
+Judgement LookupSymbol(SymbolTable* table, InternedString name, ScopeSet scope);
+Judgement LookupLocalSymbol(SymbolTable* table, InternedString name);
+void BindSymbol(SymbolTable* table, InternedString name, ScopeSet scope, struct Ast* term);
+void UnbindSymbol(SymbolTable* table, InternedString name);
 
 #endif // !SYMBOLTABLE_H

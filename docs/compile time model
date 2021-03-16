@@ -333,3 +333,205 @@ overhead for usual monotonic procedure application.
 
 
 ----
+
+
+// okay, so we already assume that the Parse subroutine
+// produces memory which we consume, this allows us to
+// assign the pointers it returns into the Symboltable.
+// I think we also need to make the same assumptions
+// surrounding
+// A) the error terms returned; in order to construct
+//    useful error messages means constructing them
+//    dynamically, this means that in the end, when we
+//    consume the error, we must free it's description string.
+//    all of them are constant strings now, however.
+// B) the valid terms returned; each time we call Getype, it
+//    constructs the tree which describes the type of the term
+//    we passed in, this means we the caller are responsible for
+//    it's memory. I suppose if we always allocate, and thus, are always
+//    free to free memory that is known to be an intermediary value.
+//    things that can be assigned dynamic memory that can be freed
+//    in the allocating scope upon exit:
+// 1) temporary values a.k.a. unnammed values.
+//    this refers to storage that needs to be allocated
+//    in order to compile the statement, but is not directly
+//    requested by the programmer. most often used when a
+//    expression is inserted where a procedure argument is
+//    requested, the result of evaluation is stored in a
+//    unnammed location before execution of the procedure.
+//    but this scenario also occurs when dealing with long
+//    operator expressions.
+// 2) if some local variable gets dynamic memory, and then that
+//    local variable falls out of scope. the dynamic memory is
+//    abosolutely lost. so we can free dynamic memory associated
+//    with names that are never assigned to other local variables.
+// 3) if a local variable is assigned dynamic memory, and then we
+//    assign that memory to another local variable. this dynamic
+//    memory's lifetime is tied to both, but for the purposes of
+//    this algorithm, we can say that if both local variables fall
+//    out of scope, this is the same as the single reference falling
+//    out of scope, i.e. all references to the memory are lost, and
+//    the memory leaks. so, assignment to other locals don't affect
+//    the actual lifetime of the dynamic memory.
+// 4) a case where dynamic memory lifetime is actually validly
+//    extended is assignment to a variable located in a
+//    higher scope, global or a lexically 'higher' procedure definition
+//    the lifetime then becomes attached to that outer name, as well as
+//    the inner name. this is a higher lexical lifetime.
+   5) the last case I can think of that validly extends dynamic memory is
+      when we assign that memory to the return value of the procedure.
+      this is essentially a value that has it's lifetime tied to the immediate
+      outer procedure frame. which is a higher dynamic lifetime.
+
+if we observe a chain of assignments between procedures, such as
+with the parsing subroutines, we can build up types of arbitrary
+complexity according to the grammar rules. however, this is not a
+replacement for being able to specify the layout of memory with types.
+when we are considering a type like the Abstract syntax tree we are
+considering two things simultaneously, the layout of each node, and
+the layout of the tree as a whole. the layout of the inside of
+the Ast is specified by the programmer, whereas the layout of
+the dynamic form of any given tree is specified by the flow
+of control throughout the execution of the program. a combination
+of the lexical lifetimes and the dynamic lifetimes of the
+set of parsing subroutines.
+
+if we think about an inner procedure, we are thinking about
+a regular procedure, except that we get to make a few extra
+assumptions. given the procedures visibility is restricted to
+the local scope exactly, we know that anytime we are in a call
+to the inner procedure we must have reached it via a call to
+the outer procedure. meaning we must have an active frame of the
+outer procedure living on the stack immediately above us.
+(this has a slight complication with recursion, either natural
+or via Z. there is now some dynamic number (n) of frames between the current
+recursive evaluation and the outer procedure frame.)
+
+this means we can access the names bound within the outer frame
+in the inner frame, given that we can assume the location of the
+outer frame, relative to the known fixed sizes of both frames.
+
+now, we may also capture by-reference, which also solves the recursion
+issue, as each frame has a direct reference to a local variable.
+
+once again here, we can note that a shared pointer to dynamic memory
+has consistent semantics, whereas a pointer to mutable local memory
+causes issues. so how about this. immutable names can be captured
+implicitly. we are free to read a reference to some data which is guaranteed
+to exist in all cases where we could reach a statement that would try to
+read that data.
+
+mutable dynamic memory can also be captured implicitly.
+mutable stack memory can never be referenced outside of the defining
+scope. we do not ever allow pointers which reference the stack to be returned
+out of procedures. (they can be passed into procedures, but that makes the
+rules more complex)
+it might be simpler to force programmers into using dynamic
+memory for all situations in which you want to pass the same memory into and
+back out of a procedure call.
+
+okay, so a pointer to immutable memory on the stack can be passed downwards.
+as it's lifetime is tied to the stack frame that the memory was allocated
+in.
+a pointer to mutable memory can never point to the stack.
+a pointer to mutable memory always points to the heap.
+
+a mutable object may be stack allocated, but it may only
+be modified within the local scope. and we can never return
+the address of a name which is leaving the scope. (again,
+unless we are talking about two names which point to dynamic
+memory, or writing static memory into dynamic memory.)
+or hell, reading dynamic memory into static memory is also fine
+as long as we don't generate the address of the static memory
+and return that.
+
+so, we need mutable and immutable variables,
+as well as mutable and immutable pointers.
+pointers additionally need to distinguish between
+a pointer to stack memory and a pointer into heap
+memory.
+and the code which tracks pointers and allocation
+needs to be very careful to track violations of these
+rules. at least what can be done at compile time.
+
+a pointer to the stack is a valid pointer as long as the
+memory it points to is stationary and constant.
+if we need special rules for, say, alloca.
+and we move stuff around the stack to allocated
+and reallocate variables from the stack during
+evaluation of a single procedure, any pointer to a
+location which was moved would need to be updated with
+the new location, this could be very complex very quickly.
+
+a pointer to mutable memory on the stack is fairly safe in
+a language with C's exact semantics, as procedure calls always
+grow and shrink the stack in a regular way, however, it is this
+authors intention to implement some form of parallelism at the
+language level. at the time of writing this, the debate is between
+threads and coroutines. threads have a C style calling api, so
+it is easy to map them from C to Pink, whereas coroutines are a different
+beast entirely. coroutines are sort of like a GOTO in that they allow
+a program to execute code within different stack frames while
+bypassing the usual calling semantics. this allows for a program to
+implement things like event handlers (i.e. interrupts) in the syntax
+of a higher level language. except that with true coroutines we also
+allow a greater level of flexibility than simple interrupts, as
+the programmer can yield to a new procedure, not just to exactly
+where the procedure was called from.
+
+now, if we want to support coroutines, we must be aware of how supporting
+them interacts with the rest of the languages features.
+if done right, coroutines will not add latency to evaluation of regular
+procedure applications. what they will add latency too is coroutines,
+and yeilding between the two.
+
+imagine if you will two coroutines,
+
+coroutine A (...)
+{
+...
+yield B ...;
+...
+}
+
+coroutine B (...)
+{
+...
+yield A ...;
+...
+}
+
+now, our main subroutine is still how we start evaluation, so
+say we have one that looks like:
+
+main (...)
+{
+  ...
+  A ...;
+  ...
+  return 0;
+}
+
+this is a regular invokation of the coroutine, and as such involves
+the call prolouge code before we can jump into the body of A.
+pushing arguments onto the stack, etc. then when we are evaluating A
+according to our usual means we encounter the yield statement,
+this is where the special actions of the coroutine come in, in order to
+fully save and then later restore the current state of execution of A
+we need to save it's active registers into the heap, along with a copy
+of the entire stack up to this point in evaluation. this therefore
+would include the stack frame of the main procedure as well. (this is
+so that the stack is in a valid state when we return back to A, and want
+to carry out whatever actions it has left to do, one control is returned.
+including but not limited to, reading data, writing data, invoking other
+procedures, yielding to coroutines other than B, and returning execution
+to the calling procedure.) so, once we save all of the active state of
+coroutine A we then essentially do a procedure call into B, which then
+does what it does until as we observe it yields control back to A,
+now, when A is returned to, we do not jump back to the beginning of the
+procedure as with a usual call, we jump back to the point at which
+control was yielded. all of the data which was available up to the point
+of yielding is restored into the active environment, and we resume
+evaluation of A. this can continue in a loop, with control yielding
+between two coroutines forever, or until some stop condition is reached,
+or it can simply pass between coroutines until each is finished. 

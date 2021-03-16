@@ -49,7 +49,7 @@ Judgement GetypeBind(Bind* bnd, Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = lookup_in_local_scope(env->outer_scope, bnd->id);
+  Ast* bound_term = LookupLocal(env->symbols, bnd->id);
 
   if (bound_term == NULL)
   {
@@ -71,7 +71,7 @@ Judgement GetypeBind(Bind* bnd, Environment* env)
   else
   {
     result.success   = false;
-    result.error.dsc = "Id is already bound in local scope";
+    result.error.dsc = dupstr("Id is already bound in local scope");
     result.error.loc = bnd->loc;
   }
   return result;
@@ -81,7 +81,7 @@ Judgement EvaluateBind(Bind* bnd, struct Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = lookup_in_local_scope(env->outer_scope, bnd->id);
+  Ast* bound_term = LookupLocal(env->symbols, bnd->id);
 
   if (bound_term == NULL)
   {
@@ -89,7 +89,7 @@ Judgement EvaluateBind(Bind* bnd, struct Environment* env)
 
     if (result.success == true)
     {
-      bind (env->outer_scope, bnd->id, result.term);
+      BindSymbol (env->symbols, bnd->id, env->scope, result.term);
     }
   }
   else
@@ -98,9 +98,9 @@ Judgement EvaluateBind(Bind* bnd, struct Environment* env)
     char* es2 = "] is already bound in scope [";
     char* es3 = "]";
     char* boundtxt   = ToStringAst(bound_term);
-    char* I0         = addstr(es1, bnd->id);
-    char* I1         = addstr(boundtxt, es3);
-    char* I2         = addstr(es2, I1);
+    char* I0         = appendstr(es1, bnd->id);
+    char* I1         = appendstr(boundtxt, es3);
+    char* I2         = appendstr(es2, I1);
     result.success   = false;
     //result.error.dsc = (es1 + bnd->id) + (es2 + (ToStringAst(bound_term) + es3));
     //                        ^          ^      ^  ^^^^^^^^^^^^^^^^^^^^^^  ^
@@ -113,17 +113,47 @@ Judgement EvaluateBind(Bind* bnd, struct Environment* env)
     // which do not survive the scope can be freed.
     // the dynamic memory that is returned out of the
     // scope is the callers responsibility to free,
-    result.error.dsc = addstr(I0, I2);
+    result.error.dsc = appendstr(I0, I2);
     result.error.loc = bnd->loc;
     free(boundtxt); // each intermediate term is dynamically
     free(I0);       // allocated and as such needs to be freed
-    free(I1);       // after use, since the final addstr allocation is assigned
+    free(I1);       // after use, since the final appendstr allocation is assigned
     free(I2);       // to a term which is returned, it cannot be freed
   }
+  return result;
+}
 
-  // at it's worst, this is a superflous function call.
-  if (result.success == true)
-    return Evaluate(result.term, env);
+bool AppearsFreeBind(Bind* bnd, InternedString id)
+{
+  // if the name we are binding matches the
+  // id we are looking for, the programmer is
+  // declaring a new binding in the local scope
+  // which shadows the outer binding within the
+  // local scope. hence, the name appears bound
+  // within the scope, and not free. i suppose that
+  // technically we could distinguish between two
+  // variables in exactly the rhs of the bind term
+  // which introduces the shadow binding, but this
+  // introduces a different subtlety that we need
+  // to check for. and this is the simpler choice.
+  if (bnd->id == id)
+    return false;
   else
-    return result;
+    return AppearsFree(bnd->rhs, id);
+}
+
+void RenameBindingBind(Bind* bnd, InternedString target, InternedString replacement)
+{
+  if (bnd->id == target)
+    return;
+  else
+    RenameBinding(bnd->rhs, target, replacement);
+}
+
+void SubstituteBind(Bind* bnd, Ast** target, InternedString id, Ast* value, struct Environment* env)
+{
+  if (bnd->id == id)
+    return;
+  else
+    Substitute(bnd->rhs, &(bnd->rhs), id, value, env);
 }

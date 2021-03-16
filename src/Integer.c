@@ -40,7 +40,7 @@ Judgement GetypeInteger(Integer* node, Environment* env)
 {
   Judgement result;
   result.success = true;
-  result.term    = CreateAstType(GetIntegerType(env->interned_types), &(node->loc));
+  result.term    = GetIntegerType(env->interned_types, &(node->loc));
   return result;
 }
 

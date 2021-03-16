@@ -1,3 +1,31 @@
+within the context of interpretation,
+i believe with tree style evaluation
+we must accept the use of a garbage
+collector. the use of pointers to simulate
+assignment introduces so much subtlety between
+the graph of terms being used to describe themselves
+that we need something like a general garbage collection
+system to count the number of references to each object
+and only free when no part of the system has a reference
+to said object. (and to me, because it's interpretation
+and not compilation, that is acceptable. as embedded systems
+are distinctly compiled programs, specifically to avoid the
+use of a large runtime. however, with that said, it does
+make sense in some contexts to have an interpreter running
+within your program.)
+maybe if we JIT via LLVM
+we can avoid garbage collection and
+instead run atop what we -would- have
+compiled.
+
+
+this is different from the context of
+compiling the input text to a linkable
+library, or an executable object.
+
+
+
+
 // if the term is a constant object, then this is fine as
 // each branch of the tree has a reference to the same constant
 // all this means is we have saved on memory, as all constant

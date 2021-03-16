@@ -23,7 +23,7 @@ typedef struct Type
 
 void DestroyType(Type* type);
 
-void CloneType(Type* destination, Type* source);
+void CloneType(Type** destination, Type* source);
 
 char* ToStringType(Type* type);
 

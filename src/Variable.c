@@ -57,7 +57,7 @@ Judgement GetypeVariable(Variable* var, Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = lookup(env->outer_scope, var->id);
+  Ast* bound_term = Lookup(env->symbols, var->id);
 
   if (bound_term)
   {
@@ -65,9 +65,13 @@ Judgement GetypeVariable(Variable* var, Environment* env)
   }
   else
   {
-    result.success   = false;
-    result.error.dsc = "variable not defined within scope";
+    char* c0 = "Variable [";
+    char* c1 = "] not bound within environment";
+    char* i0 = appendstr(c0, (char*)var->id);
+    result.success = false;
+    result.error.dsc = appendstr(i0, c1);
     result.error.loc = var->loc;
+    free(i0);
   }
 
   return result;
@@ -77,7 +81,7 @@ Judgement EvaluateVariable(Variable* var, struct Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = lookup(env->outer_scope, var->id);
+  Ast* bound_term = Lookup(env->symbols, var->id);
 
   if (bound_term != NULL)
   {
@@ -86,11 +90,35 @@ Judgement EvaluateVariable(Variable* var, struct Environment* env)
   }
   else
   {
+    char* c0 = "Variable [";
+    char* c1 = "] not bound within environment";
+    char* i0 = appendstr(c0, (char*)var->id);
     result.success = false;
-    result.error.dsc = "variable not bound within environment";
+    result.error.dsc = appendstr(i0, c1);
     result.error.loc = var->loc;
+    free(i0);
   }
 
-
   return result;
+}
+
+bool AppearsFreeVariable(Variable* var, InternedString id)
+{
+  // the only real choice we make during traversal
+  if (var->id == id)
+    return true;
+  else
+    return false;
+}
+
+void RenameBindingVariable(Variable* var, InternedString target, InternedString replacement)
+{
+  if (var->id == target)
+    var->id = replacement;
+}
+
+void SubstituteVariable(Variable* var, Ast** target, InternedString id, Ast* value, struct Environment* env)
+{
+  if (var->id == id)
+    (*target) = value;
 }

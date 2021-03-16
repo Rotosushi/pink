@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "Judgement.h"
+#include "ScopeSet.h"
 #include "StringInterner.h"
 #include "Location.h"
 struct Ast;
@@ -55,11 +56,12 @@ typedef struct Lambda
   InternedString      arg_id;
   struct Ast*         arg_type;
   struct Ast*         body;
-  struct SymbolTable* scope;
-  bool curryed;
+  struct SymbolTable* symbols;
+  ScopeSet            scope;
+  bool                curryed;
 } Lambda;
 
-void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* scope, Location* loc);
+void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* symbols, ScopeSet scope, Location* loc);
 
 void DestroyLambda(Lambda* lam);
 
@@ -68,5 +70,11 @@ void CloneLambda(Lambda* destination, Lambda* source);
 char* ToStringLambda(Lambda* lam);
 
 Judgement GetypeLambda(Lambda* node, struct Environment* env);
+
+bool AppearsFreeLambda(Lambda* lam, InternedString id);
+
+void RenameBindingLambda(Lambda* lam, InternedString target, InternedString replacement);
+
+void SubstituteLambda(Lambda* lam, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
 
 #endif // !LAMBDA_H

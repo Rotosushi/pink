@@ -62,8 +62,7 @@ char* ToStringConditional(Conditional* cond)
 // the result type is the type of the alternatives
 Judgement GetypeConditional(Conditional* conditional, Environment* env)
 {
-  Location dummy;
-  Ast* booleanType = CreateAstType(GetBooleanType(env->interned_types), &dummy);
+  Ast* booleanType = GetBooleanType(env->interned_types, NULL);
   Judgement result, eqcnd, fstjdgmt, sndjdgmt, eqalts;
 
   Judgement cndjdgmt = Getype(conditional->cnd, env);
@@ -79,10 +78,16 @@ Judgement GetypeConditional(Conditional* conditional, Environment* env)
 
   if (eqcnd.term->obj.boolean.value == false)
   {
-    free(booleanType);
+    char* c0 = "Conditional espression has Type:[";
+    char* c1 = "] must have Type:[Bool]";
+    char* c  = ToStringAst(cndjdgmt.term);
+    char* i0 = appendstr(c0, c);
     result.success   = false;
     result.error.loc = *GetAstLocation(conditional->cnd);
-    result.error.dsc = "Conditional espression must have boolean type";
+    result.error.dsc = appendstr(i0, c1);
+    free(c);
+    free(i0);
+    free(booleanType);
     return result;
   }
 
@@ -124,11 +129,24 @@ Judgement GetypeConditional(Conditional* conditional, Environment* env)
   }
   else
   {
+    char* c0 = "Alternative expressions have differing types lhs:[";
+    char* c1 = "] rhs:[";
+    char* c2 = "]";
+    char* f  = ToStringAst(fstjdgmt.term);
+    char* s  = ToStringAst(sndjdgmt.term);
+    char* i0 = appendstr(c0, f);
+    char* i1 = appendstr(i0, c1);
+    char* i2 = appendstr(i1, s);
     result.success   = false;
     result.error.loc = *GetAstLocation(conditional->fst);
-    result.error.dsc = "Alternative expressions must have the same Type";
+    result.error.dsc = appendstr(i2, c2);
+    free(f);
+    free(s);
+    free(i0);
+    free(i1);
+    free(i2);
   }
-  
+
   free(booleanType);
   return result;
 }
@@ -163,15 +181,30 @@ Judgement EvaluateConditional(Conditional* cond, struct Environment* env)
 
   free(literalTrue);
 
-  if (result.success == true)
-    return Evaluate(result.term, env);
-  else
-    return result;
+  return result;
 }
 
+bool AppearsFreeConditional(Conditional* cond, InternedString id)
+{
+  bool c = AppearsFree(cond->cnd, id);
+  bool f = AppearsFree(cond->fst, id);
+  bool s = AppearsFree(cond->snd, id);
+  return c || f || s;
+}
 
+void RenameBindingConditional(Conditional* cond, InternedString target, InternedString replacement)
+{
+  RenameBinding(cond->cnd, target, replacement);
+  RenameBinding(cond->fst, target, replacement);
+  RenameBinding(cond->snd, target, replacement);
+}
 
-
+void SubstituteConditional(Conditional* cond, Ast** target, InternedString id, Ast* value, Environment* env)
+{
+  Substitute(cond->cnd, &(cond->cnd), id, value, env);
+  Substitute(cond->fst, &(cond->fst), id, value, env);
+  Substitute(cond->snd, &(cond->snd), id, value, env);
+}
 
 
 

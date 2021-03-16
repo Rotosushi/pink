@@ -52,10 +52,16 @@ void          DestroyTypeInterner(TypeInterner* Ity);
 // not all of them, I still can't define
 // overloaded procedures or polymorphic
 // procedures.
-struct Type* GetNilType(TypeInterner* Ity);
-struct Type* GetIntegerType(TypeInterner* Ity);
-struct Type* GetBooleanType(TypeInterner* Ity);
-struct Type* GetProcedureType(TypeInterner* Ity, struct Ast* l, struct Ast* r);
+
+// if these procedures returned Ast terms
+// which were constructed internally wrapping
+// each Type* then the calling code could
+// accept that any Ast term that was returned out of
+// this code is somthing that needs to be free'd.
+struct Ast* GetNilType(TypeInterner* Ity, Location* loc);
+struct Ast* GetIntegerType(TypeInterner* Ity, Location* loc);
+struct Ast* GetBooleanType(TypeInterner* Ity, Location* loc);
+struct Ast* GetProcedureType(TypeInterner* Ity, struct Ast* l, struct Ast* r, Location* loc);
 
 
 #endif // !TYPEINTERNER_H

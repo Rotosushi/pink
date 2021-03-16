@@ -34,4 +34,10 @@ Judgement GetypeBinop(Binop* binop, struct Environment* env);
 
 Judgement EvaluateBinop(Binop* binop, struct Environment* env);
 
+bool AppearsFreeBinop(Binop* binop, InternedString id);
+
+void RenameBindingBinop(Binop* binop, InternedString target, InternedString replacement);
+
+void SubstituteBinop(Binop* binop, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
+
 #endif // !BINOP_H

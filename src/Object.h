@@ -71,4 +71,10 @@ Judgement AssignObject(Object* dest, Object* source);
 
 Judgement EqualsObject(Object* obj1, Object* obj2);
 
+bool AppearsFreeObject(Object* obj, InternedString id);
+
+void RenameBindingObject(Object* obj, InternedString target, InternedString replacement);
+
+void SubstituteObject(Object* obj, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
+
 #endif // !OBJECT_H

@@ -27,4 +27,9 @@ Judgement GetypeConditional(Conditional* node, struct Environment* env);
 
 Judgement EvaluateConditional(Conditional* cond, struct Environment* env);
 
+bool AppearsFreeConditional(Conditional* cond, InternedString id);
+
+void RenameBindingConditional(Conditional* cond, InternedString target, InternedString replacement);
+
+void SubstituteConditional(Conditional* cond, struct Ast** target, InternedString id, struct Ast* value, struct Environment* env);
 #endif // !CONDITIONAL_H

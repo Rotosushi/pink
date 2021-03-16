@@ -1,0 +1,166 @@
+so, i have been convinced, that within the context
+of a small imperitive style language such as pink,
+full asymmetric coroutines are a powerful feature
+for expressing simple cooperative multitasking.
+that is local to the address space of the program,
+unlike a thread, which has it's address space managed
+by the OS, a coroutine allows programmers to define
+functions which can pass control between them, while
+saving their independant local state. this allows a
+cooperative multiprocessing approach to programs.
+and, since monotonic procedures are
+
+(from: cite-academic-source-here)
+
+so, what is a full asymmetric coroutine?
+
+it is an abstraction which is comprised around
+three simple operations.
+1) Create
+2) Resume // might be able to fold into regular procedure application?
+3) Yield
+
+Create takes a procedure as an argument and returns
+a coroutine object as it's result. the procedure which
+is passed is the body of the coroutine. the continuation
+point (or instruction pointer) is set such that the first
+statement in the body of the procedure is what will execute
+when the coroutine is invoked.
+
+Resume takes a coroutine, and an additional argument,
+it invokes the passed coroutine passing in the additional
+argument to the procedure body.
+
+Yield takes an argument, set's the continuation point of
+the coroutine at the statement immediately following the
+Yield ,and returns the argument to the most
+recent invokation of Resume, as it's result-value.
+
+once we are reinvoking the coroutine, the additional arguments to
+Resume are treated as the result-values of the most recent
+invokation of Yield.
+
+(when control reaches the final statement within a coroutine
+body, then the coroutine is said to be dead. we can choose
+to treat further invokations as either a runtime error, or
+a no-op.)
+
+// the expectation of the coroutine is that we are
+// voluntarily suspending execution until resumed again.
+// this means we expect either being called in a loop,
+// or by multiple physical call sites.
+// coroutines are going to be explicitly monotonic btw.
+// polymorphic dispatch between distinct coroutine bodies
+// implies sharing local variables, except that cannot be
+// done when you are trying to keep the type of any given
+// implementation static accross invokations.
+// hence, you must provide concrete
+// types in the argument list.
+
+coroutine Iterate-Array a:Ref ([] Int) =>
+{
+  i : Int = 0;
+  while (i < a.length)
+  {
+      Yield (a[i]); // implies the return type is Int
+      i++;
+  }
+}
+
+procedure main nil:Nil =>
+{
+  i : [] Int = {0, 1, 2, 3, 4, 5};
+
+  // if coroutines need to be explicitly created,
+  // this is the allocation point of their heap environment.
+  // we could thus imagine allocating multiple instances
+  // of the same coroutine body, which each would hold
+  // their own data, independant of each other allocation.
+  // so we could iterate over more than one array by constructing
+  // more than one Iterate-Array coroutine to walk each of them.
+  coro := Create Iterate-Array;
+
+  while (1)
+  {
+    Print (Resume coro &i); // this application is Ref [] Int -> Int essentially
+  }
+}
+
+within the coroutine, the value of (i) is stable accross invokations.
+until we see the end of the array. in which case the coroutine dies.
+
+so we can observe that Resume, with it's single argument restricts
+the body of a coroutine to a single argument. if we extend Resume by
+replacing it with, Application with a coroutine object in the leftmost
+position, we can 'curry' into multiple argument coroutines. (each argument
+acting like another procedure invokation, which is like a coroutine resume)
+
+with that said it then makes sense to
+allow Yield to take multiple arguments. which i suppose could be built atop
+tuples. (and in the same way that returning an array by value occurs,
+the space for the tuple is allocated in the callers stack and filled in by
+the callee.)
+(with, i suppose, the same partial application semantics?)
+(and presumably, all of the space that needs to be allocated for
+all of the variables stored on the stack, whose sizes are knowable
+at compile time (everything except alloca-dynamic-storage), are allocated
+within the stack upon entering the procedure body.)
+
+though, i still haven't gotten all the way down to emitting LLVM yet,
+so all of the above regarding specific calling semantics is heresay until
+proven otherwise.
+
+one possible implementation in assembly would be to have the procedure
+call of the coroutine allocate space on the actual stack for a single
+pointer, which is a reference to the actual by-value environment of the
+procedure? we can access names in the environment by unwrapping this
+environment pointer plus a local offset into the environment, in much the
+same way we use local offsets to access stack allocated data relative to the
+frame pointer.
+Creating a coroutine now means allocating it's frame on the heap, and
+binding the name of the coroutine to a pair of this dynamic frame pointer
+and the function pointer. we can pass this pointer as a hidden first argument
+to the procedure defined as the body of the coroutine alongside each of the
+actual arguments present in the call expression. we also need to store
+the instruction number to jump back into the coroutine? so binding to a triple
+instead of a pair.
+
+during the evaluation of the coroutine, each application enters the
+coroutines body at a different location, this is set up by the
+Resume - Yield pair. (which means that evaluation of application terms
+with a coroutine in the leftmost position needs to act exactly like
+Resume. and a yield expression will need to be added to the grammar.)
+
+the first time we apply a coroutine the body is run from the top
+until we reach our first yield term. Yield saves the continuation
+point, maybe in the dynamic environment?, and then acting like a
+return statement writes the return value(s) into their stack based
+memory locations, and transfers control back to the first application
+of the coroutine. the next time the coroutine is activated the
+Yield expression acts like the new call point of the procedure, so it
+accepts an argument list exactly the same as the original call point.
+control is resumed at the expression immediately following the Yield
+expression. and this process is repeated until the coroutine reaches it's
+end point, at which point further evaluation of the coroutine is dead
+code. so it should probably be an error.
+
+if the dynamic frame is called f, then we could imagine it as a structure
+composed of each of the bindings it holds. say we observe that within the
+frame of the coroutine, the programmer binds an integer (a), a string (b), and a
+boolean value (c). then we would access this names within the assembly as
+(f->a), (f->b), and (f->c), where the programmer would type, (a), (b), or, (c).
+
+so then a coroutine is stored in memory as an a structure
+pointer, and a function pointer. this structure is passed
+as a hidden first argument, and is used by the procedure as
+it's activation record. this means that coroutines need to be
+created before they can be called. however, given that they
+are going to be a first class language feature, it would seem
+like the nice thing to do would be to call create on each coroutine
+object as an initialization to the object as being bound within the
+environment. so at least the first time you call it, it already exists,
+but you are still handed the Create procedure if you explicitly want
+to make more than one instance. (like the array iteration example above,
+what happens when you want to iterate a new array? you have to allocate
+a new coroutine to get a new instance of i, to iterate from the beginning
+again.)

@@ -33,7 +33,7 @@ Judgement GetypeNil(Nil* node, Environment* env)
 {
   Judgement result;
   result.success = true;
-  result.term    = CreateAstType(GetNilType(env->interned_types), &(node->loc));
+  result.term    = GetNilType(env->interned_types, &(node->loc));
   return result;
 }
 

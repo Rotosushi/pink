@@ -76,7 +76,9 @@ Judgement GetypeBinop(Binop* binop, Environment* env)
 
       if (rhsjdgmt.success == true)
       {
-        BinopEliminator* eliminator = FindBinopEliminator(eliminators, lhsjdgmt.term, rhsjdgmt.term);
+        Type* lhstype = lhsjdgmt.term->obj.type.literal;
+        Type* rhstype = rhsjdgmt.term->obj.type.literal;
+        BinopEliminator* eliminator = FindBinopEliminator(eliminators, lhstype, rhstype);
 
         if (eliminator != NULL)
         {
@@ -85,9 +87,27 @@ Judgement GetypeBinop(Binop* binop, Environment* env)
         }
         else
         {
+          char* c0 = "no implementation of binop [";
+          char* c1 = "] found for actual types left:[";
+          char* c2 = "], right:[";
+          char* c3 = "]";
+          char* l  = ToStringAst(lhsjdgmt.term);
+          char* r  = ToStringAst(rhsjdgmt.term);
+          char* t0 = appendstr(c0, binop->op);
+          char* t1 = appendstr(t0, c1);
+          char* t2 = appendstr(t1, l);
+          char* t3 = appendstr(t2, c2);
+          char* t4 = appendstr(t3, r);
           result.success   = false;
-          result.error.dsc = "no implementation of binop found for actual types";
+          result.error.dsc = appendstr(t4, c3);
           result.error.loc = binop->loc;
+          free(l);
+          free(r);
+          free(t0);
+          free(t1);
+          free(t2);
+          free(t3);
+          free(t4);
         }
       }
       else
@@ -102,9 +122,13 @@ Judgement GetypeBinop(Binop* binop, Environment* env)
   }
   else
   {
-    result.success = false;
-    result.error.dsc = "binop not bound within environment";
+    char* c0 = "operator [";
+    char* c1 = "] is not bound as binop in environment";
+    char* t0 = appendstr(c0, binop->op);
+    result.success   = false;
+    result.error.dsc = appendstr(t0, c1);
     result.error.loc = binop->loc;
+    free(t0);
   }
 
   return result;
@@ -142,6 +166,7 @@ Judgement EvaluateBinop(Binop* binop, struct Environment* env)
           return result;
         }
 
+        //              (  ast handle   ) ( type handle  )
         Type *lhstype = lhstypejdgmt.term->obj.type.literal;
         Type *rhstype = rhstypejdgmt.term->obj.type.literal;
 
@@ -153,9 +178,22 @@ Judgement EvaluateBinop(Binop* binop, struct Environment* env)
         }
         else
         {
+          char* c0 = "no implementation of binop found for actual lhs:[";
+          char* c1 = "] and rhs:[";
+          char* c2 = "]";
+          char* l  = ToStringAst(lhstypejdgmt.term);
+          char* r  = ToStringAst(rhstypejdgmt.term);
+          char* i0 = appendstr(c0, l);
+          char* i1 = appendstr(i0, c1);
+          char* i2 = appendstr(i1, r);
           result.success   = false;
-          result.error.dsc = "no implementation of binop found for actual types";
+          result.error.dsc = appendstr(i2, c2);
           result.error.loc = binop->loc;
+          free(l);
+          free(r);
+          free(i0);
+          free(i1);
+          free(i2);
         }
       }
       else
@@ -170,13 +208,35 @@ Judgement EvaluateBinop(Binop* binop, struct Environment* env)
   }
   else
   {
+    char* c0 = "binop [";
+    char* c1 = "] not bound within environment";
+    char* i0 = appendstr(c0, (char*)binop->op);
     result.success = false;
-    result.error.dsc = "binop not bound within environment";
+    result.error.dsc = appendstr(i0, c1);
     result.error.loc = binop->loc;
+    free(i0);
   }
+  return result;
+}
 
-  if (result.success == true)
-    return Evaluate(result.term, env);
-  else
-    return result;
+bool AppearsFreeBinop(Binop* binop, InternedString id)
+{
+  // we don't want to short circuit the
+  // evaluation of the second recursive
+  // application.
+  bool l = AppearsFree(binop->lhs, id);
+  bool r = AppearsFree(binop->rhs, id);
+  return l || r;
+}
+
+void RenameBindingBinop(Binop* binop, InternedString target, InternedString replacement)
+{
+  RenameBinding(binop->lhs, target, replacement);
+  RenameBinding(binop->rhs, target, replacement);
+}
+
+void SubstituteBinop(Binop* binop, Ast** target, InternedString id, Ast* value, struct Environment* env)
+{
+  Substitute(binop->lhs, &(binop->lhs), id, value, env);
+  Substitute(binop->rhs, &(binop->rhs), id, value, env);
 }

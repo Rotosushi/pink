@@ -28,7 +28,8 @@ typedef struct Parser
   int             mkstksz;   // the actual length of our mark stack.
   Lexer*          lexer;     // the lexer structure, which splits the input text into tokens.
   // these pointers memory are managed elsewhere in the program.
-  SymbolTable*    outer_scope;
+  SymbolTable*    symbols;
+  ScopeSet        scope;
   StringInterner* interned_ids;
   StringInterner* interned_ops;
   TypeInterner*   interned_types;
@@ -47,7 +48,7 @@ typedef struct Parser
   communicable via comments in c. so
   like, that's a space for improvement.
 */
-struct Parser* CreateParser(SymbolTable* global_scope, StringInterner* Iids, StringInterner* Iops, TypeInterner* Itypes, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
+struct Parser* CreateParser(SymbolTable* symbols, ScopeSet scope, StringInterner* Iids, StringInterner* Iops, TypeInterner* Itypes, BinopPrecedenceTable* prec_table, BinopTable* bs, UnopTable* us);
 void    DestroyParser(struct Parser* p);
 void    ResetParser(struct Parser* p);
 Judgement Parse(struct Parser* p, char* input);

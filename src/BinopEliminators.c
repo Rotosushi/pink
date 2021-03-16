@@ -36,7 +36,7 @@ BinopEliminator* InsertPrimitiveBinopEliminator(BinopEliminatorList* BElist, Typ
   return &(BElist->list[BElist->size - 1]);
 }
 //
-BinopEliminator* FindBinopEliminator(BinopEliminatorList* BElist, Type *ltype, Type* rtype)
+BinopEliminator* FindBinopEliminator(BinopEliminatorList* BElist, Type *ltype, Type *rtype)
 {
   if (!BElist || !ltype || !rtype)
     return NULL; // fatal error: unhandleable NULL ptr passed

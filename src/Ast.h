@@ -204,7 +204,7 @@ typedef struct Ast
 // to switch over? OOP uses a Type record with a
 // pointer to the proper constructor procedure.
 // one of which is a vararg procedure.
-Ast* CreateAstVariable(InternedString id, Location* loc);
+Ast* CreateAstVariable(InternedString id, ScopeSet scope, Location* loc);
 Ast* CreateAstApplication(Ast* left, Ast* right, Location* loc);
 Ast* CreateAstAssignment(Ast* left, Ast* right, Location* loc);
 Ast* CreateAstBind(InternedString id, Ast* right, Location* loc);
@@ -215,7 +215,7 @@ Ast* CreateAstIteration(Ast* condition, Ast* body, Location* loc);
 Ast* CreateAstNil(Location* loc);
 Ast* CreateAstInteger(int  value, Location* loc);
 Ast* CreateAstBoolean(bool value, Location* loc);
-Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, struct SymbolTable* scope, Location* loc);
+Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, struct SymbolTable* symbols, ScopeSet scope, Location* loc);
 Ast* CreateAstType(Type* type, Location* loc);
 
 
@@ -234,18 +234,25 @@ void DestroyAst(Ast* ast);
 
 // constructs a new tree exaclty the same as the
 // passed tree.
-void CloneAst(Ast** destination, Ast* source);
+Ast* CloneAst(Ast** destination, Ast* source);
 
 // constructs a string that represents the passed
 // in tree. the caller is responsible for managing
 // the string passed back.
 char* ToStringAst(Ast* ast);
 
-// returns the type of the tree passed in,
-// or a description of the error that was found.
+// getype builds a tree representing the type of
+// the tree that was passed in.
 Judgement Getype(Ast* ast, struct Environment* env);
 
+// evaluate builds a tree represnting the result of
+// evaluating the passed in tree.
 Judgement Evaluate(Ast* ast, struct Environment* env);
+
+
+// AppearsFree, RenameBinding, and Substitute
+// are all used for Applying Lambdas, and as such
+// are only ever used on copies of Lambdas.
 
 // returns true if id can be found free
 // when searching the term.
@@ -271,6 +278,6 @@ void RenameBinding(Ast* term, InternedString target, InternedString replacement)
 // this may or may not cause weird bugs, i accept whatever
 // semantics arise from this, and am merely content to observe
 // them while i learn the lay of the land.
-void Substitute(Ast** term, InternedString id, Ast* value, struct Environment* env);
+void Substitute(Ast* term, Ast** target, InternedString id, Ast* value, struct Environment* env);
 
 #endif // !AST_H
