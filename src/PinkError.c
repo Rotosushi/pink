@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "Location.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "PinkError.h"
 
 /*
@@ -10,7 +10,7 @@
 
   inspiration for this subroutine! thanks :)
 */
-void PrintError(FILE* out, PinkError* perr, char* errtxt)
+void PrintError(FILE* out, PinkError* perr, const char* errtxt)
 {
   if (!out)
     FatalError("NULL ouput file", __FILE__, __LINE__);
@@ -37,29 +37,32 @@ void PrintError(FILE* out, PinkError* perr, char* errtxt)
   // adding. instead of simply doubling the final value, which
   // while "safe" uses way more space than nesessary.
   int txtlen = strlen(errtxt);
-  int length = (txtlen * 2) + strlen(perr->dsc) + 5;
+  int length = (txtlen * 2) + strlen(perr->dsc) + 7;
 
   char* restxt = (char*)calloc(sizeof(char), (length + 1)), *ctx;
 
-  strkat(restxt, errtxt, &ctx);
-  strkat(restxt, "\n",   &ctx);
+  strkat(restxt, "\t", &ctx);
+  strkat(NULL, errtxt, &ctx);
+  strkat(NULL, "\n",   &ctx);
   for (int i = 0; i < txtlen; i++)
   {
     if (i < perr->loc.first_column)
-      strkat(restxt, "-", &ctx);
+      strkat(NULL, "-", &ctx);
     else if (i > perr->loc.last_column)
-      strkat(restxt, "-", &ctx);
+      strkat(NULL, "-", &ctx);
     else
-      strkat(restxt, "^", &ctx);
+      strkat(NULL, "^", &ctx);
   }
-  strkat(restxt, "\n",      &ctx);
-  strkat(restxt, perr->dsc, &ctx);
-  strkat(restxt, "\n",      &ctx);
+  strkat(NULL, "\n",      &ctx);
+  strkat(NULL, perr->dsc, &ctx);
+  strkat(NULL, "\n",      &ctx);
 
   fprintf(out, "%s", restxt);
+
+  free (restxt);
 }
 
-void FatalError(char* msg, const char* file, int line)
+void FatalError(const char* msg, const char* file, int line)
 {
   fprintf(stderr, "[file:%s, line:%d] %s", file, line, msg);
   exit(1);

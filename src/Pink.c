@@ -36,8 +36,10 @@
   to evoke the idea of OOP.
 */
 
+#include "llvm-c/Core.h"
+
 #include "Ast.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "TypeInterner.h"
 #include "SymbolTable.h"
 #include "BinopPrecedence.h"
@@ -50,17 +52,26 @@
 
 #include "Environment.h"
 
-// main should look something like this for
-// the interpretive setup.
+
 int main (int argc, char** argv)
 {
+  // so, technically i can use the statically
+  // allocated 'global' llvm context. however,
+  // i like not having to really worry about threading.
+  // and this forces me into the style that is needed to
+  // run multiple LLVM contexts accross multiple threads.
+  LLVMContextRef llvm_context = LLVMContextCreate();
+  LLVMModuleRef  pink = LLVMModuleCreateWithNameInContext("Pink", llvm_context);
+  LLVMBuilderRef llvm_instruction_builder = LLVMCreateBuilderInContext(llvm_context);
+
+
   ScopeSet              global_scope     = 1;
   StringInterner*       interned_ids     = CreateStringInterner();
   StringInterner*       interned_ops     = CreateStringInterner();
   TypeInterner*         interned_types   = CreateTypeInterner();
   SymbolTable*          global_symbols   = CreateSymbolTable((SymbolTable*)NULL);
-  BinopPrecedenceTable* precedence_table = CreateAstBinopPrecedenceTable();
-  BinopTable*           binops           = CreateAstBinopTable();
+  BinopPrecedenceTable* precedence_table = CreateBinopPrecedenceTable();
+  BinopTable*           binops           = CreateBinopTable();
   UnopTable*            unops            = CreateUnopTable();
   Parser*               parser           = CreateParser(global_symbols, global_scope, interned_ids, interned_ops, interned_types, precedence_table, binops, unops);
   Environment*          environment      = CreateEnvironment(parser, global_symbols, global_scope, interned_ids, interned_ops, interned_types, precedence_table, binops, unops);
@@ -70,5 +81,19 @@ int main (int argc, char** argv)
 
   Repl(stdin, stdout, environment);
 
+
+  DestroyStringInterner(interned_ids);
+  DestroyStringInterner(interned_ops);
+  DestroyTypeInterner(interned_types);
+  DestroySymbolTable(global_symbols);
+  DestroyBinopPrecedenceTable(precedence_table);
+  DestroyBinopTable(binops);
+  DestroyUnopTable(unops);
+  DestroyParser(parser);
+  DestroyEnvironment(environment);
+
+  LLVMDisposeBuilder(llvm_instruction_builder);
+  LLVMModuleDispose(pink);
+  LLVMContextDispose(llvm_context);
   return 0;
 }

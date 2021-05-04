@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "PinkError.h"
 #include "Token.h"
 #include "Location.h"
@@ -33,7 +33,7 @@ void yySetBuffer(Lexer* lexer, char* text, int len)
     if (lexer->buf != NULL)
         free(lexer->buf);
     lexer->buf    = (char*)calloc(sizeof(char), len);
-    lexer->buf    = strncpy(lexer->buf, text, len);
+    lexer->buf    = strncpy(lexer->buf, text, len - 1);
     lexer->cursor = lexer->marker = lexer->mrkctx = lexer->token = lexer->buf;
     lexer->end    = lexer->buf + len;
 }

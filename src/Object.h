@@ -8,6 +8,7 @@
 #include "Lambda.h"
 #include "Judgement.h"
 #include "TypeLiteral.h"
+#include "PartiallyAppliedLambda.h"
 
 // so like, is this the place to store
 // per value flags? like mutable,
@@ -18,7 +19,8 @@ typedef enum ObjKind
   O_NIL,
   O_INT,
   O_BOOL,
-  O_LAMB,
+  O_LAMBDA,
+  O_PARAPP,
   O_TYPE,
 } ObjKind;
 
@@ -49,11 +51,12 @@ typedef struct Object
 {
   ObjKind kind;
   union {
-    TypeLiteral type;
-    Nil         nil;
-    Integer     integer;
-    Boolean     boolean;
-    Lambda      lambda;
+    TypeLiteral        type;
+    Nil                nil;
+    Integer            integer;
+    Boolean            boolean;
+    Lambda             lambda;
+    PartiallyAppliedLambda parapp;
   };
 } Object;
 

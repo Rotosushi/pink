@@ -4,7 +4,7 @@
 
 #include "Judgement.h"
 #include "ScopeSet.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 
 struct Ast;
 

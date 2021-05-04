@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "ScopeSet.h"
 #include "Judgement.h"
 #include "Environment.h"
@@ -26,11 +26,11 @@ Ast* CreateAstVariable(InternedString id, ScopeSet scope, Location* loc)
   return ast;
 }
 
-Ast* CreateAstApplication(Ast* left, Ast* right, Location* loc)
+Ast* CreateAstApplication(Ast* left, Ast* right, int num_args, Location* loc)
 {
   Ast* ast  = (Ast*)malloc(sizeof(Ast));
   ast->kind = A_APP;
-  InitializeApplication(&(ast->app), left, right, loc);
+  InitializeApplication(&(ast->app), left, right, num_args, loc);
   return ast;
 }
 
@@ -113,8 +113,17 @@ Ast* CreateAstLambda(InternedString arg_id, Ast* arg_type, Ast* body, SymbolTabl
 {
   Ast* ast      = (Ast*)malloc(sizeof(Ast));
   ast->kind     = A_OBJ;
-  ast->obj.kind = O_LAMB;
+  ast->obj.kind = O_LAMBDA;
   InitializeLambda(&(ast->obj.lambda), arg_id, arg_type, body, symbols, scope, loc);
+  return ast;
+}
+
+Ast* CreateAstPartiallyAppliedLambda(Ast* rest, InternedString arg_name, ScopeSet arg_scope, Ast* arg_value, Ast* arg_type, Location* loc)
+{
+  Ast* ast = (Ast*)malloc(sizeof(Ast));
+  ast->kind = A_OBJ;
+  ast->obj.kind = O_PARAPP;
+  InitializePartiallyAppliedLambda(&(ast->obj.parapp), rest, arg_name, arg_scope, arg_value, arg_type, loc);
   return ast;
 }
 
@@ -207,6 +216,19 @@ Location* GetAstLocation(Ast* ast)
     default:
       FatalError("Bad Ast Kind", __FILE__, __LINE__);
   }
+}
+
+Type* GetTypePtrFromLiteral(Ast* ast)
+{
+  Type* result = NULL;
+  if (ast->kind == A_OBJ)
+  {
+    if (ast->obj.kind == O_TYPE)
+    {
+      result = ast->obj.type.literal;
+    }
+  }
+  return result;
 }
 
 // this shall deallocate all memory associated
@@ -371,6 +393,7 @@ char* ToStringAst(Ast* term)
 // when you already know exactly what needs doing?
 // and for two reasons
 // A) it keeps this file from being >3000 lines
+//     and oh boy would this file be huge if every
 // B) the compiler can still inline each procedure if it wants.
 Judgement Getype(Ast* term, struct Environment* env)
 {
@@ -539,6 +562,116 @@ void RenameBinding(Ast* term, InternedString target, InternedString replacement)
 // to be Variables ever need the Target pointer.
 void Substitute(Ast* term, Ast** target, InternedString id, Ast* value, Environment* env)
 {
+  /*
+  why doesn't substitute's signature look like?
+  void Substitute(Ast** target, InternedString id, Ast* value, Environment* env)
+
+  well, this is actually interesting, because it has to do
+  with type specialization/reduction/shortening along what i
+  think is the Object boundary that OOP languages observe.
+
+  to cut directly to the point, substitution is performed
+  via pointer assignment. this has the effect that we need
+  a reference to the parent pointer, specifically, the cell
+  of memory held within the ast structure 'above' the
+  variable which is being substituted. this allows the
+  procedure to replace the pointer in the cell with the
+  pointer to the value, thus, substituting a variable for
+  a value.
+  now, since i am thinking
+  about procedure overloading which works atop C procedure
+  calls, i am treating Substitute and SubstituteBind and such
+  as an overload set. now, in each other procedure in this
+  program (getype, evaluate, etc) the type specialization
+  that is occurring to differenciate between instances of
+  this overload set, essentially:
+
+    Judgement Getype(Ast* term, Environment* env);
+    Judgement GetypeBind(Bind* bind, Environment* env);
+    ...
+
+  there is a difference in the type of the first argument
+  alongside the difference in name (that is required by the
+  C standard.) in a programming language with support for
+  overloading procedures by argument type we could define
+  Getype like:
+
+    Judgement Getype(Variable* term, Environment* env);
+    Judgement Getype(Bind* bind, Environment* env);
+    ...
+
+  and then within the mutually recursive definition of
+  Getype, the programmer always calls Getype passing in
+  an Ast, because that is how the Ast is constructed.
+  however the programmer only defines bodies for the
+  members of the union type that Ast describes, and
+  thus the programmer doesn't have to write the switch
+  statement which dispatches to the correct procedure
+  given which member is currently occupying the node
+  being pointed to by the Ast*. the compiler can infer
+  the switch by which types are used as argument for
+  the overload set. if a type is defined and then used
+  as an argument, then any call of the procedure passing
+  in a variable of said type can be dispatched at compile
+  time to the correct body. and type defined as a sum of
+  types or as an alias of another existing type can be
+  used as a formal argument, and then actual argument type
+  can be used to dispatch to the correct body at compile time.
+  any type which is defined as a set of alternative types
+  can be passed into a procedure correctly, only if there is
+  a member of the procedures overload set for each type present
+  within the alternative type set. and the dispatch routine
+  which takes the set of alternates type can be implemented
+  as a switch over the runtime type of the member, dispatching
+  to each of the correct members of the overload set.
+  (recursion can be handled by a second dispatch routine,
+   i.e. if one of the alternatives is itself a sum of
+    alternatives, the disptach routine which strips off
+    the first set, dispatches to a second routine which
+    disptaches over which member is currently active in
+    that set. this of course means that each alternative in
+    every member of the set is represented flatly from the
+    programmers perspective. they simply define a body for
+    each alternative that is not a union, and the compiler
+    builds disptach routines for each union type, recursively
+    peeling away unions until the actual active sum type is
+    represented.)
+
+  and now we reach the rub, you see, Substitution performs it's
+  work on Ast*'s. and we just defined a method of overloading
+  that never deals in the actual type of the set of alternatives
+  type. the programmer only defines bodies accepting the
+  member types. this means that substituion itself could not
+  be defined in the straightforward way.
+  we would need to define it differently.
+
+  one thing that is absolutely critical is the existance of
+  an Ast**, i.e. a reference to the cell of memory which needs
+  to be overwritten in the argument list. otherwise how will that
+  cell of memory be reachable while we are traversing the node
+  below. additionally, while we only ever actually substitute
+  on a node that happens to contain a variable, we could find
+  that variable as a leaf to one of any of the other nodes.
+
+  this is the impetus behind the argument list of substitution.
+  one of the ideas i had would be to allow the programmer to
+  explicitly declare a body taking a pointer to a union type
+  directly, meaning wrapper procedures could be written by
+  taking the pointer, and then the runtime dispatch can be
+  invoked by unwraping the pointer to it's union directly
+  and passing that into the procedure by-value.
+  this would allow a reference to the cell of memory containing
+  the reference to the union type to appear in the argument list,
+  and be manipulated in the same way we do it in C.
+
+  then, Substitution would be defined as something like
+
+  void Substitution(Variable* var, Ast** target, InternedString id, Ast* value, Environment* env);
+  void Substitution(Bind* bind, Ast** target, InternedString id, Ast* value, Environment* env);
+  ...
+
+
+  */
   switch(term->kind)
   {
     case A_VAR:

@@ -1,7 +1,7 @@
 #ifndef BINOP_H
 #define BINOP_H
 
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Judgement.h"
 #include "Location.h"
 struct Environment;

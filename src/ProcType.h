@@ -41,6 +41,10 @@ struct Type;
 // compose together, we must store types within Ast* structures.
 // this does enable us to call the same Equals routine to compare
 // Types and Values.
+// turns out, this simply isn't true, and i figured out how to
+// do both. ProcType is built out of Type*'s directly, and TypeLiterals
+// only ever hold a single Type*. there is no case where an instance of
+// a type ever holds anything other than a Type*. 
 typedef struct ProcType
 {
   struct Type* lhs;

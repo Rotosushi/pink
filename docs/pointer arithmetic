@@ -1,3 +1,132 @@
+distinguish between pointers and references
+but in that a pointer is a c-bare pointer
+and a reference is more type safe????
+
+
+
+from a smarter person than I am:
+Jonathan Muller "Rethinking Pointers"
+
+Taxonomy of pointers:
+
+	implicit/explicit access
+	implicit/explicit creation
+
+
+	Definition: ALIAS
+
+	implicit creation syntax
+	implicit access   syntax
+
+	Implemented by
+
+	T&
+
+
+	Definition REFERENCE
+
+	explicit creation syntax
+	explicit access   syntax
+
+	T*
+
+(shallow vs. deep equality)
+shallow equality compares pointers themselves,
+that is, shallow equality compares whether two
+pointer values refer to the same object.
+that is, if the two pointer values contain the same address.
+
+deep equality compares the pointee's equality.
+that is they compare the objects being pointer at by the
+pointers.
+
+pointer/pointee mutability.
+can we read-write the pointer?
+can we read-write the pointee?
+
+const T&
+read-only alias
+
+T*
+read-write reference
+
+valid/invalid pointer. can we dereference the pointer?
+
+nullptr is the classic example of a pointer you cannot dereference.
+
+nullability is if the pointer can hold a null pointer.
+
+you cannot explicitly construct a NULL reference,
+but you can invalidate the memory the reference
+points to, thus invalidating the reference.
+
+in a well formed program, all pointers that can be
+read are either valid, or nullptr.
+
+owning, non-owning
+
+
+Level 1: Function Parameters:
+
+	a) IN
+	b) PERSISTENT IN
+	c) PERSISTENT POINTER IN
+	d) OUT
+	e) IN/OUT
+	f) CONSUME
+	g) FORWARD
+
+	all have the additional question of
+	whether the parameter is a required
+	parameter of the procedure.
+
+	a) IN
+		the procedure only reads the parameter
+		Guide:
+			CONST ALIAS
+			because it's
+				NULLABLE or always NON_NULL
+				READ_ONLY
+				NON_OWNING
+
+		a pointer-like type is transparent if it can be replaced
+		by it's value without a change in semantics.
+
+		int func(int& i);
+		is equivalent to
+		int func(int i);
+
+		a constant alias is transparent (if T is small and trivially copyable)
+
+	b) PERSISTENT IN
+		CONST ALIAS
+		because it's
+			NULLABLE or always NON_NULL
+			READ_ONLY
+			NON_OWNING
+
+	c) PERSISTENT POINTER IN
+		a pointer to some object is going to be stored somewhere
+		in a persistent location.
+			REFERENCE
+			CONST T*
+
+	d) OUT
+		a pointer passed in is going to be modified or allocated
+		by the procedure.
+		REFERENCE
+
+	e) IN/OUT
+	 	REFERENCE
+
+
+	f) CONSUME
+		REFERENCE
+
+		these destroy the memory associated with the
+		pointer, and turns the pointer to null.
+
+
 /* pointer arithmetic is not black magic!
 // 1 number per char/byte, regardless of the
 // upper bound, the bytes between cursor

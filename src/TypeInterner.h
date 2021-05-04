@@ -1,14 +1,7 @@
 #ifndef TYPEINTERNER_H
 #define TYPEINTERNER_H
 
-struct Ast;
 struct Type;
-
-typedef struct TLelem
-{
-  struct Type*   type;
-  struct TLelem* next;
-} TLelem;
 
 /*
   okay, so a super basic version of
@@ -34,13 +27,24 @@ typedef struct TLelem
   into an LLVM interface at some later
   date. while the langauge can take
   advantage of the encoding style rn.
+
+  some thoughts on what this ends up
+  looking like with how it is used in the
+  front end.
+
+  each member of the linked list only ever
+  holds a single ProcType node. each proctype
+  node could thus be held in a list of Types.
+  (each initialized to the new proctype.)
+
 */
 typedef struct TypeInterner
 {
   struct Type*  nilType;
   struct Type*  integerType;
   struct Type*  booleanType;
-  TLelem*       procTypes;
+  struct Type*  procTypes; // this one's a dynamic array.
+  int           cntProcTypes; // the size of the array
 } TypeInterner;
 
 TypeInterner* CreateTypeInterner();
@@ -58,10 +62,10 @@ void          DestroyTypeInterner(TypeInterner* Ity);
 // each Type* then the calling code could
 // accept that any Ast term that was returned out of
 // this code is somthing that needs to be free'd.
-struct Ast* GetNilType(TypeInterner* Ity, Location* loc);
-struct Ast* GetIntegerType(TypeInterner* Ity, Location* loc);
-struct Ast* GetBooleanType(TypeInterner* Ity, Location* loc);
-struct Ast* GetProcedureType(TypeInterner* Ity, struct Ast* l, struct Ast* r, Location* loc);
+struct Type* GetNilType(TypeInterner* Ity);
+struct Type* GetIntegerType(TypeInterner* Ity);
+struct Type* GetBooleanType(TypeInterner* Ity);
+struct Type* GetProcedureType(TypeInterner* Ity, struct Type* l, struct Type* r);
 
 
 #endif // !TYPEINTERNER_H

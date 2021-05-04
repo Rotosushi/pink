@@ -3,8 +3,8 @@
 
 #include "Ast.h"
 #include "Judgement.h"
-#include "Utilities.h"
-#include "StringInterner.h"
+#include "Utilities.hpp"
+#include "StringInterner.hpp"
 #include "Environment.h"
 #include "Binop.h"
 

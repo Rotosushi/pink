@@ -58,10 +58,10 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Token.h"
 #include "SymbolTable.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Ast.h"
 #include "Judgement.h"
 #include "Judgement.h"
@@ -480,7 +480,7 @@ Judgement ParseAffix(Parser* p)
           {
 
             lhsjdgmt.success = true;
-            lhsjdgmt.term    = GetProcedureType(p->interned_types, lhsjdgmt.term, rhsjdgmt.term, &typeloc);
+            lhsjdgmt.term    = CreateAstType(GetProcedureType(p->interned_types, GetTypePtrFromLiteral(lhsjdgmt.term), GetTypePtrFromLiteral(rhsjdgmt.term)), &typeloc);
           }
           else
           {
@@ -609,6 +609,7 @@ Judgement ParseApplication(Parser* p)
 
   if (lhsjdgmt.success == true)
   {
+    int num_args = 0;
     // this first check makes total sense,
     // either we see more application expression
     // or we see an operator, but
@@ -616,7 +617,7 @@ Judgement ParseApplication(Parser* p)
     // i.e. is_unop()?
     // because we want to give precedence to every
     // binop over any unop. to prevent unintuitive
-    // trees.
+    // trees. i.e. 3 - 3 should be (3 - 3) not (3 (-3))
     while ((curtok(p) != T_OPERATOR && is_primary(curtok(p)))
         || (curtok(p) == T_OPERATOR && !is_binop(p, curtxt(p))))
     {
@@ -631,23 +632,11 @@ Judgement ParseApplication(Parser* p)
         apploc.last_line    = rhsloc.last_line;
         apploc.last_column  = rhsloc.last_column;
 
-        // we want to count the number of arguments
-        // held within the call tree such that at
-        // each call node, you know how many call nodes
-        // are below you. then as we apply the procedure,
-        // if it stores that this particular application
-        // is curryed, then we should be able to build
-        // some logic that can construct a partial application
-        // term holding a tuple of values which are the already
-        // evaluated arguments, and a pointer to the procedure
-        // body taking those arguments. maybe both terms need a
-        // count, so that we can construct the partial with
-        // knowledge of how many more arguments are needed
-        // to complete the application. within the interpreter
-        // we need to do nothing to get partial application semantics.
-        // precisely because we are using tree style evaluation.
+        num_args += 1; // we parsed another argument in this
+                       // call expression.
+
         lhsjdgmt.success         = true;
-        lhsjdgmt.term            = CreateAstApplication(lhsjdgmt.term, rhsjdgmt.term, &apploc);
+        lhsjdgmt.term            = CreateAstApplication(lhsjdgmt.term, rhsjdgmt.term, num_args, &apploc);
       }
       else
         return rhsjdgmt; // leaks lhsjdgmt.term
@@ -696,7 +685,8 @@ Judgement ParsePrimary(Parser* p)
       // the getype for binding which double
       // checks the correctness.
       // it's exactly an extra constraint the
-      // programmer can add to the expression.
+      // programmer can add to the expression
+      // just to be more explicit.
       if (curtok(p) == T_COLONEQ)
       {
         nextok(p); // eat T_COLONEQ
@@ -720,7 +710,7 @@ Judgement ParsePrimary(Parser* p)
       else
       {
         lhsjdgmt.success   = true;
-        lhsjdgmt.term      = CreateAstVariable(id, env->scope, &lhsloc);
+        lhsjdgmt.term      = CreateAstVariable(id, p->scope, &lhsloc);
       }
       break;
     }
@@ -735,7 +725,7 @@ Judgement ParsePrimary(Parser* p)
     {
       nextok(p); // eat 'Nil'
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = GetNilType(p->interned_types, &lhsloc);
+      lhsjdgmt.term    = CreateAstType(GetNilType(p->interned_types), &lhsloc);
       break;
     }
     case T_INTEGER:
@@ -749,7 +739,7 @@ Judgement ParsePrimary(Parser* p)
     {
       nextok(p); // eat 'Int'
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = GetIntegerType(p->interned_types, &lhsloc);
+      lhsjdgmt.term    = CreateAstType(GetIntegerType(p->interned_types), &lhsloc);
       break;
     }
     case T_TRUE:
@@ -770,7 +760,7 @@ Judgement ParsePrimary(Parser* p)
     {
       nextok(p); // eat 'Bool'
       lhsjdgmt.success = true;
-      lhsjdgmt.term    = GetBooleanType(p->interned_types, &lhsloc);
+      lhsjdgmt.term    = CreateAstType(GetBooleanType(p->interned_types), &lhsloc);
       break;
     }
     case T_BSLASH:
@@ -847,7 +837,7 @@ Judgement ParsePrimary(Parser* p)
 
     default:
     {
-      char* c0 = "unknown Atom token:[";
+      char* c0 = "unknown Primary token:[";
       char* c1 = "], text:[";
       char* c2 = "] found";
       char* t  = ToStringToken(curtok(p));
@@ -883,7 +873,7 @@ Judgement ParsePrimary(Parser* p)
 */
 Judgement ParseConditional(Parser* p)
 {
-  Location       lhsloc = curloc(p);
+  Location  lhsloc = curloc(p);
   Judgement result;
   if (curtok(p) == T_IF)
   {
@@ -1112,10 +1102,6 @@ Judgement ParseLambda(Parser* p)
 
   nextok(p); // eat 'identifier'
 
-  // type annotations are required,
-  // until we add PolyLambda's, which
-  // take over the idea of writing in an
-  // annotation free style.
   // (bindings are already annotation free baby B^) )
   if (curtok(p) != T_COLON)
   {
@@ -1264,6 +1250,25 @@ Judgement ParseUnop(Parser* p)
 
   nextok(p); // eat operator
 
+  if (!is_primary(curtok(p)))
+  {
+    char* c0 = "expected Primary token; instead saw token:[";
+    char* c1 = "], text:[";
+    char* c2 = "]";
+    char* t  = ToStringToken(curtok(p));
+    char* t0 = appendstr(c0, t);
+    char* t1 = appendstr(t0, c1);
+    char* t2 = appendstr(t1, curtxt(p));
+    result.success   = false;
+    result.error.dsc = appendstr(t2, c2);
+    result.error.loc = curloc(p);
+    free(t);
+    free(t0);
+    free(t1);
+    free(t2);
+    return result;
+  }
+
   Judgement rhsjdgmt = ParsePrimary(p);
 
   if (rhsjdgmt.success == false)
@@ -1329,7 +1334,8 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
 
   // since we intern operators now, we have to account for that
   // when parsing them
-  while ((Iop = InternString(p->interned_ops, curtxt(p)))
+  while ((is_binop(p, curtxt(p)))
+     && (Iop = InternString(p->interned_ops, curtxt(p)))
      && (lookahead = FindBinopPrecAssoc(p->precedence_table, Iop)) && lookahead->precedence >= min_prec)
   {
 
@@ -1369,7 +1375,8 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
 
       InternedString Irop;
 
-      while((Irop = InternString(p->interned_ops, curtxt(p)))
+      while((is_binop(p, curtxt(p)))
+         && (Irop = InternString(p->interned_ops, curtxt(p)))
          && (lookahead = FindBinopPrecAssoc(p->precedence_table, Irop))
          && (lookahead->precedence > operator->precedence
            || (lookahead->precedence == operator->precedence && lookahead->associativity == A_RIGHT)))

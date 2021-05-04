@@ -1,13 +1,13 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Associativity.h"
 #include "BinopPrecedence.h"
 
 #define BPATABLE_DEFAULT_NUM_BUCKETS 10
 
-BinopPrecedenceTable* CreateAstBinopPrecedenceTable()
+BinopPrecedenceTable* CreateBinopPrecedenceTable()
 {
   BinopPrecedenceTable* result = (BinopPrecedenceTable*)malloc(sizeof(BinopPrecedenceTable));
   result->table                = (BPElem**)malloc(sizeof(BPElem*) * BPATABLE_DEFAULT_NUM_BUCKETS);

@@ -1,6 +1,6 @@
 
 #include "Token.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 
 char* ToStringToken(Token tok)
 {

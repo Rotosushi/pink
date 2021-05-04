@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Judgement.h"
 #include "Ast.h"
 #include "Environment.h"
@@ -33,7 +33,7 @@ Judgement GetypeNil(Nil* node, Environment* env)
 {
   Judgement result;
   result.success = true;
-  result.term    = GetNilType(env->interned_types, &(node->loc));
+  result.term    =  CreateAstType(GetNilType(env->interned_types), &(node->loc));
   return result;
 }
 

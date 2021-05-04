@@ -2,9 +2,9 @@
 
 
 #include "Ast.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "PinkError.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "UnopEliminators.h"
 #include "BinopEliminators.h"
 #include "BinopTable.h"
@@ -261,10 +261,8 @@ Judgement UnopBangNegateBoolean(Ast* rval)
 
 void RegisterPrimitiveUnops(Environment* env)
 {
-  Ast*  booleanTypeLiteral = GetBooleanType(env->interned_types, NULL);
-  Ast*  integerTypeLiteral = GetIntegerType(env->interned_types, NULL);
-  Type* booleanType = booleanTypeLiteral->obj.type.literal;
-  Type* integerType = integerTypeLiteral->obj.type.literal;
+  Type* booleanType = GetBooleanType(env->interned_types);
+  Type* integerType = GetIntegerType(env->interned_types);
   InternedString hyphenOp = InternString(env->interned_ops, "-");
   UnopEliminatorList* hyphenUnopElims = CreateUnopEliminatorList();
   InsertPrimitiveUnopEliminator(hyphenUnopElims, integerType, integerType, UnopHyphenNegateInteger);
@@ -278,12 +276,9 @@ void RegisterPrimitiveUnops(Environment* env)
 
 void RegisterPrimitiveBinops(Environment* env)
 {
-  Ast*  btl         = GetBooleanType(env->interned_types, NULL);
-  Ast*  itl         = GetIntegerType(env->interned_types, NULL);
-  Ast*  ntl         = GetNilType(env->interned_types, NULL);
-  Type* booleanType = btl->obj.type.literal;
-  Type* integerType = itl->obj.type.literal;
-  Type* nilType     = ntl->obj.type.literal;
+  Type* booleanType = GetBooleanType(env->interned_types);
+  Type* integerType = GetIntegerType(env->interned_types);
+  Type* nilType     = GetNilType(env->interned_types);
 
   InternedString eqOp = InternString(env->interned_ops, "=");
   BinopEliminatorList* eqBinopElims = CreateBinopEliminatorList();

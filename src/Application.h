@@ -10,11 +10,12 @@ struct Environment;
 typedef struct Application
 {
   Location    loc;
+  int         num_args;
   struct Ast* lhs;
   struct Ast* rhs;
 } Application;
 
-void InitializeApplication(Application* app, struct Ast* lhs, struct Ast* rhs, Location* loc);
+void InitializeApplication(Application* app, struct Ast* lhs, struct Ast* rhs, int num_args, Location* loc);
 
 void DestroyApplication(Application* app);
 

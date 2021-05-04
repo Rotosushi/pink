@@ -3,7 +3,7 @@
 
 #include "Ast.h"
 #include "Type.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "ProcType.h"
 
 void InitializeProcType(ProcType* proc, struct Type* left, struct Type* right)
@@ -34,13 +34,12 @@ bool is_proc_type(Type* type)
 
 char* ToStringProcType(ProcType* proc)
 {
-  char *result, *rarrow, *left, *right, *ctx;
-  char *lprn, *rprn;
-  rarrow = " -> "; // 4
-  lprn   = "(";    // 1
-  rprn   = ")";    // 1
-  left   = ToStringType(proc->lhs);
-  right  = ToStringType(proc->rhs);
+  char *result = NULL, *ctx = NULL;
+  const char * rarrow = " -> "; // 4
+  const char * lprn   = "(";    // 1
+  const char * rprn   = ")";    // 1
+  char * left   = ToStringType(proc->lhs);
+  char * right  = ToStringType(proc->rhs);
 
   if (is_proc_type(proc->lhs))
   {

@@ -4,8 +4,8 @@
 #include "Ast.h"
 #include "SymbolTable.h"
 #include "Environment.h"
-#include "StringInterner.h"
-#include "Utilities.h"
+#include "StringInterner.hpp"
+#include "Utilities.hpp"
 #include "Bind.h"
 
 void InitializeBind(Bind* bind, InternedString id, struct Ast* right, Location* loc)
@@ -49,9 +49,9 @@ Judgement GetypeBind(Bind* bnd, Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = LookupLocal(env->symbols, bnd->id);
+  Judgement bound = LookupLocalSymbol(env->symbols, bnd->id);
 
-  if (bound_term == NULL)
+  if (bound.success == false)
   {
     Judgement rhsjdgmt = Getype(bnd->rhs, env);
     // when we add a sequence (';') grapheme, we need to
@@ -81,9 +81,9 @@ Judgement EvaluateBind(Bind* bnd, struct Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = LookupLocal(env->symbols, bnd->id);
+  Judgement bound = LookupLocalSymbol(env->symbols, bnd->id);
 
-  if (bound_term == NULL)
+  if (bound.success == false)
   {
     result = Evaluate(bnd->rhs, env);
 
@@ -97,7 +97,7 @@ Judgement EvaluateBind(Bind* bnd, struct Environment* env)
     char* es1 = "Id [";
     char* es2 = "] is already bound in scope [";
     char* es3 = "]";
-    char* boundtxt   = ToStringAst(bound_term);
+    char* boundtxt   = ToStringAst(bound.term);
     char* I0         = appendstr(es1, bnd->id);
     char* I1         = appendstr(boundtxt, es3);
     char* I2         = appendstr(es2, I1);

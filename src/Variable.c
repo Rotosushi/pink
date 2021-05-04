@@ -1,17 +1,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Ast.h"
 #include "Environment.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "SymbolTable.h"
 #include "Variable.h"
 
-void InitializeVariable(Variable* variable, InternedString id, Location* loc)
+void InitializeVariable(Variable* variable, InternedString id, ScopeSet scope, Location* loc)
 {
-  variable->loc = *loc;
-  variable->id  = id;
+  variable->loc   = *loc;
+  variable->id    = id;
+  variable->scope = scope;
 }
 
 void DestroyVariable(Variable* var)
@@ -21,8 +22,9 @@ void DestroyVariable(Variable* var)
 
 void CloneVariable(Variable* dest, Variable* source)
 {
-  dest->loc = source->loc;
-  dest->id  = source->id;
+  dest->loc   = source->loc;
+  dest->id    = source->id;
+  dest->scope = source->scope;
 }
 
 // you might ask, why are you returning a copy
@@ -57,21 +59,15 @@ Judgement GetypeVariable(Variable* var, Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = Lookup(env->symbols, var->id);
+  Judgement bound = LookupSymbol(env->symbols, var->id, var->scope);
 
-  if (bound_term)
+  if (bound.success == true)
   {
-    result = Getype(bound_term, env);
+    result = Getype(bound.term, env);
   }
   else
   {
-    char* c0 = "Variable [";
-    char* c1 = "] not bound within environment";
-    char* i0 = appendstr(c0, (char*)var->id);
-    result.success = false;
-    result.error.dsc = appendstr(i0, c1);
-    result.error.loc = var->loc;
-    free(i0);
+    result = bound;
   }
 
   return result;
@@ -81,23 +77,7 @@ Judgement EvaluateVariable(Variable* var, struct Environment* env)
 {
   Judgement result;
 
-  Ast* bound_term = Lookup(env->symbols, var->id);
-
-  if (bound_term != NULL)
-  {
-    result.success = true;
-    result.term    = bound_term;
-  }
-  else
-  {
-    char* c0 = "Variable [";
-    char* c1 = "] not bound within environment";
-    char* i0 = appendstr(c0, (char*)var->id);
-    result.success = false;
-    result.error.dsc = appendstr(i0, c1);
-    result.error.loc = var->loc;
-    free(i0);
-  }
+  result = LookupSymbol(env->symbols, var->id, var->scope);
 
   return result;
 }

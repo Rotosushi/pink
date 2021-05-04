@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "Ast.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Location.h"
 #include "Judgement.h"
 #include "Environment.h"

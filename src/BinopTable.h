@@ -5,7 +5,7 @@
 #define BINOPTABLE_H
 #include <stdlib.h>
 
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "BinopEliminators.h"
 
 typedef struct BTElem
@@ -22,7 +22,7 @@ typedef struct BinopTable
   int num_elements;
 } BinopTable;
 
-BinopTable* CreateAstBinopTable();
+BinopTable* CreateBinopTable();
 void        DestroyBinopTable(BinopTable* BOPTable);
 BinopEliminatorList* InsertBinop(BinopTable* BOPTable, InternedString op, BinopEliminatorList* BEList);
 BinopEliminatorList* FindBinop(BinopTable* BOPTable, InternedString op);

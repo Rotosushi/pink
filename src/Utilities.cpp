@@ -2,16 +2,16 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "Utilities.h"
+#include "Utilities.hpp"
 
-char* dupnstr(char* str, int len)
+char* dupnstr(const char* str, int len)
 {
   char* result = (char*)calloc(sizeof(char), len + 1);
   result = strncpy(result, str, len);
   return result;
 }
 
-char* dupstr(char* str)
+char* dupstr(const char* str)
 {
   return dupnstr(str, strlen(str));
 }
@@ -24,9 +24,7 @@ char* dupstr(char* str)
   if you pass in the address of an uninitialized
   char* however, you don't crash!
 
-  what the fuck?
-
-  it's it semantically identical?
+  isn't it semantically identical?
 
   the only difference should be passing
   the same char** each time, or passing
@@ -36,7 +34,7 @@ char* dupstr(char* str)
 
   anyways, it works now so ...
 */
-void strkat(char* dest, char* source, char** strctx)
+void strkat(char* dest, const char* source, char** strctx)
 {
   int i = 0, j = 0;
   if (dest != NULL)
@@ -80,7 +78,7 @@ void strkat(char* dest, char* source, char** strctx)
 }
 
 // this is a super straightforward implementation.
-char* appendstr(char* s1, char* s2)
+char* appendstr(const char* s1, const char* s2)
 {
   // oh nooooo, named intermediary values that would
   // need to be allocated anyways.
@@ -95,7 +93,7 @@ char* appendstr(char* s1, char* s2)
 }
 
 
-char* gensym(char* prefix)
+char* gensym(const char* prefix)
 {
   static int counter = 0;
   int prelen = 1;

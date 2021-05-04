@@ -5,7 +5,7 @@
 
 #include "Judgement.h"
 #include "ScopeSet.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Location.h"
 struct Ast;
 struct SymbolTable;
@@ -59,6 +59,7 @@ typedef struct Lambda
   struct SymbolTable* symbols;
   ScopeSet            scope;
   bool                curryed;
+  int                 arg_num;
 } Lambda;
 
 void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* symbols, ScopeSet scope, Location* loc);

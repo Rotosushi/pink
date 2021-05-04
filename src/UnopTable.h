@@ -5,7 +5,7 @@
 #define UNOPTABLE_H
 #include <stdlib.h>
 
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "UnopEliminators.h"
 
 typedef struct UTElem

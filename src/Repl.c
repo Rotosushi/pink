@@ -66,7 +66,8 @@ void Repl(FILE* in, FILE* out, Environment* env)
     size_t charsRead = getline(&buffer, &length, in);
 
     // this builds a tree represnting the text that
-    // was collected in the buffer.
+    // was collected in the buffer. Parse returns us
+    // a dynamically allocated tree.
     Judgement parsejdgmt = Parse(env->parser, buffer);
 
     if (parsejdgmt.success == true)
@@ -75,8 +76,10 @@ void Repl(FILE* in, FILE* out, Environment* env)
       fprintf(out, "parsed:[%s]\n", termtxt);
       free(termtxt);
 
-      // returns us new memory that represents the Type
-      // of the tree we parsed.
+      // returns the Type of the tree we parsed
+      // this procedure allocates a new Ast to
+      // hold the Type* and return through Judgement.
+      // this simplifies the usage of this procedure.
       Judgement typejdgmt = Getype(parsejdgmt.term, env);
 
       if (typejdgmt.success == true)
@@ -85,6 +88,9 @@ void Repl(FILE* in, FILE* out, Environment* env)
         fprintf(out, "type:[%s]\n", t0);
         free(t0);
 
+        // this evaluates the tree we parsed.
+        // the resulting value is a dynamically
+        // allocated tree.
         Judgement evaljdgmt = Evaluate(parsejdgmt.term, env);
 
         if (evaljdgmt.success == true)

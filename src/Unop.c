@@ -2,9 +2,9 @@
 #include <string.h>
 
 #include "Ast.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Environment.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "UnopEliminators.h"
 #include "Unop.h"
 
@@ -113,11 +113,13 @@ Judgement EvaluateUnop(Unop* uop, struct Environment* env)
     {
       Judgement rhstypejdgmt = Getype(rhs.term, env); // free me
       Type* rhstype = rhstypejdgmt.term->obj.type.literal;
+      DestroyAst(rhstypejdgmt.term); // free'd!
       UnopEliminator* eliminator = FindUnopEliminator(eliminators, rhstype);
 
       if (eliminator != NULL)
       {
         result = (eliminator->eliminator)(rhs.term); // dynamic result
+        DestroyAst(rhs.term);
       }
       else
       {
@@ -139,7 +141,7 @@ Judgement EvaluateUnop(Unop* uop, struct Environment* env)
     }
     else
     {
-      result = rhs;
+      result = rhs; // no longer need to free rhs, as we want to keep the error.
     }
   }
   else

@@ -5,7 +5,7 @@
 #include "Location.h"
 #include "Token.h"
 #include "SymbolTable.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "TypeInterner.h"
 #include "BinopTable.h"
 #include "BinopPrecedence.h"

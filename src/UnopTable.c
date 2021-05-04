@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Type.h"
 #include "Ast.h"
 #include "UnopEliminators.h"

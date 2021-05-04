@@ -8,7 +8,7 @@
 // unop eliminator set
 // cleanup list (only when sequence is added)
 #include "ScopeSet.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "TypeInterner.h"
 #include "BinopPrecedence.h"
 #include "BinopTable.h"

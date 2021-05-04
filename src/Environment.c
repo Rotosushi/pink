@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "SymbolTable.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Parser.h"
 #include "BinopTable.h"
 #include "BinopPrecedence.h"
@@ -26,6 +26,7 @@ Environment* CreateEnvironment(Parser* parser,
   result->scope   = scope;
   result->interned_ids = Iids;
   result->interned_ops = Iops;
+  result->interned_types = Ity;
   result->precedence_table = BPAtbl;
   result->binops = bop;
   result->unops = uop;

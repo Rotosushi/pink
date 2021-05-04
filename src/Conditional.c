@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "Ast.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Location.h"
 #include "Environment.h"
 #include "Conditional.h"
@@ -62,7 +62,7 @@ char* ToStringConditional(Conditional* cond)
 // the result type is the type of the alternatives
 Judgement GetypeConditional(Conditional* conditional, Environment* env)
 {
-  Ast* booleanType = GetBooleanType(env->interned_types, NULL);
+  Ast* booleanType = CreateAstType(GetBooleanType(env->interned_types), NULL);
   Judgement result, eqcnd, fstjdgmt, sndjdgmt, eqalts;
 
   Judgement cndjdgmt = Getype(conditional->cnd, env);

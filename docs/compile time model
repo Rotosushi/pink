@@ -3,6 +3,120 @@ written in pink to compile to machine
 code. not efficiently at first, but
 we aren't aiming for inefficient either.
 
+the grammar right now:
+
+affix := application
+       | application operator affix // binops are parsed by a traditional binop precedence parser.
+       | application "<-" affix
+
+application := primary
+             | primary application
+
+primary := identifier
+         | identifier ":=" affix
+         | nil
+         | integer
+         | true
+         | false
+         | "\\" identifier ":" type "=>" affix
+         | "if" affix "then" affix "else" affix
+         | "while" affix "do" affix
+         | operator primary
+         | "(" affix ")"
+
+so, the compile time has to contend with
+a few major things, constants/literals
+variables, primitive operators, two
+control primitives and lambdas/procedures.
+
+we consider every variable to label certain storage
+cells. each storage cell has a type, and the type
+determines to layout of the data held within the
+cell, and if it is a primitive type, the cell is
+also accompanied by a set of primitive operators
+which provide a base set of actions that can be
+performed upon cells of said type.
+functions generalize the idea of abstracting over
+language expressions, such that
+the same procedure can accept any particular
+instance of a cell of a type, instead of the particular
+cell being baked into the specification of the expression.
+and the procedure performs the same
+set of instructions upon that cell. since the procedure
+accepts values, consumes them and then produces a single
+cell as it's result, we want the memory which the
+procedure is performing it's action upon to be somewhat
+flexible with respect to the programmers intention.
+this is why by-value was chosen, simply because upon
+by-value we can easily have the programmer specify
+reference semantics exactly where they need it, and
+under the hood the compiler can perform all sorts of
+copy elision to make the by-value semantics fast.
+(because we are using LLVM which already optimizes by-value
+procedures in it's day to day.)
+but yet, we still have the flexibility to pass a reference by value,
+which allows the programmer to point the reference to either
+stack or heap memory and the callee simply unwraps performs the
+action and returns, this allows the same procedure body to
+perform upon both stack and heap memory cells. because the reference
+it takes by argument is allowed to point to the stack or the heap.
+
+for version one, we are requireing explicit type annotations on all
+arguments. we allow the definition of a variable to infer it's
+type based upon it's initialization expression; and are going to
+provide an optional type annotation of the term for explicitness.
+
+identifier ":" type? "=" affix
+
+this allows bind expressions to optionally specify the type, which
+causes the compiler to ensure that the initialization expression has
+the same type as the annotation expression.
+
+so, we allow three primitive types in our first version,
+and one composite type. the primitive types are
+Nil, Int, and Bool. (where Int means i32) ((and Integer
+will be the type of an infinite precision signed integer.))
+the composite type is the procedure type, which is composed
+of it's argument type and it's return type.
+
+we have a few basic operations that are provided by the language
+semantics. namely assignment, binding, and equality comparison for all types,
+the four arithmetic primitives for Ints, and the
+three Boolean primitives for Bool's. Nil has no basic operations.
+
+lastly we have a few basic expressions which are defined, namely
+the 'if' * 'then' * 'else' * term, which allows choice of
+evaluation, and the "while" * "do" * term, which allows repetition
+of evaluation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 so, since we purport to be a small footprint
 language like C, why did we pick a high level
 of abstraction language like the lambda calculus?
@@ -26,7 +140,7 @@ can we define new procedures polymorphically.
 to my mind, C++ proves we can add these things
 with enough effort and ingenuity, and looking
 at how functional languages have been implemented
-in the past, i think i have a good execution model
+in the past, i think we can have a good execution model
 with a balance between speed and power.
 
 We are borrowing a lot of ideas which originated in
@@ -42,17 +156,12 @@ the lambda calculus.
 so, the main problems with the lambda calculus from
 the perspective of C arises from three use cases of
 procedures which are not directly supported in C.
+
 - passing procedures as values, either downwards through
 arguments/parameters, or upwards through return values.
 
-- coroutines: throwing and returning control at will between two procedures,
-effectively dictating the transfer of control between two
-procedures whose lifetimes are now simultaneous.
-(which raises the issue of, there is only one stack frame
-active, with one set of bindings, at a time, how can we
-maintain the bindings of two separate call stacks
-in the same place at the same time? moreover, potentially
--any- two procedures defined within the program.)
+- closures a.k.a. partial application of lambda terms
+
 
 - the use of assignment in the presence of popular
 functions-as-values implementations.
@@ -102,7 +211,7 @@ it as we can. so, for starters, what is the
 usual compiled program execution model? (this refers to other
 static typed, strict execution, functions aren't first class languages.)
 
-well, to simplify a lot, they use a stack of activation records
+well, to simplify a lot, we use a stack of activation records
 to represent each procedure's active data during invokation/execution.
 this approach actually already natively supports passing
 procedures in a downwards manner, as an argument, because when
@@ -190,6 +299,11 @@ so the only real way to give the same semantics
 is to follow suit and allocate space for closed
 over values in the heap, and silently use those
 bindings during evaluation of the returned procedure.
+luckily, this is knowable from the source text, as
+the names which cause this issue are by definition free
+variables which are referenced within a locally defined
+procedure. free variables which are bound within the
+callers scope and not the global scope.
 
 this is the basic insight for following the hybrid
 stack/heap approach. essentially, closures are
@@ -237,7 +351,7 @@ many closure objects are allocated at the return site, which
 simply combine a function pointer to the same body,
 and the pointer to the free variables which it references stored in the heap.
 each of which is allocated at the time of creation of the closure.
-for immutable values, a by-value copy suffices.
+for immutable values, a by-value copy suffices in all cases.
 this only needs to happen when the inner procedure actually closes
 over free data.
 a closure can support assignment to an inner by-value
@@ -248,7 +362,18 @@ to the stack.
 a closure cannot support assignment to a mutable free variable,
 as the lifetime may end before the closure is invoked. so a
 mutable free variable referenced within the closure must be stored
-on the heap.
+on the heap. this is precisely what we are closing over with the closure.
+
+--------
+
+- coroutines: throwing and returning control at will between two procedures,
+effectively dictating the transfer of control between two
+procedures whose lifetimes are now simultaneous.
+(which raises the issue of, there is only one stack frame
+active, with one set of bindings, at a time, how can we
+maintain the bindings of two separate call stacks
+in the same place at the same time? moreover, potentially
+-any- two procedures defined within the program.)
 
 a coroutine cannot support mutable values living on it's stack either.
 because the only way to truly support coroutines is to maintain
@@ -285,7 +410,10 @@ for (int i = 0; i < length; i++)
 { array[i] = func(array[i]); }
 
 this integer (i) can absolutely be stored on the stack frame of
-it's enclosing scope, because we only ever use it as an argument.
+it's enclosing scope, because we only ever use it as a value within
+it's defining context, in fact all modifications to this variable are
+supportable with the data stored on the stack as well, and this
+is the implementation strategy of C.
 even if func itself is a closure around some data, i is not
 participating in that discussion, because it is not used by
 func in any way. even if we passed i directly we still would
@@ -295,14 +423,19 @@ as mutable in the argument list, wouldn't be writable.)
 and if we pass a reference to i such that func could modify
 i directly, i still think it's okay, because i is a valid memory
 location, alive within the stack frame for the entire execution
-of func, by definition the body of the for loop encompases the
-entire call/return sequence for func, so unless it exist abnormally,
-we can expect to return to this point of execution. so i can be
+of func, by definition the body of the for loop encompases this
+entire call/return sequence for func, so unless it exits abnormally,
+we can expect to return to this point of execution. so (i) can be
 written to at any point within func, and if func calls a procedure
 which takes i by reference again, the same argument holds. we expect that
 the body of func itself encompases the call/return sequence for
-the inner call. and as such i is alive on the stack for the entire
-sequence.
+the inner call. and as such (i) is alive on the stack for the entire
+sequence. the issue comes when we pass the reference as the result
+value of the procedure. if we are passing a reference to stack
+allocated memory we cannot pass it out of the enclosing scope.
+because the memory is deallocated once we leave the scope,
+the reference is invalid as soon as we actually exit the scope.
+
 
 it is only when two conditions are broken that we are forced into
 allocating memory on the heap, when the lifetime of the closure in
@@ -314,7 +447,8 @@ sense that if the defining context of the closure contains the mutable free
 variable, we capture it by value onto the heap, then when the closure
 attempts to write to this mutable value, it would be a separate mutable
 value from a closure that was created at a later point in execution.
-or would we -want- the closures to share the same exact memory?
+this provides essentially the same by-value semantics of procedure calls
+in C, and as such should make sense to anyone used to by-value semantics.
 i guess if we bind a free variable that is itself a reference
 to some memory on the heap we can achieve those semantics,
 because the by-value copies of the reference would achieve
@@ -328,6 +462,51 @@ default style will not run into the above issues. only when
 the programmer explicitly asks for it, will they have to pay
 the overhead. and with particular implementations we find no
 overhead for usual monotonic procedure application.
+nor do we find any overhead if the called procedure contains
+no free variables whatsoever.
+
+this discussion assumes that any time we are talking about
+a closure, what we are talking about is an object that represents
+a locally defined procedure, that captures memory declared within
+it's defining local context and then this procedure object is returned out of
+it's defining local context to be stored in an outer context,
+either the calling context itself, or the calling context's calling context
+or so on; and then the object is used within another application term,
+which provides the final expected values at some later point.
+the value that is held within the closure of
+the procedure are the exact same values that would have been passed
+to the procedure as arguments, were the previous application
+to provide enough arguments that we must jump into and evaluate the
+body of the procedure. thus the intermediate object, that represents the
+procedure in a partially applied state can be formed by a pointer to
+the procedure body, and a tuple of each of the previous arguments.
+each time we partially apply the procedure, we form the new closure
+by constructing a new tuple out of the old tuple plus the new value,
+and we use the same function pointer. (or if interpreted we do strip
+off each layer of the lambda, but the tuple now holds substitution pairs,
+to be evaluated once every value is provided.) ((and if this works, we
+should se no observably distinct behavior from evaluation. essentially
+if we rewrite the interpreter to use this style of application, which is
+slightly easier to translate into assembly using C style procedure
+application, then nothing should change about the behavior of interpretation,
+we should expect to see a by-value version of the simply typed Lambda
+Calculus, regardless of which interpretation strategy we choose.))
+also, also, given that we know a-priori which names are closed over
+values at time of definition, we can emit instructions such that references
+to the free names can be implemented in assembly as getting the correct
+value out of the tuple stored in the heap, (and passed in as a hidden
+first argument), and references to regular arguments can be done the
+usual way, and so can references to local names. so can mutable references
+to local names, and mutable values held within the tuple. (obviously these
+work exactly like the by-value mutable values of C procedure calls.
+so if you want the closure to point to some dynamic memory, then you can
+do that. and then references to the name now pull a pointer out of the tuple.
+we should disallow pointers to stack values from being returned, as this
+reintroduces the exact semantic issue that we are trying to avoid with
+closures in the first place.)
+
+so, if you write a pure procedure, a pointer suffices in all calling
+contexts, (along with the procedures type of course),
 
 
 
@@ -351,7 +530,10 @@ overhead for usual monotonic procedure application.
 //    it's memory. I suppose if we always allocate, and thus, are always
 //    free to free memory that is known to be an intermediary value.
 //    things that can be assigned dynamic memory that can be freed
-//    in the allocating scope upon exit:
+//    in the allocating scope upon exit which maintains the discipline
+//    of one free for every malloc. the only place memory is stored
+//    and not immediately freed is the symoltable itself. and we
+//
 // 1) temporary values a.k.a. unnammed values.
 //    this refers to storage that needs to be allocated
 //    in order to compile the statement, but is not directly
@@ -363,7 +545,7 @@ overhead for usual monotonic procedure application.
 //    operator expressions.
 // 2) if some local variable gets dynamic memory, and then that
 //    local variable falls out of scope. the dynamic memory is
-//    abosolutely lost. so we can free dynamic memory associated
+//    absolutely lost. so we can free dynamic memory associated
 //    with names that are never assigned to other local variables.
 // 3) if a local variable is assigned dynamic memory, and then we
 //    assign that memory to another local variable. this dynamic
@@ -534,4 +716,4 @@ control was yielded. all of the data which was available up to the point
 of yielding is restored into the active environment, and we resume
 evaluation of A. this can continue in a loop, with control yielding
 between two coroutines forever, or until some stop condition is reached,
-or it can simply pass between coroutines until each is finished. 
+or it can simply pass between coroutines until each is finished.

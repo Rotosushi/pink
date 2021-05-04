@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "Ast.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Environment.h"
 #include "Iteration.h"
 
@@ -50,7 +50,7 @@ char* ToStringIteration(Iteration* itr)
 Judgement GetypeIteration(Iteration* itr, struct Environment* env)
 {
   Location dummy;
-  Ast* booleanType = GetBooleanType(env->interned_types, &dummy);
+  Ast* booleanType = CreateAstType(GetBooleanType(env->interned_types), &dummy);
   Judgement result, eqcnd;
 
   Judgement cndjdgmt = Getype(itr->cnd, env);
@@ -67,7 +67,7 @@ Judgement GetypeIteration(Iteration* itr, struct Environment* env)
         if (bdyjdgmt.success == true)
         {
           result.success = true;
-          result.term    = GetNilType(env->interned_types, &itr->loc);
+          result.term    = CreateAstType(GetNilType(env->interned_types), &itr->loc);
         }
         else
         {

@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "PinkError.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Ast.h"
 #include "Environment.h"
 #include "Nil.h"
@@ -10,6 +10,7 @@
 #include "Boolean.h"
 #include "Lambda.h"
 #include "TypeLiteral.h"
+#include "PartiallyAppliedLambda.h"
 #include "Object.h"
 
 Location* GetObjLocation(Object* obj)
@@ -24,8 +25,10 @@ Location* GetObjLocation(Object* obj)
       return &(obj->integer.loc);
     case O_BOOL:
       return &(obj->boolean.loc);
-    case O_LAMB:
+    case O_LAMBDA:
       return &(obj->lambda.loc);
+    case O_PARAPP:
+      return &(obj->parapp.loc);
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
   }
@@ -44,11 +47,14 @@ void DestroyObject(Object* obj)
     case O_BOOL:
       DestroyBoolean(&(obj->boolean));
       break;
-    case O_LAMB:
+    case O_LAMBDA:
       DestroyLambda(&(obj->lambda));
       break;
     case O_TYPE:
       DestroyTypeLiteral(&(obj->type));
+      break;
+    case O_PARAPP:
+      DestroyPartiallyAppliedLambda(&(obj->parapp));
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
@@ -71,11 +77,14 @@ void CloneObject(Object* dest, Object* source)
     case O_BOOL:
       CloneBoolean(&(dest->boolean), &(source->boolean));
       break;
-    case O_LAMB:
+    case O_LAMBDA:
       CloneLambda(&(dest->lambda), &(source->lambda));
       break;
     case O_TYPE:
       CloneTypeLiteral(&(dest->type), &(source->type));
+      break;
+    case O_PARAPP:
+      ClonePartiallyAppliedLambda(&(dest->parapp), &(source->parapp));
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
@@ -97,11 +106,14 @@ char* ToStringObject(Object* obj)
     case O_BOOL:
       result = ToStringBoolean(&(obj->boolean));
       break;
-    case O_LAMB:
+    case O_LAMBDA:
       result = ToStringLambda(&(obj->lambda));
       break;
     case O_TYPE:
       result = ToStringTypeLiteral(&(obj->type));
+      break;
+    case O_PARAPP:
+      result = ToStringPartiallyAppliedLambda(&(obj->parapp));
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
@@ -136,11 +148,14 @@ Judgement GetypeObject(Object* obj, Environment* env)
     case O_BOOL:
       result = GetypeBoolean(&(obj->boolean), env);
       break;
-    case O_LAMB:
+    case O_LAMBDA:
       result = GetypeLambda(&(obj->lambda), env);
       break;
     case O_TYPE:
       result = GetypeTypeLiteral(&(obj->type), env);
+      break;
+    case O_PARAPP:
+      result = GetypePartiallyAppliedLambda(&(obj->parapp), env);
       break;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
@@ -169,12 +184,17 @@ Judgement AssignObject(Object* dest, Object* source)
       case O_BOOL:
         result = AssignBoolean(&(dest->boolean), &(source->boolean));
         break;
-      case O_LAMB: // this is a special case for now, however
+      case O_LAMBDA: // this is a special case for now, however
                    // once we turn on immutability by default
                    // this case will be wrapped up that check.
         result.success   = false;
         result.error.loc = dest->lambda.loc;
         result.error.dsc = dupstr("Lambda objects are immutable");
+        break;
+      case O_PARAPP:
+        result.success = false;
+        result.error.loc = dest->parapp.loc;
+        result.error.dsc = dupstr("Partially Applied Lambda objects are immutable");
         break;
 
       // and later AssignRecord
@@ -227,10 +247,15 @@ Judgement EqualsObject(Object* obj1, Object* obj2)
       case O_BOOL:
         result = EqualsBoolean(&(obj1->boolean), &(obj2->boolean));
         break;
-      case O_LAMB:
+      case O_LAMBDA:
         result.success   = false;
         result.error.loc = *(GetObjLocation(obj1));
         result.error.dsc = dupstr("Lambda Objects cannot be compared");
+        break;
+      case O_PARAPP:
+        result.success = false;
+        result.error.loc = *(GetObjLocation(obj1));
+        result.error.dsc = dupstr("Partially Applied Lambda objects cannot be compared");
         break;
       default:
         FatalError("Bad Object Kind.", __FILE__, __LINE__);
@@ -271,8 +296,10 @@ bool AppearsFreeObject(Object* obj, InternedString id)
       return false;
     case O_BOOL:
       return false;
-    case O_LAMB:
+    case O_LAMBDA:
       return AppearsFreeLambda(&(obj->lambda), id);
+    case O_PARAPP:
+      return false;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
   }
@@ -290,8 +317,10 @@ void RenameBindingObject(Object* obj, InternedString target, InternedString repl
       return;
     case O_BOOL:
       return;
-    case O_LAMB:
+    case O_LAMBDA:
       return RenameBindingLambda(&(obj->lambda), target, replacement);
+    case O_PARAPP:
+      return;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
   }
@@ -309,8 +338,10 @@ void SubstituteObject(Object* obj, struct Ast** target, InternedString id, Ast* 
       return;
     case O_BOOL:
       return;
-    case O_LAMB:
+    case O_LAMBDA:
       return SubstituteLambda(&(obj->lambda), target, id, value, env);
+    case O_PARAPP:
+      return;
     default:
       FatalError("Bad Object Kind", __FILE__, __LINE__);
   }

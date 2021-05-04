@@ -3,9 +3,9 @@
 
 #include "Ast.h"
 #include "Location.h"
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "Type.h"
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Environment.h"
 #include "SymbolTable.h"
 #include "Lambda.h"
@@ -13,22 +13,29 @@
 bool is_lambda_term(Ast* term)
 {
   bool result = false;
-  if (term->kind == A_OBJ && term->obj.kind == O_LAMB)
+  if (term->kind == A_OBJ && term->obj.kind == O_LAMBDA)
     result = true;
   return result;
 }
 
-void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* symbols, Location* loc)
+void InitializeLambda(Lambda* lambda, InternedString arg_id, struct Ast* arg_type, struct Ast* body, struct SymbolTable* symbols, ScopeSet scope, Location* loc)
 {
   lambda->loc        = *loc;
   lambda->arg_id     = arg_id;
   lambda->arg_type   = arg_type;
   lambda->body       = body;
   lambda->symbols    = symbols;
+  lambda->scope      = scope;
   if (is_lambda_term(body))
+  {
     lambda->curryed = true;
+    lambda->arg_num = body->obj.lambda.arg_num + 1;
+  }
   else
+  {
     lambda->curryed = false;
+    lambda->arg_num = 1;
+  }
 }
 
 void DestroyLambda(Lambda* lam)
@@ -41,6 +48,8 @@ void CloneLambda(Lambda* destination, Lambda* source)
 {
   destination->loc      = source->loc;
   destination->arg_id   = source->arg_id;
+  destination->scope    = source->scope;
+  destination->curryed  = source->curryed;
 
   CloneAst(&(destination->arg_type), source->arg_type);
   CloneAst(&(destination->body), source->body);
@@ -50,7 +59,7 @@ void CloneLambda(Lambda* destination, Lambda* source)
 char* ToStringLambda(Lambda* lam)
 {
   char *result = NULL, *argtype = NULL, *body = NULL, *ctx = NULL;
-  char *bslsh = NULL, *cln = NULL, *eqrarrow = NULL;
+  const char *bslsh = NULL, *cln = NULL, *eqrarrow = NULL;
   bslsh    = "\\"; // 1
   cln      = ": "; // 2
   eqrarrow = " => "; // 4
@@ -72,6 +81,7 @@ char* ToStringLambda(Lambda* lam)
   free(body);
   return result;
 }
+
 // given that the argument has type Ta
 // and we can type the body as having
 // type Tb, then we can conclude that
@@ -96,7 +106,7 @@ Judgement GetypeLambda(Lambda* lam, Environment* env)
                                         // everything is heap allocated
                                         // we can do easy pointer assignment.
 
-  BindSymbol(env->symbols, lam->arg_id, localscope, dummy_binding);
+  BindSymbol(env->symbols, lam->arg_id, lam->scope, dummy_binding);
                                                // the symbol table currently
                                                // takes ownership of the Ast
                                                // tree's that it binds.
@@ -117,7 +127,12 @@ Judgement GetypeLambda(Lambda* lam, Environment* env)
   if (bodyjdgmt.success == true)
   {
     result.success = true;
-    result.term    = GetProcedureType(env->interned_types, lam->arg_type, bodyjdgmt.term, &(lam->loc));
+    result.term    = CreateAstType(
+                      GetProcedureType(
+                        env->interned_types,
+                        GetTypePtrFromLiteral(lam->arg_type),
+                        GetTypePtrFromLiteral(bodyjdgmt.term)),
+                      &(lam->loc));
   }
   else
     result = bodyjdgmt;

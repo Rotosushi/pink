@@ -9,12 +9,12 @@
 
 typedef struct PinkError
 {
-  Location loc;
-  char*    dsc;
+  Location       loc;
+  std::string    dsc;
 } PinkError;
 
 
-void PrintError(FILE* out, PinkError* err, char* errtxt);
-void FatalError(char* msg, const char* file, int line);
+void PrintError(FILE* out, PinkError* err, const char* errtxt);
+void FatalError(const char* msg, const char* file, int line);
 
 #endif // !PINKERROR_H

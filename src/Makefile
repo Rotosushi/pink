@@ -1,16 +1,18 @@
-CC = clang
-CARGS = -g -std=c11
+CC = g++
+CARGS = -g -std=c++17 -I/home/cadence/Development/Source/llvm-12/include
+LARGS = -g -std=c++17 -L/home/cadence/Development/Source/llvm-12/lib
 
-LINK_STEP = Application.o Assignment.o Conditional.o Iteration.o \
+OBJECT_FILES = Application.o Assignment.o Conditional.o Iteration.o \
 StringInterner.o Variable.o Bind.o Binop.o Unop.o BinopEliminators.o \
 UnopEliminators.o BinopPrecedence.o BinopTable.o UnopTable.o Nil.o \
-Integer.o Boolean.o Lambda.o ScalarType.o ProcType.o Type.o TypeLiteral.o Object.o \
-Ast.o TypeInterner.o Environment.o SymbolTable.o PinkError.o Token.o \
-Lexer.o Parser.o PinkKernel.o Repl.o Utilities.o Pink.o -o pink
+Integer.o Boolean.o Lambda.o PartiallyAppliedLambda.o ScalarType.o ProcType.o \
+Type.o TypeLiteral.o Object.o Ast.o TypeInterner.o Environment.o \
+SymbolTable.o ScopeSet.o PinkError.o Token.o Lexer.o Parser.o \
+PinkKernel.o Repl.o Utilities.o Pink.o -o pink
 
 
 pink: Types Objects DataStructures SymbolicComputation Frontend Aux Main
-	${CC} ${CARGS} ${LINK_STEP}
+	${CC} ${LARGS} ${OBJECT_FILES}
 
 clean:
 	rm -f *.o pink
@@ -18,16 +20,19 @@ clean:
 debug: pink
 	gdb -tui pink
 
-DataStructures: StringInterner TypeInterner SymbolTable BinopEliminators BinopTable BinopPrecedence UnopEliminators UnopTable Environment
+DataStructures: StringInterner TypeInterner SymbolTable ScopeSet BinopEliminators BinopTable BinopPrecedence UnopEliminators UnopTable Environment
 
 StringInterner:
-	${CC} ${CARGS} -c StringInterner.c -o StringInterner.o
+	${CC} ${CARGS} -c StringInterner.cpp -o StringInterner.o
 
 TypeInterner:
 	${CC} ${CARGS} -c TypeInterner.c -o TypeInterner.o
 
 SymbolTable:
 	${CC} ${CARGS} -c SymbolTable.c -o SymbolTable.o
+
+ScopeSet:
+	${CC} ${CARGS} -c ScopeSet.c -o ScopeSet.o
 
 BinopEliminators:
 	${CC} ${CARGS} -c BinopEliminators.c -o BinopEliminators.o
@@ -90,7 +95,7 @@ ProcType:
 TypeLiteral:
 	${CC} ${CARGS} -c TypeLiteral.c -o TypeLiteral.o
 
-Objects: Nil Integer Boolean Lambda Object
+Objects: Nil Integer Boolean Lambda PartiallyAppliedLambda Object
 
 Nil:
 	${CC} ${CARGS} -c Nil.c -o Nil.o
@@ -103,6 +108,9 @@ Boolean:
 
 Lambda:
 	${CC} ${CARGS} -c Lambda.c -o Lambda.o
+
+PartiallyAppliedLambda:
+	${CC} ${CARGS} -c PartiallyAppliedLambda.c -o PartiallyAppliedLambda.o
 
 Object:
 	${CC} ${CARGS} -c Object.c -o Object.o

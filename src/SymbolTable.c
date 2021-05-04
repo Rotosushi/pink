@@ -1,7 +1,10 @@
 #include <stdlib.h>
+#include <string>
+
 
 #include "Ast.h"
-#include "StringInterner.h"
+#include "Utilities.hpp"
+#include "StringInterner.hpp"
 #include "SymbolTable.h"
 
 #define SYMTABLE_DEFAULT_NUM_BUCKETS 10
@@ -100,70 +103,151 @@ Judgement LookupSymbolHelper(SymbolTable* table, InternedString name, ScopeSet s
 {
   Location  dummy;
   Judgement result;
-  int hash = (int)(name);
-  hash %= table->num_buckets;
 
-  Symbol* cursor = table->table[hash];
+  result.success = false;
 
-  if (cursor != NULL)
+  size_t hashval = std::hash<string>{}(name);;
+  hashval %= table->num_buckets;
+
+  Symbol* cursor = table->table[hashval];
+
+  // a matching symbol is one that meets these criteria:
+  // -) the symbol shares the same interned string
+  //     as the name passed in as a parameter.
+  // -) the bound symbols ScopeSet is a Subset of the
+  //     references Symbol's ScopeSet.
+  // additionally, if we found a matching symbol already
+  // we have two options, either it is a valid override of
+  // the binding in which case we shall observe the the
+  // binding in the higher scope will have a smaller subset
+  // than the binding which was introduced in a deeper scope.
+  // should the new possible match have a subset that is
+  // equal in size to the subset of the current binding, we
+  // are observing conflicting/ambiguous bindings.
+
+  if (best != NULL)
   {
-    do {
-      // does the bound name match the name we are searching for?
-      if (cursor->name == name)
+    ScopeSet bestsubset = Subset(best->scope, scope);
+    // we already have a possible binding in best.
+    if (cursor != NULL)
+    {
+      do
       {
-        // if the bound identifier's Scope is a subset of
-        // the ScopeSet we are looking in, then we have found
-        // a possible binding.
-        ScopeSet s0 = Subset(cursor->scope, scope);
+        if (cursor->id == name)
+        {
+          ScopeSet cursorsubset = Subset(cursor->scope, scope);
 
-        if (s0 && best == NULL)
-        {
-          best = cursor;
-          break;
-        }
-        else
-        {
-          // we already found a candidate match for this binding,
-          // but are currently looking for more possible bindings.
-          // should a binding we find have a larger subset than
-          // the current best match, the binding we found becomes
-          // the new best match.
-          ScopeSet s1 = Subset(cursor->scope, best->scope);
-          if (s0 == s1)
+          // if the subset of the cursor is larger than
+          // the subset of the previous best, then
+          // the cursor is the new best.
+          if (cursorsubset > bestsubset)
           {
-            result.success   = false;
-            result.error.loc = dummy;
-            result.error.dsc = dupstr("Conflicting Bindings!");
+            // this symbol is the new best match
+            result.success = true;
+            result.term    = cursor->term;
+            best           = cursor;
           }
-          else if (s0 > s1)
+          else if (cursorsubset < bestsubset)
           {
-            best = cursor;
+            // reaffirm that the result is best
             result.success = true;
             result.term    = best->term;
           }
+          else
+          {
+            // this symbol has the same subset, which
+            // can only happen if two bindings with
+            // the same name are constructed in the
+            // same scope.
+            result.success = false;
+            result.error.loc = dummy;
+            result.error.dsc = appendstr("Ambiguous binding: ", name->c_str());
+          }
           break;
         }
-      }
-      cursor = cursor->next;
-    } while (cursor != NULL);
 
-    if (result.success == true)
-    {
-      return LookupSymbolHelper(table->enclosing_table, name, scope, best);
+        cursor = cursor->next;
+      } while (cursor != NULL);
+
+
     }
     else
     {
-      return result;
+      // reaffirm that the result is best.
+      result.success = true;
+      result.term    = best->term;
+    }
+
+    // if we could keep looking, we have to?
+    if (table->enclosing_table != NULL)
+    {
+      result = LookupSymbolHelper(table->enclosing_table, name, scope, best);
+    }
+    else
+    {
+      result.success = true;
+      result.term    = best->term;
     }
   }
   else
   {
-    result.success = false;
-    result.error.loc = dummy;
-    result.error.dsc = dupstr("Failed to Find Binding!");
-    return result;
+    // no current best match
+    if (cursor != NULL)
+    {
+      // we could find a match in this bucket
+      do
+      {
+        if (cursor->id == name)
+        {
+          // the name matches, we have our next best
+          // match, if the scope is a subset.
+          ScopeSet s = Subset(cursor->scope, scope);
+          // if the Scope is a Subset then at least
+          // one scope will be shared between the
+          // binding and the reference.
+          if (s != 0)
+          {
+            result.success = true;
+            result.term    = cursor->term;
+            best           = cursor;
+          }
+          else
+          {
+            result.success   = false;
+            result.error.loc = dummy;
+            result.error.dsc = appendstr("How did this happen? binding's scope is not a subset of reference's scope.", name->c_str());
+          }
+          break;
+        }
+        // walk to the next possible matching binding
+        cursor = cursor->next;
+      } while (cursor != NULL);
+
+      // can we continue to look for possible better matches?
+      if (table->enclosing_table != NULL)
+      {
+        result = LookupSymbolHelper(table->enclosing_table, name, scope, best);
+      }
+    }
+    else
+    {
+      // no possible matches in this bucket.
+      if (table->enclosing_table != NULL)
+      {
+        // search in the next outer scope.
+        result = LookupSymbolHelper(table->enclosing_table, name, scope, best);
+      }
+      else
+      {
+        // this was the final scope we could be holding the binding in.
+        result.success = false;
+        result.error.loc = dummy;
+        result.error.dsc = appendstr("Failed to find Binding: ", name->c_str());
+      }
+    }
   }
 
+  return result;
 }
 
 Judgement LookupSymbol(SymbolTable* table, InternedString name, ScopeSet scope)
@@ -173,21 +257,33 @@ Judgement LookupSymbol(SymbolTable* table, InternedString name, ScopeSet scope)
   return result;
 }
 
-Judgement LookupLocal(SymbolTable* table, InternedString name)
+// local lookup is exclusively used within the typechecking
+// routine of 'bind' terms. where what we care about is that
+// we are not duplicating a binding within the same local scope.
+// if the binding exists in an outer scope, we can accept that
+// this inner binding will shadow the outer binding. the name
+// resolution with scope set rules will select this inner binding
+// over the outer binding when references to this binding occur
+// within the body of this scope. because those references will be
+// constructed within the larger scope set. (only if you smuggle
+// a free variable in a lambda will you be able to declare an inner
+// reference with a smaller scope set that the current defining scope.)
+// (this models our intuition behind 'local scopes' well.)
+Judgement LookupLocalSymbol(SymbolTable* table, InternedString name)
 {
   Location  dummy;
   Judgement result;
-  int hash = (int)(name);
-  hash %= table->num_buckets;
+  size_t hashval = std::hash<string>{}(name);
+  hashval %= table->num_buckets;
 
   // find the bucket to look in
-  Symbol* cursor = table->table[hash];
+  Symbol* cursor = table->table[hashval];
   // look through the bucket (list)
   if (cursor != NULL)
   {
     do {
       // does the bound name match the name we are searching for?
-      if (cursor->name == name)
+      if (cursor->id == name)
       {
         result.success = true;
         result.term    = cursor->term;
@@ -213,28 +309,28 @@ Judgement LookupLocal(SymbolTable* table, InternedString name)
 
 void BindSymbol(SymbolTable* table, InternedString name, ScopeSet scope, Ast* term)
 {
-  int hash = (int)(name);
-  hash %= table->num_buckets;
+  int hashval = std::hash<string>{}(name);
+  hashval %= table->num_buckets;
 
   // find the bucket to look in
-  Symbol* head = table->table[hash];
+  Symbol* head = table->table[hashval];
 
   Symbol* elem = (Symbol*)malloc(sizeof(Symbol));
   elem->id     = name;
   elem->scope  = scope;
   elem->term   = term;
   elem->next   = head; // prepend to the bucket, for speed.
-  table->table[hash] = elem;
+  table->table[hashval] = elem;
   table->num_elements++;
 }
 
 void UnbindSymbol(SymbolTable* table, InternedString name)
 {
-  int hash = (int)(name);
-  hash %= table->num_buckets;
+  int hashval = std::hash(name);
+  hashval %= table->num_buckets;
 
   // find the bucket to look in
-  Symbol *cursor = table->table[hash], *prev = NULL;
+  Symbol *cursor = table->table[hashval], *prev = NULL;
   // look through the bucket (list)
 
   // so we need to handle removing the head of the
@@ -242,7 +338,7 @@ void UnbindSymbol(SymbolTable* table, InternedString name)
   if (name == cursor->id)
   {
     prev = cursor;
-    table->table[hash] = cursor->next;
+    table->table[hashval] = cursor->next;
     DestroyAst(prev->term);
     free(prev);
     table->num_elements--;

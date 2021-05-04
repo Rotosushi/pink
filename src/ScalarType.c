@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Utilities.h"
+#include "Utilities.hpp"
 #include "ScalarType.h"
 
 void InitializeScalarType(ScalarType* scalar, ScalarKind kind)

@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Ast.h"
 #include "Type.h"
 #include "BinopEliminators.h"

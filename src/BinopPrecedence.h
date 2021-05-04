@@ -1,7 +1,7 @@
 #ifndef BINOPPRECEDENCE_H
 #define BINOPPRECEDENCE_H
 
-#include "StringInterner.h"
+#include "StringInterner.hpp"
 #include "Associativity.h"
 
 typedef struct BinopPrecAssoc
@@ -24,7 +24,7 @@ typedef struct BinopPrecedenceTable
   int num_elements;
 } BinopPrecedenceTable;
 
-BinopPrecedenceTable* CreateAstBinopPrecedenceTable();
+BinopPrecedenceTable* CreateBinopPrecedenceTable();
 void                  DestroyBinopPrecedenceTable(BinopPrecedenceTable* BPtbl);
 BinopPrecAssoc* FindBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op);
 BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, int prec, Associativity assoc);
