@@ -2,7 +2,18 @@ so, the coarse grained view of usage is:
 
 construct a LLVM module. (and destroy after using.)
 (or use the global LLVM module, which i would hazard to guess
- is statically allocated?)
+ is statically allocated?)s
+
+!!! find and set the Target Triple and Target DataLayout for
+    codegen. if these are not set to at least sensible defaults
+    the code generated may not work !!!
+
+the target triple can be found with
+
+  llvm::sys::getDefaultTargetTriple();
+
+
+
 
 if we are interpreting we are working over a basic block or a module?
 where we traverse the ast and construct a set of LLVM instructions

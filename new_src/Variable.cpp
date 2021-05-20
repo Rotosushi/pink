@@ -24,7 +24,7 @@ std::string Variable::ToString()
   return std::string(name);
 }
 
-Judgement Variable::Getype(const Environment& env)
+Judgement Variable::GetypeV(const Environment& env)
 {
   Judgement result;
   std::optional<std::shared_ptr<Ast>> boundval = env.symbols->lookup(name, scope);
@@ -35,7 +35,7 @@ Judgement Variable::Getype(const Environment& env)
   }
   else
   {
-    result = Judgement(PinkError("Unknown Variable: " + std::string(name), loc));
+    result = Judgement(PinkError("Variable [" + std::string(name) + "] not bound in Environment.", loc));
   }
 
   return result;
@@ -43,5 +43,16 @@ Judgement Variable::Getype(const Environment& env)
 
 Judgement Variable::Codegen(const Environment& env)
 {
-  // generate a load from the local stack, or from a global name.
+  // return the value bound to this name within the symbols
+  // or return an error.
+  std::optional<std::shared_ptr<Ast>> boundval = env.symbols->lookup(name, scope);
+
+  if (boundval)
+  {
+    return Judgement(*boundval);
+  }
+  else
+  {
+    return Judgement(PinkError("Variable [" + std::string(name) + "] not bound in Environment.", loc));
+  }
 }

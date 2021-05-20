@@ -21,7 +21,7 @@ Boolean::Boolean(const Location& loc, bool val)
 
 std::shared_ptr<Boolean> Boolean::Clone()
 {
-  return std::make_shared(Boolean(loc, value));
+  return std::make_shared<Boolean>(loc, value);
 }
 
 std::string Boolean::ToString()
@@ -36,7 +36,7 @@ std::string Boolean::ToString()
   }
 }
 
-Judgement Boolean::Getype(const Environment& env)
+Judgement Boolean::GetypeV(const Environment& env)
 {
   return std::make_shared<TypeLiteral>(loc, llvm::Type::getInt1Ty(env.GetContext());
 }

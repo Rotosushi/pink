@@ -16,6 +16,8 @@
 */
  class Object : public Ast
  {
+ private:
+   virtual Judgement GetypeV(const Environment& env) = 0;
  public:
    Object(const Location& loc);
    virtual ~Object() = default;
@@ -23,6 +25,6 @@
    virtual std::shared_ptr<Object> Clone() = 0;
    virtual std::string ToString() = 0;
 
-   virtual Judgement Getype(const Environment& env) = 0;
+
    virtual Judgement Codegen(const Environment& env) = 0;
  };

@@ -23,6 +23,9 @@ SymbolTable::SymbolTable(SymbolTable* outer)
   this->scope = outer->scope.IntroduceNewScope(outer->scope);
 }
 
+SymbolTable* SymbolTable::GetParentSymbols()
+{}
+
 std::optional<std::shared_ptr<Ast>> SymbolTable::LookupHelper(InternedString name, ScopeSet scope, std::shared_ptr<Ast> best_match, ScopeSet best_subset)
 {
   if (best_match == nullptr)

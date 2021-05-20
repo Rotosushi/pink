@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Ast.h"
 #include "Type.h"
 #include "UnopEliminators.h"
@@ -25,6 +25,8 @@ void DestroyUnopEliminatorList(UnopEliminatorList* UElist)
 
 UnopEliminator* InsertPrimitiveUnopEliminator(UnopEliminatorList* UElist, Type* rtype, Type* restype, PrimitiveUnopEliminator eliminator)
 {
+  PrimitiveUnopEliminator prim_elim = NULL;
+
   if (!UElist || !rtype || !restype)
     return NULL; // fatal error: bad pointers
 

@@ -4,7 +4,7 @@
 #include "Ast.h"
 #include "SymbolTable.h"
 #include "Environment.h"
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Utilities.hpp"
 #include "Bind.h"
 

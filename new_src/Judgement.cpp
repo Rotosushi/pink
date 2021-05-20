@@ -20,6 +20,11 @@ Judgement::Judgement(std::shared_ptr<Ast> term)
 
 }
 
+bool Judgement::operator bool()
+{
+  return erroneous;
+}
+
 Judgement& Judgement::operator=(const Judgement& rhs)
 {
   erroneous = rhs.erroneous;
@@ -36,7 +41,7 @@ Judgement& Judgement::operator=(const Judgement& rhs)
 
 bool Judgement::IsAnError()
 {
-  return erroneous;
+  return !erroneous;
 }
 
 PinkError& Judgement::GetError()

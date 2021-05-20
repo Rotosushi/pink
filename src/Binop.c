@@ -4,7 +4,7 @@
 #include "Ast.h"
 #include "Judgement.h"
 #include "Utilities.hpp"
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Environment.h"
 #include "Binop.h"
 

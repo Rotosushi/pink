@@ -23,7 +23,7 @@ llvm::Type* GetLiteral()
 
 std::shared_ptr<TypeLiteral> TypeLiteral::Clone()
 {
-  return std::make_shared(loc, literal);
+  return std::make_shared<TypeLiteral>(loc, literal);
 }
 
 std::string TypeLiteral::ToString()
@@ -36,9 +36,9 @@ std::string TypeLiteral::ToString()
 
 // we shouldn't really be calling Getype on
 // TypeLiteral's.
-Judgement TypeLiteral::Getype(const Environment& env)
+Judgement TypeLiteral::GetypeV(const Environment& env)
 {
-  return std::make_shared(loc, literal);
+  return std::make_shared<TypeLiteral>(loc, literal);
 }
 
 // nor should we really be calling Codegen on
@@ -48,5 +48,5 @@ Judgement TypeLiteral::Getype(const Environment& env)
 // use? putting a pin in this for later...
 Judgement TypeLiteral::Codegen(const Environment& env)
 {
-  return std::make_shared(loc, literal);
+  return std::make_shared<TypeLiteral>(loc, literal);
 }

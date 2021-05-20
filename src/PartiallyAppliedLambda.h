@@ -2,7 +2,7 @@
 #define PARTIAL_APPLICATION_H
 
 #include "Judgement.h"
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "ScopeSet.h"
 #include "Location.h"
 struct Ast;

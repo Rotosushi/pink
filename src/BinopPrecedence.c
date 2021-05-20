@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Associativity.h"
 #include "BinopPrecedence.h"
 

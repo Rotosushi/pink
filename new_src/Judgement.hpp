@@ -5,6 +5,13 @@
 
 class Ast;
 
+
+/*
+  Judgement encapsulates the two major paths of
+  our algorithm, either we are building a correct
+  code/type, or we are building a description of
+  the error we encountered.
+*/
 class Judgement
 {
 private:
@@ -18,10 +25,11 @@ public:
   Judgement(PinkError& err);
   Judgement(std::shared_ptr<Ast> term);
 
+  bool       operatorbool();
   Judgement& operator=(const Judgement& rhs);
 
   bool IsAnError();
 
   PinkError& GetError();
-  std::shared_ptr<Ast>       GetTerm();
+  std::shared_ptr<Ast> GetTerm();
 };

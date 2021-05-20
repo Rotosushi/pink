@@ -408,7 +408,31 @@ or it constructs a procedure application.
 
 
 
+a name is itself a reference to that specific
+peice of data which represents it. all
+actions upon the name pass through the data
+that is the name, and act upon the data
+that is refferent. this is the main distinction
+between pointers and references.
+both however are addresses.
 
+by considering names to be values by default.
+we gain the ability to define a pointer value.
+then we can consider a value that is itself a
+pointer/reference. which allows the language
+to speak about such things within the text itself.
+
+passing by value becomes the default, with the
+option to pass by pointer/reference, which
+opens up different semantic options to the programmer,
+which allows for engineering to happen.
+
+i suppose we could consider the opposite, by reference
+the default, and a syntax that means by value. however
+C goes with the former, so arbitrarily we will keep
+the same semantics. and with types that are smaller
+than or equal to the size of a pointer the distinction
+is largely immaterial.
 
 
 

@@ -15,6 +15,7 @@ private:
   std::shared_ptr<Ast> left;
   std::shared_ptr<Ast> right;
 
+  virtual Judgement GetypeV(const Environment& env) override;
 public:
   Binop(const Location& loc, InternedString op, std::shared_ptr<Ast> lhs, std::shared_ptr<Ast> rhs);
   virtual ~Binop() = default;
@@ -22,6 +23,6 @@ public:
   virtual std::shared_ptr<Binop> Clone() override;
   virtual std::string ToString() override;
 
-  virtual Judgement Getype(const Environment& env) override;
+
   virtual Judgement Codegen(const Environment& env) override;
 };

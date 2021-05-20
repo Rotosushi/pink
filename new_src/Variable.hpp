@@ -14,15 +14,15 @@ private:
   InternedString name;
   ScopeSet       scope;
 
+  virtual Judgement GetypeV(const Environment& env) override;
 public:
   Variable(const Location& loc, InternedString name, ScopeSet scope);
   virtual ~Variable() = default;
 
   virtual std::shared_ptr<Variable> Clone() override;
-
   virtual std::string ToString();
 
-  virtual Judgement Getype(const Environment& env) override;
+
   // using a Judgement as the return type here implies using
   // a std::shared_ptr<Ast> to hold the generated code.
   // given that we use Objects to represent values in pink,

@@ -1,7 +1,7 @@
 #ifndef UNOP_H
 #define UNOP_H
 
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Judgement.h"
 #include "Judgement.h"
 #include "Location.h"

@@ -13,6 +13,7 @@ private:
   InternedString op;
   std::shared_ptr<Ast> right;
 
+  virtual Judgement GetypeV(const Environment& env);
 public:
   Unop(const Location& loc, InternedString op, std::shared_ptr<Ast> rhs);
   virtual ~Unop() = default;
@@ -20,6 +21,6 @@ public:
   virtual std::shared_ptr<Unop> Clone() override;
   virtual std::string ToString() override;
 
-  virtual Judgement Getype(const Environment& env);
+
   virtual Judgement Codegen(const Environment& env);
 };

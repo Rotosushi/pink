@@ -3,9 +3,9 @@
 
 #include "Ast.h"
 #include "Location.h"
-#include "Utilities.hpp"
+#include "Utilities.h"
 #include "Type.h"
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Environment.h"
 #include "SymbolTable.h"
 #include "Lambda.h"

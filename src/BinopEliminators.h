@@ -2,7 +2,7 @@
 #define BINOPELIMINATORS_H
 #include <stdlib.h>
 
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Judgement.h"
 struct Ast;
 struct Type;

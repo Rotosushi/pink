@@ -10,7 +10,9 @@ class Ast
 {
 protected:
   Location loc;
+  llvm::Type* cached_type;
 
+  virtual Judgement GetypeV(const Environment& env) = 0;
 public:
   Ast(const Location& loc);
   virtual ~Ast() = default;
@@ -46,6 +48,6 @@ public:
   // and valid paths.) so, from that perspective we are solving
   // the same problem. and from that same perspective we are going
   // to add a LLVMValueLiteral Object.
-  virtual Judgement Getype(const Environment& env) = 0;
+  Judgement Getype(const Environment& env);
   virtual Judgement Codegen(const Environment& env) = 0;
 };

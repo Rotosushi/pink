@@ -2,9 +2,9 @@
 #include <string.h>
 
 #include "Ast.h"
-#include "Utilities.hpp"
+#include "Utilities.h"
 #include "Environment.h"
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "UnopEliminators.h"
 #include "Unop.h"
 

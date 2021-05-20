@@ -7,8 +7,13 @@
 #include "Environment.hpp"
 #include "Object.hpp"
 
+/*
+  represents a literal Nil within our grammar.
+*/
 class Nil : public Object
 {
+private:
+  virtual Judgement GetypeV(const Environment& env) override;
 public:
   Nil(const Location& loc);
   virtual ~Nil() = default;
@@ -16,6 +21,6 @@ public:
   virtual std::shared_ptr<Nil> Clone() override;
   virtual std::string ToString() override;
 
-  virtual Judgement Getype(const Environment& env) override;
+
   virtual Judgement Codegen(const Environment& env) override;
 }

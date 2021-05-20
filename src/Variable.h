@@ -3,7 +3,7 @@
 
 #include "Judgement.h"
 #include "ScopeSet.h"
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 #include "Location.h"
 struct Environment;
 struct Ast;

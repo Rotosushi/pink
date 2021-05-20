@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "Location.hpp"
 #include "Judgement.hpp"
@@ -10,16 +11,16 @@
 class Application : public Ast
 {
 private:
-  std::shared_ptr<Ast> left;
-  std::shared_ptr<Ast> right;
+  std::shared_ptr<Ast> function;
+  std::vector<std::shared_ptr<Ast>> actual_arguments; 
 
+  virtual Judgement GetypeV(const Environment& env) override;
 public:
-  Application(const Location& loc, std::shared_ptr<Ast> lhs, std::shared_ptr<Ast> rhs);
+  Application(const Location& loc, std::shared_ptr<Ast> fn, std::vector<std::shared_ptr<Ast>> args);
   virtual ~Application() = default;
 
   virtual std::shared_ptr<Application> Clone() override;
   virtual std::string ToString() override;
 
-  virtual Judgement Getype(const Environment& env) override;
   virtual Judgement Codegen(const Environment& env) override;
 };

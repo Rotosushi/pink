@@ -4,10 +4,11 @@ LINKER_ARGS   = -g -std=c++17 -L${HOME}/Development/Source/llvm-12/lib
 
 OBJECT_FILES  = Location.o Judgement.o ScopeSet.o StringInterner.o \
 PinkError.o \
-Ast.o
+Ast.o \
+Object.o Nil.o Boolean.o Integer.o TypeLiteral.o ValueLiteral.o
 
 
-Pink: Types Objects DataStructures SymbolicComputation Frontend Aux Main
+Pink: SymbolicComputation Objects DataStructures Frontend Aux Main
 	${CC} ${LINKER_ARGS} ${OBJECT_FILES}
 
 clean:
@@ -16,20 +17,38 @@ clean:
 debug: Pink
 	gdb -tui Pink
 
+Objects: Object Nil Boolean Integer TypeLiteral ValueLiteral
+
+Object:
+	${CC} ${COMPILER_ARGS} -c Object.cpp -o Object.o
+
+Nil:
+	${CC} ${COMPILER_ARGS} -c Nil.cpp -o Nil.o
+
+Boolean:
+	${CC} ${COMPILER_ARGS} -c Boolean.cpp -o Boolean.o
+
+Integer:
+	${CC} ${COMPILER_ARGS} -c Integer.cpp -o Integer.o
+
+TypeLiteral:
+	${CC} ${COMPILER_ARGS} -c TypeLiteral.cpp -o TypeLiteral.o
+
+ValueLiteral:
+	${CC} ${COMPILER_ARGS} -c ValueLiteral.cpp -o ValueLiteral.o
 
 
-Types:
+
+SymbolicComputation: Ast Bind Application Binop Unop
+
+Ast:
+	${CC} ${COMPILER_ARGS} -c Ast.cpp -o Ast.o
 
 
 
-
-Objects:
-
-
-
-
-
-DataStructures: Location Judgement StringInterner ScopeSet SymbolTable
+DataStructures: Location Judgement StringInterner ScopeSet SymbolTable \
+BinopLiteralTable BinopTable UnopLiteralTable UnopTable Argument \
+Environment
 
 Location:
 	${CC} ${COMPILER_ARGS} -c Location.cpp -o Location.o
@@ -46,13 +65,20 @@ ScopeSet:
 SymbolTable:
 	${CC} ${COMPILER_ARGS} -c SymbolTable.cpp -o SymbolTable.o
 
+BinopLiteralTable:
+	${CC} ${COMPILER_ARGS} -c BinopLiteralTable.cpp -o BinopLiteralTable.o
 
+BinopTable:
+	${CC} ${COMPILER_ARGS} -c BinopTable.cpp -o -BinopTable.o
 
-SymbolicComputation: Ast
+UnopLiteralTable:
+	${CC} ${COMPILER_ARGS} -c UnopLiteralTable.cpp -o UnopLiteralTable.o
 
-Ast:
-	${CC} ${COMPILER_ARGS} -c Ast.cpp -o Ast.o
+UnopTable:
+	${CC} ${COMPIELR_ARGS} -c UnopTable.cpp -o UnopTable.o
 
+Environment:
+	${CC} ${COMPIELR_ARGS} -c Environment.cpp -o Environment.o
 
 
 Fontend:
@@ -60,7 +86,7 @@ Fontend:
 
 
 
-Aux: PinkError
+Aux: PinkError Environment
 
 PinkError:
 	${CC} ${COMPILER_ARGS} -c PinkError.cpp -o PinkError.o

@@ -13,9 +13,10 @@ class SymbolTable
 private:
   // we use a dense map here to be speedy.
   // and because we are mapping a pointer to
-  // another pointer.
+  // another pointer. so the types are super small.
   llvm::DenseMap<InternedString, std::shared_ptr<Ast>> map;
   SymbolTable* outer;
+
   ScopeSet     scope;
 
   // used to do lookup recursively.
@@ -23,6 +24,8 @@ private:
 public:
   SymbolTable();
   SymbolTable(SymbolTable* outer);
+
+  SymbolTable* GetParentSymbols();
 
   std::optional<std::shared_ptr<Ast>> Lookup(InternedString name, ScopeSet scope); // recursive lookup
   std::optional<std::shared_ptr<Ast>> LookupLocal(InternedString name); // non-recursive lookup.

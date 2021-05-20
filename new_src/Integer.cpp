@@ -27,7 +27,7 @@ std::string Integer::ToString()
   return std::to_string(value);
 }
 
-Judgement Integer::Getype(const Environment& env)
+Judgement Integer::GetypeV(const Environment& env)
 {
   return Judgement(std::make_shared<TypeLiteral>(loc, llvm::Type::getInt64Ty(env.GetContext())));
 }

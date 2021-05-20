@@ -3,7 +3,7 @@
 
 #include "Location.h"
 #include "Judgement.h"
-#include "StringInterner.hpp"
+#include "StringInterner.h"
 
 struct Ast;
 

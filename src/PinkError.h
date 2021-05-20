@@ -9,8 +9,8 @@
 
 typedef struct PinkError
 {
-  Location       loc;
-  std::string    dsc;
+  Location loc;
+  char*    dsc;
 } PinkError;
 
 
