@@ -2,10 +2,15 @@
 #include "TypeLiteral.hpp"
 #include "Ast.hpp"
 
-Ast::Ast(const Location& loc) :
-  cached_type(nullptr), loc(loc)
+Ast::Ast(const AstKind kind, const Location& loc) :
+  loc(loc), cached_type(nullptr), kind(kind)
 {
 
+}
+
+AstKind Ast::GetKind()
+{
+  return kind;
 }
 
 Location Ast::GetLocation()

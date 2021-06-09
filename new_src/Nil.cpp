@@ -10,9 +10,14 @@
 #include "Object.hpp"
 
 Nil::Nil(const Location& loc)
-  : Object (loc)
+  : Ast(Ast::Kind::Nil, loc)
 {
 
+}
+
+bool Nil::classof(const Ast* ast)
+{
+  return ast->GetKind() == Ast::Kind::Nil;
 }
 
 std::shared_ptr<Nil> Nil::Clone()

@@ -12,9 +12,14 @@
 #include "Object.hpp"
 
 Integer::Integer(const Location& loc, int64_t value)
-  : Object(loc), value(value)
+  : Ast(Ast::Kind::Integer, loc), value(value)
 {
 
+}
+
+bool Integer::classof(const Ast* ast)
+{
+  return ast->GetKind() == Ast::Kind::Integer;
 }
 
 std::shared_ptr<Integer> Integer::Clone()

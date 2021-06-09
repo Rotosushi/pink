@@ -7,13 +7,18 @@
 #include "Location.hpp"
 #include "Judgement.hpp"
 #include "Environment.hpp"
-#include "Object.hpp"
+#include "Ast.hpp"
 #include "TypeLiteral.hpp"
 
 TypeLiteral::TypeLiteral(const Location& loc, llvm::Type* literal)
-  : Object(loc), literal(literal)
+  : Ast(Ast::Kind::TypeLiteral, loc), literal(literal)
 {
 
+}
+
+bool TypeLiteral::classof(const Ast* ast)
+{
+  return ast->GetKind() == Ast::Kind::TypeLiteral;
 }
 
 llvm::Type* GetLiteral()

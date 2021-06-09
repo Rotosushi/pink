@@ -5,13 +5,13 @@
 #include "Location.hpp"
 #include "Judgement.hpp"
 #include "Environment.hpp"
-#include "Object.hpp"
+#include "Ast.hpp"
 
 /*
   represents a literal boolean within
   our grammar.
 */
-class Boolean : public Object
+class Boolean : public Ast
 {
 private:
   bool value;
@@ -20,6 +20,8 @@ private:
 public:
   Boolean(const Location& loc, bool val);
   virtual ~Boolean() = default;
+
+  static bool classof(const Ast* ast);
 
   virtual std::shared_ptr<Boolean> Clone() override;
   virtual std::string ToString() override;

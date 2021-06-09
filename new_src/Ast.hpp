@@ -2,21 +2,91 @@
 #include <string>
 #include <memory>
 
+// https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
+#include "llvm/Support/Casting.h"
+
 #include "Location.hpp"
 #include "Judgement.hpp"
 #include "Environment.hpp"
 
+
+
 class Ast
 {
+  // our defined metadata, we want access to these values
+  // within our baseclasses.
 protected:
   Location loc;
   llvm::Type* cached_type;
 
+  // we hide the virtual call so we can tuck away the cached
+  // type in the concrete call.
   virtual Judgement GetypeV(const Environment& env) = 0;
+
+// https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
+// this is for LLVM style RTTI, which is based
+// on enumerations, just like dynamic typeinformation
+// in C.
+// so, from reading the documentation, the only classes that actually
+// need to participate in the is-a analysis are the ones that
+// can actually be instanciated. this has the effect of us not
+// needing to specify abstract classes in this enumeration, meaning
+// we do not specify the abstract base class.
+// I am reflecting on that to say we also directly specify our
+// objects themselves, and not the virtual Object class.
+// despite the fact that Object is a class in our heirarchy.
+// so maybe object is truly useless if we are not defining our own
+// evaluator.
 public:
-  Ast(const Location& loc);
+  // this spot circularly/recursively requires me to know all of
+  // the classes in the heirarchy a-priori to definition.
+  enum Kind
+  {
+  // Language Terms for Typing and Codegeneration
+    TypeLiteral,
+    ValueLiteral,
+  // Symbolic Computation
+    Variable,
+    Bind,
+    Application,
+    // Conditional,
+    // Iteration,
+    // RunFirstIteration,
+    Binop,
+    Unop,
+  // Objects
+    Nil,
+    Boolean,
+    Integer,
+    Pointer,
+    // Unsigned
+    // i8/16/32/64, s8/16/32/64
+    // Char
+    // Float
+    // Reference/Pointer
+    // Enumeration
+    // Array
+    // String
+    // Tuple
+    // Union
+    // type definitions/aliasing
+  // Abstraction (which is-a Object)
+    Lambda,
+    Closure,
+    // Function,
+    // Coroutine
+  };
+
+private:
+  const Kind kind;
+
+// the rest of our class
+public:
+
+  Ast(const Kind kind, const Location& loc);
   virtual ~Ast() = default;
 
+  AstKind  GetKind() const;
   Location GetLocation();
 
   virtual std::shared_ptr<Ast> Clone() = 0;
@@ -28,26 +98,6 @@ public:
   // the same return type. in this way, the logic of each
   // procedure only needs to check success, and can simply
   // early return failure. which keeps the procedure logic simpler.
-  // now that we are using LLVM however, and we are going to leverage
-  // their JIT to do Interpretation. this means that we are
-  // not going to implement in tree evaluation like we have been,
-  // and it also means that we might need a LLVM::Value literal Object.
-  // so we can smuggle the code that is being generated out within a
-  // Judgement. Judgement holds a std::shared_ptr<Ast> as it were.
-  // note that this is essentially the same strategy we used with
-  // Type Literals. we consider an Ast Node which represents a TypeLiteral.
-  // and then it could hold our Interned Type Ptr. this is how Getype
-  // returns a successful type from static analysis.
-  // so why not have Codegen do the same with a llvm::Value* ?
-  // to me, it just seems a bit weird, and there isn't the
-  // internededness of Value*'s. However, we do want to compose
-  // with the result types of other Codegen proceedures,
-  // (in fact this is exactly where the impetous behind the
-  //  Judgement class itself comes from. we either want to compose
-  // successes together, or report the failure, both are known
-  // and valid paths.) so, from that perspective we are solving
-  // the same problem. and from that same perspective we are going
-  // to add a LLVMValueLiteral Object.
   Judgement Getype(const Environment& env);
   virtual Judgement Codegen(const Environment& env) = 0;
 };

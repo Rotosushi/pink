@@ -19,6 +19,8 @@ public:
   Variable(const Location& loc, InternedString name, ScopeSet scope);
   virtual ~Variable() = default;
 
+  static bool classof(const Ast* ast);
+
   virtual std::shared_ptr<Variable> Clone() override;
   virtual std::string ToString();
 

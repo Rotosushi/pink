@@ -1,4 +1,13 @@
 /*
+the goal for v1 is not to write an amazing compiler
+right off the bat, it is to see if this is a valid
+implementation strategy.
+
+i suspect that what i have gone with design wise
+is fairly rudementary, and i am okay with that.
+
+once it works we can refine it to work faster.
+
   "A good programming language is to be as eggs."
   -- somebody other than me said this,
      but for the life of me i can't remember who,
@@ -75,12 +84,16 @@
    or I see it with doubt, and agenda. of course
    this doesn't mean that just because it is
    freely shared it is beyond doubt, or without
-   agenda, what we can do, is approach it with
+   agenda, nor does it truly mean that just because
+   it is behind a paywall it is doubtful and from some
+   agenda, however it does give a natural financial incentive
+   which some would wish to exploit.
+   what we can do, is approach it with
    our understanding of what freely shared means,
    and what things we can be sure of, and what things
    we cannot, and we can more accurately judge the
    truth of what is being said.
-   what i can do though, is reflect on my
+   what persons can do individually can do though, is reflect on my
    understanding of freely sharing, and the difficulties
    i've had with creating and communicating information,
    and i can come to a fuller understanding of the
@@ -240,10 +253,7 @@ of the instruction.)
 
  result ~> 7
 
- within the compiler, given the above definition,
- we treat the inner  lambda, which the programmer
- said, took one argument, is actually a definition
- of this procedure, which takes three arguments.
+ is implemented as:
 
  fn outerf (x:Int, y:Int)
  {
@@ -305,7 +315,7 @@ in and of itself?
 
 int main(int argc, char** argv)
 {
-  InitLLVM X(argc, argv); // declaration.
+  InitLLVM X(argc, argv);
   /*
     the llvm context holds a lot of core datastructures
     of llvm, like the type and constant interners,
@@ -326,15 +336,24 @@ int main(int argc, char** argv)
     within the llvm api. we set up the builder relative to
     our context, this implies the same threadsafety discussion
     as above.
+
+    to ensure that we have a consistant beginning state,
+    for the inner algorithm, the IRBuilder which is in the
+    global scope will have no insertion point.
+    we should be able to get away with mostly constant expressions
+    in global definitions right? although, i really like the whole
+    compile time evaluation thing. plus it's super easy to modify
+    in once we have solved the problem of JIT ing our code.
   */
   std::shared_ptr<llvm::IRBuilder>   pink_builder = std::make_shared<llvm::IRBuilder<>>(*pink_context);
-
+  pink_builder->clearInsertionPoint();
   /*
    these functions are defined in
    llvm/Support/TargetSelect.h
    they initialize the TargetRegistry
    (i assume a member of the global LLVMContext)
-   this initializes all of the
+   this initializes all of the evetything.
+   instead i could call
   */
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
@@ -350,7 +369,7 @@ int main(int argc, char** argv)
   // one that dynamically finds the TargetTriple for
   // the installation/target machine, or allows the user to specify
   // searches through the TargetRegistry in the arguments to the program.
-  llvm::StringRef pink_target_triple = llvm::sys::getProcessTriple();
+  std::string pink_target_triple = llvm::sys::getProcessTriple().str();
 
   // to properly get the datalayout string
   // we are going to get LLVM to generate it
@@ -393,16 +412,17 @@ int main(int argc, char** argv)
     the llvm module is the core datastructure representing a
     module of compilation. this is what the header files in
     C/C++ specify, and this is what many modern languages
-    make explicit in the text of the language. Files are
+    make explicit in the text of the language. i.e. Files are
     modules in Python, and Modules have an Explicit Syntax
     in Haskell.
 
-    Pink is probably going to follow Python here,
+    Pink is probably going to follow both Python & Haskell here,
     and elide explicit module specification syntax,
     instead making the File itself, implicitly the Module.
-    import/export syntax is going to be explicit, and
+    in addition to making import/export explicit, and
     any name not explicitly exported will be implicitly private.
 
+    for us the programmers
     functions and global variables can be added to modules,
     and exported to other modules by setting the linkage
     attributes on the specific symbols. when considering
@@ -413,6 +433,7 @@ int main(int argc, char** argv)
   std::shared_ptr<llvm::Module>  pink_module  = std::make_shared<llvm::Module>("PinkREPL", *pink_context);
 
   pink_module->setTargetTriple(pink_target_triple);
+
   // all that work above just to validly call this function.
   pink_module->setDataLayout(pink_target_machine->createDataLayout());
 
@@ -421,12 +442,14 @@ int main(int argc, char** argv)
 
   pink_lljit_builder.setJitTargetMachineBuilder(pink_jit_target_machine_builder);
 
-  llvm::Expected<std::unique_ptr<llvm::orc::LLJIT>> pink_lljit = pink_lljit_builder.create();
+  llvm::Expected<std::unique_ptr<llvm::orc::LLJIT>> possible_pink_lljit = pink_lljit_builder.create();
 
-  if (!pink_lljit)
+  if (!possible_pink_lljit)
   {
-    //return error
+    FatalError("Failed to initialize the JIT.", __FILE__, __LINE__);
   }
+
+  std::unique_ptr<llvm::orc::LLJIT> pink_jit = *possible_pink_lljit;
 
   /*
     build AST,

@@ -17,10 +17,7 @@ clean:
 debug: Pink
 	gdb -tui Pink
 
-Objects: Object Nil Boolean Integer TypeLiteral ValueLiteral
-
-Object:
-	${CC} ${COMPILER_ARGS} -c Object.cpp -o Object.o
+Objects: Nil Boolean Integer Argument Lambda Closure TypeLiteral ValueLiteral
 
 Nil:
 	${CC} ${COMPILER_ARGS} -c Nil.cpp -o Nil.o
@@ -31,6 +28,15 @@ Boolean:
 Integer:
 	${CC} ${COMPILER_ARGS} -c Integer.cpp -o Integer.o
 
+Argument:
+	${CC} ${COMPILER_ARGS} -c Argument.cpp -o Argument.o
+
+Lambda:
+	${CC} ${COMPILER_ARGS} -c Lambda.cpp -o Lambda.o
+
+Closure:
+	${CC} ${COMPILER_ARGS} -c Closure.cpp -o Closure.o
+
 TypeLiteral:
 	${CC} ${COMPILER_ARGS} -c TypeLiteral.cpp -o TypeLiteral.o
 
@@ -39,15 +45,29 @@ ValueLiteral:
 
 
 
-SymbolicComputation: Ast Bind Application Binop Unop
+SymbolicComputation: Ast Variable Application Bind Binop Unop
 
 Ast:
 	${CC} ${COMPILER_ARGS} -c Ast.cpp -o Ast.o
 
+Variable:
+	${CC} ${COMPILER_ARGS} -c Variable.cpp -o Variable.o
+
+Application:
+	${CC} ${COMPILER_ARGS} -c Application.cpp -o Application.o
+
+Bind:
+	${CC} ${COMPILER_ARGS} -c Bind.cpp -o Bind.o
+
+Binop:
+	${CC} ${COMPIELR_ARGS} -c Binop.cpp -o Binop.o
+
+Unop:
+	${CC} ${COMPILER_ARGS} -c Unop.cpp -o Unop.o
 
 
 DataStructures: Location Judgement StringInterner ScopeSet SymbolTable \
-BinopLiteralTable BinopTable UnopLiteralTable UnopTable Argument \
+BinopLiteralTable BinopPrecedenceTable BinopTable UnopLiteralTable UnopTable \
 Environment
 
 Location:
@@ -68,6 +88,9 @@ SymbolTable:
 BinopLiteralTable:
 	${CC} ${COMPILER_ARGS} -c BinopLiteralTable.cpp -o BinopLiteralTable.o
 
+BinopPrecedenceTable:
+	${CC} ${COMPILER_ARGS} -c BinopPrecedenceTable.cpp -o BinopPrecedenceTable.o
+
 BinopTable:
 	${CC} ${COMPILER_ARGS} -c BinopTable.cpp -o -BinopTable.o
 
@@ -86,11 +109,13 @@ Fontend:
 
 
 
-Aux: PinkError Environment
+Aux: PinkError PinkKernel
 
 PinkError:
 	${CC} ${COMPILER_ARGS} -c PinkError.cpp -o PinkError.o
 
+PinkKernel:
+	${CC} ${COMPILER_ARGS} -c PinkKernel.cpp -o PinkKernel.o
 
 
 

@@ -20,6 +20,8 @@ public:
   Binop(const Location& loc, InternedString op, std::shared_ptr<Ast> lhs, std::shared_ptr<Ast> rhs);
   virtual ~Binop() = default;
 
+  static bool classof(const Ast* ast);
+
   virtual std::shared_ptr<Binop> Clone() override;
   virtual std::string ToString() override;
 

@@ -14,9 +14,14 @@
 #include "Boolean.hpp"
 
 Boolean::Boolean(const Location& loc, bool val)
-  : Object(loc), value(val)
+  : Ast(Ast::Kind::Boolean, loc), value(val)
 {
 
+}
+
+bool Boolean::classof(const Ast* ast)
+{
+  return ast->GetKind() == Ast::Kind::Boolean;
 }
 
 std::shared_ptr<Boolean> Boolean::Clone()

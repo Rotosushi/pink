@@ -12,12 +12,14 @@ class Application : public Ast
 {
 private:
   std::shared_ptr<Ast> function;
-  std::vector<std::shared_ptr<Ast>> actual_arguments; 
+  std::vector<std::shared_ptr<Ast>> actual_arguments;
 
   virtual Judgement GetypeV(const Environment& env) override;
 public:
   Application(const Location& loc, std::shared_ptr<Ast> fn, std::vector<std::shared_ptr<Ast>> args);
   virtual ~Application() = default;
+
+  static bool classof(const Ast* ast);
 
   virtual std::shared_ptr<Application> Clone() override;
   virtual std::string ToString() override;

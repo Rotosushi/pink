@@ -250,7 +250,7 @@ all of this boild down to,
 #include "Judgement.hpp"
 #include "Environment.hpp"
 #include "Argument.hpp"
-#include "Object.hpp"
+#include "Ast.hpp"
 
 
 /*
@@ -276,11 +276,11 @@ all of this boild down to,
 
   we need to build the function the lambda describes
   with llvm, in the codegen function. then what
-  we return out of the codegen function, that is the value
+  we return out of the codegen function, that is, the value
   we return to represent the function is itself one
   of these function-objects. thus a Lambda literal
-  does two things, defines a procedure, produces a
-  temporary value representing the function that can be
+  does two things, defines a procedure, and produces a
+  temporary value representing the procedure that can be
   captured by the local scope, and thus work done with it.
   (this temporary value is the same thing that would be
    created if the user were to request an already bound
@@ -299,21 +299,22 @@ all of this boild down to,
   represents the definition of an anonymous function
   within our grammar.
 */
-class Lambda : public Object
+class Lambda : public Ast
 {
 private:
-  llvm::FunctionType* llvm_function_type;
-  llvm::Function*     llvm_function_literal;
+  // ret, arg0, arg1, ..., argN
+  // std::vector<llvm::Type*> presented_fn_type;
+  llvm::AttributeList   lambda_attributes;
   std::vector<Argument> formal_args;
   std::unique_ptr<SymbolTable> symbols;
   std::shared_ptr<Ast> body;
-
-  static std::string Gensym(const Environment& env);
 
   virtual Judgement GetypeV(const Environment& env) override;
 public:
   Lambda(const Location& loc, std::vector<Argument>& formal_args, SymbolTable* outer_symbols, std::shared_ptr<Ast> body);
   virtual ~Lambda() = default;
+
+  static bool classof(const Ast* ast);
 
   virtual std::shared_ptr<Lambda> Clone() override;
   virtual std::string ToString() override;

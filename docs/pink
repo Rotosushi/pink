@@ -10,8 +10,7 @@ a large runtime, and more specifically they require (?) a
 garbage collector. now, i was watching a talk, i don't remember
 the particular one, but the speaker was good, and he gives a lot of talks,
 i've seen him plenty. i even think ive seen multiple locations
-recordings of the same talk he gave. (i've also picked up some about
-the talk show circuit in my time watching a butt load of programming talks)
+recordings of the same talk he gave. TODO: Cite this speech i saw
 
 anyways, at one point in the talk, the speaker points out the isomorphism
 between the lambda calculus, and deductive reasoning. namely
@@ -26,6 +25,24 @@ this idea took some time to fully settle, but it has given me
 so much to think about, and has legit improved my methods of thinking.
 so here i share what my thoughts on this subject are, for
 whatever they are worth.
+
+additionally, and more personally, I specifically wanted to know if
+the definition of the lambda calculus itself presents problems such
+that the use of a garbage collector becomes required, or if the
+problem was just hard, and a garbage collector (in it's first and
+more primitive forms) is a simple solution to this complex problem.
+if there is some essence of the lambda calculus that makes garbage
+collection a necessary component of a language defining computation
+around this abstraction, then truly there is no way for an embedded
+system to utilize this abstraction as it's core conception of abstraction.
+and we must accept that the lambda calculus is in some sense to big
+an abstraction for these small tasks. alternatively if the problems are hard but not
+untenable, then why not define a small language which then exists
+as a proof of concept for this line of thinking, and at the end,
+i will have learned a lot, and will have a language to show for it.
+even if it's a toy language i will still be happy.
+
+
 
 what is substitution you ask?
 well, in mathematics we define a
@@ -408,17 +425,17 @@ or it constructs a procedure application.
 
 
 
-a name is itself a reference to that specific
+a name is itself a reference (in the c++ sense exactly) to that specific
 peice of data which represents it. all
-actions upon the name pass through the data
+actions upon the name pass through to the data
 that is the name, and act upon the data
 that is refferent. this is the main distinction
 between pointers and references.
 both however are addresses.
 
-by considering names to be values by default.
+by considering names to be 'values' by default.
 we gain the ability to define a pointer value.
-then we can consider a value that is itself a
+we can consider a value that is itself a
 pointer/reference. which allows the language
 to speak about such things within the text itself.
 
@@ -434,7 +451,288 @@ the same semantics. and with types that are smaller
 than or equal to the size of a pointer the distinction
 is largely immaterial.
 
+-----------------------------------------------------------------------------------
 
+
+
+
+
+
+
+// we don't allow pointer arguments directly, yet.
+// so we don't have to handle adding the byref attribute
+// to reference parameters yet.
+// our primitive types for now all fit in registers.
+// this means that adding byval, and passing
+// in a local allocation of something that fits in a register
+// will be harmless, and optimizable by the compiler.
+// i am sure this is one their peephole optimizations.
+// only one primitive type doesn't fit in a register
+// for passing, functions. their representation is
+// is a structure type, but the precise type of the
+// struct is dependant on the number of applied arguments
+// of the codepath above. which could be different on
+// different calls into the same procedure. this means
+// that inside the procedure we have to handle N
+// many arguments. (luckily it is always some N,
+// because argument lists are static, after emission.)
+// which could be different based on different codepaths.
+// this pushes the representation into the runtime a little.
+// we have to pass function objects as opaque pointers.
+// the other option would be to build it atop
+// varargs, but then we could only support one function
+// literal in the argument list. and that feels weird,
+// and restrictive of the kinds of procedures we can express.
+
+// say we have a fn like
+/*
+  Apply (op: int -> int -> int, x: int, y: int)
+  {
+    op x y
+  }
+
+  we could imagine passing in procedures which have the
+  type signature 'int -> int -> int', but with the
+  system we have described what we have implemented
+  is to have argument values within structures stored
+  locally, representing the function with pre bound values.
+  this record's type could be different, even though the
+  presented functions type is still 'int -> int -> int'
+  this means we have to pass different sized structures
+  to the same procedure code, and have the inner application
+  of the passed procedure object handle that ambiguity.
+  luckily it is only ambiguous in the sense of exactly how
+  big the argument list is. the number of arguments needed to
+  produce the distinct static types (result values or closures)
+  is constant for the definition of the term.
+
+  the only way we could define static procedures that take
+  variable sized arguments is with opaque struct pointers.
+  but, the procedure itself isn't taking a variable size argument
+  list. the caller of a closure isn't always sure how many arguments
+  the closure is going to provide, however, it is always the case that
+  the number of arguments the closure provides (N) is (Y)
+  arguments short of completing the call, where (Y) is equal
+  to the number of arguments in the presented function type of the
+  closure. i.e. the function type of the object that the closure
+  represents. which is the type of the binding one would specify
+  in the argument list.
+
+  to give a specific example, lets use a contrived base function.
+
+  Int baseFn(i: Int, j: Int, n: Int, m: Int)
+  {
+    (i * n) + (j * m)
+  }
+
+  in our language baseFn has a type
+
+  Int -> Int -> Int -> Int -> Int
+
+  in llvm baseFn looks like
+
+  %baseFnArgsType = type { i64, i64, i64, i64 }*
+  %baseFnRetType  = type { i64 }*
+
+  // we assume the caller made the allocation for
+  // the argument values and the return value.
+  // this is what the sret and byref parameter attributes mean.
+  // well, not byref technically, but we will be writing
+  // application to construct the alloca locally for the call.
+
+  void basefn(sret u8* ret, byref u8* args)
+  {
+    %addr-ret = getelementptr inbounds baseFnRetType ret 0 0
+
+    %typed-args = bitcast (args to baseFnArgsType)
+    // casting a pointer to another type of pointer is
+    // how we could accomplish this in c too.
+    %addr-i = getelementptr inbounds baseFnArgsType typed-args 0 0
+    %i      = load i64 addr-i
+    %addr-j = getelementptr inbounds baseFnArgsType typed-args 0 1
+    %j      = load i64 addr-j
+    %addr-n = getelementptr inbounds baseFnArgsType typed-args 0 2
+    %n      = load i64 addr-n
+    %addr-m = getelementptr inbounds baseFnArgsType typed-args 0 3
+    %m      = load i64 addr-m
+
+    %t0 = mul i64 %i %n
+    %t1 = mul i64 %j %m
+    %t2 = add i64 %t0 %t1
+    store %t2 %addr-ret
+  }
+
+  a closure around such a procedure would be built like:
+
+  Add := baseFn 1 1
+
+  timesTwo := baseFn 2 0
+
+  Sub := baseFn -1 1
+
+
+  so [Add] would be a pointer to a structure layed out in pseudoIR like:
+  {fnPtr     := baseFn,
+   args-desc := {i64 = sizeof(clsd-args), i8* = &(clsd-args.0), i8* = &(clsd-args.1)},
+   clsd-args := {i64 = 1, i64 = 1}}
+
+   [timesTwo]
+  {fnPtr     := baseFn,
+   args-desc := {i64 = sizeof(clsd-args), i8* = &(clsd-args.0), i8* = &(clsd-args.1)},
+   clsd-args := {i64 = 2, i64 = 0}}
+
+   [Sub]
+  {fnPtr     := baseFn,
+   args-desc := {i64 = sizeof(clsd-args), i8* = &(clsd-args.0), i8* = &(clsd-args.1)},
+   clsd-args := {i64 = -1, i64 = 1}}
+
+
+  to the application term, and to the Typechecker
+  these closure objects [Add, timesTwo, Sub] have a type of
+
+  Int -> Int -> Int
+
+  and so can be bound to parameters expecting such a type.
+
+
+  we could support a 'locally bound procedure' by allocating a
+  closure object with the signature
+
+  {fnPtr     := theFn,
+   args-desc := {i64 = 0, i8* = nullptr},
+   clsd-args := {i8* = nullptr}}
+
+   and then we could apply this just like any other procedure.
+
+---------------------------------------------------------------------------
+
+  so, the way that OOP handles this is with static lookup
+  tables. they store a pointer to a static structure describing
+  the layout of the record in the first position of the anon
+  structure, then the receiving procedure can cast this
+  (void* essentially) opaque pointer to a pointer to this
+  description structure. then they can use this description
+  structure to access the elements. we should only need the sizes
+  and argument positions right? if we need the type, for a
+  cast instruction, then we need some way to get it there
+  statically, which the only thing i can think of is
+  with a type field in the description structure, say
+  each object with a type holds it's type field in the
+  object itself. then we can use this field to cast each
+  type.
+
+  we could try to do something similar, if we imagine an array of ints,
+  and it's length held in an i32 together a struct.
+  where the length N = the number of members within the structure + 2,
+  of i32 values, where within the first position we store the size of the
+  structure itself, int the second we store the expected number of
+  arguments for a call, and in each subsequent i32 we store the offset one has to use
+  to compute the structure elements address relative to a pointer to such a structure.
+  then we can know, how many elements we need to pre apply,
+  as that is stored in the array, and we have the elements known
+  from the application term, but we only know the function's
+  address, and not it's type at runtime, so we need to build this
+  lookup structure holding the expected number of arguments too.
+
+  so the first element of a closure is it's description
+  struct. the second is the function pointer, and the third is
+  each held argument value.
+  the description struct is one i32 and an array of i32's
+  of N size. the first i32 holds the size of the array.
+  the second element, we interpret as an i32* and index it
+  relative to that. the size of the array just so happens to
+  be the number of held arguments plus two, the first
+  element of the array is the expected number of arguments of the
+  function held within the function pointer. the second
+  element of array is the size of the held elements structure itself.
+  then each subsequent
+  element of the array holds the offset to index the held elements
+  structure to get to each element.
+
+  we then have enough information to memmove
+  each element, because we know it's starting position
+  and the next element (only in packed structures)
+  occurs immediately after the end of the first element.
+  so the differece between the two offsets held within
+  the third and fourth integers is the size of the first
+  element, the difference between the offsets held within
+  the fourth and fifth integers is the size of the second
+  element, and so on, until we are talking about the last
+  element, whose size is the difference between the the
+  last offset and the total size. (which is an offset to the
+  end of the object.)
+  if we have enough information to memmove, then we can make
+  all the by value copies we need to then pass addresses of local
+  memory locations. which is the value that gets passed
+  when we know the precise type.
+  or if the elements size would fit inside a single word
+  we could move them in a register.
+
+  closure-literal (the-function-pointer, arg0, arg1, ..., argM)
+  {
+    // we might be able to get away with i16 as
+    // an optimization. but i32 would be safer.
+    {i32, {M + 2 x i32}}; // the type descriptor
+    (the-function-pointer);
+    {arg0; arg1; ...; argM;} // the structure of applied arguments
+  }
+
+  we place the size of the structure of applied arguments in the first
+  element of the type descriptor array.
+  we place the expected number of formal arguments in the second position
+  of the type descriptor array.
+  then we place the offset of each element in the structure into each subsequent
+  slot of the array.
+  then we place each argument into it's slot in the structure
+  of applied arguments.
+
+  this does in fact increase the overhead of storing a function
+  as a literal. we now have to store a description of the closure
+  itself for the runtime to pull each element out and into a local
+  alloca, to then pass each alloca into it's call position to then
+  call the function.
+  for the smallest case, where we consider a closure with no held
+  arguments. a minimum of three integers, plus the function
+  pointer, plus nothing.
+  which is not a ton of memory. it's only around four words.
+
+  for each argument we bind we have to store it's offset, so the
+  sizeof the structure increases by one integer plus the sizeof
+  the argument value itself, per argument we bind.
+  so, for arguments that fit in a register, we are doubling
+  or more the storage required. for arguments that must be
+  passed by making a local copy, we are adding more dataoverhead
+  but it gets better the larger the value is. (sometimes we need
+  to store a lot of references. look at the Environment class i wrote)
+
+  so, since the closure needs to be opaque and dynamically allocated
+  i don't think we can store the functions pointer directly within
+  the structure. like with how Vtables require a specific Vpointer
+  to get to the correct table at runtime, we need a table of
+  pointers to lookup against. we have a mapping of names to pointers
+  already with InternedStrings. so we could emit a mapping between
+  InternedStrings to Function Pointers, such that we as compiler
+  writers could emit a runtime query to this map, by extracting
+  the InternedString value from the opaque Closure, then
+  emitting a lookup, then we get back a function pointer whose
+  type we should know. (in the same way that we know a variables
+  type by looking up it's binding in the SymbolTable.)
+  constructing another lambda means emitting a binding to this table
+  of the lambda's internal name to it's pointer. then we can get a
+  pointer with a type via the runtime lookup
+*/
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------------------------------------
 
 
 

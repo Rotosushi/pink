@@ -12,9 +12,14 @@
 #include "Binop.hpp"
 
 Binop::Binop(const Location& loc, InternedString op, std::shared_ptr<Ast> left, std::shared_ptr<Ast> right)
-  : Ast(loc), op(op), left(left), right(right)
+  : Ast(Ast::Kind::Binop, loc), op(op), left(left), right(right)
 {
 
+}
+
+bool Binop::classof(const Ast* ast)
+{
+  return ast->GetKind() == Ast::Kind::Binop;
 }
 
 std::shared_ptr<Binop> Binop::Clone()
@@ -33,7 +38,7 @@ std::string Binop::ToString()
 
 Judgement Binop::GetypeV(const Environment& env)
 {
-  const BinopTable& binops = env.GetBoundBinops();
+  const BinopTable& binops = env.GetBinopTable();
 
   // find the binop
   std::optional<std::shared_ptr<BinopCodegenTable>> bound_binop = binops.Lookup(op);
@@ -90,22 +95,14 @@ Judgement Binop::GetypeV(const Environment& env)
 
 Judgement Binop::Codegen(const Environment& env)
 {
-  const BinopTable& binops = env.GetBoundBinops();
+  const BinopTable& binops = env.GetBinopTable();
 
   // find the binop
   std::optional<std::shared_ptr<BinopCodegenTable>> bound_binop = binops.Lookup(op);
 
   if (bound_binop)
   {
-    // Calls of Codegen return valid ValueLiterals,
-    // or valid PinkErrors.
-    // (in my mind, calls of an in-tree evaluation
-    //  procedure would return valid Objects,
-    //  or valid PinkErrors, but because llvm
-    //  provides it's own evaluation strategy,
-    //  LLJIT, we can leverage that instead of
-    //  nailing down a custon in-tree evaluator.
-    //  which is really hard.
+    // generate the left and right hand sides.
     Judgement left_jdgmt = left->Codegen(env);
 
     if (!left_jdgmt)
@@ -119,6 +116,10 @@ Judgement Binop::Codegen(const Environment& env)
     {
       return right_jdgmt;
     }
+
+    //
+    llvm::Value* left_value = nullptr;
+    llvm::Value* right_value = nullptr;
 
     std::shared_ptr<ValueLiteral> lvl = dynamic_cast<ValueLiteral>(left_jdgmt.term);
     std::shared_ptr<ValueLiteral> rvl = dynamic_cast<ValueLiteral>(right_jdgmt.term);

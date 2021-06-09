@@ -7,20 +7,23 @@
 #include "Location.hpp"
 #include "Judgement.hpp"
 #include "Environment.hpp"
-#include "Object.hpp"
+#include "Ast.hpp"
 
-class ValueLiteral : public Object
+class ValueLiteral : public Ast
 {
 private:
   llvm::Value* literal;
 
+  virtual Judgement GetypeV(const Environment& env) override;
 public:
   ValueLiteral(const Location& loc, llvm::Value* literal);
   virtual ~ValueLiteral() = default;
 
-  virtual std::shared_ptr<ValueLiteral> Clone() override;
-  virtual std::string ToString() override;
+  static bool  classof(const Ast* ast);
+  llvm::Value* GetLiteral();
 
-  virtual Judgement Getype(const Environment& env) override;
+  std::shared_ptr<ValueLiteral> Clone();
+  std::string ToString();
+
   virtual Judgement Codegen(const Environment& env) override;
 };

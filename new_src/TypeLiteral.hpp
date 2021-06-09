@@ -7,9 +7,9 @@
 #include "Location.hpp"
 #include "Judgement.hpp"
 #include "Environment.hpp"
-#include "Object.hpp"
+#include "Ast.hpp"
 
-class TypeLiteral : public Object
+class TypeLiteral : public Ast
 {
 private:
   llvm::Type* literal;
@@ -19,6 +19,7 @@ public:
   TypeLiteral(const Location& loc, llvm::Type* literal);
   virtual ~TypeLiteral() = default;
 
+  static bool classof(const Ast* ast);
   llvm::Type* GetLiteral();
 
   virtual std::shared_ptr<TypeLiteral> Clone() override;

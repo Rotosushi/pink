@@ -1,17 +1,10 @@
-#include <string>
-#include <memory>
+#include "llvm/Support/raw_ostream.h"
 
-#include "llvm/IR/Value.h"
-
-#include "Location.hpp"
-#include "Judgement.hpp"
-#include "Environment.hpp"
-#include "Object.hpp"
 #include "ValueLiteral.hpp"
 
 
 ValueLiteral::ValueLiteral(const Location& loc, llvm::Value* literal)
-  : Object(loc), literal(literal)
+  : Ast(Ast::Kind::ValueLiteral, loc), literal(literal)
 {
 
 }
@@ -23,18 +16,28 @@ std::shared_ptr<ValueLiteral> ValueLiteral::Clone()
 
 std::string ValueLiteral::ToString()
 {
-  std::string result;
-  llvm::raw_string_ostream handle(result);
-  literal->print(handle);
-  return handle.str();
+  std::string buf;
+  llvm::raw_string_ostream hdl(buf);
+  literal->print(hdl);
+  return hdl.str();
 }
 
-Judgement ValueLiteral::Getype(const Environment& env)
+bool ValueLiteral::classof(const Ast* ast)
 {
-  return std::make_shared<TypeLiteral>(loc, literal->getType());
+  return ast->GetKind() == Ast::Kind::ValueLiteral;
+}
+
+llvm::Value* ValueLiteral::GetLiteral()
+{
+  return literal;
+}
+
+Judgement ValueLiteral::GetypeV(const Environment& env)
+{
+  return Judgement(std::make_shared<TypeLiteral>(loc, literal->getType()));
 }
 
 Judgement ValueLiteral::Codegen(const Environment& env)
 {
-  return std::make_shared<ValueLiteral>(loc, literal);
+  return Judgement(std::make_shared<ValueLiteral>(loc, literal));
 }

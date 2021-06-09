@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <memory>
 
 #include "llvm/IR/DataLayout.h"
@@ -29,45 +30,57 @@
 class Environment
 {
 private:
-  // instead of making this variable a static local
-  // of the gensym procedure, i'm storing it in the
-  // Environment, which already does the, singleton
-  // variable shared between calls of the same procedure
-  // thing, that needs to happen between calls of gensym.
-  // (and everything else in the compiler.)
-  size_t                             lambda_count;
   // interning is so cool!
-  std::shared_ptr<StringInterner>    interned_names;
-  std::shared_ptr<StringInterner>    interned_operators;
+  const StringInterner&    interned_names;
+  const StringInterner&    interned_operators;
   // symboltable is a DenseMap of InternedStrings to shared_ptr<Ast>s
-  std::shared_ptr<SymbolTable>       symbols;
+  const SymbolTable&       symbols;
   // in fact all *Table's are DenseMaps.
-  std::shared_ptr<BinopTable>          binops;
-  std::shared_ptr<UnopTable>           unops;
+  const BinopTable&        binops;
+  const UnopTable&         unops;
   // and then the llvm stuff that we need.
-  llvm::StringRef                    target_triple;
-  std::shared_ptr<llvm::DataLayout>  data_layout;
-  std::shared_ptr<llvm::LLVMContext> context;
-  std::shared_ptr<llvm::Module>      module;
-  std::shared_ptr<llvm::IRBuilder>   irbuilder;
+  const std::string&       target_triple;
+  const llvm::DataLayout&  data_layout;
+  const llvm::LLVMContext& context;
+  const llvm::Module&      module;
+  const llvm::IRBuilder&   builder;
 
+  llvm::Value* BuildLoadAggregate(llvm::Value* pointer, llvm::Type* allocated_type);
+
+  void BuildStoreAggregate(llvm::Value* pointer, llvm::Constant* value);
 public:
-  Environment(std::shared_ptr<StringInterner>    interned_names,
-              std::shared_ptr<StringInterner>    interned_operators,
-              std::shared_ptr<SymbolTable>       symbols,
-              std::shared_ptr<BinopSet>          binops,
-              std::shared_ptr<UnopSet>           unops,
-              std::shared_ptr<llvm::LLVMContext> context,
-              std::shared_ptr<llvm::Module>      module,
-              std::shared_ptr<llvm::IRBuilder>   irbuilder);
+  Environment(const StringInterner&    interned_names,
+              const StringInterner&    interned_operators,
+              const SymbolTable&       symbols,
+              const BinopTable&        binops,
+              const UnopTable&         unops,
+              const std::string&       target_triple,
+              const llvm::DataLayout&  data_layout,
+              const llvm::LLVMContext& context,
+              const llvm::Module&      module,
+              const llvm::IRBuilder&   builder);
 
-  size_t&            GetLambdaCount();
-  StringInterner&    GetInternedNames();
-  StringInterner&    GetInternedOperators();
-  SymbolTable&       GetBoundSymbols();
-  BinopSet&          GetBoundBinops();
-  UnopSet&           GetBoundUnops();
-  llvm::LLVMContext& GetContext();
-  llvm::Module&      GetModule();
-  llvm::IRBuilder&   GetIRBuilder();
+  const StringInterner&    GetInternedNames();
+  const StringInterner&    GetInternedOperators();
+  const SymbolTable&       GetSymbolTable();
+  const BinopSet&          GetBinopTable();
+  const UnopSet&           GetUnopTable();
+  const std::string&       GetTargetTriple();
+  const llvm::DataLayout&  GetDataLayout();
+  const llvm::LLVMContext& GetContext();
+  const llvm::Module&      GetModule();
+  const llvm::IRBuilder&   GetIRBuilder();
+
+  // builds an allocation for the passed value
+  // returns the allocation point of the
+  // variable, i'm fairly sure this is a
+  // Pointer to the Alloca (the local stack of the fn)
+  llvm::AllocaInst* BuildLocalAlloca(llvm::Type* type, std::string& name, llvm::Function* fn);
+
+  // loads the value inside the alloca into a llvm::Value*
+  // this handles the case where the value is too big
+  // to fit inside a single load instruction.
+  llvm::Constant* BuildLoad(llvm::AllocaInst* alloc);
+
+  void BuildStore(llvm::AllocaInst* pointer, llvm::Constant* value);
 };

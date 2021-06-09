@@ -6,12 +6,12 @@
 #include "Location.hpp"
 #include "Judgement.hpp"
 #include "Environment.hpp"
-#include "Object.hpp"
+#include "Ast.hpp"
 
 /*
   represents an instance of a literal integer within our grammar.
 */
-class Integer : public Object
+class Integer : public Ast
 {
 private:
   int64_t value;
@@ -20,6 +20,8 @@ private:
 public:
   Integer(const Location& loc, int64_t value);
   virtual ~Integer() = default;
+
+  static bool classof(const Ast* ast);
 
   virtual std::shared_ptr<Integer> Clone() override;
   virtual std::string ToString() override;

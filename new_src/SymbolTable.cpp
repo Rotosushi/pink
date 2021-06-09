@@ -7,26 +7,40 @@
 #include "StringInterner.hpp"
 #include "SymbolTable.hpp"
 
-SymbolTable::SymbolTable() :
-  map(), outer(nullptr), scope(1)
-{}
-
-SymbolTable::SymbolTable(SymbolTable* outer)
+SymbolTable::SymbolTable()
+  : map(), outer(nullptr), scope(1), tmpcnt(0)
 {
-  // map is default constructed
-  this->outer = outer;
-  // construct a new scope, relative to the outer scope;
-  // containing all of the same scopes that have been built
-  // up in the outer set. (because each scope we step into
-  // adds another scope to the set, likewise each scope we
-  // step out of we remove from the set.)
-  this->scope = outer->scope.IntroduceNewScope(outer->scope);
+
 }
 
-SymbolTable* SymbolTable::GetParentSymbols()
-{}
+SymbolTable::SymbolTable(SymbolTable* outer)
+  : map(), outer(outer), scope(outer->scope.IntroduceNewScope(outer->scope)), tmpcnt(0)
+{
 
-std::optional<std::shared_ptr<Ast>> SymbolTable::LookupHelper(InternedString name, ScopeSet scope, std::shared_ptr<Ast> best_match, ScopeSet best_subset)
+}
+
+// generates a new string, appending, then incrementing, a number
+// to the prefix to help to maintain uniqueness.
+// i suppose a call to srand might be more unique?
+std::string SymbolTable::Gensym(std::string& prefix)
+{
+  std::string result = prefix;
+  result += std::to_string(tmpcnt);
+  tmpcnt++;
+  return result;
+}
+
+bool SymbolTable::IsGlobalScope()
+{
+  return outer == nullptr;
+}
+
+SymbolTable* SymbolTable::GetParentSymbolTable()
+{
+  return outer;
+}
+
+std::optional<llvm::AllocaInst*> SymbolTable::LookupHelper(InternedString name, ScopeSet scope, llvm::AllocaInst* best_match, ScopeSet best_subset)
 {
   if (best_match == nullptr)
   {
@@ -62,13 +76,13 @@ std::optional<std::shared_ptr<Ast>> SymbolTable::LookupHelper(InternedString nam
 
   if (outer != nullptr)
   {
-    // if we could search more, we will
+    // if we could search more, we do
     return outer->lookupHelper(name, scope, best_match, best_subset);
   }
   else if (best_match != nullptr)
   {
     // we have our best match, return it
-    return std::optional<std::shared_ptr<Ast>>(best_match);
+    return std::optional<llvm::AllocaInst*>(best_match);
   }
   else
   {
@@ -77,24 +91,22 @@ std::optional<std::shared_ptr<Ast>> SymbolTable::LookupHelper(InternedString nam
   }
 }
 
-std::optional<Ast*> SymbolTable::Lookup(InternedString name, ScopeSet scope)
+std::optional<llvm::AllocaInst*> SymbolTable::Lookup(InternedString name, ScopeSet scope)
 {
   return lookupHelper(name, scope, nullptr, ScopeSet());
 }
 
-std::optional<Ast*> SymbolTable::LookupLocal(InternedString name)
+std::optional<llvm::AllocaInst*> SymbolTable::LookupLocal(InternedString name)
 {
   auto itr = map.find(name);
 
   if (itr == map.end())
   {
-    return std::optional<std::shared_ptr<Ast>>();
+    return std::optional<llvm::AllocaInst*>();
   }
   else
   {
-    // as far as i can tell, dereferencing iterators
-    // should always return a value type.
-    return std::optional<std::shared_ptr<Ast>>(itr->getSecond());
+    return std::optional<llvm::AllocaInst*>(itr->getSecond());
   }
 }
 
@@ -104,7 +116,7 @@ void SymbolTable::Bind(InternedString name, std::shared_ptr<Ast> value)
 
   if (result.second == false)
   {
-    FatalError("Could no insert symbol into table.", __FILE__, __LINE__);
+    FatalError("Could not insert symbol into table.", __FILE__, __LINE__);
   }
 }
 
