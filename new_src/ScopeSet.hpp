@@ -31,25 +31,33 @@
 
   lambda ScopeSet [0000....0011]
 */
-#include <cstdint>
+#include <vector>
 
+namespace pink {
 
 class ScopeSet
 {
 private:
-  uint32_t set;
+  std::vector<bool> set; // TODO refactor this to use a vector of bools
 
-  uint32_t MostSigBitIndex();
+  std::size_t MostSigBitIndex(); // this function becomes O(N) in the straightforward case.
+
+  // we hid this constructor because whenever we are
+  // introducing a new scope in the consumer code
+  // we are doing it with respect to an existing scope.
+  // even lambda's get built in the global scope. thus, their
+  // scope designation is one past the global scope.
+  // inner lambda's are the same discussion, one level deeper.
+  // so all we have to implement is this 'one-past-ness' against
+  // the knowns default of Global.
+  ScopeSet(std::vector<bool>& set);
 public:
   ScopeSet();
-  ScopeSet(uint32_t set);
+  ScopeSet(ScopeSet& set); // builds this scope relative to the given scope.
 
-  bool operator<(ScopeSet rhs);
-  bool operator<=(ScopeSet rhs);
+  ScopeSet IntroduceNewScope(ScopeSet& outer);
 
-  bool IsFull();
-
-  ScopeSet IntroduceNewScope(ScopeSet outer);
-
-  ScopeSet Subset(ScopeSet rhs);
+  ScopeSet Subset(ScopeSet& rhs);
 };
+
+}

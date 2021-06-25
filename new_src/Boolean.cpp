@@ -13,6 +13,14 @@
 #include "ValueLiteral.hpp"
 #include "Boolean.hpp"
 
+namespace pink {
+
+Boolean::Boolean(const Location& loc)
+  : Ast(Ast::Kind::Boolean, loc), value(false)
+{
+
+}
+
 Boolean::Boolean(const Location& loc, bool val)
   : Ast(Ast::Kind::Boolean, loc), value(val)
 {
@@ -43,13 +51,13 @@ std::string Boolean::ToString()
 
 Judgement Boolean::GetypeV(const Environment& env)
 {
-  return std::make_shared<TypeLiteral>(loc, llvm::Type::getInt1Ty(env.GetContext());
+  return std::make_shared<TypeLiteral>(loc, env.GetBooleanType());
 }
 
 Judgement Boolean::Codegen(const Environment& env)
 {
   Judgement result;
-  llvm::Type* BooleanType = llvm::Type::getInt1Ty(env.GetContext());
+  llvm::Type* BooleanType = env.GetBooleanType();
 
   if (value)
   {
@@ -61,4 +69,6 @@ Judgement Boolean::Codegen(const Environment& env)
   }
 
   return result;
+}
+
 }

@@ -3,14 +3,14 @@
 
 #include "Location.h"
 #include "Utilities.hpp"
-#include "PinkError.h"
+#include "Error.h"
 
 /*
   https://www.clear.rice.edu/comp506/Labs/IBM-Note.pdf
 
   inspiration for this subroutine! thanks :)
 */
-void PrintError(FILE* out, PinkError* perr, const char* errtxt)
+void PrintError(FILE* out, Error* perr, const char* errtxt)
 {
   if (!out)
     FatalError("NULL ouput file", __FILE__, __LINE__);

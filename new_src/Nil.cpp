@@ -9,6 +9,8 @@
 #include "Environment.hpp"
 #include "Object.hpp"
 
+namespace pink {
+
 Nil::Nil(const Location& loc)
   : Ast(Ast::Kind::Nil, loc)
 {
@@ -32,12 +34,12 @@ std::string Nil::ToString()
 
 Judgement Nil::Getype(const Environment& env)
 {
-  llvm::Type* NilType = llvm::Type::getInt1Ty(env.GetContext());
-  return Judgement(std::make_shared<TypeLiteral>(loc, NilType));
+  return Judgement(std::make_shared<TypeLiteral>(loc, env.GetNilType()));
 }
 
 Judgement Nil::Codegen(const Environment& env)
 {
-  llvm::Type* NilType = llvm::Type::getInt1Ty(env.GetContext());
-  return Judgement(std::make_shared<ValueLiteral>(loc, llvm::ConstantInt::get(NilType, 0)));
+  return Judgement(std::make_shared<ValueLiteral>(loc, llvm::ConstantInt::get(env.GetNilType(), 0)));
+}
+
 }

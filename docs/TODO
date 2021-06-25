@@ -1,4 +1,4 @@
-1) all error messages returned through the PinkError struct
+1) all error messages returned through the Error struct
    need to be made into dynamic allocations, so we can uniformly
    free them without possibly freeing static memory.
 

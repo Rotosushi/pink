@@ -8,6 +8,8 @@
 #include "Ast.hpp"
 #include "Variable.hpp"
 
+namespace pink {
+
 Variable::Variable(const Location& loc, InternedString name, ScopeSet scope)
   : Ast(Ast::Kind::Variable, loc), name(name), scope(scope)
 {
@@ -43,7 +45,7 @@ Judgement Variable::GetypeV(const Environment& env)
   }
   else
   {
-    result = Judgement(PinkError("Variable [" + std::string(name) + "] not bound in Environment.", loc));
+    result = Judgement(Error("Variable [" + std::string(name) + "] not bound in Environment.", loc));
   }
 
   return result;
@@ -66,14 +68,29 @@ Judgement Variable::Codegen(const Environment& env)
 
   if (bound)
   {
-    // this should return a pointer to the location, and we get to
-    // treat the thing returned from a name as a pointer.
-    // we will now have to delegate the loading of the variable to
-    // the user of the variable.
-    return Judgement(std::make_shared<ValueLiteral>(loc, llvm::cast<llvm::Value>(*bound)));
+    // our table binds alloca's, because all local names
+    // must be stored on the stack to be assignable.
+    // so we first emit a load to convert the alloca ponter
+    // to a constant value holding the data from the alloca.
+    // for simple types this means loading the cell into a
+    // register for working on. for larger values we have to
+    // talk about multiple loads.
+    // to simplify every location which needs to load values
+    // we defined a recursive load procedure which should handle
+    // any composite made of structs and arrays. unions are just
+    // their largest struct. and are handled as such.
+
+    // For now, See the Assignment.hpp file for more details
+    // on why, but we are returning the address of the local
+    // allocation when we encounter a variable name now,
+    // TL;DR to implement Assignment as a true binary operator.
+    //llvm::Constant* loaded_value = env.BuildLoad((*bound));
+    return Judgement(std::make_shared<ValueLiteral>(loc, llvm::cast<Value>(*bound)));
   }
   else
   {
-    return Judgement(PinkError("Variable [" + std::string(name) + "] not bound in Environment.", loc));
+    return Judgement(Error("Variable [" + std::string(name) + "] not bound in Environment.", loc));
   }
+}
+
 }

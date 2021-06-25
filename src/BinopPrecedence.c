@@ -49,7 +49,7 @@ BinopPrecAssoc* FindBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString o
   if (BPtbl == NULL || BPtbl->table == NULL)
     return (BinopPrecAssoc*)NULL;
 
-  int hash = (int)(op);
+  int hash = static_cast<int>(op);
   hash %= BPtbl->num_buckets;
 
   BPElem *cur = BPtbl->table[hash];
@@ -67,12 +67,12 @@ BinopPrecAssoc* FindBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString o
   return (BinopPrecAssoc*)NULL;
 }
 
-BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, int prec, Associativity assoc)
+BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, unsigned prec, Associativity assoc)
 {
   if (BPtbl == NULL || BPtbl->table == NULL)
     return (BinopPrecAssoc*)NULL;
 
-  int hash = (int)(op);
+  int hash = static_cast<int>(op);
   hash %= BPtbl->num_buckets;
 
   BPElem *head = BPtbl->table[hash];

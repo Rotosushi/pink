@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "PinkError.h"
+#include "Error.h"
 #include "ScalarType.h"
 #include "ProcType.h"
 #include "Type.h"

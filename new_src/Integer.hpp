@@ -11,6 +11,9 @@
 /*
   represents an instance of a literal integer within our grammar.
 */
+
+namespace pink {
+
 class Integer : public Ast
 {
 private:
@@ -18,6 +21,7 @@ private:
 
   virtual Judgement GetypeV(const Environment& env) override;
 public:
+  Integer(const Location& loc); // default value is zero
   Integer(const Location& loc, int64_t value);
   virtual ~Integer() = default;
 
@@ -29,3 +33,5 @@ public:
 
   virtual Judgement Codegen(const Environment& env) override;
 };
+
+}

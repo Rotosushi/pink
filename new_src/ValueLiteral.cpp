@@ -2,6 +2,7 @@
 
 #include "ValueLiteral.hpp"
 
+namespace pink {
 
 ValueLiteral::ValueLiteral(const Location& loc, llvm::Value* literal)
   : Ast(Ast::Kind::ValueLiteral, loc), literal(literal)
@@ -40,4 +41,6 @@ Judgement ValueLiteral::GetypeV(const Environment& env)
 Judgement ValueLiteral::Codegen(const Environment& env)
 {
   return Judgement(std::make_shared<ValueLiteral>(loc, literal));
+}
+
 }

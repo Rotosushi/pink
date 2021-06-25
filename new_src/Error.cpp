@@ -2,12 +2,14 @@
 #include <string>
 
 #include "Location.hpp"
-#include "PinkError.hpp"
+#include "Error.hpp"
 
-PinkError::PinkError(std::string& dsc, Location& loc)
+namespace pink {
+
+Error::Error(std::string& dsc, Location& loc)
+  : dsc(dsc), loc(loc)
 {
-  this->dsc = dsc;
-  this->loc = loc;
+  
 }
 
 /*
@@ -15,7 +17,7 @@ PinkError::PinkError(std::string& dsc, Location& loc)
 
   inspiration for this subroutine! thanks :)
 */
-void PinkError::PrintError(std::ostream& out, const std::string& errtxt)
+void Error::PrintError(std::ostream& out, const std::string& errtxt)
 {
   std::string result;
 
@@ -40,4 +42,6 @@ void FatalError(std::string& msg, const std::string& filename, const size_t line
 {
   std::cerr << msg + "[file:" + filename + " line:" std::to_string(linenum) + "]\n";
   exit(1);
+}
+
 }

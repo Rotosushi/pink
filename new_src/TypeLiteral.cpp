@@ -10,6 +10,8 @@
 #include "Ast.hpp"
 #include "TypeLiteral.hpp"
 
+namespace pink {
+
 TypeLiteral::TypeLiteral(const Location& loc, llvm::Type* literal)
   : Ast(Ast::Kind::TypeLiteral, loc), literal(literal)
 {
@@ -54,4 +56,6 @@ Judgement TypeLiteral::GetypeV(const Environment& env)
 Judgement TypeLiteral::Codegen(const Environment& env)
 {
   return std::make_shared<TypeLiteral>(loc, literal);
+}
+
 }

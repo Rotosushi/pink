@@ -7,6 +7,8 @@
 #include "StringInterner.hpp"
 #include "SymbolTable.hpp"
 
+namespace pink {
+
 SymbolTable::SymbolTable()
   : map(), outer(nullptr), scope(1), tmpcnt(0)
 {
@@ -19,20 +21,14 @@ SymbolTable::SymbolTable(SymbolTable* outer)
 
 }
 
-// generates a new string, appending, then incrementing, a number
-// to the prefix to help to maintain uniqueness.
-// i suppose a call to srand might be more unique?
-std::string SymbolTable::Gensym(std::string& prefix)
-{
-  std::string result = prefix;
-  result += std::to_string(tmpcnt);
-  tmpcnt++;
-  return result;
-}
-
 bool SymbolTable::IsGlobalScope()
 {
   return outer == nullptr;
+}
+
+ScopeSet SymbolTable::GetScope()
+{
+  return scope;
 }
 
 SymbolTable* SymbolTable::GetParentSymbolTable()
@@ -128,4 +124,6 @@ void SymbolTable::Unbind(InternedString name)
   {
     FatalError("Could not erase name from table.", __FILE__, __LINE__);
   }
+}
+
 }

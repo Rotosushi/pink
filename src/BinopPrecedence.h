@@ -7,8 +7,8 @@
 typedef struct BinopPrecAssoc
 {
   InternedString op;
-  int precedence;
-  Associativity associativity;
+  unsigned       precedence;
+  Associativity  associativity;
 } BinopPrecAssoc;
 
 typedef struct BPElem
@@ -27,6 +27,6 @@ typedef struct BinopPrecedenceTable
 BinopPrecedenceTable* CreateBinopPrecedenceTable();
 void                  DestroyBinopPrecedenceTable(BinopPrecedenceTable* BPtbl);
 BinopPrecAssoc* FindBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op);
-BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, int prec, Associativity assoc);
+BinopPrecAssoc* InsertBinopPrecAssoc(BinopPrecedenceTable* BPtbl, InternedString op, unsigned prec, Associativity assoc);
 
 #endif // !BINOPPRECEDENCE_H

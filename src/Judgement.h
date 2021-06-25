@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 struct Ast;
-#include "PinkError.h"
+#include "Error.h"
 
 // type Judgement = Success term | Failure error
 typedef struct Judgement
@@ -11,7 +11,7 @@ typedef struct Judgement
   bool success;
   union {
     struct Ast* term;
-    PinkError   error;
+    Error   error;
   };
 } Judgement;
 

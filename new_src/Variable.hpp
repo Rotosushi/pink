@@ -7,6 +7,7 @@
 #include "Environment.hpp"
 #include "Ast.hpp"
 
+namespace pink {
 
 class Variable : public Ast
 {
@@ -37,3 +38,5 @@ public:
   // algorithm cleaner to express in the code.
   virtual Judgement Codegen(const Environement& env) override;
 };
+
+}

@@ -8,6 +8,8 @@
 #include "StringInterner.hpp"
 #include "UnopEliminatorTable.hpp"
 
+namespace pink {
+
 class UnopTable
 {
 private:
@@ -18,3 +20,5 @@ public:
   void RegisterUnop(InternedString operator, std::shared_ptr<UnopLiteralTable> eliminators);
   std::optional<std::shared_ptr<UnopLiteralTable>> Lookup(InternedString operator);
 };
+
+}

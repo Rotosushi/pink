@@ -8,6 +8,8 @@
 #include "Environment.hpp"
 #include "Ast.hpp"
 
+namespace pink {
+
 class Application : public Ast
 {
 private:
@@ -26,3 +28,5 @@ public:
 
   virtual Judgement Codegen(const Environment& env) override;
 };
+
+}

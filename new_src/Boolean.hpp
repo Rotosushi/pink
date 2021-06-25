@@ -7,6 +7,7 @@
 #include "Environment.hpp"
 #include "Ast.hpp"
 
+namespace pink {
 /*
   represents a literal boolean within
   our grammar.
@@ -18,6 +19,7 @@ private:
 
   virtual Judgement GetypeV(const Environment& env) override;
 public:
+  Boolean(const Location& loc);
   Boolean(const Location& loc, bool val);
   virtual ~Boolean() = default;
 
@@ -29,3 +31,5 @@ public:
 
   virtual Judgement Codegen(const Environment& env) override;
 };
+
+}

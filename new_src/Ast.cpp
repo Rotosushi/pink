@@ -2,6 +2,8 @@
 #include "TypeLiteral.hpp"
 #include "Ast.hpp"
 
+namespace pink {
+
 Ast::Ast(const AstKind kind, const Location& loc) :
   loc(loc), cached_type(nullptr), kind(kind)
 {
@@ -33,4 +35,6 @@ Judgement Ast::Getype(const Environment& env)
 
     return result;
   }
+}
+
 }

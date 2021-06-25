@@ -9,7 +9,7 @@
 #include "Judgement.hpp"
 #include "Environment.hpp"
 
-
+namespace pink {
 
 class Ast
 {
@@ -38,17 +38,22 @@ protected:
 // so maybe object is truly useless if we are not defining our own
 // evaluator.
 public:
-  // this spot circularly/recursively requires me to know all of
+  // this spot circularly/recursively requires knowledge of all
   // the classes in the heirarchy a-priori to definition.
+  // this is the flag that tells llvm which class is active
+  // when we see an Ast*, this is used via 'classof' by llvm
+  // to implement llvm::cast<>(), llvm::isa<>(), llvm::dyn_cast<>()
   enum Kind
   {
-  // Language Terms for Typing and Codegeneration
+  // Language Terms for Typing and Code generation
+    Empty,
     TypeLiteral,
     ValueLiteral,
   // Symbolic Computation
     Variable,
     Bind,
     Application,
+    Assignment,
     // Conditional,
     // Iteration,
     // RunFirstIteration,
@@ -101,3 +106,5 @@ public:
   Judgement Getype(const Environment& env);
   virtual Judgement Codegen(const Environment& env) = 0;
 };
+
+}

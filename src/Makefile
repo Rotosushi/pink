@@ -7,7 +7,7 @@ StringInterner.o Variable.o Bind.o Binop.o Unop.o BinopEliminators.o \
 UnopEliminators.o BinopPrecedence.o BinopTable.o UnopTable.o Nil.o \
 Integer.o Boolean.o Lambda.o PartiallyAppliedLambda.o ScalarType.o ProcType.o \
 Type.o TypeLiteral.o Object.o Ast.o TypeInterner.o Environment.o \
-SymbolTable.o ScopeSet.o PinkError.o Token.o Lexer.o Parser.o \
+SymbolTable.o ScopeSet.o Error.o Token.o Lexer.o Parser.o \
 PinkKernel.o Repl.o Utilities.o Pink.o -o pink
 
 
@@ -19,6 +19,9 @@ clean:
 
 debug: pink
 	gdb -tui pink
+
+llvm:
+
 
 DataStructures: StringInterner TypeInterner SymbolTable ScopeSet BinopEliminators BinopTable BinopPrecedence UnopEliminators UnopTable Environment
 
@@ -130,10 +133,10 @@ re2c: Lexer.re
 Parser:
 	${CC} ${CARGS} -c Parser.c -o Parser.o
 
-Aux: PinkError PinkKernel Repl Utils
+Aux: Error PinkKernel Repl Utils
 
-PinkError:
-	${CC} ${CARGS} -c PinkError.c -o PinkError.o
+Error:
+	${CC} ${CARGS} -c Error.c -o Error.o
 
 PinkKernel:
 	${CC} ${CARGS} -c PinkKernel.c -o PinkKernel.o

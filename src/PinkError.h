@@ -1,5 +1,5 @@
-#ifndef PINKERROR_H
-#define PINKERROR_H
+#ifndef Error_H
+#define Error_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -7,14 +7,14 @@
 
 #include "Location.h"
 
-typedef struct PinkError
+typedef struct Error
 {
   Location loc;
   char*    dsc;
-} PinkError;
+} Error;
 
 
-void PrintError(FILE* out, PinkError* err, const char* errtxt);
+void PrintError(FILE* out, Error* err, const char* errtxt);
 void FatalError(const char* msg, const char* file, int line);
 
-#endif // !PINKERROR_H
+#endif // !Error_H

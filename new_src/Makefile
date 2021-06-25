@@ -3,9 +3,10 @@ COMPILER_ARGS = -g -std=c++17 -I${HOME}/Development/Source/llvm-12/include
 LINKER_ARGS   = -g -std=c++17 -L${HOME}/Development/Source/llvm-12/lib
 
 OBJECT_FILES  = Location.o Judgement.o ScopeSet.o StringInterner.o \
-PinkError.o \
-Ast.o \
-Object.o Nil.o Boolean.o Integer.o TypeLiteral.o ValueLiteral.o
+BinopTable.o BinopLiteralTable.o BinopPrecedenceTable.o UnopTable.o UnopLiteralTable.o \
+SymbolTable.o Environment.o Error.o Kernel.o Gensym.o Lexer.o Parser.o\
+Ast.o Variable.o Assignment.o Application.o Bind.o Binop.o Unop.o \
+Nil.o Boolean.o Integer.o Pointer.o Lambda.o Closure.o TypeLiteral.o ValueLiteral.o
 
 
 Pink: SymbolicComputation Objects DataStructures Frontend Aux Main
@@ -17,7 +18,7 @@ clean:
 debug: Pink
 	gdb -tui Pink
 
-Objects: Nil Boolean Integer Argument Lambda Closure TypeLiteral ValueLiteral
+Objects: Nil Boolean Integer Lambda Closure TypeLiteral ValueLiteral
 
 Nil:
 	${CC} ${COMPILER_ARGS} -c Nil.cpp -o Nil.o
@@ -27,9 +28,6 @@ Boolean:
 
 Integer:
 	${CC} ${COMPILER_ARGS} -c Integer.cpp -o Integer.o
-
-Argument:
-	${CC} ${COMPILER_ARGS} -c Argument.cpp -o Argument.o
 
 Lambda:
 	${CC} ${COMPILER_ARGS} -c Lambda.cpp -o Lambda.o
@@ -45,13 +43,16 @@ ValueLiteral:
 
 
 
-SymbolicComputation: Ast Variable Application Bind Binop Unop
+SymbolicComputation: Ast Variable Assignment Application Bind Binop Unop
 
 Ast:
 	${CC} ${COMPILER_ARGS} -c Ast.cpp -o Ast.o
 
 Variable:
 	${CC} ${COMPILER_ARGS} -c Variable.cpp -o Variable.o
+
+Assignment:
+	${CC} ${COMPILER_ARGS} -c Assignment.cpp -o Assignment.o
 
 Application:
 	${CC} ${COMPILER_ARGS} -c Application.cpp -o Application.o
@@ -104,15 +105,21 @@ Environment:
 	${CC} ${COMPIELR_ARGS} -c Environment.cpp -o Environment.o
 
 
-Fontend:
+Fontend: Lexer Parser
 
+Lexer: re2c
+	${CC} ${COMPILER_ARGS} -c Lexer.cpp -o Lexer.o
 
+re2c:
+	re2c -W --input custom Lexer.re -o Lexer.cpp
 
+Parser:
+	${CC} ${COMPILER_ARGS} -c Parser.cpp -o Parser.o
 
-Aux: PinkError PinkKernel
+Aux: Error PinkKernel
 
-PinkError:
-	${CC} ${COMPILER_ARGS} -c PinkError.cpp -o PinkError.o
+Error:
+	${CC} ${COMPILER_ARGS} -c Error.cpp -o Error.o
 
 PinkKernel:
 	${CC} ${COMPILER_ARGS} -c PinkKernel.cpp -o PinkKernel.o

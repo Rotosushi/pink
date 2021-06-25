@@ -8,6 +8,7 @@
 #include "StringInterner.hpp"
 #include "BinopCodegen.hpp"
 
+namespace pink {
 
 class BinopTable
 {
@@ -18,3 +19,5 @@ public:
   void RegisterBinop(InternedString operator, std::shared_ptr<BinopCodegenTable> eliminators);
   std::optional<std::shared_ptr<BinopCodegenTable>> Lookup(InternedString operator);
 };
+
+}

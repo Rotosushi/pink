@@ -11,6 +11,14 @@
 #include "Environment.hpp"
 #include "Object.hpp"
 
+namespace pink {
+
+Integer::Integer(const Location& loc)
+  : Ast(Ast::Kind::Integer, loc), value(0)
+{
+
+}
+
 Integer::Integer(const Location& loc, int64_t value)
   : Ast(Ast::Kind::Integer, loc), value(value)
 {
@@ -34,11 +42,12 @@ std::string Integer::ToString()
 
 Judgement Integer::GetypeV(const Environment& env)
 {
-  return Judgement(std::make_shared<TypeLiteral>(loc, llvm::Type::getInt64Ty(env.GetContext())));
+  return Judgement(std::make_shared<TypeLiteral>(loc, env.GetIntegerType());
 }
 
 Judgement Integer::Codegen(const Environment& env)
 {
-  llvm::Type* IntegerType = llvm::Type::getInt64Ty(env.GetContext());
-  return Judgement(std::make_shared<ValueLiteral>(loc, llvm::ConstantInt::get(IntegerType, value)));
+  return Judgement(std::make_shared<ValueLiteral>(loc, llvm::ConstantInt::get(env.GetIntegerType(), value)));
+}
+
 }

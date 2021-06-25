@@ -10,6 +10,8 @@
 #include "ScopeSet.hpp"
 #include "StringInterner.hpp"
 
+namespace pink {
+
 class SymbolTable
 {
 private:
@@ -29,8 +31,8 @@ public:
   SymbolTable();
   SymbolTable(SymbolTable* outer);
 
-  std::string  Gensym(std::string& prefix = "");
   bool         IsGlobalScope();
+  ScopeSet     GetScope();
   SymbolTable* GetParentSymbolTable();
 
   std::optional<llvm::AllocaInst*> Lookup(InternedString name, ScopeSet scope); // recursive lookup
@@ -39,3 +41,5 @@ public:
   void Bind(InternedString name, llvm::AllocaInst*);
   void Unbind(InternedString name);
 };
+
+}

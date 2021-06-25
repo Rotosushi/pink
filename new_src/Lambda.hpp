@@ -249,7 +249,6 @@ all of this boild down to,
 #include "Location.hpp"
 #include "Judgement.hpp"
 #include "Environment.hpp"
-#include "Argument.hpp"
 #include "Ast.hpp"
 
 
@@ -293,25 +292,150 @@ all of this boild down to,
   which come together to make up the full argument
   list.
 
+  because we are always formally building applications
+  from closure objects, we can consider only a single
+  form of application. otherwise we would need a form
+  for closures and a form for procedure calls to not
+  closures. we can consider applications that
+  provide all formal arguments to be equivalent to
+  C procedure calls, and we can optimize them the
+  same, (i think that's how it works at least)
+
+  thereform only exactly where we need to, will the
+  compiler emit a heap allocation.
+
+  now, do we place these closures into an invalid
+  state after their frist call? this makes storage
+  of closures inconveinent, as we need to rebuild
+  everytime we apply if we want to use the stored closure
+  again, so i think this means we want to accept whatever
+  semantics arise from the opposite choice, namely
+  that we free them only when absolutely necessary.
+  for a procedure that is local to a scope and never
+  has it's lifetime extended via. returning the procedure
+  as the result value, then we can insert a free of the
+  closure at the end of the scope, then each call to
+  this procedure will allocate a proper closure, and then
+  deallocate it. (and if the lambda is used exclusively
+  in this way, then we can garuntee that the defining
+  scope will always be alive during the evaluation of
+  the lambda, and more optimizations can be used.)
+  (we could elide by-value captures/arguments and use stack
+   addresses to get to constant local data for instance.
+   i.e. in this case we can consider the implicit capture to
+   be equivalent to a dynamically scoped reference.)
+
+  should the lifetime be extended, by either returning
+  the closure as a result, or storing the closure in
+  dynamic memory, the closures lifetime is extended to be
+  equivalent to the lifetime of the storage cell.
+
+  (perhaps we say, a reference to the object is non-owning?
+   then storing a reference to a closure in dynamic memory
+   would -have- to be an error, because the lifetime is
+   explicitly not extended, and thus the reference would be
+   pointing to garbage as soon as the local scope surrounding
+   the assignment statement was fully evaluated.)
+
+  if we receive some dynamic memory and thus take ownership
+  of it's memory, (by the nature of us having the only living
+  reference to the closure after the defining scope exits)
+  then unless the lifetime is extended we are free to
+  free the closure at the end of this scope. and again
+  the only current lifetime extension methods are
+  return values, and dynamic storage.
+  (if we conside an array of lambda literals, we are considering
+   an array of pointers to dynamic memory. but conceptually
+   we are storing the procedure literal as a 'value' within the
+   array. so the lifetime of the pointer is semantically equal
+   to the lifetime of it's referent memory, it is in essence an
+   owning pointer. sort of equivalent to a unique_ptr.)
+
+  we can thus accurately, implicitly allocate and free lambda objects,
+  and truly all objects that are dynamically allocated
+  as long as their lifetimes are only ever extended via return
+  values. because then it becomes a question of if the dynamic
+  value is being returned, or being assigned into a value that
+  is being returned. (we kinda already know which values we are
+  assigning to the return value, as it's explicit/implicit in the
+  syntax of the language itself.)
+
+  the only tricky part is if the lifetime is extended by means of
+  assignment into other dynamic memory. semantically we are talking
+  about the same thing, this dynamic memory now manages the lifetime
+  of the memory of the closure. this seems to only add a single
+  layer of scomplication, but it actually adds an infinite set of
+  layers of complexity, in that we can consider assigning this
+  reference to dynamic memory into arbitrarily many other dynamic
+  allocations, and then the memory has to have it's lifetime tied
+  to all instances of a reference to it. which again, could be
+  any number. so, truly to model this, we could use the semantics
+  of a shared_ptr. when we are in the case of extension via return
+  values, the shared_ptr will fluxuate between one and two references
+  to the closure as we walk from getting the first reference, to
+  assigning it to a return location, and having two references, to
+  then retuning out and freeing the first reference, back to one living
+  reference. and so on until we enter the case where we don't store
+  another reference whereby on the final deallocation of the reference
+  we are in the case where we dont have any living reference and we can
+  free the closure. and shared_ptr was built explicitly for the case where
+  we have arbitrarily many dynamic references, because each assigned reference
+  increments the number of shared_ptrs to the same memory, and each
+  free of the other dynamic reference similarly decrements the number
+  of shared references, and so we can accurately track the number of
+  living references and free when it reaches zero. which is thus allowed
+  to either happen, or never happen depending upon the syntax entered by
+  the programmer (which is good, because we want to expose engineering choices)
+
+  there is a wrench in this plan in that shared_ptrs are built atop
+  the OOP structures of c++ and we have no such structures defined.
+  however, we do know that many of the structures of OOP are built
+  atop the fact that all types can be built by calling a procedure
+  with a knowable name to build values of said type, (constructors),
+  and a procedure that has a knowable name for destroying values of
+  said type (destructors). if we simply implicitly define these procedures
+  for all types within the programming language we will have access
+  to the primitive semantics atop which we can express uniform construction
+  and destruction. the big thing with OOP is defining objects with members
+  who are also objects, via inheritance, which can then be leveraged to
+  define polymorphic procedures. however polymorphic calling, and
+  defining objects with inheritance do not necessarily have to go together,
+  as was proven by CLOS. so, what if we consider instead that any type can be
+  built by a special procedure which is named the same thing as the type itself,
+  which takes by default an argument list which is equivalent to it's member
+  list. (this will be expanded in the future to a programmer defined overload set.)
+  and destroyed via a procedure with a name that has a similar naming
+  convention. both take the object to be built as a reference parameter in
+  the first position. thus we can call this procedure to build objects
+  on the stack or the heap.
+
+  and we can define constructors so that they call the constructors
+  of the parent type, before they call the constructors of the
+  child type, when we define single inheritance for our types.
+
+
 */
 
 /*
   represents the definition of an anonymous function
   within our grammar.
 */
+
+namespace pink {
+
 class Lambda : public Ast
 {
 private:
   // ret, arg0, arg1, ..., argN
   // std::vector<llvm::Type*> presented_fn_type;
   llvm::AttributeList   lambda_attributes;
-  std::vector<Argument> formal_args;
+  std::vector<std::pair<InternedString, llvm::Type*>> formal_arguments;
   std::unique_ptr<SymbolTable> symbols;
   std::shared_ptr<Ast> body;
 
   virtual Judgement GetypeV(const Environment& env) override;
 public:
-  Lambda(const Location& loc, std::vector<Argument>& formal_args, SymbolTable* outer_symbols, std::shared_ptr<Ast> body);
+  Lambda(const Location& loc, std::vector<std::pair<InternedString, llvm::Type*>>& formal_args, SymbolTable* outer_symbols, std::shared_ptr<Ast> body);
   virtual ~Lambda() = default;
 
   static bool classof(const Ast* ast);
@@ -319,25 +443,7 @@ public:
   virtual std::shared_ptr<Lambda> Clone() override;
   virtual std::string ToString() override;
 
-  /*
-    After a call to Getype,
-    the FunctionType* can be filled in
-
-    After a call to Codegen,
-    the Function* can be filled in.
-  */
-
-  // the real trick to codgen with LLVM
-  // is to notice that we are maintaining
-  // our symboltable with the bindings
-  // contained within local scopes.
-  // these hold llvm::Value*'s that can
-  // be passed into futher instructions
-  // that we tell llvm to build- and that is
-  // what manages the flow of information
-  // from one usage of a value to the next.
-  // an instruction is built by passing in
-  // the Value's it operates upon. that instruction
-  // then becomes a User of that Value.
   virtual Judgement Codegen(const Environment& env) override;
 };
+
+}

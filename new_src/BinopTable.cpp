@@ -8,6 +8,7 @@
 #include "BinopEliminators.hpp"
 #include "BinopTable.hpp"
 
+namespace pink {
 
 void BinopTable::RegisterBinop(InternedString operator, std::shared_ptr<BinopEliminatorTable> eliminators)
 {
@@ -26,4 +27,6 @@ std::optional<std::shared_ptr<BinopEliminator>> BinopTable::Lookup(InternedStrin
   {
     return std::optional<std::shared_ptr<BinopEliminators>>(*itr);
   }
+}
+
 }

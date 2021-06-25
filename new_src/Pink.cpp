@@ -484,7 +484,7 @@ int main(int argc, char** argv)
     however, LLJIT returns the address of the symbol only.
     which is fine, we can cast the address to a type, if
     we know it. so, when we access a value that we know to
-    be Boolean, when we get the address from the JIT we cam
+    be Boolean, when we get the address from the JIT we can
     cast the address to be the address of a boolean value,
     unwrap it, and boom we have the value to return or
     modify as we wish. we just need a function that

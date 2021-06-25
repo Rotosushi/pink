@@ -9,6 +9,8 @@
 #include "UnopLiteralTable.hpp"
 #include "UnopTable.h"
 
+namespace pink {
+
 UnopTable::UnopTable()
 {
 
@@ -31,4 +33,6 @@ std::optional<std::shared_ptr<UnopLiteralTable>> UnopTable::Lookup(InternedStrin
   {
     return std::optional<std::shared_ptr<UnopLiteralTable>>(*itr);
   }
+}
+
 }

@@ -11,6 +11,8 @@
 #include "Ast.hpp"
 #include "Binop.hpp"
 
+namespace pink {
+
 Binop::Binop(const Location& loc, InternedString op, std::shared_ptr<Ast> left, std::shared_ptr<Ast> right)
   : Ast(Ast::Kind::Binop, loc), op(op), left(left), right(right)
 {
@@ -46,7 +48,7 @@ Judgement Binop::GetypeV(const Environment& env)
   if (bound_binop)
   {
     // calls of getype return valid TypeLiterals
-    // or valid PinkErrors.
+    // or valid Errors.
     Judgement left_type = left->Getype(env);
 
     if (!left_type)
@@ -80,7 +82,7 @@ Judgement Binop::GetypeV(const Environment& env)
       error_str += "] doesn't have an implementation for the given Types. left:[";
       error_str += ltl->ToString() + "] right:[";
       error_str += rtl->ToString() + "]";
-      return Judgement(PinkError(error_str, loc));
+      return Judgement(Error(error_str, loc));
     }
 
   }
@@ -89,7 +91,7 @@ Judgement Binop::GetypeV(const Environment& env)
     std::string error_str;
     error_str += "binop :[" + std::string(op) + "] ";
     error_str += "not bound in environment.";
-    return Judgement(PinkError(error_str, loc));
+    return Judgement(Error(error_str, loc));
   }
 }
 
@@ -138,7 +140,7 @@ Judgement Binop::Codegen(const Environment& env)
       error_str += "binop doesn't have an implementation for the given values. left:[";
       error_str += ltl->ToString() + "] right:[";
       error_str += rtl->ToString() + "]";
-      return Judgement(PinkError(error_str, loc));
+      return Judgement(Error(error_str, loc));
     }
 
   }
@@ -147,6 +149,9 @@ Judgement Binop::Codegen(const Environment& env)
     std::string error_str;
     error_str += "binop :[" + std::string(op) + "] ";
     error_str += "not bound in environment.";
-    return Judgement(PinkError(error_str, loc));
+    return Judgement(Error(error_str, loc));
   }
+}
+
+
 }

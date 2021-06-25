@@ -1,7 +1,9 @@
 #pragma once
 #include <memory>
 
-#include "PinkError.hpp"
+#include "Error.hpp"
+
+namespace pink {
 
 class Ast;
 
@@ -17,12 +19,12 @@ class Judgement
 private:
   bool erroneous;
   union {
-    PinkError            error;
+    Error            error;
     std::shared_ptr<Ast> term;
   };
 public:
   Judgement();
-  Judgement(PinkError& err);
+  Judgement(Error& err);
   Judgement(std::shared_ptr<Ast> term);
 
   bool       operatorbool();
@@ -30,6 +32,8 @@ public:
 
   bool IsAnError();
 
-  PinkError& GetError();
+  Error& GetError();
   std::shared_ptr<Ast> GetTerm();
 };
+
+}

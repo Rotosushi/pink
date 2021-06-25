@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "PinkError.h"
+#include "Error.h"
 #include "Utilities.hpp"
 #include "Ast.h"
 #include "Environment.h"

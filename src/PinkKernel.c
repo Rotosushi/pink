@@ -3,7 +3,7 @@
 
 #include "Ast.h"
 #include "Utilities.hpp"
-#include "PinkError.h"
+#include "Error.h"
 #include "StringInterner.hpp"
 #include "UnopEliminators.h"
 #include "BinopEliminators.h"

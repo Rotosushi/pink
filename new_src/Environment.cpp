@@ -3,84 +3,138 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Constants.h"
 #include "llvm/IR/Instruction.h"
 
 #include "Environment.hpp"
 
+namespace pink {
 
-Environment::Environment (std::shared_ptr<StringInterner>    interned_names,
-                          std::shared_ptr<StringInterner>    interned_operators,
-                          std::shared_ptr<SymbolTable>       symbols,
-                          std::shared_ptr<BinopSet>          binops,
-                          std::shared_ptr<UnopSet>           unops,
-                          llvm::StringRef                    target_triple,
-                          std::shared_ptr<llvm::DataLayout>  data_layout,
-                          std::shared_ptr<llvm::LLVMContext> context,
-                          std::shared_ptr<llvm::Module>      module,
-                          std::shared_ptr<llvm::IRBuilder>   builder);
-  : interned_names(interned_names), interned_operators(interned_operators),
-    symbols(symbols),   binops(binops), unops(unops),   target_triple(target_triple),
-    data_layout(data_layout), context(context), module(module), builder(builder)
+Environment::Environment(const Parser&               parser,
+                         const StringInterner&       interned_names,
+                         const StringInterner&       interned_operators,
+                         const SymbolTable&          symbols,
+                         const BinopTable&           binops,
+                         const BinopPrecedenceTable& bpt,
+                         const UnopTable&            unops,
+                         const std::string&          target_triple,
+                         const llvm::DataLayout&     data_layout,
+                         const llvm::LLVMContext&    context,
+                         const llvm::Module&         module,
+                         const llvm::IRBuilder&      builder);
+  : parser(parser),               interned_names(interned_names), interned_operators(interned_operators),
+    symbols(symbols),             binops(binops),                 binop_precedence_table(bpt),
+    unops(unops),                 target_triple(target_triple),   data_layout(data_layout),
+    context(context),             module(module),                 builder(builder)
 {
 
 }
 
-// these names could honestly just be public,
-// and it would be identical.
-const StringInterner& Environment::GetInternedNames()
+
+// sooo, yeah. technically/semantically nil -is- false.
+// even though conceptually they have distinct types.
+llvm::IntegerType* GetNilType()
 {
-  return interned_names;
+  return llvm::Type::getInt1Ty(context);
 }
 
-const StringInterner& Environment::GetInternedOperators()
+llvm::IntegerType* GetBooleanType()
 {
-  return interned_operators;
+  return llvm::Type::getInt1Ty(context);
 }
 
-const SymbolTable& Environment::GetSymbolTable()
+llvm::IntegerType* GetIntegerType()
 {
-  return symbols;
+  return llvm::Type::getInt64Ty(context);
 }
 
-const BinopSet& Environment::GetBinopTable()
+/*
+  https://llvm.org/doxygen/classllvm_1_1IntegerType.html
+  ~> ...
+    """MAX_INT_BITS | maximum number of bits that can be specified
+                    Note that bit width is stored in the Type classes SubclassData
+                    field which has 24 bits. This yields a maximum bit width of
+                    16,777,215 bits"""
+    ...
+  this is a weird thought, but any structure that
+  is smaller than 16 million some odd bits can be
+  encoded as a single llvm::IntegerType holding the
+  same exact bitpattern. could we simply reinterpret_cast
+  the Type to an IntegerType? to treat it as a bitpattern
+  instead of a typed structure? we could also imagine a
+  converse operation. the only issue is the semantics of
+  construction, especially with complex objects which require
+  specific initialization patterns.
+  if we are imagining
+  a flattening to binary to transmit peices of the program around
+  then this operation could be well-formed, as long as we are
+  only building objects from bitpatterns that were built
+  from the same type of object. which is something that
+  could be negotiated by the language.
+  this is dangerous in the general use case, and so should be
+  guarded in a modern design. but if we were aiming for
+  usable immediately we could provide a small barebones
+  unsafe implementation, essentaially just the basic primitive
+  operations, and eventually build up a library around them
+  to be exported as part of the standard.
+*/
+
+
+/*
+  given a primitive type, builds a object that is the
+  right type, default initialized. this is uniformly
+  going to be zero, unless specifically required by the
+  type itself.
+  which is not the case for most primitive types.
+  standard i/o and thread objects are the only things i
+  can think where we don't want default initialzed
+  objects that are simply zeroed out.
+*/
+Judgement Environment::BuildZeroedValue(llvm::Type* t)
 {
-  return binops;
+  if (llvm::IntegerType* intTy = llvm::dyn_cast<llvm::IntegerType>(t))
+  {
+    // currently, all three of our types are integer types
+    // this is because integers can be used to encode all three finite types.
+    // and llvm provides us with a handy method within
+    // this circumstance.
+    // get's a llvm::ConstantInt of the specified type and value.
+    // we are garunteed to be able to store the value 0 in any
+    // size ConstantInt, and thus we can default initialize
+    // any ConstantInt type safely with this statement.
+    // https://llvm.org/doxygen/classllvm_1_1ConstantInt.html
+    return llvm::ConstantInt::get(intTy, 0);
+  }
+  else
+  {
+    // this is a small kindness to debugging this statement.
+    std::string buf;
+    llvm::raw_string_ostream hdl(buf);
+    type->print(hdl);
+
+    std::string errtxt = hdl.str();
+
+    FatalError("Unsupported type for default initialization ~> " + errtxt, __FILE__, __LINE__);
+  }
 }
 
-const UnopSet& Environment::GetUnopTable()
-{
-  return unops;
-}
 
-const std::string& Environment::GetTargetTriple()
-{
-  return target_triple;
-}
-
-const llvm::DataLayout& Environment::GetDataLayout()
-{
-  return data_layout;
-}
-
-const llvm::DataLayout& Environment::GetContext()
-{
-  return context;
-}
-
-const llvm::Module& Environment::GetModule()
-{
-  return module;
-}
-
-const llvm::IRBuilder& Environment::GetIRBuilder()
-{
-  return builder;
-}
 
 /*
   all local bindings get allocated in the beginning
   of the function, this is the requirement for local
   binding optimizations from LLVM.
+  to make this convenient we require a reference to the
+  procedure directly, this delegates getting this reference
+  to the procedure to the caller, which means we can handle
+  it hopefully a little easier, as each place that could
+  possibly want to allocate a local should have a direct
+  reference to a current InsertionPoint (llvm::BasicBlock)
+  which has a reference to it's containing function.
+
+  https://llvm.org/docs/LangRef.html#alloca-instruction
+  https://llvm.org/doxygen/classllvm_1_1AllocaInst.html
+  https://llvm.org/doxygen/classllvm_1_1PointerType.html
 */
 llvm::AllocaInst* Environment::BuildLocalAlloca(llvm::Type* type, std::string& name, llvm::Function* fn)
 {
@@ -90,7 +144,7 @@ llvm::AllocaInst* Environment::BuildLocalAlloca(llvm::Type* type, std::string& n
   // to satisfy the 'insert all alloca's at the beginning
   // of the functions InitialBlock' constraint, we get the
   // Function's EntryBlock's FirstInsertionPoint.
-  // this should have the aggregate effect or 'prepending'
+  // this should have the aggregate effect of 'prepending'
   // all allocations within the entryblock. in
   // effect, allocating each variable declared
   // one position lower than the next variable
@@ -99,22 +153,35 @@ llvm::AllocaInst* Environment::BuildLocalAlloca(llvm::Type* type, std::string& n
   llvm::BasicBlock*          insertion_block = &(fn->GetEntryBlock());
   llvm::BasicBlock::iterator insertion_point = insertion_block->GetFirstInsertionPt();
 
+  // build a temporary local builder to perform the insertion
+  // so we do not have to save/restore the insertion point of
+  // the IRBuilder we have as a member.
   llvm::IRBuilder local_builder(insertion_block, insertion_point);
 
   llvm::AllocaInst* local_storage  = local_builder.CreateAlloca(type,
                                                                 data_layout.getAllocaAddrSpace(),
-                                                                nullptr, /* array size */
+                                                                nullptr, /* array size, used for alloca'ing arrays */
                                                                 name);
   return local_storage;
 }
 
 
 /*
-  BuildLoad is a collection of IRBUilder instructions,
+  BuildLoad emits one or a series of IRBUilder instructions,
   where we load an alloca into a constant of the same type
   and value. essentially implementing the unwrap function
   of a pointer, as one thinks of it in C.
 
+  the assumption of this procedure is that every
+  primitive type of the language isSingleValueType
+  (we can store it in a machine register on the target)
+  and that any element that is larger than a single
+  register is that way because it is an aggregate type.
+  thus we can write a simple recursive procedure to load
+  each element that is a register size, and recurring
+  to emit the right series of loads to get the next
+
+  https://llvm.org/docs/LangRef.html#load-instruction
 */
 llvm::Value* Environment::BuildLoad(llvm::AllocaInst* alloc)
 {
@@ -127,6 +194,11 @@ llvm::Value* Environment::BuildLoad(llvm::AllocaInst* alloc)
   // given by llvm, it would be reasonable to assume
   // that a struct type whose AllocaSize was smaller
   // than a single word would be a SingleValueType.
+  // otherwise this would be using the DataLayout to
+  // calculate the AllocaSize and then comparing that
+  // to the maximum register value. this is what
+  // I assume defined the mapping of types to booleans
+  // that i am sure this function is implemented as.
   if (allocated_type->isSingleValueType())
   {
     return builder.CreateAlignedLoad(allocated_type,
@@ -135,7 +207,7 @@ llvm::Value* Environment::BuildLoad(llvm::AllocaInst* alloc)
   }
   else
   {
-    llvm::Constant* agg_ptr = llvm::dyn_cast<llvm::Constant*>(alloc);
+    llvm::Value* agg_ptr = llvm::dyn_cast<llvm::Value>(alloc);
 
     if (!agg_ptr)
       FatalError("We couldn't cast the Allocation to a Pointer!", __FILE__, __LINE__);
@@ -152,7 +224,7 @@ llvm::Value* Environment::BuildLoad(llvm::AllocaInst* alloc)
 llvm::Value* Environment::BuildLoadAggregate(llvm::Value* value_ptr, llvm::Type* pointee_type)
 {
 
-  if (pointee_type->isStructTy())
+  if (llvm::StructType* struct_type = llvm::dyn_cast<llvm::StructType>(pointee_type))
   {
     // so we need to build a new structure in memory to
     // return as a value. (i assume) so, this means loading each field
@@ -161,40 +233,44 @@ llvm::Value* Environment::BuildLoadAggregate(llvm::Value* value_ptr, llvm::Type*
     // is itself too big to fit in a single load,
     // we recurse, which will handle the case where
     // we have a struct made of structs.
-    llvm::StructType*         struct_type    = llvm::cast<llvm::StructType*>(pointee_type);
     llvm::ArrayRef<Type*>     struct_element_types = struct_type->elements();
     std::vector<llvm::Constant*> new_struct_members;
 
     for (std::size_t i = 0; i < struct_element_types.size(); i++)
     {
+      // the builder expects the index in the form of an llvm::Value*
+      // for this particular instruction.
+      llvm::Value* elem_index  = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), i);
+
       llvm::Value* loaded_elem = nullptr;
       llvm::Type*  elem_type   = struct_element_types[i];
 
       // get element pointer computes the address of the
       // element of aggregate types. how does it do this?
+      //  -- https://llvm.org/docs/GetElementPtr.html --
       // it takes a pointer to some type. the first index treats
       // the pointer as if it pointed to an array of that type
-      // from the point. so as if in C you had typed:
+      // from the initial point. so as if in C you had typed:
       // Type* Foo = ...;
-      // Foo[idx0]
+      // &(Foo[idx0])
       // and the second index indexes the structure at that point
       // in memory.
       // &(Foo[idx0].idx1)
-      // so, because we have been given a single Alloca, which is a Value Ptr
-      // we want to always index the first element of the pointer, which
-      // will be the structure itself, and we index element i. which is
+      // so, because we have been given a single Alloca, which is a Ptr to our Type
+      // we want to always index the first array cell of that pointer, which
+      // will be the structure itself/the alloca space itself,
+      // and we index element i. which is
       // the element this run of the loop is working on.
-      llvm::Value* elem_ptr = builder.CreateConstInBoundsGEP2_32(struct_type,
-                                                              value_ptr,
-                                                              0,
-                                                              i);
-
+      /*llvm::Value* elem_ptr = builder.CreateConstInBoundsGEP2_32(struct_type,
+                                                                 value_ptr,
+                                                                 0,
+                                                                 i);
+      we are using this one instruction, because it seems to replace
+      these two bit's of code entirely.
+      */
       if (elem_type->isSingleValueType())
       {
-        llvm::Align elem_align = data_layout.getABITypeAlign(elem_type);
-
-        // llvm supports efficient loads of first class types.
-        loaded_elem = builder.CreateAlignedLoad(elem_type, elem_ptr, elem_align);
+        loaded_elem = builder.CreateExtractElement(value_ptr, elem_index);
       }
       else
       {
@@ -211,9 +287,8 @@ llvm::Value* Environment::BuildLoadAggregate(llvm::Value* value_ptr, llvm::Type*
 
     return llvm::ConstantStruct::get(struct_type, new_struct_members);
   }
-  else if (pointee_type->isArrayTy())
+  else if (llvm::ArrayType* array_type = llvm::dyn_cast<llvm::ArrayType>(pointee_type))
   {
-    llvm::ArrayType* array_type = llvm::cast<llvm::ArrayType*>(pointee_type);
     llvm::Type* elem_type       = array_type->getElementType();
     std::size_t num_array_elem  = array_type->getNumElements();
     llvm::Align elem_alignment  = data_layout.getABITypeAlign(elem_type);
@@ -266,21 +341,23 @@ llvm::Value* Environment::BuildLoadAggregate(llvm::Value* value_ptr, llvm::Type*
   takes an alloca which has already been built to hold the constant
   being stored, and the constant being stored.
   this function handles the case where the value we want to store
-  is too big to hold within a single register. which means we ned
+  is too big to hold within a single register. which means we need
   to use multiple stores instead.
+
+  https://llvm.org/docs/LangRef.html#store-instruction
 */
 void BuildStore(llvm::AllocaInst* pointer, llvm::Constant* value)
 {
   llvm::Type* value_type     = value->getType();
   llvm::Type* alloca_type    = pointer->getAllocatedType();
   llvm::TypeSize value_size  = data_layout.getTypeAllocSize(value_type);
-  llvm::TypeSize alloca_size = data_layout.getTypeAllocaSize(alloca_type);
+  llvm::TypeSize alloca_size = data_layout.getTypeAllocSize(alloca_type);
 
   if (value_size <= alloca_size)
   {
     // if the value can fit in a single register
     // then we can use a single LLVM store instruction
-    if (value_size->isSingleValueType())
+    if (value_type->isSingleValueType())
     {
       builder.CreateAlignedStore(value, pointer, pointer->getAlign());
     }
@@ -291,7 +368,10 @@ void BuildStore(llvm::AllocaInst* pointer, llvm::Constant* value)
   }
   else
   {
-    FatalError("Allocation not big enough to hold Constant.", __FILE__, __LINE__);
+    std::string buf, errtxt;
+    llvm::raw_string_ostream hdl(buf);
+    errtxt = hdl.str();
+    FatalError("Allocation not big enough to hold Type. ~> " + errtxt, __FILE__, __LINE__);
   }
 }
 
@@ -302,12 +382,11 @@ void BuildStoreAggregate(llvm::Value* pointer, llvm::Constant* value)
   // they are both memory cells with type.
   llvm::Type* value_type = value->getType();
 
-  if (value_type->isStructTy())
+  if (llvm::StructType* struct_type = llvm::cast<llvm::StructType>(value_type))
   {
-    // build a GEP to each pair of elements in the alloca space,
+    // build a GEP to each pair of member in the alloca space,
     // and within the value literal, then attempt to store the value
     // from the literal into the alloca
-    llvm::StructType* struct_type = llvm::cast<llvm::StructType*>(value_type);
 
     llvm::ArrayRef<llvm::Type*> member_types = struct_type->elements();
 
@@ -321,6 +400,7 @@ void BuildStoreAggregate(llvm::Value* pointer, llvm::Constant* value)
 
       if (member_type->isSingleValueType())
       {
+        /*
         // get a pointer to the member whose type we have (member [i])
         llvm::Value* value_member_ptr = builder.CreateConstInBoundsGEP2_32(struct_type, // getting a pointer to this type
                                                                            value, // this is what we get a pointer to
@@ -330,6 +410,10 @@ void BuildStoreAggregate(llvm::Value* pointer, llvm::Constant* value)
         llvm::Value* alloca_member_ptr = builder.CreateConstInBoundsGEP2_32(struct_type, pointer, 0, i);
         // we can build a single store instruction here.
         llvm::StoreInst* stored_member = builder.CreateAlignedStore(value_member_ptr, alloca_member_ptr, member_align);
+        */
+
+        llvm::Value* value_element = builder.CreateExtractElement(value, i);
+        llvm::Value* inserted_elem = builder.CreateInsertElement(pointer, value_element, i);
       }
       else // load an aggregate member
       {
@@ -382,7 +466,7 @@ void BuildStoreAggregate(llvm::Value* pointer, llvm::Constant* value)
 }
 
 
-
+}
 
 
 

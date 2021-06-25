@@ -5,13 +5,15 @@
 
 #include "Location.hpp"
 
-class PinkError
+namespace pink {
+
+class Error
 {
 public:
   std::string dsc;
   Location    loc;
 
-  PinkError(std::string& err, Location& loc);
+  Error(std::string& err, Location& loc);
 
   void PrintError(std::ostream& out, const std::string& errtxt);
 };

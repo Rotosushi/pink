@@ -5,6 +5,8 @@
 
 #include "StringInterner.hpp"
 
+namespace pink {
+
 InternedString StringInterner::InternString(const std::string& str)
 {
   // try_emplace encompases both actions of InternString
@@ -23,4 +25,6 @@ InternedString StringInterner::InternString(const std::string& str)
   // StringSet itself.)
   auto element = strs.try_emplace(str);
   return (InternedString)((element.first)->getKey()).data();
+}
+
 }

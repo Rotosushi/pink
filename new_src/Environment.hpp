@@ -1,12 +1,18 @@
 #pragma once
+
+// std library code
 #include <string>
 #include <memory>
 
+// llvm code
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
 
+#include "Parser.hpp"
+
+// my code
 #include "StringInterner.hpp"
 #include "SymbolTable.hpp"
 #include "BinopSet.hpp"
@@ -24,53 +30,65 @@
   variable updating, for instance)
   each algorithm instead adds to and is written to query from
   a central source of truth. a reference to these sources of
-  thruth is what we store here.
+  truth is what we store here. making it so these sources
+  of truth are not globally allocated makes updating the program
+  later easier. this is part of why globals are to be avoided,
+  and this is an instance of a techinque avoiding global variables,
+  while still getting the benefiets.
 
 */
+
+namespace pink {
+
 class Environment
 {
-private:
-  // interning is so cool!
-  const StringInterner&    interned_names;
-  const StringInterner&    interned_operators;
-  // symboltable is a DenseMap of InternedStrings to shared_ptr<Ast>s
-  const SymbolTable&       symbols;
-  // in fact all *Table's are DenseMaps.
-  const BinopTable&        binops;
-  const UnopTable&         unops;
-  // and then the llvm stuff that we need.
-  const std::string&       target_triple;
-  const llvm::DataLayout&  data_layout;
-  const llvm::LLVMContext& context;
-  const llvm::Module&      module;
-  const llvm::IRBuilder&   builder;
 
+
+public:
+  const Parser&              parser;
+  // interning is so cool!
+  const StringInterner&      interned_names;
+  const StringInterner&      interned_operators;
+  // symboltable is a DenseMap of InternedStrings to shared_ptr<Ast>s
+  const SymbolTable&         symbols;
+  // in fact all *Table's are DenseMaps.
+  const BinopTable&          binops;
+  const BinopPrecedenceTable binop_precedence_table;
+  const UnopTable&           unops;
+  // and then the llvm stuff that we need.
+  const std::string&         target_triple;
+  const llvm::DataLayout&    data_layout;
+  const llvm::LLVMContext&   context;
+  const llvm::Module&        module;
+  const llvm::IRBuilder&     builder;
+
+private:
   llvm::Value* BuildLoadAggregate(llvm::Value* pointer, llvm::Type* allocated_type);
 
   void BuildStoreAggregate(llvm::Value* pointer, llvm::Constant* value);
 public:
-  Environment(const StringInterner&    interned_names,
-              const StringInterner&    interned_operators,
-              const SymbolTable&       symbols,
-              const BinopTable&        binops,
-              const UnopTable&         unops,
-              const std::string&       target_triple,
-              const llvm::DataLayout&  data_layout,
-              const llvm::LLVMContext& context,
-              const llvm::Module&      module,
-              const llvm::IRBuilder&   builder);
+  Environment(const Parser&               parser,
+              const StringInterner&       interned_names,
+              const StringInterner&       interned_operators,
+              const SymbolTable&          symbols,
+              const BinopTable&           binops,
+              const BinopPrecedenceTable& bpt,
+              const UnopTable&            unops,
+              const std::string&          target_triple,
+              const llvm::DataLayout&     data_layout,
+              const llvm::LLVMContext&    context,
+              const llvm::Module&         module,
+              const llvm::IRBuilder&      builder);
 
-  const StringInterner&    GetInternedNames();
-  const StringInterner&    GetInternedOperators();
-  const SymbolTable&       GetSymbolTable();
-  const BinopSet&          GetBinopTable();
-  const UnopSet&           GetUnopTable();
-  const std::string&       GetTargetTriple();
-  const llvm::DataLayout&  GetDataLayout();
-  const llvm::LLVMContext& GetContext();
-  const llvm::Module&      GetModule();
-  const llvm::IRBuilder&   GetIRBuilder();
+  // general helper routines
+  llvm::IntegerType* GetNilType();
+  llvm::IntegerType* GetIntegerType();
+  llvm::IntegerType* GetBooleanType();
 
+  Judgement BuildZeroedValue(std::shared_ptr<Ast> type);
+
+
+  // codegen helper routines.
   // builds an allocation for the passed value
   // returns the allocation point of the
   // variable, i'm fairly sure this is a
@@ -82,5 +100,10 @@ public:
   // to fit inside a single load instruction.
   llvm::Constant* BuildLoad(llvm::AllocaInst* alloc);
 
+  // builds enough store instructions to copy the whole
+  // constant into the alloca. FatalError if the alloca isn't
+  // big enough.
   void BuildStore(llvm::AllocaInst* pointer, llvm::Constant* value);
 };
+
+}

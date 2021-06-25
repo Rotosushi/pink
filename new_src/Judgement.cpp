@@ -1,6 +1,9 @@
 
 #include "Ast.hpp"
-#include "PinkError.hpp"
+#include "Error.hpp"
+#include "Judgement.hpp"
+
+namespace pink {
 
 Judgement::Judgement()
   : erroneous(true), error("Default Judgement", Location())
@@ -8,7 +11,7 @@ Judgement::Judgement()
 
 }
 
-Judgement::Judgement(PinkError& err)
+Judgement::Judgement(Error& err)
   : erroneous(true), error(err)
 {
 
@@ -44,7 +47,7 @@ bool Judgement::IsAnError()
   return !erroneous;
 }
 
-PinkError& Judgement::GetError()
+Error& Judgement::GetError()
 {
   if (erroneous == true)
   {
@@ -66,4 +69,6 @@ std::shared_ptr<Ast> Judgement::GetTerm()
   {
     return term;
   }
+}
+
 }

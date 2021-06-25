@@ -7,6 +7,8 @@
 #include "Environment.hpp"
 #include "Ast.hpp"
 
+namespace pink {
+
 class Unop : public Ast
 {
 private:
@@ -26,3 +28,5 @@ public:
 
   virtual Judgement Codegen(const Environment& env);
 };
+
+}

@@ -448,8 +448,38 @@ i suppose we could consider the opposite, by reference
 the default, and a syntax that means by value. however
 C goes with the former, so arbitrarily we will keep
 the same semantics. and with types that are smaller
-than or equal to the size of a pointer the distinction
+than or equal to the size of a pointer the byvalue/byreference distinction
 is largely immaterial.
+
+
+forcing assignment to work only on names, would force
+programmers to name the things they wanted to assign to.
+which would change the structure of a loop assigning to
+locations within an array as 'getting' the element, and
+then assigning it. whereas C's grammar explicitly allows
+those two statements to happen with a single combination
+of terms. C does this by distinguishing between
+values which can be assigned to, lvalues, and
+values which cannot be assigned to, rvalues.
+
+however, this is an idea that has been tailor made to
+exactly contour inconsistency in the grammar.
+
+why precisely can a reference to some local data not be modified?
+mostly because there is never a reason too. local data is always
+allocated in the same way, and so can be accessed through constants.
+the same is true of constant global names. (and globally mutable
+names always introduce complexity, and so are very few in their legitimate use.)
+
+however, there is sometimes a reason to modify a reference to dynamic memory.
+we want to grow or shrink dynamic structures or simply modify which portion
+of a dynamic structure we are observing.
+
+notice how the underlying structure of both these actions are the same,
+modifying an integer which contains the address of the object being
+referenced. and so fundamentally we can imagine a thing to do in
+both situations. but we want to allow some things, and disallow others.
+
 
 -----------------------------------------------------------------------------------
 
@@ -459,30 +489,7 @@ is largely immaterial.
 
 
 
-// we don't allow pointer arguments directly, yet.
-// so we don't have to handle adding the byref attribute
-// to reference parameters yet.
-// our primitive types for now all fit in registers.
-// this means that adding byval, and passing
-// in a local allocation of something that fits in a register
-// will be harmless, and optimizable by the compiler.
-// i am sure this is one their peephole optimizations.
-// only one primitive type doesn't fit in a register
-// for passing, functions. their representation is
-// is a structure type, but the precise type of the
-// struct is dependant on the number of applied arguments
-// of the codepath above. which could be different on
-// different calls into the same procedure. this means
-// that inside the procedure we have to handle N
-// many arguments. (luckily it is always some N,
-// because argument lists are static, after emission.)
-// which could be different based on different codepaths.
-// this pushes the representation into the runtime a little.
-// we have to pass function objects as opaque pointers.
-// the other option would be to build it atop
-// varargs, but then we could only support one function
-// literal in the argument list. and that feels weird,
-// and restrictive of the kinds of procedures we can express.
+
 
 // say we have a fn like
 /*
@@ -502,15 +509,26 @@ is largely immaterial.
   to the same procedure code, and have the inner application
   of the passed procedure object handle that ambiguity.
   luckily it is only ambiguous in the sense of exactly how
-  big the argument list is. the number of arguments needed to
+  big the closed over argument list is and this ambiguity is
+  constrained between zero and the length of the formal argument
+  list itself. the number of arguments needed to
   produce the distinct static types (result values or closures)
   is constant for the definition of the term.
 
   the only way we could define static procedures that take
   variable sized arguments is with opaque struct pointers.
+  because otherwise we have to provide a concrete type
+  with a concrete knowable number of arguments. (essentially we
+  would be forced to collapse the ambiguity described above, choosing
+  to let this function name bind a closure with zero closed over values
+  only, which is essentially the behavior of bare function pointers.)
+
   but, the procedure itself isn't taking a variable size argument
   list. the caller of a closure isn't always sure how many arguments
-  the closure is going to provide, however, it is always the case that
+  the closure is going to provide, the procedure itself always knows
+  exactly how many and what type of arguments it needs to apply to any given
+  closure to build either another closure or a valid full application.
+  it is always the case that
   the number of arguments the closure provides (N) is (Y)
   arguments short of completing the call, where (Y) is equal
   to the number of arguments in the presented function type of the

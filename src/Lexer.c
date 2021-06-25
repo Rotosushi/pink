@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #include "Utilities.hpp"
-#include "PinkError.h"
+#include "Error.h"
 #include "Token.h"
 #include "Location.h"
 #include "Lexer.h"

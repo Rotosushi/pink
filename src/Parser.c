@@ -20,6 +20,9 @@
         // should we allow binding types?
         // if yes: why not also allow type susbtitution?
         // aka: procedures abstracting over type expressions?
+        // becausev all type expressions are by definition
+        // constant expressions, the compiler can reduce all of them
+        // down to the 'real' type.
         // TL;DR: identifier := affix OR identifier := term ???
         // currently it is:
         | identifier := affix
@@ -1332,10 +1335,8 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
 
   InternedString Iop;
 
-  // since we intern operators now, we have to account for that
-  // when parsing them
-  while ((is_binop(p, curtxt(p)))
-     && (Iop = InternString(p->interned_ops, curtxt(p)))
+
+  while ((Iop = is_binop(p, curtxt(p)))
      && (lookahead = FindBinopPrecAssoc(p->precedence_table, Iop)) && lookahead->precedence >= min_prec)
   {
 
@@ -1344,8 +1345,8 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
     BinopPrecAssoc* operator = lookahead;
 
     nextok(p); // eat 'operator'
-    // we don't recurr fully up the grammr, because dont we want
-    // to recurr into this procedure again, so we go up
+    // we don't recur fully up the grammar, because dont we want
+    // to recur into this procedure again (that would be confusing), so we go up
     // to application, one step below where infix procedures can
     // be parsed.
     Judgement right = ParseApplication(p);
@@ -1381,6 +1382,9 @@ Judgement ParseInfix(Parser* p, Judgement left, int min_prec)
          && (lookahead->precedence > operator->precedence
            || (lookahead->precedence == operator->precedence && lookahead->associativity == A_RIGHT)))
       {
+        // the operator we are looking at, the one after 'op'
+        // has a precedence, this is the precedence we are using
+        //
         right = ParseInfix(p, right, lookahead->precedence);
 
         if (right.success == false)

@@ -1,14 +1,19 @@
 #pragma once
 #include <cstddef>
 
+namespace pink {
+
 class Location
 {
 public:
-  size_t first_line;
-  size_t first_column;
-  size_t last_line;
-  size_t last_column;
+  std::size_t first_line;
+  std::size_t first_column;
+  std::size_t last_line;
+  std::size_t last_column;
 
   Location();
-  Location(size_t fl, size_t fc, size_t ll, size_t lc);
+  Location(const Location& loc);
+  Location(std::size_t fl, std::size_t fc, std::size_t ll, std::size_t lc);
 };
+
+}
