@@ -31,10 +31,22 @@
 
 */
 
-constexpr auto TEST_ERROR           = 0x0001;
-constexpr auto TEST_STRING_INTERNER = 0x0002;
+constexpr auto TEST_ERROR             = 0x0001;
+constexpr auto TEST_STRING_INTERNER   = 0x0002;
+constexpr auto TEST_SYMBOL_TABLE      = 0x0004;
+constexpr auto TEST_TYPE_INTERNER     = 0x0008;
+constexpr auto TEST_AST_AND_NIL       = 0x0010;
+constexpr auto TEST_BOOL              = 0x0020;
+constexpr auto TEST_INT               = 0x0040;
+constexpr auto TEST_VARIABLE          = 0x0080;
+constexpr auto TEST_BIND              = 0x0100;
+constexpr auto TEST_BINOP             = 0x0200;
+constexpr auto TEST_UNOP              = 0x0400;
+constexpr auto TEST_TYPE_AND_NIL_TYPE = 0x0800;
+constexpr auto TEST_INT_TYPE          = 0x1000;
+constexpr auto TEST_BOOL_TYPE         = 0x2000;
 
-constexpr auto TEST_ALL             = 0xFFFF;
+constexpr auto TEST_ALL               = 0xFFFF;
 
 
 /*
