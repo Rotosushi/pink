@@ -95,12 +95,12 @@ to give an example:
 
 if we imagine the structure of our Object union
 
-union Object is TypeLiteral | Nil | Integer | Boolean | Lambda;
+union Object is LLVMType | Nil | Integer | Boolean | Lambda;
 
 we then can imagine implementing a strict typing algorithm as
 an overloaded procedure providing a single body per case.
 
-proc getype(TypeLiteral, Environment);
+proc getype(LLVMType, Environment);
 
 proc getype(Nil, Environment);
 

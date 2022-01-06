@@ -48,7 +48,7 @@ main and then were golden.
 
 additionally, TypeInterner can be modified to be a wrapper around the LLVM
 TypeInterner, (which is stored within the LLVMModule being used for compilation)
-TypeLiteral becomes a wrapper for a (LLVMTypeRef)
+LLVMType becomes a wrapper for a (LLVMTypeRef)
 
 I think Object becomes a wrapper for LLVMValueRef,
 yep, and so does a bunch of other stuff i think,

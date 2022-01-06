@@ -234,7 +234,7 @@ lifetimes is to copy the data onto the heap, and then store
 a reference to the free variables data in the binding for
 the local name, such that when we consider an 'instance'
 of the Lambda, we are talking about a LambdaLiteral, as opposed
-to the Lambda itself. (grok that? just like Types, and TypeLiterals.)
+to the Lambda itself. (grok that? just like Types, and LLVMTypes.)
 thus, we could imagine a generator procedure like,
 
 /*

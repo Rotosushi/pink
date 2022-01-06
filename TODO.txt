@@ -1,6 +1,129 @@
-1) finish Parser, Lexer, Environment,
-  Binop and Unop Eliminators,
-  Binop  Precedence and Associativity Table,
-  PolyLambda, EvalError and Judgement
-  getype and evaluate,
-  the REPL.
+
+I now know enough about my own language design choices to fully realize that 
+zig is doing precisely what I want. Up to the point of providing a dynamic 
+function object. If I really wanted to, I might be able to write up the dynamic 
+function object as a library and then create and consume callable objects.
+And I am curious, because then the language is close to a 'functional' one,
+though, then the design descisions that get you to that point of being able 
+to have a callable function become apparent in the function signature of the 
+functinos that can be validly wrapped within a function object. Actually, no,
+because in a hard coded language the compiler can emit the correct typecasts 
+and under-the-hood function signatures such that callable dynamic objects can 
+wrap any possible function in the language. in a library, this is no longer a feasable 
+option. so it would have to be a language feature, or we would never be able 
+to partially apply a regularly defined procedure. In pink, it was planned that every 
+procedure formally had the signature of: f(x: x8*) -> u8* { ... }
+Then, all of the myriad of function signatures would be handled by the caller 
+allocating the correct stackspace to hold all the parameters and return values, then passing two
+pointers to the places in the stack where we need to read/write from/to.
+Then, because within the body of a function all parameter types are known, the 
+compiler can emit the correct casts such that it access the functions parameters 
+correctly within the body. in this way, code that calls a function with such a signature 
+only needs to write the correct arguments to the stack and then read the return value 
+from the stack. whereas the callee only needs to use the memory it is given, and can 
+allocate it's local variables on the stack just the same.
+a pointer to one of these function objects would still be statically typed, and it was planned 
+that a pointer to an overloaded function would only ever point to a fully statically 
+typed version (an instance) of the procedure.
+
+
+the main difference between the simply typed lambda calculus and a 
+statically typed programming language (like C) is that an object that 
+represents a new instance of a function at runtime cannot be a stack allocated 
+object. Whereas an integer can be a stack allocated object at runtime.
+This is because a function which was defined locally may be returned from 
+the procedure defining it. Now, despite the fact that any function which 
+was being returned would itself be statically typed, and so we could 
+statically type such a procedure, even if we went so far as to simply allocate 
+the stack frame of a local procedure in the return site of the caller,
+we would have to allocate enough memory to capture all of the uses of the 
+free names of such a lambda, so it would hide it's entire size. this would 
+also create the problem of the captured variables needing to be updated 
+in lock-step with their capturee counterparts within the outer stack frame.
+which introduecs hidden overhead at a minimum. But also, how would code that 
+was already compiled, and sitting in a library know how to call any function 
+that could be potentially passed in? Since we are talking about new instances,
+if we imagine a stack allocated procedure that was defined in some function,
+and library code which calls that function, which then returns some procedure
+which the library code presumably is going to call. How could the library code 
+possibly allocate the correct amount of space to properly call any possible 
+procedure that can be bound to it's static interface? If you think, well,
+that's not a problem, is it? Doesn't the static typing save us here?
+No, static types Do not save you, because of the captured names. any name 
+that would need to be captured would in this scenario live on the stack,
+that would then make those variables extra stack space that needed to be 
+allocated by the caller, and those variables are precisely those which are 
+unmentioned within the parameter list of the procedure. hence, we cannot 
+write static code which could possibly allocate the correct amount of space 
+to call any conceivable lambda that could be passed in. 
+which is an issue that stands alongside the issue of passing in partially 
+applied procedures. Because a partially applied procedure specifically has 
+it's formal type reduced in size. which it could then be validly bound to 
+another parameter of the reduced type size, and then how would the caller 
+know how much stack space to allocate for such a procedure to live on the 
+stack?
+
+The only way we can circumnavigate both of these problems is to allocate the stack 
+frame of the function on a heap. This then allows the program to store 
+the required information on the heap along with the stack frame, which allows 
+the program to write a static call site which can call any given dynamic 
+allocation representing an instance of a lambda. 
+(even the wrappers (partial applications) around regular procedures)
+This however, introduces another problem, which is, how can a single kind of 
+dynamic allocation refer to any possible function definable within the language.
+and the solution to that is to unify the physical function type of all 
+procedures within the language. Which makes the entire language pay for the 
+single feature which is not always used. Basically everything is passed 
+through a struct on the stack. instead of being able to pass different 
+arguments in different registers or the stack depending.
+
+The best upside is that you get a simply typed lambda calculus alongside 
+a c like evaluation environment. which theoretically is faster than 
+an interpreted simply typed lambda calculus. If we are willing to accept 
+lambda's on a heap, and a slowdown across all function calls, (which theroetically should 
+be relatively minor, c/c++ and other systems languages pass structs all the time
+in parameter slots)
+
+This is then another basis for providing the idea of functional composition which 
+does not rely on an interpreter, or compilation environment to be 
+embedded into the resulting programs, and it is fully disconnected from the 
+idea of a garbage collector. (though with an allocator interface, theoretically 
+we can imagine using a GC as our allocator)
+
+The rest of the design descisions that must be made to get this kernel of the 
+simply typed lambda calculus, up to the level of a fully featured programming 
+language, I am basically going to follow in the footsteps of zig/rust.
+even though I didn't entirely know that at the beginning. 
+because those languages are amazing, and getting what amounts to part of the 
+power of python/lisp in their greater ability to abstract away the details 
+of code, and the low level mindset of a system programming language 
+would be a little more cohesive in the resulting language.
+
+(however zig also has #comptime code evaluation which is a layer of abstraction 
+that I haven't really considered the full implications of)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

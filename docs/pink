@@ -12,14 +12,13 @@ the particular one, but the speaker was good, and he gives a lot of talks,
 i've seen him plenty. i even think ive seen multiple locations
 recordings of the same talk he gave. TODO: Cite this speech i saw
 
-anyways, at one point in the talk, the speaker points out the isomorphism
+anyways, the point of the talk the speaker was giving was to point out the isomorphism
 between the lambda calculus, and deductive reasoning. namely
 the Curry-Howard correspondence. Which essentially points out that
 the action of substitution, which lambda's encapsulate, is equivalent
 to a single step of deductive reasoning. and because we can use lambdas
 themselves to describe computation itself fully, the lambda calculus
-can be used to describe deductive reasoning also. (in an abstract way
-of course.)
+can be used to describe deductive reasoning also.
 
 this idea took some time to fully settle, but it has given me
 so much to think about, and has legit improved my methods of thinking.
@@ -31,12 +30,49 @@ the definition of the lambda calculus itself presents problems such
 that the use of a garbage collector becomes required, or if the
 problem was just hard, and a garbage collector (in it's first and
 more primitive forms) is a simple solution to this complex problem.
+(which is good, and i'm not knocking the existence of garbage collectors.
+ but the introduction of the storage overhead and timing delays it makes
+ programming at a very small scale very hard. now, a linked list is not
+ 'hard', nor does it require an obscene amount of overhead, using a very
+ primitive memory allocation structure like C-has, with perhaps more attention
+ to memory allocation security flaws than original C allocators. we
+ can have an amount of dynamic memory usage at a small scale.
+
+ the real key to this, i believe is if we can provide a switch, to
+ turn off this dynamic memory, and any language feature that used it,
+ in the event that any amount of dynamic memory usage is bad. but
+ the normal action of calling a procedure need not incur any dynamic
+ memory overhead either. (it only needs the stack, just like C)
+ it is only the 'new' case, new from the C perspective,
+ of having a representation of a partly applied procedure. that is, the
+ common functional language cases of storing a procedure as a value,
+ that is, not applying any arguments to a function and storing it, and
+ applying less than the formally required arguments of the procedure.
+ since functional languages are generally interpreted, they can
+ conceive of a function in a dynamic sense, however this is not
+ the case when we are talking about a sequence of instructions living
+ at some constant address in memory.)
+
+(hint: its storing procedures as values, and defining a semantic
+to conceive of Currying against static procedures sitting in memory.
+hint to this hint: these are the same problem :)
+
+(branching thought, if we disallow procedures themselves (i know right O.O),
+and thus only have sequence, conditionals, and iteration, we can provide a
+language to computers that only have static memory and registers.
+(well, we also need to disallow assignment in that case, it's basically
+decls, constant calculations, and probably the ability to fill a register
+in the CPU with input from some PINs, like reading a DataBus and computing
+against that value which means some conception of I/O at the Word level.))
+
 if there is some essence of the lambda calculus that makes garbage
 collection a necessary component of a language defining computation
 around this abstraction, then truly there is no way for an embedded
 system to utilize this abstraction as it's core conception of abstraction.
-and we must accept that the lambda calculus is in some sense to big
-an abstraction for these small tasks. alternatively if the problems are hard but not
+it would be simply too big an idea to fit on such small computers, aww :(
+and we must accept that the lambda calculus is in some sense too big
+an abstraction for these small tasks.
+alternatively if the problems are hard but not
 untenable, then why not define a small language which then exists
 as a proof of concept for this line of thinking, and at the end,
 i will have learned a lot, and will have a language to show for it.
@@ -51,25 +87,32 @@ function like
 f (x) = x + x
 
 
-and that describes a function over the statement '+'
+and that describes a function over the expression containing the operator '+'
 
 what is meant by substitution, is the act of placing a
-specific value of x in the place where the x once was.
+specific value of x in the place where the syntactic x once was.
 i.e. substituting each x for some concrete value.
 
-say, 2.
-
+say, 2:
 f (2) = 2 + 2
 
+or 10:
 f (10) = 10 + 10
 
+if we think, this system is then going to reduce (!!)
+this expression from it's more complex state, to as
+simple a state as we can get it, (fully reduce the beta-form)
+it would have to perform the operation on the two values
+and return us the result.
+
 we can see that this function describes an action over
-numbers. not things. now, as in real life and programming languages
+numbers. not just anything. now, as in real life and programming languages
 sometimes we have actions which are valid on some things, but
 not on others, usually for reasons.
 (think of a time you couldn't pick something up because
 it was too heavy, or a time where you missed the bus because you
 showed up to the stop too late.)
+
 now, this is related to, but distinct from the kind of problem
 that is the very common while developing in programming languages.
 what is meant here, is the idea of placing a type which is not
@@ -88,13 +131,77 @@ substitute within the body of the function.
 if we say, only what i have defined above is what exists, then
 any existing system would have no choice but to reject a bit of
 code that tried to pass in some text to a procedure which expected
-an integer value.
+an integer value. this is what is known a strong/strict/static typing.
+essentially, only one Type of thing can live in any single
+place within the computer. the thing as that place has one
+type forever and ever. now this is good in the small scale as
+it allows us to say/to conceive of "This Place has this Type"
+which is necessary to have any conception of difference, when
+all we have is binary. so, instead of delegating the task entirely
+to the programmer, which is the central conceit of providing a
+base set of actions which may then be composed. (and thus, what the CPU,
+and also what LLVM itself does. (it is also what C/C++ does, and
+what HTML does.)). we cannot presuppose any particular composition.
+that's why the construction of an assembly instruction is simply
+add/sub/mul/div/operate upon the values in these two locations
+and store the result in a third known location. or Jump to somewhere
+if this value equals this other value. or, store this value here.
+you can freely perform any operation on any address (subject to the restrictions
+specified in the devices Data Sheet.) and thus the language has no
+conception of "type" itself, the act of 'typing' any particular
+value or memory location is thus delegated entirely to the programmer.
+a programming language is thus centrally about it's conception of Type,
+and it's management of the composition of Types and Operations, so that
+the programmer may type 3 + 3, and doesn't necessarily have to know
+that those two values live in registers persay. the lambda calculus is
+a 'complete' conception of functions, and only coherent if it has a static
+conception of types. (subject to extensions describing more complex types.)
+
+the thing about Types is that they are entirely abstract, and since we
+are adhering to strict typing; entirely constant and knowable at compile time.
+and, as C++ has proved, with enough ingenuity you can get very nice abstractions
+over static definitions that C provides. that don't cost in memory and timing
+like the garbage collector does, that many functional languages are based in.
+
+recently there have been advances in linear type systems
+https://github.com/pikatchu/LinearML
+that can provide functional abstractions and even multiprocessing
+capabilities with no garbage collector! :)
+
+so, it is possible. but, every type is essentially allocated within
+a c++ unique_ptr. meaning movement is always destructive to the
+source. (in c++ you can get a bald ptr to the member of a unique_ptr
+as then a non owning reference to the memory held.)
 
 this idea, of what kind of thing the function is valid over, is
 encapsulated by the idea of a Type. the Type of an object
 within a programming language which represents integer values
 that lie on the integer number line are usually called
 Integers. in c we say (int)
+
+okay okay. so the central conception of the Lambda calculus is Lambdas,
+given just Lambdas, you get multiple argument fully recursive procedures
+(via Currying, and a Fixed Point function, like: X, or Z, or T)
+and you also get a fully realized programming language right then, if you are
+willing to Church encode everything. please don't be willing to Church encode
+everything, because this language will take it like
+writing a hundred parameter procedure for the value 100
+
+the Central concept of C is that Pointers are essentially Static Types.
+once you have pointers, you have the base of all static types.
+basically, computers only work in a general way upon elements of the
+size of their machine word or less. to even think about the types of
+things, as like, the Type of an Array, or the Type of a Struct. you
+have to think instead of the address of that Array, or the Address
+of that Struct. because an array of a hundred integers, or hell even
+two integers is not going to fit within a single integer sized register.
+to operate upon both element of the arrays, you -must- operate on them
+one machine word at a time. to operate on the first value between two
+structs means extracting that machine word sized value or less.
+
+f := \x:Int => { x + x; ...; ...; ...; };
+
+
 
 so thus, the correspondence in a programming language like C
 happens at the level of functions, we say the above idea
@@ -128,16 +235,16 @@ similarly, in deductive reasoning, such as what we read
 about in sir Arthur Conan Doyle's books about
 Sherlock Holmes, deductive reasoning is about observing
 a situation, looking and seeing the actions that were
-performed, then using ones own logic intuition and previous
-understandings together to do calculations or make constrained
+performed, then using ones own logic, intuition, and previous
+understanding together to do calculations or make constrained
 guesses, such as, look some footprints below a message
 written on the wall. and Sherlock says, paraphrasing,
 "Well, based upon the distance between the footprint's.
-the stride of the person making the footprints, and upon
+thus the stride of the person making the footprints, and upon
 the height at which the message is written, the person would
 most likely be 'such-and-such' height."
 
-what Sherlock is describing here, is similar to (hence the correspondence)
+what Sherlock is performing/computing here, is similar to (hence the correspondence)
 a function, which when given two values, namely,
 the stride length of a person, and the height at which the message
 was written, and returns a constrained guess at the persons height
@@ -206,8 +313,10 @@ deductive reasoning. this is precisely what Newton did with his
 equations. the test of their truth, was if their output was consistent
 with independent observations of reality. and it was hundreds of years
 of true observations which aligned with Newton before we discovered
-interactions which do not follow these laws. however it would
-be more precise to say that the laws are not capturing the
+interactions which do not follow Newtons laws. (very very fast things,
+very very small things, and very very heavy things)
+ however it would
+be equivalent to say that the laws are not capturing the
 correct information in their pattern of action such that they
 maintain their alignment with observable reality.
 
@@ -225,7 +334,7 @@ consistent cycle across years of time.)
 
 another thing that was discovered is that without Types, the lambda
 calculus is undecidable. essentially it's internal logic actually breaks
-down and it becomes unusable. (i haven't explored why yet.)
+down and it becomes unusable.
 
 okay, so now that we have an idea of what correspondence is and that
 the lambda calculus corresponds with some of the fundamental rules
@@ -277,18 +386,21 @@ known at compile time is a valid argument. which is nearly everything
 in a c program, int's fit this mold, as do floats, as do enumerations,
 and structures, which are composed of named fields of different types
 added together, have constant knowable storage and type.
+
 but it isn't one thing, procedures themselves, why aren't procedures
 able to be stored in a named field in a C program? well, because a
 C procedure is stored as a sequence of physical instructions.
 we do not want to duplicate that sequence of instructions for
 each place that the procedure is stored, as that would explode the
-size of the program itself. however, C instead provides a
+size of the program itself. so when we need to store a function
+ C instead provides a
 different solution, the function pointer. that is a reference to the
 procedure. we can get to the procedure via the reference, but the
 reference is just a reference, hence it itself has constant space and
 known type.
 so, why isn't a reference to a procedure being held in a variable
 equivalent to a procedure being held in a variable?
+
 that is a hard question to answer from this perspective, so we are
 going to shift gears and build up from an example.
 
@@ -318,35 +430,105 @@ however,
 in lambda calculus we can imagine a valid stream of evaluation for
 the terms
 
-f := (\x:int => \y:int => x + y);
-g := (f 3);
-g 4;
+f := (\x:int => \y:int => x + y); // no application, locally storing a procedure
+g := (f 3); // locally storing a partially applied result.
+h := g 4; // fully calling the procedure and getting a result.
 
 that is, we can partially apply procedures in the lambda calculus,
-and the langauge takes care of storing the memory entirely
+and the language takes care of storing the memory entirely
 invisibly to the programmer.
+
 in C, a procedure call either has the required number of arguments
 or it doesn't. within the lambda calculus, we can peel away layers
 of a procedure quite naturally with the syntax, and store partially
-applied procedures. more specifically, partially applied multiple
+applied procedures. (storing partly applied procedures in arguments
+is the basis for the fixed point combinator.) more specifically, partially applied multiple
 argument procedures, under the lambda calculus, technically there is
 only single argument procedures, and technically we are performing
 one application after another, in a sequence when we encounter the
 term applying the multiple argument procedure to multiple actual
-values. however, given the existence of currying we can instead
+values. we want express both Currying and Partial Application, what is the solution?
+well, one clue is that given the existence of currying we can instead
 treat a lambda whose body is immediately another lambda as a part of
 an argument list, instead of an actual beginning of the body of the
-lambda. which makes the below situation slightly distinct from the
+lambda which returns another lambda. this more directly makes the below
+situation slightly distinct from the
 above calling sequence.
 
-f := (\x:int => (y := 2; \z:int => (x + y + z)));
+f := (\x:Int => (y := 2; \z:Int => (x + y + z)));
+
+f : Int -> (Int -> Int)
+
+g := f 2;
+
+g is-a [x := 2, y := 2](\z:Int => x + y + z);
+
+g : Int -> Int
+
+h := g 2
+
+h := Int
+
+h is-a Int(6)
 
 (parenthesis added for explicit scoping, but the langauge
 parses the above as above with the current grammar rules,
 sans any parenthesis. (and currently we don't have the sequence operator.))
 
 so, this is a procedure who's result is a procedure, but that procedure
-doesn't participate in application in the usual way. because we define
+doesn't participate in application in the usual way. namely, it isn't
+curryed. one consequence of adopting currying as equivalent to multi
+argument procedure directly, is that when we encounter a procedure as
+a result of application it is a distinct syntactic situation, because
+the parser treats the list as the full argument list, so while in the
+syntax of the actual lambda calculus, this is legal
+
+f := (\x:Int => (y := 2; \z:Int => (x + y + z)));
+
+f : Int -> (Int -> Int)
+
+g := f 2 2
+
+where then g := 6
+
+instead, Pink would complain that
+the application provides too many arguments to a
+procedure of type (Int -> (Int -> Int))
+(as we have sorta defined it to take one argument
+and return a procedure type as the result.)
+this is because the result type is not a participant
+in The normal process of Currying when we are not
+interpreting the syntax more directly with the
+evaluation rules of the calculus.
+
+because the calculus actually treats
+f 2 2 as equivalent to (f 2) 2 anyways,
+that's what makes currying equivalent to
+multiple argument procedures in the first place.
+
+if we added a case where, if
+the argument list was longer, but the result
+type was itself a function type, we could
+compile that application to one application of
+the outer fn, and then with the rest of the
+present argument list try to construct another
+application of the returned procedure (we know
+where it will be stored by the nature of this term
+allocating space for it) and we can interpret the
+rest of the argument list as arguments to the
+inner procedure.
+potentially allowing for a single textual application
+to call more than one procedure in succession,
+leading to either a result value if the correct
+number of arguments was provided, or a closure
+term if less than the required number of arguments
+was provided. or an error in the case where the
+return type is not a procedure type and an argument
+still exists in the application term. this is
+obviously a mistake.
+
+
+because we define
 a locally scoped variable which is then subsequently captured by the inner
 procedure, that is being returned. in this situation, a function pointer
 to the inner procedure being returned out of the procedure 'f' is not

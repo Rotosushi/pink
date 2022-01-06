@@ -11,6 +11,10 @@ so, this language is small for languages,
 and this document is going to serve as the
 language standard of sorts for now.
 
+Destination is on the Left,
+and we start counting from zero
+starting at the leftmost position.
+
 we might as well start at the beginning.
 
 the EBNFish grammar right now:
@@ -18,6 +22,13 @@ the EBNFish grammar right now:
 // all operations have a lower precedence than applications.
 // so F x y + G a b is always parsed as the addition of
 // the result of two applications. (F x y) + (G a b)
+
+result : bool = true;
+result := true;
+
+result = true;
+
+f := \x: Int, y: Int => x + y;
 
 affix := application
        | application operator affix // binops are parsed separately by a traditional binop precedence parser.
@@ -49,7 +60,7 @@ type := "Nil"
       // { ( type ( '=' affix )? ( ',' type ( '=' affix )? )* )? } // an unlabeled anon struct type
       // the equals binds the structs cell to an initialization expression whose type matches
       // the cells type. (i.e. literals, constant expressions, expressions dependent on earlier bindings etc.)
-      // '{}' is equivalent to saying
+      // '{}' is equivalent to saying nil
 
 
 
@@ -64,9 +75,17 @@ integer := [0-9]+
 the type system is also fairly standard.
 
 the type of nil is Nil (in llvm i1)
+
+ENV |- nil : Nil
+
 the type of true and false is Bool (in llvm i1)
+
+ENV |- true  : Bool
+ENV |- false : Bool
+
 the type of integers is Int (in llvm i64)
 
+ENV |- [0-9]+ : Int
 
 the type of an if expression is only valid
 if it's condition expression has type Bool
@@ -75,11 +94,22 @@ have the same type. then the type of the
 if expression is the type of the alternate
 expressions.
 
+ENV |- t0 : T0, t1 : T1, t2 : T2
+  T0 = Bool, T1 = T2
+---------------------------------
+ENV |- 'if' t0 'then' t1 'else' t2 : T2
+
 
 the type of a while expression is only valid
 if the type of it's condition is Bool, and
 it's body has some type, then it's type is
-Nil. (maybe instead it's optional<T> where
+Nil.
+
+ENV |- t0 : T0, t1 : T1, T0 = Bool
+------------------------------------
+ENV |- 'while' t0 'do' t1 : Nil
+
+ (maybe instead it's optional<T> where
 T is the type of the body. and we get a nil
 optional when we evaluate the conditional the
 first time, and it turns false. that is
@@ -94,15 +124,31 @@ result type of the binop elimination procedure
 which takes the types of the left and right
 terms.
 
+ENV |- l : L, r : R, op : T0 -> T1 -> T2,
+       L = T0, R = T1
+-----------------------------------------
+ENV |- l op r : T2
+
 the type of a unop expression is the
 result type of the unop elimination procedure
 which takes the type of the right term.
+
+ENV |- r : R, op : T0 -> T1,
+       R = T0
+-----------------------------------------
+ENV |- op r : T1
 
 the type of a procedure is the type of it's arguments,
 appended to the type of it's body. (we consider terms
 where the argument appears within the body to have
 the type of the argument.) the arguments annotation is
 explicit and required of the name.
+
+ENV, a0: A0, a1: A1, ..., aN: AN |- t0: T0
+-------------------------------------------
+ENV |- '\'a0: A0, a1: A1, ..., aN: AN '=>' t0 : A0 -> ... -> AN -> T0
+
+notice that if N = 0, then A0 -> T0
 
 the type of an application is the type resulting from
 applying each of the types of the actual arguments
@@ -119,10 +165,14 @@ or a non function type object. but it's always knowable
 from the static type of the application and the static type of
 the callee.
 
+ENV |- f: T0 -> ... -> TN -> R0, a0: A0, ..., aM: AM,
+        T0 = A0, ..., TX = AM where (X is (N - M), so if N = M then TX = TN)
 ---------------------------------------------------------------------
+ENV |- f a0 ... aM : TX -> ... -> R0 where if N = M then R0 because TX = TN
 
-the local storage of a closure is an opaque ptr to dynamic memory, but it's type is
-fully deterministic with respect to the structure of the program.
+the local storage of a closure is an opaque ptr to dynamic memory,
+but we need to define the structure such that we can extract the
+closed over arguments to make a argument list out of them.
 you have to define a procedure with a definite number of arguments
 and apply it with a definite number of arguments, since these
 are two definite numbers we know that we can do a three way comparison
@@ -132,10 +182,13 @@ if given just the right number and type, that's a regular application.
 if given less than, only then do we build a closure. and since we
 built it from a finite type, and we were given a finite number
 of arguments, the expected number of arguments needed to build a
-proper application from a closure is also definite at compile time. the expected
+proper application from a closure is also definite at compile time.
+and is precisely the type of the closure itself. the expected
 and supplied type of each of the arguments in any given application term
 are known as well. the number of times you can bind a new argument to
-the closure and not have it be a valid application is a finite knowable number.
+the closure and have it be a valid application is a finite knowable number.
+between one and the number of arguments that the function has past one.
+because a one argument procedure is either applied or not applied.
 
 in spite of the fact that we need to represent closures as opaque
 pointers, the number and type of the argument list within a function is
@@ -144,20 +197,32 @@ the closed over values are of the right type. it had to be to build it.
 to even properly type the application which defined the closure.
 
 the only thing we cannot rely on, that we normally can with C style
-procedures as values is preciesly how many arguments the underlying
+procedures as values is precisely how many arguments the underlying
 closure has bound, before we get to the 'rest' of the
-procedures type which is the type of the closure, and the type of
-a formal argument binding a function object.
+procedures type which is the type of the closure, and thus the type of
+a binding of the function object. the formal binding type
+is still required to match exactly what types we expect to be able to
+bind to the function underneath and compose together a valid function
+application. that is at each step, the function type provides a complete
+description of all of the new arguments that need to be applied to
+result in a complete function application, what it no longer shows as
+well, is how many or what type of argument was applied to the passed
+object before it gets to this point of evaluation. under C-style rules
+every function application is either full, or invalid. so if a function
+is stored as an object, a-la a function pointer, we always have the
+precise type of the underlying procedure, because it cannot be any
+other way. however, with being able to store a procedure as a result,
+we can imagine a scenario where the function has, some but not all, arguments
+bound. (a number between 1 and N, say M). well, the resulting type
+no longer describes the type of the underlying procedure. as it is smaller
+by precisely M arguments. however, it does describe precisely how many
+arguments we need to apply to said underlying procedure to get a full
+application, vs simply binding more arguments.
 
 since a closure with the presented correct type could be representing
 a call to a procedure accepting more arguments than the type of the binding
 closures must be allocated like C++ vectors. they are, in essence
-dynamically sized. what is constant about any given closure that
-could be bound to the arguments type is that is takes the
-argument type more arguments, to produce a result value of the
-argument types return value. that is, the rest of it's application
-has the correct type to be applied by the procedure accepting
-the type as argument.
+dynamically sized.
 
 we also know a maximum upper bound on the size of any given closure
 at any given time. it is the size of the argument list as values in
@@ -172,29 +237,29 @@ then an application of that lambda could supply a sequence of names
 which gets consumed by the rules of the calculus
 into what is essentially a multiple argument application. (each argument
 is bound one at a time) the only real difference is how you write down
-the argument list of the lambda itself. formally
+the argument list of the lambda itself.
+
+formally
 
 \x:Int, y:Int, z:Int => x + y + z
 is
 \x:Int => \y:Int => \z:Int => x + y + z
 
-the key insight that i am leveraging is that the procedure
-body is constant for any given value of type Int that is bound
-to each of the arguments plus this notion of currying, to
-say that the C style procedure
+since C procedures are also statically typed, and
+strictly evaluated. (in applicative order). we
+can say that
 
 int fn(int x, int y, int z)
 {
-return x + y + z;
+  return x + y + z;
 }
 
 is an equivalent definition as well.
 
- the big difference is the lambda calculus's
+the big difference is the lambda calculus's
 ability to treat functions in a value sense. in terms of the grammar.
 
 saying terms like:
-
 
 
 multiply := \a:Int, b:Int => a * b
@@ -230,7 +295,8 @@ add has the familiar type
 
 Int -> Int -> Int
 
-(which you will notice is 5 - 2 = 3 elements long)
+(which you will notice is 5 - 2 = 3 elements long
+N - M = X)
 
 sub has the same type as add.
 
@@ -240,6 +306,7 @@ Int -> Int
 
 which is 5 - 3 = 2 elements long.
 which is the smallest function type.
+2 elements long. (elem -> elem)
 
 
 all of the closures defined above are over the same procedure,
@@ -276,20 +343,25 @@ past a certain number of arguments in their list.
 all of this means that we cannot pass the closure objects directly,
 and we cannot store them locally. just like with how we don't
 store a vectors array allocation directly, we locally store a
-reference to a vector locally. because despite both closure objects
-sharing a type, they have distinct storage characteristics.
+reference to a vector.
+this is because despite some two closure objects
+sharing a presented type, they have distinct storage characteristics,
+due to type differences in the functions they are closing over.
 this is similar to how two different vectors of ints can have distinct sizes.
+even though both have a type vecotor<int>.
 fundamentally this is because we are using a proxy for the
 procedure instead of the procedure itself, and the storage
 characteristics for this proxy object are what we are thinking about.
 this has disconnected the type of the procedure from the storage
 characteristics of that type which is representing the procedure
-locally. which is very much unlike what we
+locally.
+which is very much unlike what we
 know about our other primitive types. Int has a definite size
 prior to the beginning of the program. and even other composite
-types. typedef'ed arrays and structs sizes are runtime constants.
+types. typedefed arrays and struct's sizes are runtime constants.
+
 since the closure allocation itself can not be stored
-locally, because they violate the idea that we can process any value
+locally, because they violate the idea that we can hold any value
 of some type with the same allocation space for any given value of said type,
 what can we store locally? a pointer to the closure
 allocation, and since we cannot rely on the type we are pointing to,
@@ -310,14 +382,6 @@ in a more C style. in the same way we can pass strings into
 procedures in C++, but what we are passing is a reference to
 the C style array allocation of characters. (this is consistently
 combined with an implicit copy to achieve by-value semantics.)
-
-however, if the function is static for the lifetime of the program
-and the only difference is the values. then storing the partial
-application of a procedure, is equivalent to storing the same function pointer
-plus the value being bound right? which particular value is what is
-unique from call to call of the same procedure. certain other features
-can rub up against this particular assumption, particularly when thinking
-about shared data. however, to get something working we must be daring.
 
 
 strings representing names within the program are Interned. this
@@ -443,19 +507,23 @@ you wont know it happened, (i think the some CPU's also trap and run
 an interrupt? i need to do more research here) but my logic is,
 the runtime of a c program doesn't trap when you compute an out
 of bounds address. the computation of the index and the indexing
-are separated by time. what does crash the program is dereferencing
-an out of bounds address. this means that instead of inserting checks
+are separated by time. what does crash the program is the dereferencing
+an out of bounds address action. this means that instead of inserting checks
 on all of the math that the program does, it only emits checks
-on the memory access that is does.
+on the memory access that is does. and since math is more common than memory
+access (source??) we save time right?
 why can we ignore one class of error and only have the other?
 well, this is a matter of opinion truly, because there are languages
 which check all bounds computations, and don't delegate that error
-to the same segmentation fault error.
+to the same segmentation fault error. (these are not generally used in embedded
+contexts)
 the basic problem of overloading segmentation fault with so many
 different errors from so many different basic syntactic forms
 is that the presentation of the segmentation fault to the programmer
 essentially destroys the information of what caused the segmentation
-fault in the fist place.
+fault in the fist place. making debugging segmentation faults to be
+one of the more common events, but one that can lead you into many
+different language interactions.
 
 -----------------------------------------------------------------
 
@@ -463,6 +531,31 @@ so, the compile time has to contend with
 a few major things, constants/literals
 variables, primitive operators, two
 control primitives and lambdas/procedures.
+
+this means we need two storage solutions to build
+the abstraction of 'true' functions.
+a stack and a heap. the stack is used for local
+data during runtime. and the heap is used for
+lifetime disconnected local data. (global data
+is always lifetime disconnected as it's allocation
+is global, and thus happens during compile time.
+there is such a thing as lifetime extended local
+data, it's 'static' local bindings in C, they are
+globally allocated, and their binding is locally
+scoped. so they have the lifetime extension of
+dynamic allocations, but they have a subtle difference
+in that they are never deallocated, and their reference
+is constant. (it never makes sense to do arbitrary ptr
+arithmetic on them.), what makes sense from an arbitrary
+pointer arithmetic point of view is the ability to
+write down in the language, "this structure is allocated at
+this location", such that you can defined a memory mapped
+I/O address to be a structure with field access. instead of
+forcing the programmer to perform bit-wise operations, and
+potentially get them wrong. In C this is done by constructing
+a pointer from an integer. because the memory mapping is generally
+specified in a data-sheet or decided by an engineering team
+before the program is written.
 
 we consider every identifier to label storage
 cells. each storage cell has a type, and the type
