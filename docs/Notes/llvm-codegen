@@ -1,0 +1,176 @@
+so, the coarse grained view of usage is:
+
+construct a LLVM module. (and destroy after using.)
+(or use the global LLVM module, which i would hazard to guess
+ is statically allocated?)s
+
+!!! find and set the Target Triple and Target DataLayout for
+    codegen. if these are not set to at least sensible defaults
+    the code generated may not work !!!
+
+the target triple can be found with
+
+  llvm::sys::getDefaultTargetTriple();
+  llvm::sys::getProcessTriple();
+
+
+
+
+if we are interpreting we are working over a basic block or a module?
+where we traverse the ast and construct a set of LLVM instructions
+which perform the actions we read from the ast.
+then we JIT the series of instructions.
+
+what's confusing is there is an Execution Engine,
+an Interpreter, a JIT compiler, and an MCJIT compiler?
+
+also also, if we use a module during interpretation do we
+constantly reinvoke each statement as a new main? then
+pink modules could be brought in via a single statement.
+the other choice that seems to make sense is to fill in a
+basic block, JIT it and interpret? idk.
+
+
+however, compilation makes total sense from a coarse
+grained perspective. we open a file containing pink code,
+and a main entry point
+build a module by appending function bodies and global data
+to the module and then we turn that module into native code
+with a main entry point, place it all in an ELF file and
+then it can be run independently.
+
+if more than one file is specified each gets their own module
+and then we can bring each module into a single source and then
+turn that into native code and place it into an ELF file with a
+main and then were golden.
+
+-------------------------------------------------------------------------------
+
+additionally, TypeInterner can be modified to be a wrapper around the LLVM
+TypeInterner, (which is stored within the LLVMModule being used for compilation)
+LLVMType becomes a wrapper for a (LLVMTypeRef)
+
+I think Object becomes a wrapper for LLVMValueRef,
+yep, and so does a bunch of other stuff i think,
+including so far Judgement, and every object representing
+a value within our language.
+
+
+
+
+so, we as an interpreter we are operating over a single instruction.
+when we expand the language to include the sequence grapheme we -have-
+to operate over a basic-block at a minimum, and when we compile one or
+more modules we have to operate over modules.
+
+we construct instructions using the
+LLVMBuild* family of procedures.
+these return values of kind LLVMValueRef
+with an instance of
+
+//---------------------------------------------------------------
+
+Pink will have a collection of kernel primitives.
+there will be enough to work efficiently with the
+provided primitive types, and will stop there.
+as writing the rest of the language as a standard
+library will
+a) help catch bugs in the compiler
+b) help flesh out the parts of the compiler that
+    I have inadvertently not given enough thought.
+c) allow programmers to link in functionality they may not
+   want to strive for smaller emitted programs by default.
+d) allow me to work in the language, so at least one person
+   can have an opinion on how the features are interacting,
+   and how the syntax flows with the information.
+
+so the Kernel of Pink:
+broadly the Kernel is composed of
+  -) Data Primitives
+    -) Unit Types
+    -) Composite Types
+    -) Abstraction
+    -) Global Variables
+    -) then Malloc/Free
+    -) Coroutines and then Threads
+  -) Evaluation Primitives
+    -) Selection
+    -) Sequence
+    -) Iteration
+    -) Application
+
+
+first: data primitives, the basic information building blocks of the language.
+
+integers:
+
+Type
+
+[Nil]
+
+  a unit Type, to represent 'nothing' or 'zero' in a computational sense.
+               it's equivalent to 'false'.
+
+               has a small width. (i8, or one word, whichever is available)
+
+[Boolean]
+
+  a bool type, represents 'true' or 'false' in a computation sense.
+               true is equivalent to one, false to zero.
+
+               has a small width. (i8, or one word, whichever is available)
+
+[Integer]
+
+  regular old integer, with a width of one machine word.
+
+  TODO: add syntax to inspect/trap overflows?
+
+[I8/16/32/64]
+
+  an integer of the specified width. (we wouldn't support an integer width larger
+                                      than we could emit code for, so this is kinda
+                                      target dependent primitive Types. though in practice
+                                      most platforms have most of these types available.)
+
+[Unsigned/Natural]
+
+  a (strictly) positive integer, with a width of one machine word.
+
+[U8/16/32/64]
+
+  an unsigned integer, with the specified width.
+
+
+
+Arrays:
+
+  [ N * T ]
+
+are a primitive, which is literally a N * sizeof(T) length
+collection of elements of Type T.
+
+a Pink array is (preliminarily) going to be implemented as
+a llvm struct holding a length, and the array.
+
+in llvm assembly:
+
+%pink-array = type { u8, [ N x T ] };
+
+where we store the length (N) within
+the first element, and we build an array of
+size (N) over Type (T) for the second element.
+
+
+
+
+
+
+
+
+
+
+
+
+
+// -------------------------------------------
