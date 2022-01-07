@@ -248,5 +248,5 @@ clean:
 	mkdir test/build/
 
 commit:
-	git add include/* src/* test/include/* test/src/* Makefile
+	git add include/* src/* test/include/* test/src/* Makefile TODO.txt 
 	git commit
