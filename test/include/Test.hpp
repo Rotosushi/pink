@@ -31,6 +31,7 @@
 
 */
 
+// auxilliary tests
 constexpr auto TEST_ERROR             = 0x0000'0001;
 constexpr auto TEST_OUTCOME           = 0x0000'0002;
 constexpr auto TEST_STRING_INTERNER   = 0x0000'0004;
@@ -38,6 +39,7 @@ constexpr auto TEST_SYMBOL_TABLE      = 0x0000'0008;
 constexpr auto TEST_TYPE_INTERNER     = 0x0000'0010;
 constexpr auto TEST_ENVIRONMENT       = 0x0000'0020;
 constexpr auto TEST_UNOP_CODEGEN      = 0x0000'0040;
+// abstract syntax tree tests
 constexpr auto TEST_AST_AND_NIL       = 0x0000'0080;
 constexpr auto TEST_BOOL              = 0x0000'0100;
 constexpr auto TEST_INT               = 0x0000'0200;
@@ -45,9 +47,12 @@ constexpr auto TEST_VARIABLE          = 0x0000'0400;
 constexpr auto TEST_BIND              = 0x0000'0800;
 constexpr auto TEST_BINOP             = 0x0000'1000;
 constexpr auto TEST_UNOP              = 0x0000'2000;
+// type tests
 constexpr auto TEST_TYPE_AND_NIL_TYPE = 0x0000'4000;
 constexpr auto TEST_INT_TYPE          = 0x0000'8000;
 constexpr auto TEST_BOOL_TYPE         = 0x0001'0000;
+// fronend tests
+constexpr auto TEST_LEXER             = 0x0002'0000;
 
 constexpr auto TEST_ALL               = 0xFFFF'FFFF;
 

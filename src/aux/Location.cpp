@@ -21,4 +21,14 @@ namespace pink {
     {
 
     }
+
+    bool Location::operator==(const Location& other)
+    {
+        bool result;
+        result = (firstLine == other.firstLine)
+                && (firstColumn == other.firstColumn)
+                && (lastLine == other.lastLine)
+                && (lastColumn == other.lastColumn);
+        return result;
+    }
 }

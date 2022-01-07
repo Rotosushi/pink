@@ -18,14 +18,26 @@
 #include "type/TestTypeAndNilType.hpp"
 #include "type/TestIntType.hpp"
 #include "type/TestBoolType.hpp"
+#include "front/TestLexer.hpp"
 
 size_t Test(std::ostream& out, size_t flags)
 {
     size_t result = 0;
 
+    /*
+        If we refactor the basic test subroutine to take
+        a reference to the class being tested, then we
+        can rerun previous tests when we have a component
+        of a class that is itself an instance of that
+        other class.
+
+        In this way we could compose together the unit tests
+        themselves to write tests for the classes that are
+        composed of other classes. This would repeat work.
+    */
 
     /*
-        Auxilliary classes.
+        Auxilliary Classes Tests.
     */
     if ((flags & TEST_ERROR) > 0)
     {
@@ -72,7 +84,7 @@ size_t Test(std::ostream& out, size_t flags)
 
 
     /*
-        Abstract Syntax Tree classes
+        Abstract Syntax Tree Tests
     */
     if ((flags & TEST_AST_AND_NIL) > 0)
     {
@@ -118,7 +130,7 @@ size_t Test(std::ostream& out, size_t flags)
 
 
     /*
-        Type classes;
+        Type Tests
     */
     if ((flags & TEST_TYPE_AND_NIL_TYPE) > 0)
     {
@@ -136,6 +148,16 @@ size_t Test(std::ostream& out, size_t flags)
     {
         if (TestBoolType(out))
             result |= TEST_BOOL_TYPE;
+    }
+
+    /*
+        Frontend Tests
+    */
+
+    if ((flags & TEST_LEXER) > 0)
+    {
+        if (TestLexer(out))
+            result |= TEST_LEXER;
     }
 
     return result;
