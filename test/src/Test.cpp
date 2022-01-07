@@ -2,9 +2,12 @@
 #include "Test.hpp"
 
 #include "aux/TestError.hpp"
+#include "aux/TestOutcome.hpp"
 #include "aux/TestStringInterner.hpp"
 #include "aux/TestTypeInterner.hpp"
 #include "aux/TestSymbolTable.hpp"
+#include "aux/TestEnvironment.hpp"
+#include "aux/TestUnopCodegen.hpp"
 #include "ast/TestAstAndNil.hpp"
 #include "ast/TestBool.hpp"
 #include "ast/TestInt.hpp"
@@ -20,10 +23,20 @@ size_t Test(std::ostream& out, size_t flags)
 {
     size_t result = 0;
 
+
+    /*
+        Auxilliary classes.
+    */
     if ((flags & TEST_ERROR) > 0)
     {
         if (TestError(out))
             result |= TEST_ERROR;
+    }
+
+    if ((flags & TEST_OUTCOME) > 0)
+    {
+        if (TestOutcome(out))
+            result |= TEST_OUTCOME;
     }
 
     if ((flags & TEST_STRING_INTERNER) > 0)
@@ -44,6 +57,23 @@ size_t Test(std::ostream& out, size_t flags)
             result |= TEST_TYPE_INTERNER;
     }
 
+    if ((flags & TEST_ENVIRONMENT) > 0)
+    {
+        if (TestEnvironment(out))
+            result |= TEST_ENVIRONMENT;
+    }
+
+    if ((flags & TEST_UNOP_CODEGEN) > 0)
+    {
+        if (TestUnopCodegen(out))
+            result |= TEST_UNOP_CODEGEN;
+    }
+
+
+
+    /*
+        Abstract Syntax Tree classes
+    */
     if ((flags & TEST_AST_AND_NIL) > 0)
     {
         if (TestAstAndNil(out))
@@ -86,6 +116,10 @@ size_t Test(std::ostream& out, size_t flags)
             result |= TEST_UNOP;
     }
 
+
+    /*
+        Type classes;
+    */
     if ((flags & TEST_TYPE_AND_NIL_TYPE) > 0)
     {
         if (TestTypeAndNilType(out))

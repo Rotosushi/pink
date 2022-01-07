@@ -1,8 +1,4 @@
 
-#include "aux/TestEnvironment.hpp"
-#include "aux/Environment.hpp"
-#include "aux/Error.hpp"
-
 #include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
 #include "llvm/Support/TargetRegistry.h" // llvm::TargetRegistry::lookupTarget();
 #include "llvm/Support/TargetSelect.h"
@@ -10,11 +6,23 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-bool TestEnvironment(std::ostream& out)
+#include "aux/TestUnopCodegen.hpp"
+#include "aux/UnopCodegen.hpp"
+
+#include "type/IntType.hpp"
+
+pink::Outcome<pink::Error, llvm::Value*> test_codegen_fn(llvm::Value* term, pink::Environment& env)
+{
+    std::string s("");
+    pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
+    return pink::Outcome<pink::Error, llvm::Value*>(err);
+}
+
+bool TestUnopCodegen(std::ostream& out)
 {
     bool result = true;
     out << "\n-----------------------\n";
-    out << "Testing Pink::Environment: \n";
+    out << "Testing and pink::UnopCodegen: \n";
 
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -63,12 +71,35 @@ bool TestEnvironment(std::ostream& out)
     pink::Environment env(symbols, operators, types, bindings,
         target_triple, data_layout, context, module, builder);
 
+    pink::Type* ty = new pink::IntType();
+    pink::UnopCodegen unop_gen(ty, test_codegen_fn);
+
+    if (unop_gen.result_type == ty)
+    {
+        out << "\tTest: UnopCodegen::result_type: Passed\n";
+    }
+    else
+    {
+        result = false;
+        out << "\tTest: UnopCodegen::result_type: Failed\n";
+    }
+
+    pink::Outcome<pink::Error, llvm::Value*> v = unop_gen.generate(nullptr, env);
+
+    if (v.GetWhich())
+    {
+        out << "\tTest: UnopCodegen::generate: Passed\n";
+    }
+    else
+    {
+        result = false;
+        out << "\tTest: UnopCodegen::generate: Failed\n";
+    }
 
     if (result)
-        out << "Test: pink::Environment: Passed\n";
+        out << "Test: pink::UnopCodegen: Passed\n";
     else
-        out << "Test: pink::Environment: Failed\n";
-
+        out << "Test: pink::UnopCodegen: Failed\n";
     out << "\n-----------------------\n";
     return result;
 }
