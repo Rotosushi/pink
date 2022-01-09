@@ -1,5 +1,5 @@
 
-
+#include "Test.hpp"
 #include "aux/TestTypeInterner.hpp"
 #include "aux/TypeInterner.hpp"
 
@@ -17,15 +17,7 @@ bool TestTypeInterner(std::ostream& out)
         Checks that the type interner returns a valid
         Interned Type
     */
-    if (nt0 != NULL)
-    {
-        out << "\tTest: TypeInterner::GetNilType(), unique Type is valid: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: TypeInterner::GetNilType(), unique Type is valid: Failed\n";
-    }
+    result &= Test(out, "TypeInterner::GetNilType()", nt0 != nullptr);
 
     pink::Type* nt1 = interner.GetNilType();
 
@@ -33,15 +25,7 @@ bool TestTypeInterner(std::ostream& out)
         Checks that another of the same kind of type compares
         equal to the previous type, using pointer comparison.
     */
-    if (nt1 != NULL && nt0 == nt1)
-    {
-        out << "\tTest: TypeInterner::GetNilType(), two of the same unique Types compare equal: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: TypeInterner::GetNilType(), two of the same unique Types compare equal: Failed\n";
-    }
+    result &= Test(out, "TypeInterner::GetNilType(), interned type compares equal", nt1 != nullptr && nt0 == nt1);
 
     pink::Type* bt0 = interner.GetBoolType();
 
@@ -49,20 +33,9 @@ bool TestTypeInterner(std::ostream& out)
         checks that a different type compares not equal
         to the previous type
     */
-    if (bt0 != NULL && nt0 != bt0)
-    {
-        out << "\tTest: TypeInterner::GetNilType(), two different unique Types compares not-equal: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: TypeInterner::GetNilType(), two different unique Types compares not-equal: Failed\n";
-    }
+    result &= Test(out, "TypeInterner::GetBoolType(), different types compare not equal", bt0 != nullptr && nt0 != bt0);
 
-    if (result)
-        out << "Test: pink::TypeInterner: Passed\n";
-    else
-        out << "Test: pink::TypeInterner: Failed\n";
+    result &= Test(out, "pink::TypeInterner", result);
 
     out << "\n-----------------------\n";
     return result;

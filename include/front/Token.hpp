@@ -1,5 +1,5 @@
 #pragma once
-
+#include <string>
 
 namespace pink {
     enum class Token {
@@ -10,7 +10,7 @@ namespace pink {
         Op,
 
         Colon,
-        Assign,
+        Equals,
         LParen,
         RParen,
 
@@ -22,4 +22,6 @@ namespace pink {
         False,
         BoolType,
     };
+
+    std::string TokenToString(Token t);
 }

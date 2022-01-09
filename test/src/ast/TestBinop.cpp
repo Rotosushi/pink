@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "ast/TestBinop.hpp"
 
 #include "ast/Binop.hpp"
@@ -45,76 +45,26 @@ bool TestBinop(std::ostream& out)
     -) Binop::ToString() == l->ToString() + std::string(op) + r->ToString();
 
     */
-    if (b0->GetKind() == pink::Ast::Kind::Binop)
-    {
-        out << "\tTest Binop::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Binop::GetKind(): Failed\n";
-    }
+    result &= Test(out, "Binop::GetKind()", b0->GetKind() == pink::Ast::Kind::Binop);
 
-    if (b0->classof(b0))
-    {
-        out << "\tTest: Binop::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Binop::classof(): Failed\n";
-    }
+    result &= Test(out, "Binop::classof()", b0->classof(b0));
 
     pink::Location bl(b0->GetLoc());
-    if (bl.firstLine == l3.firstLine && bl.firstColumn == l3.firstColumn
-     && bl.lastLine == l3.lastLine && bl.lastColumn == l3.lastColumn)
-    {
-        out << "\tTest: Binop::GetLoc(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Binop::GetLoc(): Failed\n";
-    }
 
-    if (b0->op == plus)
-    {
-        out << "\tTest: Binop::symbol: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Binop::symbol: Failed\n";
-    }
+    result &= Test(out, "Binop::GetLoc()", bl == l3);
 
-    if (b0->left == i0 && b0->right == i1)
-    {
-        out << "\tTest: Binop::term: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Binop::term: Failed\n";
-    }
+    result &= Test(out, "Binop::symbol", b0->op == plus);
+
+    result &= Test(out, "Binop::term", b0->left == i0 && b0->right == i1);
+
 
     std::string binop_str = i0->ToString() + " " + std::string(plus) + " " + i1->ToString();
 
-    if (b0->ToString() == binop_str)
-    {
-        out << "\tTest: Binop::ToString: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Binop::ToString: Failed\n";
-    }
+    result &= Test(out, "Binop::ToString()", b0->ToString() == binop_str);
 
     delete b0;
 
-    if (result)
-        out << "Test: pink::Binop: Passed\n";
-    else
-        out << "Test: pink::Binop: Failed\n";
+    result &= Test(out, "pink::Binop", result);
     out << "\n-----------------------\n";
     return result;
 }

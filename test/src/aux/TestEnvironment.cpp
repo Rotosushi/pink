@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "aux/TestEnvironment.hpp"
 #include "aux/Environment.hpp"
 #include "aux/Error.hpp"
@@ -68,41 +68,17 @@ bool TestEnvironment(std::ostream& out)
 
     pink::InternedString symb = env.symbols.Intern("x");
 
-    if (symb == std::string("x"))
-    {
-        out << "\tTest: Environment::symbols: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Environment::symbols: Failed\n";
-    }
+    result &= Test(out, "Environment::symbols", symb == std::string("x"));
 
 
     pink::InternedString op = env.operators.Intern("+");
 
-    if (op == std::string("+"))
-    {
-        out << "\tTest: Environment::operators: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Environment::operators: Failed\n";
-    }
+    result &= Test(out, "Environment::operators", op == std::string("+"));
 
 
     pink::Type* type = env.types.GetNilType();
 
-    if (type->ToString() == std::string("Nil"))
-    {
-        out << "\tTest: Environment::types: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Environment::types: Failed\n";
-    }
+    result &= Test(out, "Environment::types", type->ToString() == std::string("Nil"));
 
     pink::Location l(0, 7, 0, 10);
     pink::Nil* nil = new pink::Nil(l);
@@ -113,36 +89,12 @@ bool TestEnvironment(std::ostream& out)
 
     // since they point to the same memory, nil, and the bound
     // term's pointer values compare equal if everything works.
-    if (term.hasValue() && *term == nil)
-    {
-        out << "\tTest: Environment::bindings: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Environment::bindings: Failed\n";
-    }
+    result &= Test(out, "Environment::bindings", term.hasValue() && *term == nil);
 
 
-    if (env.target_triple == target_triple)
-    {
-        out << "\tTest: Environment::target_triple: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Environment::target_triple: Failed\n";
-    }
+    result &= Test(out, "Environment::target_triple", env.target_triple == target_triple);
 
-    if (env.data_layout == data_layout)
-    {
-        out << "\tTest: Environment::data_layout: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest:: Environment::data_layout: Failed\n";
-    }
+    result &= Test(out, "Environment::data_layout", env.data_layout == data_layout);
 
 
     // there isn't a easy way of telling that the LLVMContext
@@ -154,35 +106,15 @@ bool TestEnvironment(std::ostream& out)
     // unique. We could check that this module supports
     // Typed Pointers, but that isn't necessarily the same condition.
 
-
-    if (env.module.getModuleIdentifier() == std::string("TestEnvironment"))
-    {
-        out << "\tTest: Environment::module: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest:: Environment::module: Failed\n";
-    }
+    result &= Test(out, "Environment::module", env.module.getModuleIdentifier() == std::string("TestEnvironment"));
 
     llvm::Type* ltype = llvm::Type::getInt8Ty(env.context);
     llvm::Type* irtype = env.ir_builder.getInt8Ty();
 
-    if (ltype == irtype)
-    {
-        out << "\tTest: Environment::ir_builder: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Environment::ir_builder: Failed\n";
-    }
+    result &= Test(out, "Environment::ir_builder", ltype == irtype);
 
 
-    if (result)
-        out << "Test: pink::Environment: Passed\n";
-    else
-        out << "Test: pink::Environment: Failed\n";
+    result &= Test(out, "pink::Environment", result);
 
     out << "\n-----------------------\n";
     return result;

@@ -1,6 +1,7 @@
 #include <string>
 #include <sstream>
 
+#include "Test.hpp"
 #include "ast/TestAstAndNil.hpp"
 #include "ast/Nil.hpp"
 
@@ -35,56 +36,18 @@ bool TestAstAndNil(std::ostream& out)
     pink::Location l0(0, 14, 0, 15);
     pink::Nil a(l0);
 
-    if (a.GetKind() == pink::Ast::Kind::Nil)
-    {
-        out << "\tTest: Nil::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Nil::GetKind(): Failed\n";
-    }
-
-    if (a.classof(&a))
-    {
-        out << "\tTest: Nil::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Nil::classof(): Failed\n";
-    }
+    result &= Test(out, "Nil::GetKind()", a.GetKind() == pink::Ast::Kind::Nil);
+    result &= Test(out, "Nil::classof()", a.classof(&a));
 
     pink::Location l1(l0);
-    if (l0.firstLine == l1.firstLine && l0.firstColumn == l1.firstColumn
-     && l0.lastLine == l1.lastLine && l0.lastColumn == l1.lastColumn)
-    {
-        out << "\tTest: Nil::GetLoc(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Nil::GetLoc(): Failed\n";
-    }
 
+    result &= Test(out, "Nil::GetLoc()", l0 == l1);
 
     std::string nil = "nil";
 
+    result &= Test(out, "Nil::ToString()", a.ToString() == nil);
 
-    if (a.ToString() == nil)
-    {
-        out << "\tTest: Nil::ToString(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Nil::ToString(): Failed\n";
-    }
-
-    if (result)
-        out << "Test: pink::Ast and pink::Nil: Passed\n";
-    else
-        out << "Test: pink::Ast and pink::Nil: Failed\n";
+    result &= Test(out, "pink::Nil", result);
     out << "\n-----------------------\n";
     return result;
 }

@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "aux/TestStringInterner.hpp"
 
 #include "aux/StringInterner.hpp"
@@ -26,15 +26,7 @@ bool TestStringInterner(std::ostream& out)
         InternedString, that holds the same characters as
         the argument string.
     */
-    if (istr0 != NULL && s0 == istr0)
-    {
-        out << "\tTest StringInterner::Intern(std::string&), unique string is valid: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest StringInterner::Intern(std::string&), unique string is valid: Failed\n";
-    }
+    result &= Test(out, "StringInterner::Intern(), unique string", istr0 != NULL && s0 == istr0);
 
     pink::InternedString istr1 = interner.Intern(s1);
 
@@ -43,15 +35,7 @@ bool TestStringInterner(std::ostream& out)
         that the StringInterner returned a different InternedString
         from the first InternedString by pointer comparison
     */
-    if (istr1 != NULL && s1 == istr1 && istr1 != istr0)
-    {
-        out << "\tTest StringInterner::Intern(std::string&), two unique strings compare not-equal: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest StringInterner::Intern(std::string&), two unique strings compare not-equal: Failed\n";
-    }
+    result &= Test(out, "StringInterner::Intern(), second uniqe string", istr1 != NULL && s1 == istr1 && istr1 != istr0);
 
     pink::InternedString istr2 = interner.Intern(s0);
 
@@ -60,20 +44,10 @@ bool TestStringInterner(std::ostream& out)
         then checks that the StringInterner returned the exact same
         InternedString as the first InternedString, due to the duplicate text.
     */
-    if (istr2 != NULL && s0 == istr2 && istr2 == istr0)
-    {
-        out << "\tTest StringInterner::Intern(std::string&), duplicate string compares equal: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest StringInterner::Intern(std::string&), duplicate string compares equal: Failed\n";
-    }
+    result &= Test(out, "StringInterner::Intern(), duplicate string", istr2 != NULL && s0 == istr2 && istr2 == istr0);
 
-    if (result)
-        out << "Test: pink::StringInterner: Passed\n";
-    else
-        out << "Test: pink::StringInterner: Failed\n";
+
+    result &= Test(out, "pink::StringInterner", result);
 
     out << "\n-----------------------\n";
     return result;

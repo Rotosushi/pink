@@ -6,6 +6,7 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
+#include "Test.hpp"
 #include "aux/TestUnopCodegen.hpp"
 #include "aux/UnopCodegen.hpp"
 
@@ -74,32 +75,14 @@ bool TestUnopCodegen(std::ostream& out)
     pink::Type* ty = new pink::IntType();
     pink::UnopCodegen unop_gen(ty, test_codegen_fn);
 
-    if (unop_gen.result_type == ty)
-    {
-        out << "\tTest: UnopCodegen::result_type: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: UnopCodegen::result_type: Failed\n";
-    }
+    result &= Test(out, "UnopCodegen::result_type", unop_gen.result_type == ty);
+
 
     pink::Outcome<pink::Error, llvm::Value*> v = unop_gen.generate(nullptr, env);
 
-    if (v.GetWhich())
-    {
-        out << "\tTest: UnopCodegen::generate: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: UnopCodegen::generate: Failed\n";
-    }
+    result &= Test(out, "UnopCodegen::generate", v.GetWhich());
 
-    if (result)
-        out << "Test: pink::UnopCodegen: Passed\n";
-    else
-        out << "Test: pink::UnopCodegen: Failed\n";
+    result &= Test(out, "pink::UnopCodegen", result);
     out << "\n-----------------------\n";
     return result;
 }

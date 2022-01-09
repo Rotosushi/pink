@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "ast/TestBind.hpp"
 
 #include "ast/Nil.hpp"
@@ -7,8 +7,6 @@
 bool TestBind(std::ostream& out)
 {
     bool result = true;
-    result = true;
-
     out << "\n-----------------------\n";
     out << "Testing pink::Bind: \n";
 
@@ -42,77 +40,24 @@ bool TestBind(std::ostream& out)
     -) Bind::ToString() == std::string(symbol) + " := " + term->ToString();
 
     */
-    if (b0->GetKind() == pink::Ast::Kind::Bind)
-    {
-        out << "\tTest Bind::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Bind::GetKind(): Failed\n";
-    }
 
-    if (b0->classof(b0))
-    {
-        out << "\tTest: Bind::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Bind::classof(): Failed\n";
-    }
+    result &= Test(out, "Bind::GetKind()", b0->GetKind() == pink::Ast::Kind::Bind);
+    result &= Test(out, "Bind::classof()", b0->classof(b0));
 
     pink::Location l2(l0);
     pink::Location bl(b0->GetLoc());
-    if (bl.firstLine == l2.firstLine && bl.firstColumn == l2.firstColumn
-     && bl.lastLine == l2.lastLine && bl.lastColumn == l2.lastColumn)
-    {
-        out << "\tTest: Bind::GetLoc(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Bind::GetLoc(): Failed\n";
-    }
+    result &= Test(out, "Bind::GetLoc()", bl == l2);
 
-    if (b0->symbol == v)
-    {
-        out << "\tTest: Bind::symbol: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Bind::symbol: Failed\n";
-    }
-
-    if (b0->term == n0)
-    {
-        out << "\tTest: Bind::term: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Bind::term: Failed\n";
-    }
+    result &= Test(out, "Bind::symbol", b0->symbol == v);
+    result &= Test(out, "Bind::term", b0->term == n0);
 
     std::string bind_str = std::string(v) + std::string(" := ") + n0->ToString();
 
-    if (b0->ToString() == bind_str)
-    {
-        out << "\tTest: Bind::ToString: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Bind::ToString: Failed\n";
-    }
+    result &= Test(out, "Bind::ToString()", b0->ToString() == bind_str);
 
     delete b0;
 
-    if (result)
-        out << "Test: pink::Bind: Passed\n";
-    else
-        out << "Test: pink::Bind: Failed\n";
+    result &= Test(out, "pink::Bind", result);
     out << "\n-----------------------\n";
     return result;
 }

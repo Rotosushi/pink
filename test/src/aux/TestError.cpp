@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "aux/TestError.hpp"
 
 #include "aux/Error.hpp"
@@ -25,47 +25,21 @@ bool TestError(std::ostream& out)
     // this test does not check that the correct peice
     // of the input is underlined. To do so requires regex
     // or a parser at a minimum, #TODO
-    if (synstr.length() == 0)
-    {
-        result = false;
-        out << "\tTest: Error::Error(), Syntax Error: Failed\n";
-    }
-    else
-    {
-        //out << synstr;
-        out << "\tTest: Error::Error(), Syntax Error: Passed\n";
-    }
+    result &= Test(out, "Error::Error(Error::Kind::Syntax)", synstr.length() > 0);
 
     pink::Error typerr(pink::Error::Kind::Type, edsc, pink::Location(0, 9, 0, 13));
 
     std::string typstr = typerr.ToString(etxt);
 
-    if (typstr.length() == 0)
-    {
-        result = false;
-        out << "\tTest: Error::Error(), Type Error: Failed\n";
-    }
-    else
-    {
-        //out << typstr;
-        out << "\tTest: Error::Error(), Type Error: Passed\n";
-    }
+    result &= Test(out, "Error::Error(Error::Kind::Type)", typstr.length() > 0);
+
 
     pink::Error semerr(pink::Error::Kind::Semantic, edsc, pink::Location(0, 15, 0, 19));
 
     std::string semstr = semerr.ToString(etxt);
 
-    if (semstr.length() == 0)
-    {
-        result = false;
-        out << "\tTest: Error::Error(), Semantic Error: Failed\n";
-    }
-    else
-    {
-        //out << semstr;
-        out << "\tTest: Error::Error(), Semantic Error: Passed\n";
-    }
-    
+    result &= Test(out, "Error::Error(Error::Kind::Semantic)", semstr.length() > 0);
+
 
 
     if (result)

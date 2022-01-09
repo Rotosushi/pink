@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "ast/TestBool.hpp"
 
 #include "ast/Bool.hpp"
@@ -32,65 +32,21 @@ bool TestBool(std::ostream& out)
 
         -) Bool::ToString() == "Bool"
     */
-    if (b0->GetKind() == pink::Ast::Kind::Bool)
-    {
-        out << "\tTest Bool::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Bool::GetKind(): Failed\n";
-    }
+    result &= Test(out, "Bool::GetKind()", b0->GetKind() == pink::Ast::Kind::Bool);
 
-    if (b0->classof(b0))
-    {
-        out << "\tTest: Bool::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Bool::classof(): Failed\n";
-    }
+    result &= Test(out, "Bool::classof()", b0->classof(b0));
 
     pink::Location l1(l0);
     pink::Location bl(b0->GetLoc());
-    if (bl.firstLine == l1.firstLine && bl.firstColumn == l1.firstColumn
-     && bl.lastLine == l1.lastLine && bl.lastColumn == l1.lastColumn)
-    {
-        out << "\tTest: Bool::GetLoc(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Bool::GetLoc(): Failed\n";
-    }
+    result &= Test(out, "Bool::GetLoc()", bl == l1);
 
-    if (b0->value == true)
-    {
-        out << "\tTest Bool::value: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Bool::value: Failed\n";
-    }
+    result &= Test(out, "Bool::value", b0->value == true);
 
-    if (b0->ToString() == "true")
-    {
-        out << "\tTest Bool::ToString: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Bool::ToString: Failed\n";
-    }
+    result &= Test(out, "Bool::ToString()", b0->ToString() == "true");
 
     delete b0;
 
-    if (result)
-        out << "Test: pink::Bool: Passed\n";
-    else
-        out << "Test: pink::Bool: Failed\n";
+    result &= Test(out, "pink::Result", result);
     out << "\n-----------------------\n";
     return result;
 }

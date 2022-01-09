@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "aux/TestSymbolTable.hpp"
 
 #include "aux/SymbolTable.hpp"
@@ -32,25 +32,9 @@ bool TestSymbolTable(std::ostream& out)
     pink::SymbolTable t0;
     pink::SymbolTable t1(&t0);
 
-    if (t0.OuterScope() == nullptr)
-    {
-        out << "\tTest: SymbolTable::OuterScope(), default constructed symbol table: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: SymbolTable::OuterScope(), default constructed symbol table: Failed\n";
-    }
+    result &= Test(out, "SymbolTable::OuterScope(), global scope", t0.OuterScope() == nullptr);
 
-    if (t1.OuterScope() == &(t0))
-    {
-        out << "\tTest: SymbolTable::OuterScope(), inner table, Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: SymbolTable::OuterScope(), inner table, Failed\n";
-    }
+    result &= Test(out, "SymbolTable::OuterScope(), inner scope", t1.OuterScope() == &(t0));
 
     pink::Location l(0, 5, 0, 7);
     pink::Nil* n0 = new pink::Nil(l);
@@ -60,33 +44,14 @@ bool TestSymbolTable(std::ostream& out)
     t0.Bind(x, n0);
     llvm::Optional<pink::Ast*> s0 = t0.Lookup(x);
 
-    if (s0.hasValue() && *s0 == n0)
-    {
-        out << "\tTest: SymbolTable::Bind, and SymbolTable::Lookup(), created and found a binding: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: SymbolTable::Bind, and SymbolTable::Lookup(), created and found a binding: Failed\n";
-    }
+    result &= Test(out, "SymbolTable::Bind(), SymbolTable::Lookup()", s0.hasValue() && *s0 == n0);
 
     t0.Unbind(x);
     llvm::Optional<pink::Ast*> s1 = t0.Lookup(x);
 
-    if (!s1.hasValue())
-    {
-        out << "\tTest: SymbolTable::Unbind, and SymbolTable::Lookup(), removed and did not find a binding: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: SymbolTable::Unbind, and SymbolTable::Lookup(), removed and did not find a binding: Failed\n";
-    }
+    result &= Test(out, "SymbolTable::Unbind()", !s1.hasValue());
 
-    if (result)
-        out << "Test: pink::SymbolTable: Passed\n";
-    else
-        out << "Test: pink::SymbolTable: Failed\n";
+    result &= Test(out, "pink::SymbolTable", result);
     out << "\n-----------------------\n";
     return result;
 }

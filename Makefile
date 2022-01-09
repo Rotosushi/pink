@@ -14,11 +14,11 @@
 # ----------- Makefile Basic Definitions -----------
 CC=clang++-13
 # `llvm-config-13 -cxxflags` adds necessary flags for compiling c++ with llvm-13
-CFLAGS=-g -std=c++20 -Iinclude/ -Itest/include/ -c `llvm-config-13 --cxxflags`
+CFLAGS=-g -Wall -stdlib=libstdc++ -std=c++17 -Iinclude/ -Itest/include/ -c `llvm-config-13 --cxxflags`
 # `llvm-config-13 --ldflags --libs` adds necessary flags and libraries to link
 # agains llvm-13, as per:
 # https://stackoverflow.com/questions/53805007/compilation-failing-on-enableabibreakingchecks
-LFLAGS=-g -std=c++20 `llvm-config-13 --ldflags --libs`
+LFLAGS=-g -stdlib=libstdc++ -fuse-ld=lld -std=c++17 `llvm-config-13 --ldflags --libs`
 
 # ----------- Build Rules for the Compiler itself -----------
 
@@ -30,9 +30,9 @@ TYP0_OBJS=build/Type.o build/NilType.o build/IntType.o build/BoolType.o
 TYPE_OBJS=$(TYP0_OBJS)
 AUX0_OBJS=build/Location.o build/Error.o build/StringInterner.o build/SymbolTable.o
 AUX1_OBJS=build/TypeInterner.o build/Environment.o build/UnopCodegen.o
-AUX2_OBJS=build/Outcome.o
+AUX2_OBJS=build/Outcome.o build/PrecedenceTable.o
 AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS) $(AUX2_OBJS)
-FRT0_OBJS=build/Lexer.o
+FRT0_OBJS=build/Token.o build/Lexer.o
 FRNT_OBJS=$(FRT0_OBJS)
 
 BUILD_OBJS:=$(AUX_OBJS) $(AST_OBJS) $(TYPE_OBJS) $(FRNT_OBJS)
@@ -54,7 +54,7 @@ components: aux ast type front
 # auxilliary classes for the compiler, not conceptually tied to the
 # compilation process, but necessary for bookkeeping and stitching
 # the parts of the compiler together.
-aux: location error outcome string_interner symbol_table type_interner environment unop_codegen
+aux: location error outcome string_interner symbol_table type_interner environment precedence_table unop_codegen
 
 location:
 	$(CC) $(CFLAGS) src/aux/Location.cpp -o build/Location.o
@@ -76,6 +76,9 @@ type_interner:
 
 environment:
 	$(CC) $(CFLAGS) src/aux/Environment.cpp -o build/Environment.o
+
+precedence_table:
+	$(CC) $(CFLAGS) src/aux/PrecedenceTable.cpp -o build/PrecedenceTable.o
 
 unop_codegen:
 	$(CC) $(CFLAGS) src/aux/UnopCodegen.cpp -o build/UnopCodegen.o
@@ -120,7 +123,10 @@ bool_type:
 
 
 # builds the Frontend of the Compiler
-front: lexer
+front: token lexer
+
+token:
+	$(CC) $(CFLAGS) src/front/Token.cpp -o build/Token.o
 
 lexer: re
 	$(CC) $(CFLAGS) src/front/Lexer.cpp -o build/Lexer.o
@@ -136,7 +142,7 @@ re:
 TEST_AUX0_OBJS=test/build/TestError.o test/build/TestStringInterner.o
 TEST_AUX1_OBJS=test/build/TestSymbolTable.o test/build/TestTypeInterner.o
 TEST_AUX2_OBJS=test/build/TestEnvironment.o test/build/TestUnopCodegen.o
-TEST_AUX3_OBJS=test/build/TestOutcome.o
+TEST_AUX3_OBJS=test/build/TestOutcome.o test/build/TestPrecedenceTable.o
 TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS) $(TEST_AUX3_OBJS)
 TEST_AST0_OBJS=test/build/TestAstAndNil.o test/build/TestBool.o test/build/TestInt.o
 TEST_AST1_OBJS=test/build/TestVariable.o test/build/TestBind.o test/build/TestBinop.o
@@ -145,7 +151,7 @@ TEST_AST_OBJS=$(TEST_AST0_OBJS) $(TEST_AST1_OBJS) $(TEST_AST2_OBJS)
 TEST_TYP0_OBJS=test/build/TestTypeAndNilType.o test/build/TestIntType.o
 TEST_TYP1_OBJS=test/build/TestBoolType.o
 TEST_TYPE_OBJS=$(TEST_TYP0_OBJS) $(TEST_TYP1_OBJS)
-TEST_FRT0_OBJS=test/build/TestLexer.o
+TEST_FRT0_OBJS=test/build/TestLexer.o test/build/TestToken.o
 TEST_FRNT_OBJS=$(TEST_FRT0_OBJS)
 # the list of all the object files needed to build the main subroutine
 # for the unit tests.
@@ -175,7 +181,7 @@ test_main:
 
 # unit tests for the auxialliary classes used
 # by the core classes of the compiler
-test_aux: test_error test_outcome test_string_interner test_symbol_table test_type_interner test_environment test_unop_codegen
+test_aux: test_error test_outcome test_string_interner test_symbol_table test_type_interner test_environment test_precedence_table test_unop_codegen
 
 test_error:
 	$(CC) $(CFLAGS) test/src/aux/TestError.cpp -o test/build/TestError.o
@@ -194,6 +200,9 @@ test_type_interner:
 
 test_environment:
 	$(CC) $(CFLAGS) test/src/aux/TestEnvironment.cpp -o test/build/TestEnvironment.o
+
+test_precedence_table:
+	$(CC) $(CFLAGS) test/src/aux/TestPrecedenceTable.cpp -o test/build/TestPrecedenceTable.o
 
 test_unop_codegen:
 	$(CC) $(CFLAGS) test/src/aux/TestUnopCodegen.cpp -o test/build/TestUnopCodegen.o
@@ -233,7 +242,10 @@ test_bool_type:
 	$(CC) $(CFLAGS) test/src/type/TestBoolType.cpp -o test/build/TestBoolType.o
 
 # unit tests for the frontend of the compiler
-test_front: test_lexer
+test_front: test_lexer test_token
+
+test_token:
+	$(CC) $(CFLAGS) test/src/front/TestToken.cpp -o test/build/TestToken.o
 
 test_lexer:
 	$(CC) $(CFLAGS) test/src/front/TestLexer.cpp -o test/build/TestLexer.o

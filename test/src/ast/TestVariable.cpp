@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "ast/TestVariable.hpp"
 
 #include "ast/Variable.hpp"
@@ -34,66 +34,21 @@ bool TestVariable(std::ostream& out)
 
         -) Variable::ToString() == "v"
     */
-    if (v0->GetKind() == pink::Ast::Kind::Variable)
-    {
-        out << "\tTest Variable::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Variable::GetKind(): Failed\n";
-    }
+    result &= Test(out, "Variable::GetKind()", v0->GetKind() == pink::Ast::Kind::Variable);
 
-    if (v0->classof(v0))
-    {
-        out << "\tTest: Variable::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Variable::classof(): Failed\n";
-    }
+    result &= Test(out, "Variable::classof()", v0->classof(v0));
 
     pink::Location l1(l0);
     pink::Location vl(v0->GetLoc());
-    if (vl.firstLine == l1.firstLine && vl.firstColumn == l1.firstColumn
-     && vl.lastLine == l1.lastLine && vl.lastColumn == l1.lastColumn)
-    {
-        out << "\tTest: Variable::GetLoc(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Variable::GetLoc(): Failed\n";
-    }
+    result &= Test(out, "Variable::GetLoc()", vl == l1);
 
+    result &= Test(out, "Variable::symbol", v0->symbol == v);
 
-    if (v0->symbol == v)
-    {
-        out << "\tTest Variable::symbol: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Variable::symbol: Failed\n";
-    }
-
-    if (v0->ToString() == v)
-    {
-        out << "\tTest: Variable::ToString(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Variable::ToString(): Failed\n";
-    }
+    result &= Test(out, "Variable::ToString()", v0->ToString() == v);
 
     delete v0;
 
-    if (result)
-        out << "Test: pink::Variable: Passed\n";
-    else
-        out << "Test: pink::Variable: Failed\n";
+    result &= Test(out, "pink::Variable", result);
     out << "\n-----------------------\n";
     return result;
 }

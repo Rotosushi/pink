@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "ast/TestUnop.hpp"
 #include "ast/Unop.hpp"
 #include "ast/Int.hpp"
@@ -42,76 +42,24 @@ bool TestUnop(std::ostream& out)
     -) Unop::ToString() == std::string(op) + i0->ToString();
 
     */
-    if (u0->GetKind() == pink::Ast::Kind::Unop)
-    {
-        out << "\tTest Unop::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Unop::GetKind(): Failed\n";
-    }
+    result &= Test(out, "Unop::GetKind()", u0->GetKind() == pink::Ast::Kind::Unop);
 
-    if (u0->classof(u0))
-    {
-        out << "\tTest: Unop::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Unop::classof(): Failed\n";
-    }
+    result &= Test(out, "Unop::classof()", u0->classof(u0));
 
     pink::Location ul(u0->GetLoc());
-    if (ul.firstLine == l3.firstLine && ul.firstColumn == l3.firstColumn
-     && ul.lastLine == l3.lastLine && ul.lastColumn == l3.lastColumn)
-    {
-        out << "\tTest: Unop::GetLoc(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Unop::GetLoc(): Failed\n";
-    }
+    result &= Test(out, "Unop::GetLoc()", ul == l3);
 
-    if (u0->op == minus)
-    {
-        out << "\tTest: Unop::symbol: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Unop::symbol: Failed\n";
-    }
+    result &= Test(out, "Unop::symbol", u0->op == minus);
 
-    if (u0->right == i0)
-    {
-        out << "\tTest: Unop::term: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Unop::term: Failed\n";
-    }
+    result &= Test(out, "Unop::term", u0-> right == i0);
 
     std::string unop_str = std::string(minus) + i0->ToString();
 
-    if (u0->ToString() == unop_str)
-    {
-        out << "\tTest: Unop::ToString: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Unop::ToString: Failed\n";
-    }
+    result &= Test(out, "Unop::ToString()", u0->ToString() == unop_str);
 
     delete u0;
 
-    if (result)
-        out << "Test: pink::Unop: Passed\n";
-    else
-        out << "Test: pink::Unop: Failed\n";
+    result &= Test(out, "pink::Unop", result);
     out << "\n-----------------------\n";
     return result;
 }

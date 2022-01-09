@@ -7,7 +7,9 @@
 #include "aux/TestTypeInterner.hpp"
 #include "aux/TestSymbolTable.hpp"
 #include "aux/TestEnvironment.hpp"
+#include "aux/TestPrecedenceTable.hpp"
 #include "aux/TestUnopCodegen.hpp"
+
 #include "ast/TestAstAndNil.hpp"
 #include "ast/TestBool.hpp"
 #include "ast/TestInt.hpp"
@@ -15,12 +17,36 @@
 #include "ast/TestBind.hpp"
 #include "ast/TestBinop.hpp"
 #include "ast/TestUnop.hpp"
+
 #include "type/TestTypeAndNilType.hpp"
 #include "type/TestIntType.hpp"
 #include "type/TestBoolType.hpp"
+
+#include "front/TestToken.hpp"
 #include "front/TestLexer.hpp"
 
-size_t Test(std::ostream& out, size_t flags)
+
+/*
+    This is a super basic funclet, which simply saves
+    me from having to type out so much code in every
+    Test...() body
+*/
+bool Test(std::ostream& out, std::string test_name, bool test)
+{
+    if (test)
+    {
+        out << "\tTest: " << test_name << ": Passed\n";
+    }
+    else
+    {
+        out << "\tTest: " << test_name << ": Failed\n";
+    }
+
+    return test;
+}
+
+
+size_t RunTests(std::ostream& out, size_t flags)
 {
     size_t result = 0;
 
@@ -73,6 +99,12 @@ size_t Test(std::ostream& out, size_t flags)
     {
         if (TestEnvironment(out))
             result |= TEST_ENVIRONMENT;
+    }
+
+    if ((flags & TEST_PRECEDENCE_TABLE) > 0)
+    {
+        if (TestPrecedenceTable(out))
+            result |= TEST_PRECEDENCE_TABLE;
     }
 
     if ((flags & TEST_UNOP_CODEGEN) > 0)
@@ -153,6 +185,11 @@ size_t Test(std::ostream& out, size_t flags)
     /*
         Frontend Tests
     */
+    if ((flags & TEST_TOKEN) > 0)
+    {
+        if (TestToken(out))
+            result |= TEST_TOKEN;
+    }
 
     if ((flags & TEST_LEXER) > 0)
     {
@@ -160,5 +197,73 @@ size_t Test(std::ostream& out, size_t flags)
             result |= TEST_LEXER;
     }
 
+
+
     return result;
+}
+
+
+/*
+    This function is not exported fron this file
+    because it's arguments are a bit confusing,
+    the first size_t (flags) is for the full word of test results,
+    whereas the test_flag, the second size_t is for
+    which individual test we are checking for success/failure.
+
+    This sort of routine might be able to be adapted to make
+    for a sort of testing monad. which could be used to make
+    the rest of the testing procedures less verbose.
+*/
+void PrintPassedTest(std::ostream& out, size_t flags, size_t test_flag, std::string test_name)
+{
+    if ((flags & test_flag) > 0)
+    {
+        out << "Test: " << test_name << ": Passed\n";
+    }
+    else
+    {
+        out << "Test: " << test_name << ": Failed\n";
+    }
+
+}
+
+
+void PrintPassedTests(std::ostream& out, size_t flags)
+{
+    /*
+        Auxilliary Classes Tests
+    */
+    PrintPassedTest(out, flags, TEST_ERROR, "pink::Error");
+    PrintPassedTest(out, flags, TEST_OUTCOME, "pink::Outcome");
+    PrintPassedTest(out, flags, TEST_STRING_INTERNER, "pink::StringInterner");
+    PrintPassedTest(out, flags, TEST_SYMBOL_TABLE, "pink::SymbolTable");
+    PrintPassedTest(out, flags, TEST_TYPE_INTERNER, "pink::TypeInterner");
+    PrintPassedTest(out, flags, TEST_ENVIRONMENT, "pink::Environment");
+    PrintPassedTest(out, flags, TEST_PRECEDENCE_TABLE, "pink::PrecedenceTable");
+    PrintPassedTest(out, flags, TEST_UNOP_CODEGEN, "pink::UnopCodegen");
+
+    /*
+        Abstract Syntax Tree Tests
+    */
+    PrintPassedTest(out, flags, TEST_AST_AND_NIL, "pink::Ast, pink::Nil");
+    PrintPassedTest(out, flags, TEST_BOOL, "pink::Bool");
+    PrintPassedTest(out, flags, TEST_INT, "pink::Int");
+    PrintPassedTest(out, flags, TEST_VARIABLE, "pink::Variable");
+    PrintPassedTest(out, flags, TEST_BIND, "pink::Bind");
+    PrintPassedTest(out, flags, TEST_BINOP, "pink::Binop");
+    PrintPassedTest(out, flags, TEST_UNOP, "pink::Unop");
+
+    /*
+        Type Tests
+    */
+    PrintPassedTest(out, flags, TEST_TYPE_AND_NIL_TYPE, "pink::Type, pink::NilType");
+    PrintPassedTest(out, flags, TEST_INT_TYPE, "pink::IntType");
+    PrintPassedTest(out, flags, TEST_BOOL_TYPE, "pink::BoolType");
+
+    /*
+        Frontend Tests
+    */
+    PrintPassedTest(out, flags, TEST_TOKEN, "pink::Token");
+    PrintPassedTest(out, flags, TEST_LEXER, "pink::Lexer");
+
 }

@@ -1,4 +1,4 @@
-
+#include "Test.hpp"
 #include "ast/TestInt.hpp"
 
 #include "ast/Int.hpp"
@@ -33,66 +33,21 @@ bool TestInt(std::ostream& out)
 
         -) Int::ToString() == "42"
     */
-    if (i0->GetKind() == pink::Ast::Kind::Int)
-    {
-        out << "\tTest Int::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Int::GetKind(): Failed\n";
-    }
+    result &= Test(out, "Int::GetKind()", i0->GetKind() == pink::Ast::Kind::Int);
 
-    if (i0->classof(i0))
-    {
-        out << "\tTest: Int::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Int::classof(): Failed\n";
-    }
+    result &= Test(out, "Int::classof()", i0->classof(i0));
 
     pink::Location l1(l0);
     pink::Location il(i0->GetLoc());
-    if (il.firstLine == l1.firstLine && il.firstColumn == l1.firstColumn
-     && il.lastLine == l1.lastLine && il.lastColumn == l1.lastColumn)
-    {
-        out << "\tTest: Int::GetLoc(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Int::GetLoc(): Failed\n";
-    }
+    result &= Test(out, "Int::GetLoc()", il == l1);
 
+    result &= Test(out, "Int::value", i0->value == 42);
 
-    if (i0->value == 42)
-    {
-        out << "\tTest Int::value: Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest Int::value: Failed\n";
-    }
-
-    if (i0->ToString() == "42")
-    {
-        out << "\tTest: Int::ToString(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: Int::ToString(): Failed\n";
-    }
+    result &= Test(out, "Int::ToString()", i0->ToString() == "42");
 
     delete i0;
 
-    if (result)
-        out << "Test: pink::Int: Passed\n";
-    else
-        out << "Test: pink::Int: Failed\n";
+    result &= Test(out, "pink::Int", result);
     out << "\n-----------------------\n";
     return result;
 }
