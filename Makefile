@@ -11,6 +11,13 @@
 #	unit test final linking step.
 
 
+# TODO: define a function which checks if a file has been built already
+#		then does or does not compile the associated file depending.
+#		This could then be used to speed up build times.
+#		This wouldn't be a perfect solution, as recompilation should happen
+# 		after edits to the source file, regardless of if an object file
+# 		exists.
+
 # ----------- Makefile Basic Definitions -----------
 CC=clang++-13
 # `llvm-config-13 -cxxflags` adds necessary flags for compiling c++ with llvm-13
@@ -30,7 +37,7 @@ TYP0_OBJS=build/Type.o build/NilType.o build/IntType.o build/BoolType.o
 TYPE_OBJS=$(TYP0_OBJS)
 AUX0_OBJS=build/Location.o build/Error.o build/StringInterner.o build/SymbolTable.o
 AUX1_OBJS=build/TypeInterner.o build/Environment.o build/UnopCodegen.o
-AUX2_OBJS=build/Outcome.o build/PrecedenceTable.o
+AUX2_OBJS=build/Outcome.o build/PrecedenceTable.o build/UnopLiteral.o
 AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS) $(AUX2_OBJS)
 FRT0_OBJS=build/Token.o build/Lexer.o
 FRNT_OBJS=$(FRT0_OBJS)
@@ -54,7 +61,7 @@ components: aux ast type front
 # auxilliary classes for the compiler, not conceptually tied to the
 # compilation process, but necessary for bookkeeping and stitching
 # the parts of the compiler together.
-aux: location error outcome string_interner symbol_table type_interner environment precedence_table unop_codegen
+aux: location error outcome string_interner symbol_table type_interner environment precedence_table unop_codegen unop_literal
 
 location:
 	$(CC) $(CFLAGS) src/aux/Location.cpp -o build/Location.o
@@ -82,6 +89,9 @@ precedence_table:
 
 unop_codegen:
 	$(CC) $(CFLAGS) src/aux/UnopCodegen.cpp -o build/UnopCodegen.o
+
+unop_literal:
+	$(CC) $(CFLAGS) src/aux/UnopLiteral.cpp -o build/UnopLiteral.o
 
 # The Ast is the central data structure in the compiler
 ast: nil bool int variable bind binop unop
@@ -143,7 +153,8 @@ TEST_AUX0_OBJS=test/build/TestError.o test/build/TestStringInterner.o
 TEST_AUX1_OBJS=test/build/TestSymbolTable.o test/build/TestTypeInterner.o
 TEST_AUX2_OBJS=test/build/TestEnvironment.o test/build/TestUnopCodegen.o
 TEST_AUX3_OBJS=test/build/TestOutcome.o test/build/TestPrecedenceTable.o
-TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS) $(TEST_AUX3_OBJS)
+TEST_AUX4_OBJS=test/build/TestUnopLiteral.o
+TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS) $(TEST_AUX3_OBJS) $(TEST_AUX4_OBJS)
 TEST_AST0_OBJS=test/build/TestAstAndNil.o test/build/TestBool.o test/build/TestInt.o
 TEST_AST1_OBJS=test/build/TestVariable.o test/build/TestBind.o test/build/TestBinop.o
 TEST_AST2_OBJS=test/build/TestUnop.o
@@ -181,7 +192,7 @@ test_main:
 
 # unit tests for the auxialliary classes used
 # by the core classes of the compiler
-test_aux: test_error test_outcome test_string_interner test_symbol_table test_type_interner test_environment test_precedence_table test_unop_codegen
+test_aux: test_error test_outcome test_string_interner test_symbol_table test_type_interner test_environment test_precedence_table test_unop_codegen test_unop_literal
 
 test_error:
 	$(CC) $(CFLAGS) test/src/aux/TestError.cpp -o test/build/TestError.o
@@ -207,6 +218,8 @@ test_precedence_table:
 test_unop_codegen:
 	$(CC) $(CFLAGS) test/src/aux/TestUnopCodegen.cpp -o test/build/TestUnopCodegen.o
 
+test_unop_literal:
+	$(CC) $(CFLAGS) test/src/aux/TestUnopLiteral.cpp -o test/build/TestUnopLiteral.o
 
 # unit tests for the central data structure of the compiler
 test_ast: test_bool test_int test_variable test_bind test_binop test_unop

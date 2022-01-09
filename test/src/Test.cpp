@@ -9,6 +9,7 @@
 #include "aux/TestEnvironment.hpp"
 #include "aux/TestPrecedenceTable.hpp"
 #include "aux/TestUnopCodegen.hpp"
+#include "aux/TestUnopLiteral.hpp"
 
 #include "ast/TestAstAndNil.hpp"
 #include "ast/TestBool.hpp"
@@ -113,6 +114,11 @@ size_t RunTests(std::ostream& out, size_t flags)
             result |= TEST_UNOP_CODEGEN;
     }
 
+    if ((flags & TEST_UNOP_LITERAL) > 0)
+    {
+        if (TestUnopLiteral(out))
+            result |= TEST_UNOP_LITERAL;
+    }
 
 
     /*
@@ -241,6 +247,7 @@ void PrintPassedTests(std::ostream& out, size_t flags)
     PrintPassedTest(out, flags, TEST_ENVIRONMENT, "pink::Environment");
     PrintPassedTest(out, flags, TEST_PRECEDENCE_TABLE, "pink::PrecedenceTable");
     PrintPassedTest(out, flags, TEST_UNOP_CODEGEN, "pink::UnopCodegen");
+    PrintPassedTest(out, flags, TEST_UNOP_LITERAL, "pink::UnopLiteral");
 
     /*
         Abstract Syntax Tree Tests

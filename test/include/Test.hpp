@@ -29,6 +29,12 @@
     64 bits would repeat the pattern for 64 bits, or
     0x0000'0000'0000'0000
 
+    so this pattern is not infinitely extensible,
+    so TODO: refactor the test framework to use
+        vector<bool> for the flags, and InternedStrings
+        for the Flag associations, instead of constexprs.
+
+        this should allow arbitrarily many tests.
 */
 
 // auxilliary tests
@@ -40,29 +46,31 @@ constexpr auto TEST_TYPE_INTERNER     = 0x0000'0010;
 constexpr auto TEST_ENVIRONMENT       = 0x0000'0020;
 constexpr auto TEST_PRECEDENCE_TABLE  = 0x0000'0040;
 constexpr auto TEST_UNOP_CODEGEN      = 0x0000'0080;
+constexpr auto TEST_UNOP_LITERAL      = 0x0000'0100;
 // abstract syntax tree tests
-constexpr auto TEST_AST_AND_NIL       = 0x0000'0100;
-constexpr auto TEST_BOOL              = 0x0000'0200;
-constexpr auto TEST_INT               = 0x0000'0400;
-constexpr auto TEST_VARIABLE          = 0x0000'0800;
-constexpr auto TEST_BIND              = 0x0000'1000;
-constexpr auto TEST_BINOP             = 0x0000'2000;
-constexpr auto TEST_UNOP              = 0x0000'4000;
+constexpr auto TEST_AST_AND_NIL       = 0x0000'0200;
+constexpr auto TEST_BOOL              = 0x0000'0400;
+constexpr auto TEST_INT               = 0x0000'0800;
+constexpr auto TEST_VARIABLE          = 0x0000'1000;
+constexpr auto TEST_BIND              = 0x0000'2000;
+constexpr auto TEST_BINOP             = 0x0000'4000;
+constexpr auto TEST_UNOP              = 0x0000'8000;
 // type tests
-constexpr auto TEST_TYPE_AND_NIL_TYPE = 0x0000'8000;
-constexpr auto TEST_INT_TYPE          = 0x0001'0000;
-constexpr auto TEST_BOOL_TYPE         = 0x0002'0000;
+constexpr auto TEST_TYPE_AND_NIL_TYPE = 0x0001'0000;
+constexpr auto TEST_INT_TYPE          = 0x0002'0000;
+constexpr auto TEST_BOOL_TYPE         = 0x0004'0000;
 // fronend tests
-constexpr auto TEST_TOKEN             = 0x0004'0000;
-constexpr auto TEST_LEXER             = 0x0008'0000;
+constexpr auto TEST_TOKEN             = 0x0008'0000;
+constexpr auto TEST_LEXER             = 0x0010'0000;
 
 
 constexpr auto TEST_ALL               = 0xFFFF'FFFF;
 
 
 /*
-    This is the primitive Testing subroutine.
+    This is a primitive Testing subroutine.
     it simply prints if the test Passed or Failed.
+    then returns test.
 */
 bool Test(std::ostream& out, std::string test_name, bool test);
 /*

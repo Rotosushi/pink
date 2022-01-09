@@ -36,10 +36,7 @@ bool TestToken(std::ostream& out)
     result &= Test(out, "Token::False", Testlet("Token::False", pink::Token::False));
     result &= Test(out, "Token::BoolType", Testlet("Token::BoolType", pink::Token::BoolType));
 
-    if (result)
-        out << "Test: pink::Token: Passed\n";
-    else
-        out << "Test: pink::Token: Failed\n";
+    result &= Test(out, "pink::Token", result);
     out << "\n-----------------------\n";
     return result;
 }
