@@ -1,6 +1,0 @@
-
-the expression problem:
-
-the goal is to define a datatype by members, and to be able to define
-new functions taking the member, and new members of the datatype
-without recompiling existing code, and while retaining type safety.
