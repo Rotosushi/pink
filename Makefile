@@ -36,9 +36,10 @@ AST_OBJS=$(AST0_OBJS) $(AST1_OBJS)
 TYP0_OBJS=build/Type.o build/NilType.o build/IntType.o build/BoolType.o
 TYPE_OBJS=$(TYP0_OBJS)
 AUX0_OBJS=build/Location.o build/Error.o build/StringInterner.o build/SymbolTable.o
-AUX1_OBJS=build/TypeInterner.o build/Environment.o build/UnopCodegen.o
-AUX2_OBJS=build/Outcome.o build/PrecedenceTable.o build/UnopLiteral.o
-AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS) $(AUX2_OBJS)
+AUX1_OBJS=build/TypeInterner.o build/Environment.o build/Outcome.o
+AUX2_OBJS=build/UnopCodegen.o build/UnopLiteral.o build/UnopTable.o
+AUX3_OBJS=build/BinopCodegen.o
+AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS) $(AUX2_OBJS) $(AUX3_OBJS)
 FRT0_OBJS=build/Token.o build/Lexer.o
 FRNT_OBJS=$(FRT0_OBJS)
 
@@ -61,7 +62,7 @@ components: aux ast type front
 # auxilliary classes for the compiler, not conceptually tied to the
 # compilation process, but necessary for bookkeeping and stitching
 # the parts of the compiler together.
-aux: location error outcome string_interner symbol_table type_interner environment precedence_table unop_codegen unop_literal
+aux: location error outcome string_interner symbol_table aux2
 
 location:
 	$(CC) $(CFLAGS) src/aux/Location.cpp -o build/Location.o
@@ -78,14 +79,13 @@ string_interner:
 symbol_table:
 	$(CC) $(CFLAGS) src/aux/SymbolTable.cpp -o build/SymbolTable.o
 
+aux2: type_interner environment unop_codegen unop_literal unop_table aux3
+
 type_interner:
 	$(CC) $(CFLAGS) src/aux/TypeInterner.cpp -o build/TypeInterner.o
 
 environment:
 	$(CC) $(CFLAGS) src/aux/Environment.cpp -o build/Environment.o
-
-precedence_table:
-	$(CC) $(CFLAGS) src/aux/PrecedenceTable.cpp -o build/PrecedenceTable.o
 
 unop_codegen:
 	$(CC) $(CFLAGS) src/aux/UnopCodegen.cpp -o build/UnopCodegen.o
@@ -93,7 +93,15 @@ unop_codegen:
 unop_literal:
 	$(CC) $(CFLAGS) src/aux/UnopLiteral.cpp -o build/UnopLiteral.o
 
-# The Ast is the central data structure in the compiler
+unop_table:
+	$(CC) $(CFLAGS) src/aux/UnopTable.cpp -o build/UnopTable.o
+
+aux3: binop_codegen
+
+binop_codegen:
+	$(CC) $(CFLAGS) src/aux/BinopCodegen.cpp -o build/BinopCodegen.o
+
+# Build Rules for the AST, representing typable and interpretable statements
 ast: nil bool int variable bind binop unop
 	$(CC) $(CFLAGS) src/ast/Ast.cpp -o build/Ast.o
 
@@ -118,7 +126,7 @@ binop:
 unop:
 	$(CC) $(CFLAGS) src/ast/Unop.cpp -o build/Unop.o
 
-# Types represent intention of use inside a programming language
+# Build Rules for the Types
 type: nil_type int_type bool_type
 	$(CC) $(CFLAGS) src/type/Type.cpp -o build/Type.o
 
@@ -152,8 +160,8 @@ re:
 TEST_AUX0_OBJS=test/build/TestError.o test/build/TestStringInterner.o
 TEST_AUX1_OBJS=test/build/TestSymbolTable.o test/build/TestTypeInterner.o
 TEST_AUX2_OBJS=test/build/TestEnvironment.o test/build/TestUnopCodegen.o
-TEST_AUX3_OBJS=test/build/TestOutcome.o test/build/TestPrecedenceTable.o
-TEST_AUX4_OBJS=test/build/TestUnopLiteral.o
+TEST_AUX3_OBJS=test/build/TestOutcome.o test/build/TestUnopTable.o
+TEST_AUX4_OBJS=test/build/TestUnopLiteral.o test/build/TestBinopCodegen.o
 TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS) $(TEST_AUX3_OBJS) $(TEST_AUX4_OBJS)
 TEST_AST0_OBJS=test/build/TestAstAndNil.o test/build/TestBool.o test/build/TestInt.o
 TEST_AST1_OBJS=test/build/TestVariable.o test/build/TestBind.o test/build/TestBinop.o
@@ -192,7 +200,7 @@ test_main:
 
 # unit tests for the auxialliary classes used
 # by the core classes of the compiler
-test_aux: test_error test_outcome test_string_interner test_symbol_table test_type_interner test_environment test_precedence_table test_unop_codegen test_unop_literal
+test_aux: test_error test_outcome test_string_interner test_symbol_table test_aux2
 
 test_error:
 	$(CC) $(CFLAGS) test/src/aux/TestError.cpp -o test/build/TestError.o
@@ -206,14 +214,14 @@ test_string_interner:
 test_symbol_table:
 	$(CC) $(CFLAGS) test/src/aux/TestSymbolTable.cpp -o test/build/TestSymbolTable.o
 
+
+test_aux2: test_type_interner test_environment test_unop_codegen test_unop_literal test_unop_table test_aux3
+
 test_type_interner:
 	$(CC) $(CFLAGS) test/src/aux/TestTypeInterner.cpp -o test/build/TestTypeInterner.o
 
 test_environment:
 	$(CC) $(CFLAGS) test/src/aux/TestEnvironment.cpp -o test/build/TestEnvironment.o
-
-test_precedence_table:
-	$(CC) $(CFLAGS) test/src/aux/TestPrecedenceTable.cpp -o test/build/TestPrecedenceTable.o
 
 test_unop_codegen:
 	$(CC) $(CFLAGS) test/src/aux/TestUnopCodegen.cpp -o test/build/TestUnopCodegen.o
@@ -221,7 +229,15 @@ test_unop_codegen:
 test_unop_literal:
 	$(CC) $(CFLAGS) test/src/aux/TestUnopLiteral.cpp -o test/build/TestUnopLiteral.o
 
-# unit tests for the central data structure of the compiler
+test_unop_table:
+	$(CC) $(CFLAGS) test/src/aux/TestUnopTable.cpp -o test/build/TestUnopTable.o
+
+test_aux3: test_binop_codegen
+
+test_binop_codegen:
+	$(CC) $(CFLAGS) test/src/aux/TestBinopCodegen.cpp -o test/build/TestBinopCodegen.o
+
+# unit tests for the abstract syntax tree.
 test_ast: test_bool test_int test_variable test_bind test_binop test_unop
 	$(CC) $(CFLAGS) test/src/ast/TestAstAndNil.cpp -o test/build/TestAstAndNil.o
 

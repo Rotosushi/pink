@@ -7,23 +7,24 @@
 #include "llvm/Target/TargetMachine.h"
 
 #include "Test.hpp"
-#include "aux/TestUnopLiteral.hpp"
-#include "aux/UnopLiteral.hpp"
+#include "aux/TestUnopTable.hpp"
+#include "aux/UnopTable.hpp"
 
 #include "type/IntType.hpp"
 
-pink::Outcome<pink::Error, llvm::Value*> test_literal_fn(llvm::Value* term, pink::Environment& env)
+pink::Outcome<pink::Error, llvm::Value*> test_table_fn(llvm::Value* term, pink::Environment& env)
 {
     std::string s("");
     pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
     return pink::Outcome<pink::Error, llvm::Value*>(err);
 }
 
-bool TestUnopLiteral(std::ostream& out)
+
+bool TestUnopTable(std::ostream& out)
 {
     bool result = true;
     out << "\n-----------------------\n";
-    out << "Testing pink::UnopLiteral: \n";
+    out << "Testing pink::UnopTable: \n";
 
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -72,26 +73,26 @@ bool TestUnopLiteral(std::ostream& out)
     pink::Environment env(symbols, operators, types, bindings,
         target_triple, data_layout, context, module, builder);
 
+    pink::InternedString minus = env.operators.Intern("-");
     pink::Type* ty = env.types.GetIntType();
-    pink::UnopLiteral unop;
+    pink::UnopTable unop_table;
 
-    auto pair = unop.Register(ty, ty, test_literal_fn);
+    auto pair = unop_table.Register(minus, ty, ty, test_table_fn);
 
-    result &= Test(out, "UnopLiteral::Register()", pair.first == ty);
+    result &= Test(out, "UnopTable::Register", pair.first == minus);
+
+    auto opt = unop_table.Lookup(minus);
+
+    result &= Test(out, "UnopTable::Lookup", opt.hasValue() && pair.first == minus);
+
+    unop_table.Unregister(minus);
+
+    auto opt1 = unop_table.Lookup(minus);
+
+    result &= Test(out, "UnopTable::Unregister", !opt1.hasValue());
 
 
-    auto opt = unop.Lookup(ty);
-
-    result &= Test(out, "UnopLiteral::Lookup()", opt.hasValue() && (*opt).first == ty);
-
-    unop.Unregister(ty);
-
-    opt = unop.Lookup(ty);
-
-    result &= Test(out, "UnopLiteral::Unregister()", !opt.hasValue());
-
-
-    result &= Test(out, "pink::UnopLiteral", result);
+    result &= Test(out, "pink::UnopTable", result);
     out << "\n-----------------------\n";
     return result;
 }

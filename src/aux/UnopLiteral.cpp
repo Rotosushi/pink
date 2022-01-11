@@ -9,6 +9,12 @@ namespace pink {
 
     }
 
+    UnopLiteral::UnopLiteral(Type* arg_t, Type* ret_t, UnopCodegenFn fn)
+        : overloads()
+    {
+        overloads.insert(std::make_pair(arg_t, new UnopCodegen(ret_t, fn)));
+    }
+
     UnopLiteral::~UnopLiteral()
     {
         for (auto pair : overloads)

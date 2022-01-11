@@ -17,6 +17,15 @@ namespace pink {
             table. at the cost of time during
             destruction, when each symbol binding
             needs deallocated.
+
+            TODO: I think this needs to be a
+            llvm::DenseMap<InternedString, llvm::Value*> map.
+            especially when we consider processing the
+            body of a procedure, where we bind symbols to
+            their loccation on the stack, which is returned
+            via a llvm::AllocaInst, which inherits from llvm::Value*
+
+            https://llvm.org/doxygen/DenseMap_8h.html
         */
         llvm::DenseMap<InternedString, Ast*> map;
         SymbolTable* outer;

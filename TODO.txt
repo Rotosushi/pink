@@ -1,2 +1,5 @@
 
 	# finish v0.0.1
+	
+	# refactor the aux/ directory into multiple subdirectories, or multiple directories
+	
