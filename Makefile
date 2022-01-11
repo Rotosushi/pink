@@ -38,7 +38,7 @@ TYPE_OBJS=$(TYP0_OBJS)
 AUX0_OBJS=build/Location.o build/Error.o build/StringInterner.o build/SymbolTable.o
 AUX1_OBJS=build/TypeInterner.o build/Environment.o build/Outcome.o
 AUX2_OBJS=build/UnopCodegen.o build/UnopLiteral.o build/UnopTable.o
-AUX3_OBJS=build/BinopCodegen.o
+AUX3_OBJS=build/BinopCodegen.o build/BinopLiteral.o
 AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS) $(AUX2_OBJS) $(AUX3_OBJS)
 FRT0_OBJS=build/Token.o build/Lexer.o
 FRNT_OBJS=$(FRT0_OBJS)
@@ -47,7 +47,7 @@ BUILD_OBJS:=$(AUX_OBJS) $(AST_OBJS) $(TYPE_OBJS) $(FRNT_OBJS)
 
 # The final linking step which builds the compiler
 pink: components main
-	$(CC) $(LFLAGS) $(BUILD_OBJS) $(MAIN_OBJS) -o Pink
+	$(CC) $(LFLAGS) $(BUILD_OBJS) $(MAIN_OBJS) -o "pink"
 
 # The main subroutine of the compiler
 main:
@@ -96,10 +96,13 @@ unop_literal:
 unop_table:
 	$(CC) $(CFLAGS) src/aux/UnopTable.cpp -o build/UnopTable.o
 
-aux3: binop_codegen
+aux3: binop_codegen binop_literal
 
 binop_codegen:
 	$(CC) $(CFLAGS) src/aux/BinopCodegen.cpp -o build/BinopCodegen.o
+
+binop_literal:
+	$(CC) $(CFLAGS) src/aux/BinopLiteral.cpp -o build/BinopLiteral.o
 
 # Build Rules for the AST, representing typable and interpretable statements
 ast: nil bool int variable bind binop unop
@@ -181,7 +184,7 @@ TEST_OBJS= $(TEST_AUX_OBJS) $(TEST_AST_OBJS) $(TEST_TYPE_OBJS) $(TEST_FRNT_OBJS)
 
 # the final linking step of the unit tests for the compiler
 test: components tests
-	$(CC) $(LFLAGS) $(BUILD_OBJS) $(TEST_OBJS) $(TEST_MAIN_OBJS) -o Test
+	$(CC) $(LFLAGS) $(BUILD_OBJS) $(TEST_OBJS) $(TEST_MAIN_OBJS) -o "Test"
 
 
 # this is the rule that collects all the subrules
@@ -284,8 +287,10 @@ test_lexer:
 # cleanup built object files
 clean:
 	rm -rf build/
+	rm -f Pink
 	mkdir build/
 	rm -rf test/build/
+	rm -f Test
 	mkdir test/build/
 
 commit:

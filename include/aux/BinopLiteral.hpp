@@ -27,6 +27,6 @@ namespace pink {
 
         void Unregister(Type*  left_t, Type* right_t);
 
-        llvm::Optional<std::pair<std::pair<Type* Type*>, BinopCodegen*>> Lookup(Type* left_t, Type* right_t);
+        llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> Lookup(Type* left_t, Type* right_t);
     };
 }
