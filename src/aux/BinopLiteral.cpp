@@ -14,6 +14,15 @@ namespace pink {
         overloads.insert(std::make_pair(std::make_pair(left_t, right_t), new BinopCodegen(ret_t, fn)));
     }
 
+    BinopLiteral::~BinopLiteral()
+    {
+        // BinopLiteral Manages the memory for the BinopCodegens held in the table
+        for (auto pair : overloads)
+        {
+            delete pair.second;
+        }
+    }
+
     std::pair<std::pair<Type*, Type*>, BinopCodegen*> BinopLiteral::Register(Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn)
     {
         auto iter = overloads.find(std::make_pair(left_t, right_t));
@@ -44,7 +53,7 @@ namespace pink {
     {
         auto iter = overloads.find(std::make_pair(left_t, right_t));
 
-        if (iter != overloads.end())
+        if (iter == overloads.end())
             return llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>>();
         else
             return llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>>(*iter);

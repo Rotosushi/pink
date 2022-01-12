@@ -6,21 +6,21 @@
 #include "llvm/Target/TargetMachine.h"
 
 #include "Test.hpp"
-#include "aux/TestBinopLiteral.hpp"
-#include "aux/BinopLiteral.hpp"
+#include "aux/TestBinopTable.hpp"
+#include "aux/BinopTable.hpp"
 
-pink::Outcome<pink::Error, llvm::Value*> test_binop_literal_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
+pink::Outcome<pink::Error, llvm::Value*> test_binop_table_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
 {
     std::string s("");
     pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
     return pink::Outcome<pink::Error, llvm::Value*>(err);
 }
 
-bool TestBinopLiteral(std::ostream& out)
+bool TestBinopTable(std::ostream& out)
 {
     bool result = true;
     out << "\n-----------------------\n";
-    out << "Testing pink::BinopLiteral: \n";
+    out << "Testing pink::BinopTable: \n";
 
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -35,7 +35,6 @@ bool TestBinopLiteral(std::ostream& out)
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetDisassembler();
-
 
     std::string    target_triple = llvm::sys::getProcessTriple();
 
@@ -69,29 +68,27 @@ bool TestBinopLiteral(std::ostream& out)
     pink::Environment env(symbols, operators, types, bindings,
         target_triple, data_layout, context, module, builder);
 
+    pink::InternedString plus = env.operators.Intern("+");
     pink::Type* ty = env.types.GetIntType();
+    pink::BinopTable binop_table;
     pink::Precedence p = 5;
     pink::Associativity a = pink::Associativity::Left;
-    pink::BinopLiteral binop(p, a);
 
-    result &= Test(out, "BinopLiteral::precedence", binop.precedence == p);
-    result &= Test(out, "BinopLiteral::associativity", binop.associativity == a);
+    auto pair = binop_table.Register(plus, p, a, ty, ty, ty, test_binop_table_fn);
 
-    auto pair = binop.Register(ty, ty, ty, test_binop_literal_fn);
+    result &= Test(out, "BinopTable::Register", pair.first == plus);
 
-    result &= Test(out, "BinopLiteral::Register()", pair.first == std::make_pair(ty, ty));
+    auto opt = binop_table.Lookup(plus);
 
-    auto opt = binop.Lookup(ty, ty);
+    result &= Test(out, "BinopTable::Lookup", opt.hasValue() && pair.first == plus);
 
-    result &= Test(out, "BinopLiteral::Lookup()", opt.hasValue() && (*opt).first == std::make_pair(ty, ty));
+    binop_table.Unregister(plus);
 
-    binop.Unregister(ty, ty);
+    auto opt1 = binop_table.Lookup(plus);
 
-    opt = binop.Lookup(ty, ty);
+    result &= Test(out, "BinopTable::Unregister", !opt1.hasValue());
 
-    result &= Test(out, "BinopLiteral::Unregister()", !opt.hasValue());
-
-    result &= Test(out, "pink::BinopLiteral", result);
+    result &= Test(out, "pink::BinopTable", result);
     out << "\n-----------------------\n";
     return result;
 }

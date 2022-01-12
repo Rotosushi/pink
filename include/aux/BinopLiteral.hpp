@@ -22,6 +22,7 @@ namespace pink {
         BinopLiteral() = delete;
         BinopLiteral(Precedence p, Associativity a);
         BinopLiteral(Precedence p, Associativity a, Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn);
+        ~BinopLiteral();
 
         std::pair<std::pair<Type*, Type*>, BinopCodegen*> Register(Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn);
 

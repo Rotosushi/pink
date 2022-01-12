@@ -13,7 +13,8 @@
 
 # TODO: define a function which checks if a file has been built already
 #		then does or does not compile the associated file depending.
-#		This could then be used to speed up build times.
+#		This could then be used to speed up build times during active
+#		development, as we are often only working on a single new file.
 #		This wouldn't be a perfect solution, as recompilation should happen
 # 		after edits to the source file, regardless of if an object file
 # 		exists.
@@ -25,7 +26,7 @@ CFLAGS=-g -Wall -stdlib=libstdc++ -std=c++17 -Iinclude/ -Itest/include/ -c `llvm
 # `llvm-config-13 --ldflags --libs` adds necessary flags and libraries to link
 # agains llvm-13, as per:
 # https://stackoverflow.com/questions/53805007/compilation-failing-on-enableabibreakingchecks
-LFLAGS=-g -stdlib=libstdc++ -fuse-ld=lld -std=c++17 `llvm-config-13 --ldflags --libs`
+LFLAGS=-g -stdlib=libstdc++ -std=c++17 -fuse-ld=lld `llvm-config-13 --ldflags --libs`
 
 # ----------- Build Rules for the Compiler itself -----------
 
@@ -38,7 +39,7 @@ TYPE_OBJS=$(TYP0_OBJS)
 AUX0_OBJS=build/Location.o build/Error.o build/StringInterner.o build/SymbolTable.o
 AUX1_OBJS=build/TypeInterner.o build/Environment.o build/Outcome.o
 AUX2_OBJS=build/UnopCodegen.o build/UnopLiteral.o build/UnopTable.o
-AUX3_OBJS=build/BinopCodegen.o build/BinopLiteral.o
+AUX3_OBJS=build/BinopCodegen.o build/BinopLiteral.o build/BinopTable.o
 AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS) $(AUX2_OBJS) $(AUX3_OBJS)
 FRT0_OBJS=build/Token.o build/Lexer.o
 FRNT_OBJS=$(FRT0_OBJS)
@@ -96,13 +97,16 @@ unop_literal:
 unop_table:
 	$(CC) $(CFLAGS) src/aux/UnopTable.cpp -o build/UnopTable.o
 
-aux3: binop_codegen binop_literal
+aux3: binop_codegen binop_literal binop_table
 
 binop_codegen:
 	$(CC) $(CFLAGS) src/aux/BinopCodegen.cpp -o build/BinopCodegen.o
 
 binop_literal:
 	$(CC) $(CFLAGS) src/aux/BinopLiteral.cpp -o build/BinopLiteral.o
+
+binop_table:
+	$(CC) $(CFLAGS) src/aux/BinopTable.cpp -o build/BinopTable.o
 
 # Build Rules for the AST, representing typable and interpretable statements
 ast: nil bool int variable bind binop unop
@@ -165,7 +169,8 @@ TEST_AUX1_OBJS=test/build/TestSymbolTable.o test/build/TestTypeInterner.o
 TEST_AUX2_OBJS=test/build/TestEnvironment.o test/build/TestUnopCodegen.o
 TEST_AUX3_OBJS=test/build/TestOutcome.o test/build/TestUnopTable.o
 TEST_AUX4_OBJS=test/build/TestUnopLiteral.o test/build/TestBinopCodegen.o
-TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS) $(TEST_AUX3_OBJS) $(TEST_AUX4_OBJS)
+TEST_AUX5_OBJS=test/build/TestBinopLiteral.o test/build/TestBinopTable.o
+TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS) $(TEST_AUX3_OBJS) $(TEST_AUX4_OBJS) $(TEST_AUX5_OBJS)
 TEST_AST0_OBJS=test/build/TestAstAndNil.o test/build/TestBool.o test/build/TestInt.o
 TEST_AST1_OBJS=test/build/TestVariable.o test/build/TestBind.o test/build/TestBinop.o
 TEST_AST2_OBJS=test/build/TestUnop.o
@@ -180,11 +185,11 @@ TEST_FRNT_OBJS=$(TEST_FRT0_OBJS)
 TEST_MAIN_OBJS=test/build/Test.o test/build/TestMain.o
 
 # The list of all of the object files needed to build the unit tests
-TEST_OBJS= $(TEST_AUX_OBJS) $(TEST_AST_OBJS) $(TEST_TYPE_OBJS) $(TEST_FRNT_OBJS)
+TEST_OBJS=$(TEST_AUX_OBJS) $(TEST_AST_OBJS) $(TEST_TYPE_OBJS) $(TEST_FRNT_OBJS)
 
 # the final linking step of the unit tests for the compiler
 test: components tests
-	$(CC) $(LFLAGS) $(BUILD_OBJS) $(TEST_OBJS) $(TEST_MAIN_OBJS) -o "Test"
+	$(CC) $(LFLAGS) $(BUILD_OBJS) $(TEST_OBJS) $(TEST_MAIN_OBJS) -o "tests"
 
 
 # this is the rule that collects all the subrules
@@ -235,10 +240,16 @@ test_unop_literal:
 test_unop_table:
 	$(CC) $(CFLAGS) test/src/aux/TestUnopTable.cpp -o test/build/TestUnopTable.o
 
-test_aux3: test_binop_codegen
+test_aux3: test_binop_codegen test_binop_literal test_binop_table
 
 test_binop_codegen:
 	$(CC) $(CFLAGS) test/src/aux/TestBinopCodegen.cpp -o test/build/TestBinopCodegen.o
+
+test_binop_literal:
+	$(CC) $(CFLAGS) test/src/aux/TestBinopLiteral.cpp -o test/build/TestBinopLiteral.o
+
+test_binop_table:
+	$(CC) $(CFLAGS) test/src/aux/TestBinopTable.cpp -o test/build/TestBinopTable.o
 
 # unit tests for the abstract syntax tree.
 test_ast: test_bool test_int test_variable test_bind test_binop test_unop
@@ -282,17 +293,18 @@ test_token:
 test_lexer:
 	$(CC) $(CFLAGS) test/src/front/TestLexer.cpp -o test/build/TestLexer.o
 
-# ----------- Auxialliary Essentialls -----------
+# ----------- Auxialliary Essentials -----------
 
 # cleanup built object files
 clean:
 	rm -rf build/
-	rm -f Pink
+	rm -f "pink"
 	mkdir build/
 	rm -rf test/build/
-	rm -f Test
+	rm -f "tests"
 	mkdir test/build/
 
+# make a git commit
 commit:
 	git add include/* src/* test/include/* test/src/* docs/* Makefile TODO.txt README.md
 	git commit

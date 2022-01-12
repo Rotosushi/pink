@@ -11,6 +11,8 @@
 #include "aux/TestUnopLiteral.hpp"
 #include "aux/TestUnopTable.hpp"
 #include "aux/TestBinopCodegen.hpp"
+#include "aux/TestBinopLiteral.hpp"
+#include "aux/TestBinopTable.hpp"
 
 #include "ast/TestAstAndNil.hpp"
 #include "ast/TestBool.hpp"
@@ -59,7 +61,7 @@ size_t RunTests(std::ostream& out, size_t flags)
         of a class that is itself an instance of that
         other class. Which tests more which is better right?
 
-        A cool benefiet is that this way we could compose
+        A cool benefit is that this way we could compose
         together the unit tests themselves to write unit tests
         for the classes that are composed of other classes.
 
@@ -127,6 +129,18 @@ size_t RunTests(std::ostream& out, size_t flags)
     {
         if (TestBinopCodegen(out))
             result |= TEST_BINOP_CODEGEN;
+    }
+
+    if ((flags & TEST_BINOP_LITERAL) > 0)
+    {
+        if (TestBinopLiteral(out))
+            result |= TEST_BINOP_LITERAL;
+    }
+
+    if ((flags & TEST_BINOP_TABLE) > 0)
+    {
+        if (TestBinopTable(out))
+            result |= TEST_BINOP_TABLE;
     }
 
     /*
@@ -217,46 +231,61 @@ size_t RunTests(std::ostream& out, size_t flags)
 }
 
 
-
+/*
+    This is a simple implementation of this procedure,
+    as it always assumes that every test was run.
+    and thus any zero's in place of a flag means the
+    test failed, but that can also happen when the test
+    was not one that was selected to run.
+    which works great during development, as we are
+    in fact running every test each time. However
+    a more robust testing routine/framework
+    would probably keep track of which tests were
+    requested to run, and then only print which of those
+    passed. #TODO: refactor the testing framework to
+    accomplish this
+*/
 void PrintPassedTests(std::ostream& out, size_t flags)
 {
     bool result = true;
     /*
         Auxilliary Classes Tests
     */
-    result &= Test(out, "pink::Test::Error",          flags & TEST_ERROR);
-    result &= Test(out, "pink::Test::Outcome",        flags & TEST_OUTCOME);
-    result &= Test(out, "pink::Test::StringInterner", flags & TEST_STRING_INTERNER);
-    result &= Test(out, "pink::Test::SymbolTable",    flags & TEST_SYMBOL_TABLE);
-    result &= Test(out, "pink::Test::TypeInterner",   flags & TEST_TYPE_INTERNER);
-    result &= Test(out, "pink::Test::Environment",    flags & TEST_ENVIRONMENT);
-    result &= Test(out, "pink::Test::UnopCodegen",    flags & TEST_UNOP_CODEGEN);
-    result &= Test(out, "pink::Test::UnopLiteral",    flags & TEST_UNOP_LITERAL);
-    result &= Test(out, "pink::Test::UnopTable",      flags & TEST_UNOP_TABLE);
-    result &= Test(out, "pink::Test::BinopCodegen",   flags & TEST_BINOP_CODEGEN);
+    result &= Test(out, "pink::Error",          flags & TEST_ERROR);
+    result &= Test(out, "pink::Outcome",        flags & TEST_OUTCOME);
+    result &= Test(out, "pink::StringInterner", flags & TEST_STRING_INTERNER);
+    result &= Test(out, "pink::SymbolTable",    flags & TEST_SYMBOL_TABLE);
+    result &= Test(out, "pink::TypeInterner",   flags & TEST_TYPE_INTERNER);
+    result &= Test(out, "pink::Environment",    flags & TEST_ENVIRONMENT);
+    result &= Test(out, "pink::UnopCodegen",    flags & TEST_UNOP_CODEGEN);
+    result &= Test(out, "pink::UnopLiteral",    flags & TEST_UNOP_LITERAL);
+    result &= Test(out, "pink::UnopTable",      flags & TEST_UNOP_TABLE);
+    result &= Test(out, "pink::BinopCodegen",   flags & TEST_BINOP_CODEGEN);
+    result &= Test(out, "pink::BinopLiteral",   flags & TEST_BINOP_LITERAL);
+    result &= Test(out, "pink::BinopTable",     flags & TEST_BINOP_TABLE);
     /*
         Abstract Syntax Tree Tests
     */
-    result &= Test(out, "pink::Test::Ast, pink::Test::Nil", flags & TEST_AST_AND_NIL);
-    result &= Test(out, "pink::Test::Bool",                 flags & TEST_BOOL);
-    result &= Test(out, "pink::Test::Int",                  flags & TEST_INT);
-    result &= Test(out, "pink::Test::Variable",             flags & TEST_VARIABLE);
-    result &= Test(out, "pink::Test::Bind",                 flags & TEST_BIND);
-    result &= Test(out, "pink::Test::Binop",                flags & TEST_BINOP);
-    result &= Test(out, "pink::Test::Unop",                 flags & TEST_UNOP);
+    result &= Test(out, "pink::Ast, pink::Nil", flags & TEST_AST_AND_NIL);
+    result &= Test(out, "pink::Bool",           flags & TEST_BOOL);
+    result &= Test(out, "pink::Int",            flags & TEST_INT);
+    result &= Test(out, "pink::Variable",       flags & TEST_VARIABLE);
+    result &= Test(out, "pink::Bind",           flags & TEST_BIND);
+    result &= Test(out, "pink::Binop",          flags & TEST_BINOP);
+    result &= Test(out, "pink::Unop",           flags & TEST_UNOP);
 
     /*
         Type Tests
     */
-    result &= Test(out, "pink::Test::Type, pink::Test::NilType", flags & TEST_TYPE_AND_NIL_TYPE);
-    result &= Test(out, "pink::Test::IntType",                   flags & TEST_INT_TYPE);
-    result &= Test(out, "pink::Test::BoolType",                  flags & TEST_BOOL_TYPE);
+    result &= Test(out, "pink::Type, pink::NilType", flags & TEST_TYPE_AND_NIL_TYPE);
+    result &= Test(out, "pink::IntType",             flags & TEST_INT_TYPE);
+    result &= Test(out, "pink::BoolType",            flags & TEST_BOOL_TYPE);
 
     /*
         Frontend Tests
     */
-    result &= Test(out, "pink::Test::Token",  flags & TEST_TOKEN);
-    result &= Test(out, "pink::Test::Lexer",  flags & TEST_LEXER);
+    result &= Test(out, "pink::Token",  flags & TEST_TOKEN);
+    result &= Test(out, "pink::Lexer",  flags & TEST_LEXER);
 
     Test(out, "pink::Test", result);
 }

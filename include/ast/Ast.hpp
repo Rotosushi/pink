@@ -12,9 +12,7 @@
 namespace pink {
     class Ast {
     public:
-        // at first, what we are targeting is a c-evaluation calculator
-        // then we will add functions. This way we can more clearly
-        // test the functionality of just the functions.
+        // https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
         enum class Kind {
             Variable,
             Bind,
