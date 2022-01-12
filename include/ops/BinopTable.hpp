@@ -4,8 +4,10 @@
 #include "llvm/ADT/APInt.h" // llvm::Optional<>
 #include "llvm/ADT/DenseMap.h" // llvm::DenseMap<>
 
-#include "aux/BinopLiteral.hpp"
 #include "aux/StringInterner.hpp"
+
+#include "ops/BinopLiteral.hpp"
+
 
 namespace pink {
     class BinopTable {

@@ -1,4 +1,3 @@
-
 #include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
 #include "llvm/Support/TargetRegistry.h" // llvm::TargetRegistry::lookupTarget();
 #include "llvm/Support/TargetSelect.h"
@@ -7,23 +6,21 @@
 #include "llvm/Target/TargetMachine.h"
 
 #include "Test.hpp"
-#include "aux/TestUnopCodegen.hpp"
-#include "aux/UnopCodegen.hpp"
+#include "ops/TestBinopTable.hpp"
+#include "ops/BinopTable.hpp"
 
-#include "type/IntType.hpp"
-
-pink::Outcome<pink::Error, llvm::Value*> test_codegen_fn(llvm::Value* term, pink::Environment& env)
+pink::Outcome<pink::Error, llvm::Value*> test_binop_table_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
 {
     std::string s("");
     pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
     return pink::Outcome<pink::Error, llvm::Value*>(err);
 }
 
-bool TestUnopCodegen(std::ostream& out)
+bool TestBinopTable(std::ostream& out)
 {
     bool result = true;
     out << "\n-----------------------\n";
-    out << "Testing and pink::UnopCodegen: \n";
+    out << "Testing pink::BinopTable: \n";
 
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -38,7 +35,6 @@ bool TestUnopCodegen(std::ostream& out)
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();
     llvm::InitializeNativeTargetDisassembler();
-
 
     std::string    target_triple = llvm::sys::getProcessTriple();
 
@@ -72,17 +68,27 @@ bool TestUnopCodegen(std::ostream& out)
     pink::Environment env(symbols, operators, types, bindings,
         target_triple, data_layout, context, module, builder);
 
-    pink::Type* ty = new pink::IntType();
-    pink::UnopCodegen unop_gen(ty, test_codegen_fn);
+    pink::InternedString plus = env.operators.Intern("+");
+    pink::Type* ty = env.types.GetIntType();
+    pink::BinopTable binop_table;
+    pink::Precedence p = 5;
+    pink::Associativity a = pink::Associativity::Left;
 
-    result &= Test(out, "UnopCodegen::result_type", unop_gen.result_type == ty);
+    auto pair = binop_table.Register(plus, p, a, ty, ty, ty, test_binop_table_fn);
 
+    result &= Test(out, "BinopTable::Register", pair.first == plus);
 
-    pink::Outcome<pink::Error, llvm::Value*> v = unop_gen.generate(nullptr, env);
+    auto opt = binop_table.Lookup(plus);
 
-    result &= Test(out, "UnopCodegen::generate", v.GetWhich());
+    result &= Test(out, "BinopTable::Lookup", opt.hasValue() && pair.first == plus);
 
-    result &= Test(out, "pink::UnopCodegen", result);
+    binop_table.Unregister(plus);
+
+    auto opt1 = binop_table.Lookup(plus);
+
+    result &= Test(out, "BinopTable::Unregister", !opt1.hasValue());
+
+    result &= Test(out, "pink::BinopTable", result);
     out << "\n-----------------------\n";
     return result;
 }

@@ -7,12 +7,13 @@
 #include "aux/TestTypeInterner.hpp"
 #include "aux/TestSymbolTable.hpp"
 #include "aux/TestEnvironment.hpp"
-#include "aux/TestUnopCodegen.hpp"
-#include "aux/TestUnopLiteral.hpp"
-#include "aux/TestUnopTable.hpp"
-#include "aux/TestBinopCodegen.hpp"
-#include "aux/TestBinopLiteral.hpp"
-#include "aux/TestBinopTable.hpp"
+
+#include "ops/TestUnopCodegen.hpp"
+#include "ops/TestUnopLiteral.hpp"
+#include "ops/TestUnopTable.hpp"
+#include "ops/TestBinopCodegen.hpp"
+#include "ops/TestBinopLiteral.hpp"
+#include "ops/TestBinopTable.hpp"
 
 #include "ast/TestAstAndNil.hpp"
 #include "ast/TestBool.hpp"
@@ -55,8 +56,8 @@ size_t RunTests(std::ostream& out, size_t flags)
     size_t result = 0;
 
     /*
-        If we refactor the basic test subroutine to take
-        a reference to the class being tested, then we
+        If we refactor each test subroutine to take
+        a reference or ptr to the class being tested, then we
         can rerun previous tests when we have a component
         of a class that is itself an instance of that
         other class. Which tests more which is better right?

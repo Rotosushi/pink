@@ -1,5 +1,5 @@
 
-#include "aux/BinopLiteral.hpp"
+#include "ops/BinopLiteral.hpp"
 
 namespace pink {
     BinopLiteral::BinopLiteral(Precedence p, Associativity a)

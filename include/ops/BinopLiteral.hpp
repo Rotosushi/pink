@@ -4,8 +4,8 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 
-#include "aux/BinopCodegen.hpp"
-#include "aux/PrecedenceAndAssociativity.hpp"
+#include "ops/BinopCodegen.hpp"
+#include "ops/PrecedenceAndAssociativity.hpp"
 
 namespace pink {
 

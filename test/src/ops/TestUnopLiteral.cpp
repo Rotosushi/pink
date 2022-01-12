@@ -1,3 +1,4 @@
+
 #include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
 #include "llvm/Support/TargetRegistry.h" // llvm::TargetRegistry::lookupTarget();
 #include "llvm/Support/TargetSelect.h"
@@ -5,27 +6,24 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-
 #include "Test.hpp"
-#include "aux/TestBinopCodegen.hpp"
-#include "aux/BinopCodegen.hpp"
+#include "ops/TestUnopLiteral.hpp"
+#include "ops/UnopLiteral.hpp"
 
 #include "type/IntType.hpp"
 
-pink::Outcome<pink::Error, llvm::Value*> test_binop_codegen_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
+pink::Outcome<pink::Error, llvm::Value*> test_literal_fn(llvm::Value* term, pink::Environment& env)
 {
     std::string s("");
     pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
     return pink::Outcome<pink::Error, llvm::Value*>(err);
 }
 
-
-
-bool TestBinopCodegen(std::ostream& out)
+bool TestUnopLiteral(std::ostream& out)
 {
     bool result = true;
     out << "\n-----------------------\n";
-    out << "Testing pink::BinopCodegen: \n";
+    out << "Testing pink::UnopLiteral: \n";
 
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -75,14 +73,25 @@ bool TestBinopCodegen(std::ostream& out)
         target_triple, data_layout, context, module, builder);
 
     pink::Type* ty = env.types.GetIntType();
-    pink::BinopCodegen binop_codegen(ty, test_binop_codegen_fn);
+    pink::UnopLiteral unop;
 
-    result &= Test(out, "BinopCodegen::result_type", binop_codegen.result_type == ty);
+    auto pair = unop.Register(ty, ty, test_literal_fn);
 
-    result &= Test(out, "BinopCodegen::generate", binop_codegen.generate == test_binop_codegen_fn);
+    result &= Test(out, "UnopLiteral::Register()", pair.first == ty);
 
 
-    result &= Test(out, "pink::BinopCodegen", result);
+    auto opt = unop.Lookup(ty);
+
+    result &= Test(out, "UnopLiteral::Lookup()", opt.hasValue() && (*opt).first == ty);
+
+    unop.Unregister(ty);
+
+    opt = unop.Lookup(ty);
+
+    result &= Test(out, "UnopLiteral::Unregister()", !opt.hasValue());
+
+
+    result &= Test(out, "pink::UnopLiteral", result);
     out << "\n-----------------------\n";
     return result;
 }

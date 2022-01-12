@@ -11,3 +11,6 @@ TODOs in no particular order:
 		perhaps aux/ and operators/ ?
 
 	# refactor the makefile into a cmake file
+
+	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions
+		and when i use -stdlib=libstdc++ it doesn not.

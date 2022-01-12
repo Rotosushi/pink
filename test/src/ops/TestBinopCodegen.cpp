@@ -1,4 +1,3 @@
-
 #include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
 #include "llvm/Support/TargetRegistry.h" // llvm::TargetRegistry::lookupTarget();
 #include "llvm/Support/TargetSelect.h"
@@ -6,13 +5,14 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
+
 #include "Test.hpp"
-#include "aux/TestUnopTable.hpp"
-#include "aux/UnopTable.hpp"
+#include "ops/TestBinopCodegen.hpp"
+#include "ops/BinopCodegen.hpp"
 
 #include "type/IntType.hpp"
 
-pink::Outcome<pink::Error, llvm::Value*> test_table_fn(llvm::Value* term, pink::Environment& env)
+pink::Outcome<pink::Error, llvm::Value*> test_binop_codegen_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
 {
     std::string s("");
     pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
@@ -20,11 +20,12 @@ pink::Outcome<pink::Error, llvm::Value*> test_table_fn(llvm::Value* term, pink::
 }
 
 
-bool TestUnopTable(std::ostream& out)
+
+bool TestBinopCodegen(std::ostream& out)
 {
     bool result = true;
     out << "\n-----------------------\n";
-    out << "Testing pink::UnopTable: \n";
+    out << "Testing pink::BinopCodegen: \n";
 
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -73,26 +74,15 @@ bool TestUnopTable(std::ostream& out)
     pink::Environment env(symbols, operators, types, bindings,
         target_triple, data_layout, context, module, builder);
 
-    pink::InternedString minus = env.operators.Intern("-");
     pink::Type* ty = env.types.GetIntType();
-    pink::UnopTable unop_table;
+    pink::BinopCodegen binop_codegen(ty, test_binop_codegen_fn);
 
-    auto pair = unop_table.Register(minus, ty, ty, test_table_fn);
+    result &= Test(out, "BinopCodegen::result_type", binop_codegen.result_type == ty);
 
-    result &= Test(out, "UnopTable::Register", pair.first == minus);
-
-    auto opt = unop_table.Lookup(minus);
-
-    result &= Test(out, "UnopTable::Lookup", opt.hasValue() && pair.first == minus);
-
-    unop_table.Unregister(minus);
-
-    auto opt1 = unop_table.Lookup(minus);
-
-    result &= Test(out, "UnopTable::Unregister", !opt1.hasValue());
+    result &= Test(out, "BinopCodegen::generate", binop_codegen.generate == test_binop_codegen_fn);
 
 
-    result &= Test(out, "pink::UnopTable", result);
+    result &= Test(out, "pink::BinopCodegen", result);
     out << "\n-----------------------\n";
     return result;
 }

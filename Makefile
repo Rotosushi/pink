@@ -38,13 +38,14 @@ TYP0_OBJS=build/Type.o build/NilType.o build/IntType.o build/BoolType.o
 TYPE_OBJS=$(TYP0_OBJS)
 AUX0_OBJS=build/Location.o build/Error.o build/StringInterner.o build/SymbolTable.o
 AUX1_OBJS=build/TypeInterner.o build/Environment.o build/Outcome.o
-AUX2_OBJS=build/UnopCodegen.o build/UnopLiteral.o build/UnopTable.o
-AUX3_OBJS=build/BinopCodegen.o build/BinopLiteral.o build/BinopTable.o
-AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS) $(AUX2_OBJS) $(AUX3_OBJS)
+AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS)
+OPS0_OBJS=build/UnopCodegen.o build/UnopLiteral.o build/UnopTable.o
+OPS1_OBJS=build/BinopCodegen.o build/BinopLiteral.o build/BinopTable.o
+OPS_OBJS=$(OPS0_OBJS) $(OPS1_OBJS)
 FRT0_OBJS=build/Token.o build/Lexer.o
 FRNT_OBJS=$(FRT0_OBJS)
 
-BUILD_OBJS:=$(AUX_OBJS) $(AST_OBJS) $(TYPE_OBJS) $(FRNT_OBJS)
+BUILD_OBJS:=$(AUX_OBJS) $(OPS_OBJS) $(AST_OBJS) $(TYPE_OBJS) $(FRNT_OBJS)
 
 # The final linking step which builds the compiler
 pink: components main
@@ -58,12 +59,12 @@ main:
 # up to the main rubroutine, so that both the main build rules
 # and the unit test build rules can specify they want to build/test
 # all of the components of the compiler.
-components: aux ast type front
+components: aux ops ast type front
 
 # auxilliary classes for the compiler, not conceptually tied to the
 # compilation process, but necessary for bookkeeping and stitching
 # the parts of the compiler together.
-aux: location error outcome string_interner symbol_table aux2
+aux: location error outcome string_interner symbol_table type_interner environment
 
 location:
 	$(CC) $(CFLAGS) src/aux/Location.cpp -o build/Location.o
@@ -80,35 +81,35 @@ string_interner:
 symbol_table:
 	$(CC) $(CFLAGS) src/aux/SymbolTable.cpp -o build/SymbolTable.o
 
-aux2: type_interner environment unop_codegen unop_literal unop_table aux3
-
 type_interner:
 	$(CC) $(CFLAGS) src/aux/TypeInterner.cpp -o build/TypeInterner.o
 
 environment:
 	$(CC) $(CFLAGS) src/aux/Environment.cpp -o build/Environment.o
 
+# classes which implement the behavior of operators
+ops: unop_codegen unop_literal unop_table binop_codegen binop_literal binop_table
+
 unop_codegen:
-	$(CC) $(CFLAGS) src/aux/UnopCodegen.cpp -o build/UnopCodegen.o
+	$(CC) $(CFLAGS) src/ops/UnopCodegen.cpp -o build/UnopCodegen.o
 
 unop_literal:
-	$(CC) $(CFLAGS) src/aux/UnopLiteral.cpp -o build/UnopLiteral.o
+	$(CC) $(CFLAGS) src/ops/UnopLiteral.cpp -o build/UnopLiteral.o
 
 unop_table:
-	$(CC) $(CFLAGS) src/aux/UnopTable.cpp -o build/UnopTable.o
-
-aux3: binop_codegen binop_literal binop_table
+	$(CC) $(CFLAGS) src/ops/UnopTable.cpp -o build/UnopTable.o
 
 binop_codegen:
-	$(CC) $(CFLAGS) src/aux/BinopCodegen.cpp -o build/BinopCodegen.o
+	$(CC) $(CFLAGS) src/ops/BinopCodegen.cpp -o build/BinopCodegen.o
 
 binop_literal:
-	$(CC) $(CFLAGS) src/aux/BinopLiteral.cpp -o build/BinopLiteral.o
+	$(CC) $(CFLAGS) src/ops/BinopLiteral.cpp -o build/BinopLiteral.o
 
 binop_table:
-	$(CC) $(CFLAGS) src/aux/BinopTable.cpp -o build/BinopTable.o
+	$(CC) $(CFLAGS) src/ops/BinopTable.cpp -o build/BinopTable.o
 
-# Build Rules for the AST, representing typable and interpretable statements
+
+# Build Rules for the AST, representing typable statements
 ast: nil bool int variable bind binop unop
 	$(CC) $(CFLAGS) src/ast/Ast.cpp -o build/Ast.o
 
@@ -166,11 +167,11 @@ re:
 # so the final rule doesn't get too long
 TEST_AUX0_OBJS=test/build/TestError.o test/build/TestStringInterner.o
 TEST_AUX1_OBJS=test/build/TestSymbolTable.o test/build/TestTypeInterner.o
-TEST_AUX2_OBJS=test/build/TestEnvironment.o test/build/TestUnopCodegen.o
-TEST_AUX3_OBJS=test/build/TestOutcome.o test/build/TestUnopTable.o
-TEST_AUX4_OBJS=test/build/TestUnopLiteral.o test/build/TestBinopCodegen.o
-TEST_AUX5_OBJS=test/build/TestBinopLiteral.o test/build/TestBinopTable.o
-TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS) $(TEST_AUX3_OBJS) $(TEST_AUX4_OBJS) $(TEST_AUX5_OBJS)
+TEST_AUX2_OBJS=test/build/TestEnvironment.o test/build/TestOutcome.o
+TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS)
+TEST_OPS0_OBJS=test/build/TestUnopCodegen.o test/build/TestUnopLiteral.o test/build/TestUnopTable.o
+TEST_OPS1_OBJS=test/build/TestBinopCodegen.o test/build/TestBinopLiteral.o test/build/TestBinopTable.o
+TEST_OPS_OBJS=$(TEST_OPS0_OBJS) $(TEST_OPS1_OBJS)
 TEST_AST0_OBJS=test/build/TestAstAndNil.o test/build/TestBool.o test/build/TestInt.o
 TEST_AST1_OBJS=test/build/TestVariable.o test/build/TestBind.o test/build/TestBinop.o
 TEST_AST2_OBJS=test/build/TestUnop.o
@@ -185,7 +186,7 @@ TEST_FRNT_OBJS=$(TEST_FRT0_OBJS)
 TEST_MAIN_OBJS=test/build/Test.o test/build/TestMain.o
 
 # The list of all of the object files needed to build the unit tests
-TEST_OBJS=$(TEST_AUX_OBJS) $(TEST_AST_OBJS) $(TEST_TYPE_OBJS) $(TEST_FRNT_OBJS)
+TEST_OBJS=$(TEST_AUX_OBJS) $(TEST_OPS_OBJS) $(TEST_AST_OBJS) $(TEST_TYPE_OBJS) $(TEST_FRNT_OBJS)
 
 # the final linking step of the unit tests for the compiler
 test: components tests
@@ -194,7 +195,7 @@ test: components tests
 
 # this is the rule that collects all the subrules
 # needed to build the unit tests
-tests: test_main test_header test_aux test_ast test_type test_front
+tests: test_main test_header test_aux test_ops test_ast test_type test_front
 
 # This is the routine which actually handles calling all of the
 # individual unit tests.
@@ -208,7 +209,7 @@ test_main:
 
 # unit tests for the auxialliary classes used
 # by the core classes of the compiler
-test_aux: test_error test_outcome test_string_interner test_symbol_table test_aux2
+test_aux: test_error test_outcome test_string_interner test_symbol_table test_type_interner test_environment
 
 test_error:
 	$(CC) $(CFLAGS) test/src/aux/TestError.cpp -o test/build/TestError.o
@@ -222,34 +223,34 @@ test_string_interner:
 test_symbol_table:
 	$(CC) $(CFLAGS) test/src/aux/TestSymbolTable.cpp -o test/build/TestSymbolTable.o
 
-
-test_aux2: test_type_interner test_environment test_unop_codegen test_unop_literal test_unop_table test_aux3
-
 test_type_interner:
 	$(CC) $(CFLAGS) test/src/aux/TestTypeInterner.cpp -o test/build/TestTypeInterner.o
 
 test_environment:
 	$(CC) $(CFLAGS) test/src/aux/TestEnvironment.cpp -o test/build/TestEnvironment.o
 
+
+# unit tests for the operator classes
+test_ops: test_unop_codegen test_unop_literal test_unop_table test_binop_codegen test_binop_literal test_binop_table
+
 test_unop_codegen:
-	$(CC) $(CFLAGS) test/src/aux/TestUnopCodegen.cpp -o test/build/TestUnopCodegen.o
+	$(CC) $(CFLAGS) test/src/ops/TestUnopCodegen.cpp -o test/build/TestUnopCodegen.o
 
 test_unop_literal:
-	$(CC) $(CFLAGS) test/src/aux/TestUnopLiteral.cpp -o test/build/TestUnopLiteral.o
+	$(CC) $(CFLAGS) test/src/ops/TestUnopLiteral.cpp -o test/build/TestUnopLiteral.o
 
 test_unop_table:
-	$(CC) $(CFLAGS) test/src/aux/TestUnopTable.cpp -o test/build/TestUnopTable.o
-
-test_aux3: test_binop_codegen test_binop_literal test_binop_table
+	$(CC) $(CFLAGS) test/src/ops/TestUnopTable.cpp -o test/build/TestUnopTable.o
 
 test_binop_codegen:
-	$(CC) $(CFLAGS) test/src/aux/TestBinopCodegen.cpp -o test/build/TestBinopCodegen.o
+	$(CC) $(CFLAGS) test/src/ops/TestBinopCodegen.cpp -o test/build/TestBinopCodegen.o
 
 test_binop_literal:
-	$(CC) $(CFLAGS) test/src/aux/TestBinopLiteral.cpp -o test/build/TestBinopLiteral.o
+	$(CC) $(CFLAGS) test/src/ops/TestBinopLiteral.cpp -o test/build/TestBinopLiteral.o
 
 test_binop_table:
-	$(CC) $(CFLAGS) test/src/aux/TestBinopTable.cpp -o test/build/TestBinopTable.o
+	$(CC) $(CFLAGS) test/src/ops/TestBinopTable.cpp -o test/build/TestBinopTable.o
+
 
 # unit tests for the abstract syntax tree.
 test_ast: test_bool test_int test_variable test_bind test_binop test_unop
