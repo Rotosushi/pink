@@ -7,9 +7,6 @@ TODOs in no particular order:
 			Primitive Operators (Kernel)
 			REPL
 
-	# refactor the aux/ directory into multiple subdirectories, or multiple directories
-		perhaps aux/ and operators/ ?
-
 	# refactor the makefile into a cmake file
 
 	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions
