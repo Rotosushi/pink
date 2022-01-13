@@ -19,7 +19,7 @@ namespace pink {
 
     bool Nil::classof(const Ast* a)
     {
-        return a->GetKind() == Ast::Kind::Nil;
+        return a->getKind() == Ast::Kind::Nil;
     }
 
     std::string Nil::ToString()

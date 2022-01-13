@@ -33,7 +33,7 @@ bool TestInt(std::ostream& out)
 
         -) Int::ToString() == "42"
     */
-    result &= Test(out, "Int::GetKind()", i0->GetKind() == pink::Ast::Kind::Int);
+    result &= Test(out, "Int::GetKind()", i0->getKind() == pink::Ast::Kind::Int);
 
     result &= Test(out, "Int::classof()", i0->classof(i0));
 

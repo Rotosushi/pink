@@ -45,7 +45,7 @@ bool TestBinop(std::ostream& out)
     -) Binop::ToString() == l->ToString() + std::string(op) + r->ToString();
 
     */
-    result &= Test(out, "Binop::GetKind()", b0->GetKind() == pink::Ast::Kind::Binop);
+    result &= Test(out, "Binop::GetKind()", b0->getKind() == pink::Ast::Kind::Binop);
 
     result &= Test(out, "Binop::classof()", b0->classof(b0));
 

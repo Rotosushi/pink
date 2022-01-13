@@ -14,12 +14,12 @@ namespace pink {
 
     bool IntType::classof(const Type* t)
     {
-        return t->GetKind() == Type::Kind::Int;
+        return t->getKind() == Type::Kind::Int;
     }
 
     bool IntType::operator==(Type& other)
     {
-        return other.GetKind() == Type::Kind::Int;
+        return other.getKind() == Type::Kind::Int;
     }
 
     std::string IntType::ToString()

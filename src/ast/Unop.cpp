@@ -19,7 +19,7 @@ namespace pink {
 
     bool Unop::classof(const Ast* t)
     {
-        return t->GetKind() == Ast::Kind::Unop;
+        return t->getKind() == Ast::Kind::Unop;
     }
 
     std::string Unop::ToString()

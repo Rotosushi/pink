@@ -24,7 +24,7 @@ namespace pink {
 
     bool Variable::classof(const Ast* a)
     {
-        return a->GetKind() == Ast::Kind::Variable;
+        return a->getKind() == Ast::Kind::Variable;
     }
 
     std::string Variable::ToString()

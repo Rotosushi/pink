@@ -70,7 +70,7 @@ size_t RunTests(std::ostream& out, size_t flags)
     */
 
     /*
-        Auxilliary Classes Tests.
+        Auxilliary Unit Tests.
     */
     if ((flags & TEST_ERROR) > 0)
     {
@@ -108,6 +108,9 @@ size_t RunTests(std::ostream& out, size_t flags)
             result |= TEST_ENVIRONMENT;
     }
 
+    /*
+        Operator Unit Tests
+    */
     if ((flags & TEST_UNOP_CODEGEN) > 0)
     {
         if (TestUnopCodegen(out))

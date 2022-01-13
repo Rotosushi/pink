@@ -32,7 +32,7 @@ bool TestBool(std::ostream& out)
 
         -) Bool::ToString() == "Bool"
     */
-    result &= Test(out, "Bool::GetKind()", b0->GetKind() == pink::Ast::Kind::Bool);
+    result &= Test(out, "Bool::GetKind()", b0->getKind() == pink::Ast::Kind::Bool);
 
     result &= Test(out, "Bool::classof()", b0->classof(b0));
 

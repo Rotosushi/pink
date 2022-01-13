@@ -5,12 +5,13 @@
 
 #include "aux/Error.hpp"
 #include "aux/Outcome.hpp"
-#include "aux/Environment.hpp"
 
 #include "type/Type.hpp"
 
 namespace pink {
-    typedef Outcome<Error, llvm::Value*> (*UnopCodegenFn)(llvm::Value* term, Environment& env);
+    class Environment;
+
+    typedef Outcome<llvm::Value*, Error> (*UnopCodegenFn)(llvm::Value* term, Environment& env);
 
     class UnopCodegen {
     public:

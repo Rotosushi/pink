@@ -32,7 +32,7 @@ bool TestTypeAndNilType(std::ostream& out)
 
     pink::NilType a;
 
-    if (a.GetKind() == pink::Type::Kind::Nil)
+    if (a.getKind() == pink::Type::Kind::Nil)
     {
         out << "\tTest: NilType::GetKind(): Passed\n";
     }

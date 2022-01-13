@@ -42,7 +42,7 @@ bool TestUnop(std::ostream& out)
     -) Unop::ToString() == std::string(op) + i0->ToString();
 
     */
-    result &= Test(out, "Unop::GetKind()", u0->GetKind() == pink::Ast::Kind::Unop);
+    result &= Test(out, "Unop::GetKind()", u0->getKind() == pink::Ast::Kind::Unop);
 
     result &= Test(out, "Unop::classof()", u0->classof(u0));
 

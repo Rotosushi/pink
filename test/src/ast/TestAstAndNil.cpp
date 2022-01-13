@@ -36,7 +36,7 @@ bool TestAstAndNil(std::ostream& out)
     pink::Location l0(0, 14, 0, 15);
     pink::Nil a(l0);
 
-    result &= Test(out, "Nil::GetKind()", a.GetKind() == pink::Ast::Kind::Nil);
+    result &= Test(out, "Nil::GetKind()", a.getKind() == pink::Ast::Kind::Nil);
     result &= Test(out, "Nil::classof()", a.classof(&a));
 
     pink::Location l1(l0);

@@ -22,6 +22,8 @@ bool TestEnvironment(std::ostream& out)
     pink::StringInterner operators;
     pink::TypeInterner   types;
     pink::SymbolTable    bindings;
+    pink::BinopTable     binops;
+    pink::UnopTable      unops;
 
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder(context);
@@ -62,8 +64,8 @@ bool TestEnvironment(std::ostream& out)
     llvm::Module      module("TestEnvironment", context);
 
 
-    pink::Environment env(symbols, operators, types, bindings,
-        target_triple, data_layout, context, module, builder);
+    pink::Environment env(symbols, operators, types, bindings, binops, unops,
+                          target_triple, data_layout, context, module, builder);
 
 
     pink::InternedString symb = env.symbols.Intern("x");

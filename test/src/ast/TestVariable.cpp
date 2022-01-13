@@ -34,7 +34,7 @@ bool TestVariable(std::ostream& out)
 
         -) Variable::ToString() == "v"
     */
-    result &= Test(out, "Variable::GetKind()", v0->GetKind() == pink::Ast::Kind::Variable);
+    result &= Test(out, "Variable::GetKind()", v0->getKind() == pink::Ast::Kind::Variable);
 
     result &= Test(out, "Variable::classof()", v0->classof(v0));
 

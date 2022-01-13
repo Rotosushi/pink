@@ -12,9 +12,10 @@
 #include "aux/StringInterner.hpp"
 #include "aux/SymbolTable.hpp"
 #include "aux/TypeInterner.hpp"
-//#include "aux/PrecedenceTable.hpp"
-//#include "aux/BinopTable.hpp"
-//#include "aux/UnopTable.hpp"
+
+#include "ops/BinopTable.hpp"
+#include "ops/UnopTable.hpp"
+
 //#include "front/Parser.hpp"
 
 //#TODO Finish This after all the files above
@@ -30,13 +31,12 @@ namespace pink {
     class Environment {
     public:
         // Parser parser;
-        StringInterner& symbols;
-        StringInterner& operators;
-        TypeInterner&   types;
-        SymbolTable&    bindings;
-        // PrecedenceTable op_prec;
-        // BinopTable  binops;
-        // UnopTable   unops;
+        StringInterner&    symbols;
+        StringInterner&    operators;
+        TypeInterner&      types;
+        SymbolTable&       bindings;
+        BinopTable&        binops;
+        UnopTable&         unops;
         std::string&       target_triple;
         llvm::DataLayout&  data_layout;
         llvm::LLVMContext& context;
@@ -44,7 +44,8 @@ namespace pink {
         llvm::IRBuilder<>& ir_builder;
 
         Environment(StringInterner& si, StringInterner& oi, TypeInterner& ti,
-                    SymbolTable& sy, std::string& tt, llvm::DataLayout& dl,
+                    SymbolTable& sy, BinopTable& bt, UnopTable& ut,
+                    std::string& tt, llvm::DataLayout& dl,
                     llvm::LLVMContext& ct, llvm::Module& md,
                     llvm::IRBuilder<>& ib);
     };

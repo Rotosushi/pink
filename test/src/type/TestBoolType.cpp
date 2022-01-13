@@ -30,7 +30,7 @@ bool TestBoolType(std::ostream& out)
 
     pink::BoolType a;
 
-    if (a.GetKind() == pink::Type::Kind::Bool)
+    if (a.getKind() == pink::Type::Kind::Bool)
     {
         out << "\tTest: BoolType::GetKind(): Passed\n";
     }

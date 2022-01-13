@@ -34,7 +34,7 @@ namespace pink {
         Ast(const Kind k, Location l);
         virtual ~Ast();
 
-        Kind GetKind() const;
+        Kind getKind() const;
         Location GetLoc() const;
 
         virtual Ast* Clone() = 0;

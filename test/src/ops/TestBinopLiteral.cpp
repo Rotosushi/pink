@@ -9,11 +9,13 @@
 #include "ops/TestBinopLiteral.hpp"
 #include "ops/BinopLiteral.hpp"
 
-pink::Outcome<pink::Error, llvm::Value*> test_binop_literal_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
+#include "aux/Environment.hpp"
+
+pink::Outcome<llvm::Value*, pink::Error> test_binop_literal_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
 {
     std::string s("");
     pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
-    return pink::Outcome<pink::Error, llvm::Value*>(err);
+    return pink::Outcome<llvm::Value*, pink::Error>(err);
 }
 
 bool TestBinopLiteral(std::ostream& out)
@@ -26,6 +28,8 @@ bool TestBinopLiteral(std::ostream& out)
     pink::StringInterner operators;
     pink::TypeInterner   types;
     pink::SymbolTable    bindings;
+    pink::BinopTable     binops;
+    pink::UnopTable      unops;
 
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder(context);
@@ -66,8 +70,8 @@ bool TestBinopLiteral(std::ostream& out)
     llvm::Module      module("TestEnvironment", context);
 
 
-    pink::Environment env(symbols, operators, types, bindings,
-        target_triple, data_layout, context, module, builder);
+    pink::Environment env(symbols, operators, types, bindings, binops, unops,
+                          target_triple, data_layout, context, module, builder);
 
     pink::Type* ty = env.types.GetIntType();
     pink::Precedence p = 5;

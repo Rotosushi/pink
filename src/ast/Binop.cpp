@@ -21,7 +21,7 @@ namespace pink {
 
     bool Binop::classof(const Ast* t)
     {
-        return t->GetKind() == Ast::Kind::Binop;
+        return t->getKind() == Ast::Kind::Binop;
     }
 
     std::string Binop::ToString()

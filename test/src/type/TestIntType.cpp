@@ -30,7 +30,7 @@ bool TestIntType(std::ostream& out)
 
     pink::IntType a;
 
-    if (a.GetKind() == pink::Type::Kind::Int)
+    if (a.getKind() == pink::Type::Kind::Int)
     {
         out << "\tTest: IntType::GetKind(): Passed\n";
     }

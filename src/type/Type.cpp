@@ -12,7 +12,7 @@ namespace pink {
 
     }
 
-    Type::Kind Type::GetKind() const
+    Type::Kind Type::getKind() const
     {
         return kind;
     }

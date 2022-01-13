@@ -15,12 +15,12 @@ namespace pink {
 
     bool NilType::classof(const Type* t)
     {
-        return t->GetKind() == Type::Kind::Nil;
+        return t->getKind() == Type::Kind::Nil;
     }
 
     bool NilType::operator==(Type& other)
     {
-        return other.GetKind() == Type::Kind::Nil;
+        return other.getKind() == Type::Kind::Nil;
     }
 
     std::string NilType::ToString()

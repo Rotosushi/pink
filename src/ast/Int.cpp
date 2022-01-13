@@ -20,7 +20,7 @@ namespace pink {
 
     bool Int::classof(const Ast* a)
     {
-        return a->GetKind() == Ast::Kind::Int;
+        return a->getKind() == Ast::Kind::Int;
     }
 
     std::string Int::ToString()

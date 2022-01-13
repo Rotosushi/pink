@@ -10,13 +10,15 @@
 #include "ops/TestUnopCodegen.hpp"
 #include "ops/UnopCodegen.hpp"
 
+#include "aux/Environment.hpp"
+
 #include "type/IntType.hpp"
 
-pink::Outcome<pink::Error, llvm::Value*> test_codegen_fn(llvm::Value* term, pink::Environment& env)
+pink::Outcome<llvm::Value*, pink::Error> test_codegen_fn(llvm::Value* term, pink::Environment& env)
 {
     std::string s("");
     pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
-    return pink::Outcome<pink::Error, llvm::Value*>(err);
+    return pink::Outcome<llvm::Value*, pink::Error>(err);
 }
 
 bool TestUnopCodegen(std::ostream& out)
@@ -29,6 +31,8 @@ bool TestUnopCodegen(std::ostream& out)
     pink::StringInterner operators;
     pink::TypeInterner   types;
     pink::SymbolTable    bindings;
+    pink::BinopTable     binops;
+    pink::UnopTable      unops;
 
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder(context);
@@ -69,8 +73,8 @@ bool TestUnopCodegen(std::ostream& out)
     llvm::Module      module("TestEnvironment", context);
 
 
-    pink::Environment env(symbols, operators, types, bindings,
-        target_triple, data_layout, context, module, builder);
+    pink::Environment env(symbols, operators, types, bindings, binops, unops,
+                          target_triple, data_layout, context, module, builder);
 
     pink::Type* ty = new pink::IntType();
     pink::UnopCodegen unop_gen(ty, test_codegen_fn);
@@ -78,9 +82,9 @@ bool TestUnopCodegen(std::ostream& out)
     result &= Test(out, "UnopCodegen::result_type", unop_gen.result_type == ty);
 
 
-    pink::Outcome<pink::Error, llvm::Value*> v = unop_gen.generate(nullptr, env);
+    pink::Outcome<llvm::Value*, pink::Error> v = unop_gen.generate(nullptr, env);
 
-    result &= Test(out, "UnopCodegen::generate", v.GetWhich());
+    result &= Test(out, "UnopCodegen::generate", !v.GetWhich());
 
     result &= Test(out, "pink::UnopCodegen", result);
     out << "\n-----------------------\n";

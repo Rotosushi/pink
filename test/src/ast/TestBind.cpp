@@ -41,7 +41,7 @@ bool TestBind(std::ostream& out)
 
     */
 
-    result &= Test(out, "Bind::GetKind()", b0->GetKind() == pink::Ast::Kind::Bind);
+    result &= Test(out, "Bind::GetKind()", b0->getKind() == pink::Ast::Kind::Bind);
     result &= Test(out, "Bind::classof()", b0->classof(b0));
 
     pink::Location l2(l0);
