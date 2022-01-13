@@ -21,7 +21,7 @@ namespace pink {
 
         NilType*  GetNilType();
         BoolType* GetBoolType();
-        IntType*   GetIntType();
+        IntType*  GetIntType();
     };
 
 }

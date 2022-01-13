@@ -41,6 +41,10 @@ namespace pink {
 
         virtual std::string ToString() = 0;
 
+        // instead of using two separate functions which are virtual throughout
+        // the Ast type heirarchy, we could define two kinds of visitor which
+        // accomplish the same result. and this would only require one virtual
+        // method to be defined for the entire Ast type heirarchy.
         // virtual std::variant<pink::Error, pink::Type*> Getype(Environment& e) = 0;
         // virtual std::variant<pink::Error, llvm::Value*> ToLLVM(Environment& e) = 0;
     };

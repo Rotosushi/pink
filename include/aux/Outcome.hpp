@@ -14,6 +14,8 @@ namespace pink {
         There is a slight bug in this class, where if you instanciate
         with two of the same class then the constructors become ambiguous,
         so the build doesn't compile, but it works for the use-case,
+        and it's a comptime error not a runtime one, so that makes it
+        much more bearable.
 
     */
     template <class T, class U>

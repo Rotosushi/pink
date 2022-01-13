@@ -62,9 +62,12 @@ constexpr auto TEST_UNOP              = 0x0004'0000;
 constexpr auto TEST_TYPE_AND_NIL_TYPE = 0x0008'0000;
 constexpr auto TEST_INT_TYPE          = 0x0010'0000;
 constexpr auto TEST_BOOL_TYPE         = 0x0020'0000;
-// fronend tests
+// frontend tests
 constexpr auto TEST_TOKEN             = 0x0040'0000;
 constexpr auto TEST_LEXER             = 0x0080'0000;
+// kernel tests
+constexpr auto TEST_UNOP_PRIMITIVES   = 0x0100'0000;
+constexpr auto TEST_BINOP_PRIMITIVES  = 0x0200'0000;
 
 
 constexpr auto TEST_ALL               = 0xFFFF'FFFF;

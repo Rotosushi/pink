@@ -42,10 +42,12 @@ AUX_OBJS=$(AUX0_OBJS) $(AUX1_OBJS)
 OPS0_OBJS=build/UnopCodegen.o build/UnopLiteral.o build/UnopTable.o
 OPS1_OBJS=build/BinopCodegen.o build/BinopLiteral.o build/BinopTable.o
 OPS_OBJS=$(OPS0_OBJS) $(OPS1_OBJS)
+KRN0_OBJS=build/UnopPrimitives.o build/BinopPrimitives.o
+KRNL_OBJS=$(KRN0_OBJS)
 FRT0_OBJS=build/Token.o build/Lexer.o
 FRNT_OBJS=$(FRT0_OBJS)
 
-BUILD_OBJS:=$(AUX_OBJS) $(OPS_OBJS) $(AST_OBJS) $(TYPE_OBJS) $(FRNT_OBJS)
+BUILD_OBJS:=$(AUX_OBJS) $(OPS_OBJS) $(KRNL_OBJS) $(AST_OBJS) $(TYPE_OBJS) $(FRNT_OBJS)
 
 # The final linking step which builds the compiler
 pink: components main
@@ -59,7 +61,7 @@ main:
 # up to the main rubroutine, so that both the main build rules
 # and the unit test build rules can specify they want to build/test
 # all of the components of the compiler.
-components: aux ops ast type front
+components: aux ops kernel ast type front
 
 # auxilliary classes for the compiler, not conceptually tied to the
 # compilation process, but necessary for bookkeeping and stitching
@@ -87,7 +89,7 @@ type_interner:
 environment:
 	$(CC) $(CFLAGS) src/aux/Environment.cpp -o build/Environment.o
 
-# classes which implement the behavior of operators
+# classes which implement the structure of operators
 ops: unop_codegen unop_literal unop_table binop_codegen binop_literal binop_table
 
 unop_codegen:
@@ -108,6 +110,14 @@ binop_literal:
 binop_table:
 	$(CC) $(CFLAGS) src/ops/BinopTable.cpp -o build/BinopTable.o
 
+# classes which implement the behavior of operators
+kernel: unop_primitives binop_primitives
+
+unop_primitives:
+	$(CC) $(CFLAGS) src/kernel/UnopPrimitives.cpp -o build/UnopPrimitives.o
+
+binop_primitives:
+	$(CC) $(CFLAGS) src/kernel/BinopPrimitives.cpp -o build/BinopPrimitives.o
 
 # Build Rules for the AST, representing typable statements
 ast: nil bool int variable bind binop unop
@@ -172,6 +182,8 @@ TEST_AUX_OBJS=$(TEST_AUX0_OBJS) $(TEST_AUX1_OBJS) $(TEST_AUX2_OBJS)
 TEST_OPS0_OBJS=test/build/TestUnopCodegen.o test/build/TestUnopLiteral.o test/build/TestUnopTable.o
 TEST_OPS1_OBJS=test/build/TestBinopCodegen.o test/build/TestBinopLiteral.o test/build/TestBinopTable.o
 TEST_OPS_OBJS=$(TEST_OPS0_OBJS) $(TEST_OPS1_OBJS)
+TEST_KRN0_OBJS=test/build/TestUnopPrimitives.o test/build/TestBinopPrimitives.o
+TEST_KRNL_OBJS=$(TEST_KRN0_OBJS)
 TEST_AST0_OBJS=test/build/TestAstAndNil.o test/build/TestBool.o test/build/TestInt.o
 TEST_AST1_OBJS=test/build/TestVariable.o test/build/TestBind.o test/build/TestBinop.o
 TEST_AST2_OBJS=test/build/TestUnop.o
@@ -186,7 +198,7 @@ TEST_FRNT_OBJS=$(TEST_FRT0_OBJS)
 TEST_MAIN_OBJS=test/build/Test.o test/build/TestMain.o
 
 # The list of all of the object files needed to build the unit tests
-TEST_OBJS=$(TEST_AUX_OBJS) $(TEST_OPS_OBJS) $(TEST_AST_OBJS) $(TEST_TYPE_OBJS) $(TEST_FRNT_OBJS)
+TEST_OBJS=$(TEST_AUX_OBJS) $(TEST_OPS_OBJS) $(TEST_KRNL_OBJS) $(TEST_AST_OBJS) $(TEST_TYPE_OBJS) $(TEST_FRNT_OBJS)
 
 # the final linking step of the unit tests for the compiler
 test: components tests
@@ -195,7 +207,7 @@ test: components tests
 
 # this is the rule that collects all the subrules
 # needed to build the unit tests
-tests: test_main test_header test_aux test_ops test_ast test_type test_front
+tests: test_main test_header test_aux test_ops test_kernel test_ast test_type test_front
 
 # This is the routine which actually handles calling all of the
 # individual unit tests.
@@ -251,6 +263,14 @@ test_binop_literal:
 test_binop_table:
 	$(CC) $(CFLAGS) test/src/ops/TestBinopTable.cpp -o test/build/TestBinopTable.o
 
+# The kernel defines all of the primitive operators for now.
+test_kernel: test_unop_primitives test_binop_primitives
+
+test_unop_primitives:
+	$(CC) $(CFLAGS) test/src/kernel/TestUnopPrimitives.cpp -o test/build/TestUnopPrimitives.o
+
+test_binop_primitives:
+	$(CC) $(CFLAGS) test/src/kernel/TestBinopPrimitives.cpp -o test/build/TestBinopPrimitives.o
 
 # unit tests for the abstract syntax tree.
 test_ast: test_bool test_int test_variable test_bind test_binop test_unop

@@ -30,11 +30,18 @@
 #include "front/TestToken.hpp"
 #include "front/TestLexer.hpp"
 
+#include "kernel/TestUnopPrimitives.hpp"
+#include "kernel/TestBinopPrimitives.hpp"
 
 /*
     This is a super basic funclet, which simply saves
     me from having to type out so much code in every
     Test...() body
+
+    since it takes a bool, and then does something with it,
+    and then simply returns that same bool, is this procedure
+    a monad? or would the bool have to be held in a struct
+    for that to be true?
 */
 bool Test(std::ostream& out, std::string test_name, bool test)
 {
@@ -229,6 +236,20 @@ size_t RunTests(std::ostream& out, size_t flags)
             result |= TEST_LEXER;
     }
 
+    /*
+        Kernel Tests
+    */
+    if ((flags & TEST_UNOP_PRIMITIVES) > 0)
+    {
+        if (TestUnopPrimitives(out))
+            result |= TEST_UNOP_PRIMITIVES;
+    }
+
+    if ((flags & TEST_BINOP_PRIMITIVES) > 0)
+    {
+        if (TestBinopPrimitives(out))
+            result |= TEST_BINOP_PRIMITIVES;
+    }
 
 
     return result;
@@ -248,6 +269,18 @@ size_t RunTests(std::ostream& out, size_t flags)
     requested to run, and then only print which of those
     passed. #TODO: refactor the testing framework to
     accomplish this
+
+    This would start being accomplished with the existance
+    of another parameter to this procedure which was a
+    flags mask, which simply held which tests had been run.
+    This mask is equivalent to the flags argument to
+    the RunTests procedure.
+    then each test in this body becomes
+    (flags & flags_mask & TEST_...)
+    the only time this doesn't zero out the result is when
+    there is a one in the TEST_... position in the flags_mask
+    and flags variables. which then accomplishes the
+    semantics outlines above.
 */
 void PrintPassedTests(std::ostream& out, size_t flags)
 {
@@ -290,6 +323,12 @@ void PrintPassedTests(std::ostream& out, size_t flags)
     */
     result &= Test(out, "pink::Token",  flags & TEST_TOKEN);
     result &= Test(out, "pink::Lexer",  flags & TEST_LEXER);
+
+    /*
+        Kernel Tests
+    */
+    result &= Test(out, "pink::UnopPrimitives", flags & TEST_UNOP_PRIMITIVES);
+    result &= Test(out, "pink::BinopPrimitives", flags & TEST_BINOP_PRIMITIVES);
 
     Test(out, "pink::Test", result);
 }
