@@ -28,4 +28,15 @@ namespace pink {
             }
         }
     }
+    
+    bool TokenToBool(Token t)
+    {
+    	switch (t)
+    	{
+    	case Token::Error:
+    		return false;
+    	default:
+    		return true;
+    	}
+    }
 }

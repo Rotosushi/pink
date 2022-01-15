@@ -21,7 +21,7 @@ namespace pink {
     public:
         Error(const Error& other);
         Error(Kind k, const char* d, Location l);
-        Error(Kind k, std::string& d, Location l);
+        Error(Kind k, std::string d, Location l);
 
         Error& operator=(const Error& other);
 

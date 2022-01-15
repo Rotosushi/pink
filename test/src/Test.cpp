@@ -30,6 +30,7 @@
 
 #include "front/TestToken.h"
 #include "front/TestLexer.h"
+#include "front/TestParser.h"
 
 #include "kernel/TestUnopPrimitives.h"
 #include "kernel/TestBinopPrimitives.h"
@@ -248,6 +249,12 @@ size_t RunTests(std::ostream& out, size_t flags)
         if (TestLexer(out))
             result |= TEST_LEXER;
     }
+    
+    if ((flags & TEST_PARSER) > 0)
+    {
+    	if (TestParser(out))
+    		result |= TEST_PARSER;
+    }
 
     /*
         Kernel Tests
@@ -333,6 +340,7 @@ void PrintPassedTests(std::ostream& out, size_t test_results)
     */
     result &= Test(out, "pink::Token",  test_results & TEST_TOKEN);
     result &= Test(out, "pink::Lexer",  test_results & TEST_LEXER);
+    result &= Test(out, "pink::Parser", test_results & TEST_PARSER);
 
     /*
         Kernel Tests

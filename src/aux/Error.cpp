@@ -13,11 +13,11 @@ namespace pink {
 
     }
 
-    Error::Error(Kind k, std::string& d, Location l)
-        : kind(k), dsc(d), loc(l)
-    {
-
-    }
+	Error::Error(Kind k, std::string d, Location l)
+		: kind(k), dsc(d), loc(l)
+	{
+		
+	}
 
     Error& Error::operator=(const Error& other)
     {

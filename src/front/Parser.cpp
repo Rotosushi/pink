@@ -43,10 +43,10 @@ namespace pink {
         txt = lexer.yytxt();
     }
 
-    Outcome<Ast*, Error> Parser::Parse(std::string& str, Environment& env)
+    Outcome<Ast*, Error> Parser::Parse(std::string str, Environment& env)
     {
         lexer.SetBuf(str);
-        nexttok(); // prime the lexer
+        nexttok(); // prime the lexers
         Outcome<Ast*, Error> result (ParseTerm(env));
         return result;
     }
@@ -68,7 +68,7 @@ namespace pink {
         if (tok == Token::Op) // we assume this is a binary operator appearing after a basic term
         {
         	// Handle the entire binop expression with the Infix Parser
-            Outcome<Ast*, Error> result(ParseInfix(left.GetOne(), env));
+            Outcome<Ast*, Error> result(ParseInfix(left.GetOne(), 0, env));
             return result; // pass or fail, return the result of parsing a binop expression.
         }
         
@@ -76,9 +76,54 @@ namespace pink {
 		return left;
     }
     
-    Outcome<Ast*, Error> Parser::ParseInfix(Ast* lhs, Environment& env)
-    {
     
+    /*
+    	This is an implementation of an operator precedence parser
+    	going from this pseudo-code:
+    	https://en.wikipedia.org/wiki/Operator-precedence_parser
+    */
+    Outcome<Ast*, Error> Parser::ParseInfix(Ast* lhs, Precedence precedence, Environment& env)
+    {
+    	Outcome<Ast*, Error> result(lhs);
+    	Token peek_tok;
+    	InternedString peek_str;
+    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> peek_opt;
+    	BinopLiteral* peek_lit;
+    	
+    	while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op)  
+    		&& (peek_str = env.operators.Intern(txt))
+    		&& (peek_opt = env.binops.Lookup(peek_str)) && (peek_opt.hasValue()) 
+    		&& (peek_lit = peek_opt->second) && (peek_lit->precedence >= precedence))
+    	{
+    		InternedString op_str = peek_str;
+    		BinopLiteral*  op_lit = peek_lit;
+    		Location       op_loc = loc;
+    		
+    		nexttok(); // eat the operator, Token::Op 
+    		
+    		Outcome<Ast*, Error> rhs = ParseBasic(env);
+    		
+    		if (!rhs)
+    			return rhs; 
+    			
+    		while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op) 
+    			&& (peek_str = env.operators.Intern(txt))
+    			&& (peek_opt = env.binops.Lookup(peek_str)) && (peek_opt.hasValue())
+    			&& (peek_lit = peek_opt->second) 
+    			&& ((peek_lit->precedence > op_lit->precedence) 
+    				|| ((peek_lit->associativity == Associativity::Right)
+    				&& (peek_lit->precedence == op_lit->precedence))))
+    		{
+    			rhs = ParseInfix(rhs.GetOne(), peek_lit->precedence, env);
+    			
+    			if (!rhs)
+    				return rhs; 
+    		}
+    		
+    		Location binop_loc(op_loc.firstLine, op_loc.firstColumn, loc.firstLine, loc.firstColumn);
+    		result = Outcome<Ast*, Error>(new Binop(binop_loc, op_str, result.GetOne(),  rhs.GetOne()));
+    	}
+    	return result;
     }
     
     
@@ -149,6 +194,8 @@ namespace pink {
     	
     	case Token::LParen:
     	{
+    		nexttok(); // eat the '('
+    		
     		Outcome<Ast*, Error> result(ParseAffix(env));
     		
     		if (!result)
@@ -156,7 +203,7 @@ namespace pink {
     			
     		if (tok != Token::RParen)
     		{
-    			Outcome<Ast*, Error> error(Error(Error::Kind::Syntax, "Missing Closing Parenthesis", loc);
+    			Outcome<Ast*, Error> error(Error(Error::Kind::Syntax, "Missing Closing Parenthesis", loc));
     			return error;
     		}
     		else 
@@ -166,7 +213,7 @@ namespace pink {
     		}
     	}
     	
-    	case Token::Nil
+    	case Token::Nil:
     	{	
     		Location lhs_loc = loc;
     		nexttok(); // eat 'nil'
@@ -178,7 +225,7 @@ namespace pink {
         case Token::Int:
         {
         	Location lhs_loc = loc;
-        	int value = std::to_string(txt);
+        	int value = std::stoi(txt);
         	nexttok(); // eat '42'
         	Outcome<Ast*, Error> result(new Int(lhs_loc, value));
         	return result;
@@ -205,6 +252,8 @@ namespace pink {
     		return Outcome<Ast*, Error>(Error(Error::Kind::Syntax, "Unknown Basic Token:" + TokenToString(tok), loc));
     	}
     	} // !switch(tok)
+    }
+    
     
     Outcome<Type*, Error> Parser::ParseBasicType(Environment& env)
     {
@@ -214,7 +263,7 @@ namespace pink {
         {
         	Location lhs_loc = loc;
         	nexttok(); // eat 'Nil'
-        	Outcome<Ast*, Error> result(new NilType(lhs_loc));
+        	Outcome<Type*, Error> result(env.types.GetNilType());
         	return result;
         }
         
@@ -222,7 +271,7 @@ namespace pink {
         {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "Int"
-        	Outcome<Ast*, Error> result(new IntType(lhs_loc));
+        	Outcome<Type*, Error> result(env.types.GetIntType());
         	return result;
         }
         
@@ -230,16 +279,15 @@ namespace pink {
         {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "Bool"
-        	Outcome<Ast*, Error> result(new BoolType(lhs_loc));
-        	retrn result;
+        	Outcome<Type*, Error> result(env.types.GetBoolType());
+        	return result;
         }
         
     	default:
     	{
-    		return Outcome<Ast*, Error>(Error(Error::Kind::Syntax, "Unknown Type Token:" + TokenToString(tok), loc));
+    		return Outcome<Type*, Error>(Error(Error::Kind::Syntax, "Unknown Type Token:" + TokenToString(tok), loc));
     	}
     	}
     }
         
-    }
 }

@@ -26,6 +26,19 @@ namespace pink {
 
     std::string Binop::ToString()
     {
-        return left->ToString() + " " + std::string(op) + " " + right->ToString();
+    	std::string result;
+    	if (llvm::isa<Binop>(left))
+    		result += "(" + left->ToString() + ")";
+    	else 
+    		result += left->ToString();
+    		
+    	result += " " + std::string(op) + " ";
+    	
+    	if (llvm::isa<Binop>(right))
+    		result += "(" + right->ToString() + ")";
+    	else 
+    		result += right->ToString();
+    		
+        return result;
     }
 }

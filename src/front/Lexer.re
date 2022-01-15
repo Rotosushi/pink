@@ -109,9 +109,9 @@ namespace pink {
         re2c:define:YYRESTORE = "(cursor = marker);";
         re2c:define:YYLESSTHAN = "(end > (end - cursor));";
 
-        id = [a-zA-Z_][a-zA-Z0-9_]+;
-        op = [+\-*\\%<=>&|\^!~@$]+;
-        int = [0-9]+;
+        id=[a-zA-Z_] [a-zA-Z0-9_]*;
+        op=[+\-*\\%<=>&|\^!~@$]+;
+        int=[0-9]+;
     */
 
     Token Lexer::yylex()
@@ -119,14 +119,10 @@ namespace pink {
         while (1)
         {
             token = cursor;
-            /*!re2c
-                *   { UpdateLoc(); return Token::Error; } // Unknown Token
-                $   { UpdateLoc(); return Token::End; } // End of Input
-                [ \t\n] { UpdateLoc(); continue; } // Whitespace
-
+         
+            /*!re2c               
                 "nil"   { UpdateLoc(); return Token::Nil; }
                 "Nil"   { UpdateLoc(); return Token::NilType; }
-                int     { UpdateLoc(); return Token::Int; }
                 "Int"   { UpdateLoc(); return Token::IntType; }
                 "true"  { UpdateLoc(); return Token::True; }
                 "false" { UpdateLoc(); return Token::False; }
@@ -137,9 +133,14 @@ namespace pink {
                 ":="    { UpdateLoc(); return Token::ColonEq; }
                 "("     { UpdateLoc(); return Token::LParen; }
                 ")"     { UpdateLoc(); return Token::RParen; }
-
+                
                 id      { UpdateLoc(); return Token::Id; }
                 op      { UpdateLoc(); return Token::Op; }
+                int     { UpdateLoc(); return Token::Int; }
+                
+                [ \t\n] { UpdateLoc(); continue; } // Whitespace
+                *       { UpdateLoc(); return Token::Error; } // Unknown Token
+                $       { UpdateLoc(); return Token::End; } // End of Input
             */
         }
     }

@@ -22,7 +22,7 @@
 # ----------- Makefile Basic Definitions -----------
 CC=clang++-13
 # `llvm-config-13 -cxxflags` adds necessary flags for compiling c++ with llvm-13
-CFLAGS=-g -Wall -stdlib=libstdc++ -std=c++17 -Iinclude/ -Itest/include/ -c `llvm-config-13 --cxxflags`
+CFLAGS=-g -fstandalone-debug -Wall -stdlib=libstdc++ -std=c++17 -Iinclude/ -Itest/include/ -c `llvm-config-13 --cxxflags`
 # `llvm-config-13 --ldflags --libs` adds necessary flags and libraries to link
 # agains llvm-13, as per:
 # https://stackoverflow.com/questions/53805007/compilation-failing-on-enableabibreakingchecks
@@ -44,7 +44,7 @@ OPS1_OBJS=build/BinopCodegen.o build/BinopLiteral.o build/BinopTable.o
 OPS_OBJS=$(OPS0_OBJS) $(OPS1_OBJS)
 KRN0_OBJS=build/UnopPrimitives.o build/BinopPrimitives.o
 KRNL_OBJS=$(KRN0_OBJS)
-FRT0_OBJS=build/Token.o build/Lexer.o
+FRT0_OBJS=build/Token.o build/Lexer.o build/Parser.o
 FRNT_OBJS=$(FRT0_OBJS)
 
 BUILD_OBJS:=$(AUX_OBJS) $(OPS_OBJS) $(KRNL_OBJS) $(AST_OBJS) $(TYPE_OBJS) $(FRNT_OBJS)
@@ -162,7 +162,7 @@ bool_type:
 
 
 # builds the Frontend of the Compiler
-front: token lexer
+front: token lexer parser
 
 token:
 	$(CC) $(CFLAGS) src/front/Token.cpp -o build/Token.o
@@ -173,6 +173,8 @@ lexer: re
 re:
 	re2c src/front/Lexer.re -o src/front/Lexer.cpp
 
+parser:
+	$(CC) $(CFLAGS) src/front/Parser.cpp -o build/Parser.o
 
 # ----------- Build Rules for the Test Environment -----------
 
@@ -194,7 +196,7 @@ TEST_AST_OBJS=$(TEST_AST0_OBJS) $(TEST_AST1_OBJS) $(TEST_AST2_OBJS)
 TEST_TYP0_OBJS=test/build/TestTypeAndNilType.o test/build/TestIntType.o
 TEST_TYP1_OBJS=test/build/TestBoolType.o
 TEST_TYPE_OBJS=$(TEST_TYP0_OBJS) $(TEST_TYP1_OBJS)
-TEST_FRT0_OBJS=test/build/TestLexer.o test/build/TestToken.o
+TEST_FRT0_OBJS=test/build/TestParser.o test/build/TestLexer.o test/build/TestToken.o
 TEST_FRNT_OBJS=$(TEST_FRT0_OBJS)
 # the list of all the object files needed to build the main subroutine
 # for the unit tests.
@@ -312,13 +314,16 @@ test_bool_type:
 	$(CC) $(CFLAGS) test/src/type/TestBoolType.cpp -o test/build/TestBoolType.o
 
 # unit tests for the frontend of the compiler
-test_front: test_lexer test_token
+test_front: test_lexer test_token test_parser
 
 test_token:
 	$(CC) $(CFLAGS) test/src/front/TestToken.cpp -o test/build/TestToken.o
 
 test_lexer:
 	$(CC) $(CFLAGS) test/src/front/TestLexer.cpp -o test/build/TestLexer.o
+	
+test_parser:
+	$(CC) $(CFLAGS) test/src/front/TestParser.cpp -o test/build/TestParser.o
 
 # ----------- Auxialliary Essentials -----------
 

@@ -25,4 +25,5 @@ namespace pink {
     };
 
     std::string TokenToString(Token t);
+    bool TokenToBool(Token t);
 }

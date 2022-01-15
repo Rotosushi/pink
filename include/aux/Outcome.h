@@ -81,6 +81,8 @@ namespace pink {
             one = other.one;
         else
             two = other.two;
+           
+        return *this;
     }
 
     template <class T, class U>
