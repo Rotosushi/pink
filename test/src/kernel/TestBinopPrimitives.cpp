@@ -5,9 +5,9 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-#include "Test.hpp"
-#include "kernel/TestBinopPrimitives.hpp"
-#include "kernel/BinopPrimitives.hpp"
+#include "Test.h"
+#include "kernel/TestBinopPrimitives.h"
+#include "kernel/BinopPrimitives.h"
 
 
 bool TestBinopPrimitives(std::ostream& out)

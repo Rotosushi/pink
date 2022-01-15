@@ -1,4 +1,4 @@
-#include "ast/Unop.hpp"
+#include "ast/Unop.h"
 
 namespace pink {
     Unop::Unop(Location& loc, InternedString o, Ast* r)

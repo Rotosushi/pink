@@ -1,6 +1,6 @@
-#include "Test.hpp"
-#include "front/TestLexer.hpp"
-#include "front/Lexer.hpp"
+#include "Test.h"
+#include "front/TestLexer.h"
+#include "front/Lexer.h"
 
 /*
     Test that the lexer validly lexes the provided

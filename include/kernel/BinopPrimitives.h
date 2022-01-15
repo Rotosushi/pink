@@ -1,5 +1,5 @@
 
-#include "aux/Environment.hpp"
+#include "aux/Environment.h"
 
 namespace pink {
     void InitializeBinopPrimitives(Environment& env);

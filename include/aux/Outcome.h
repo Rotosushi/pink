@@ -1,6 +1,6 @@
 #pragma once
 
-#include "aux/Error.hpp"
+#include "aux/Error.h"
 
 namespace pink {
     /*
@@ -34,6 +34,7 @@ namespace pink {
         Outcome(U u);
         Outcome(const Outcome& other);
 
+        Outcome& operator=(const Outcome& other);
         operator bool();
         bool GetWhich();
 
@@ -65,6 +66,17 @@ namespace pink {
     Outcome<T, U>::Outcome(const Outcome& other)
         : which(other.which)
     {
+        if (which)
+            one = other.one;
+        else
+            two = other.two;
+    }
+
+    template <class T, class U>
+    Outcome<T, U>& Outcome<T, U>::operator=(const Outcome& other)
+    {
+        which = other.which;
+
         if (which)
             one = other.one;
         else

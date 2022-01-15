@@ -10,6 +10,7 @@ namespace pink {
         Op,
 
         Colon,
+        ColonEq,
         Equals,
         LParen,
         RParen,

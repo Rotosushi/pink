@@ -1,5 +1,5 @@
 
-#include "ast/Int.hpp"
+#include "ast/Int.h"
 
 namespace pink {
     Int::Int(Location l, int i)

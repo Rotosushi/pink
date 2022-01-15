@@ -1,6 +1,6 @@
-#include "type/TestIntType.hpp"
+#include "type/TestIntType.h"
 
-#include "type/IntType.hpp"
+#include "type/IntType.h"
 
 bool TestIntType(std::ostream& out)
 {

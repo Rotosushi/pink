@@ -1,9 +1,9 @@
-#include "ast/Variable.hpp"
+#include "ast/Variable.h"
 
 /*
     TODO:   Move each file in the header and source directory
-    into the appropriate subfolders. src/ast/Int.cpp include/ast/Bool.hpp etc...
-    includ/aux/StringInterner.hpp
+    into the appropriate subfolders. src/ast/Int.cpp include/ast/Bool.h etc...
+    includ/aux/StringInterner.h
 */
 namespace pink {
     Variable::Variable(Location l, InternedString s)

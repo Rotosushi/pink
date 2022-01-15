@@ -5,11 +5,11 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-#include "Test.hpp"
-#include "ops/TestBinopTable.hpp"
-#include "ops/BinopTable.hpp"
+#include "Test.h"
+#include "ops/TestBinopTable.h"
+#include "ops/BinopTable.h"
 
-#include "aux/Environment.hpp"
+#include "aux/Environment.h"
 
 pink::Outcome<llvm::Value*, pink::Error> test_binop_table_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
 {

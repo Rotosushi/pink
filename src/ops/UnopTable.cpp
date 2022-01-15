@@ -1,5 +1,5 @@
 
-#include "ops/UnopTable.hpp"
+#include "ops/UnopTable.h"
 
 namespace pink {
     UnopTable::UnopTable()

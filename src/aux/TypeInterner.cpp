@@ -1,5 +1,5 @@
 
-#include "aux/TypeInterner.hpp"
+#include "aux/TypeInterner.h"
 
 namespace pink {
     TypeInterner::TypeInterner()

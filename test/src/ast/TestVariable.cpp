@@ -1,7 +1,7 @@
-#include "Test.hpp"
-#include "ast/TestVariable.hpp"
+#include "Test.h"
+#include "ast/TestVariable.h"
 
-#include "ast/Variable.hpp"
+#include "ast/Variable.h"
 
 bool TestVariable(std::ostream& out)
 {

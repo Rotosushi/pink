@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 
-#include "ast/Ast.hpp"
-#include "aux/StringInterner.hpp"
+#include "ast/Ast.h"
+#include "aux/StringInterner.h"
 
 namespace pink {
     class Binop : public Ast {

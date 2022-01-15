@@ -1,5 +1,5 @@
-#include "aux/Error.hpp"
-#include "front/Token.hpp"
+#include "aux/Error.h"
+#include "front/Token.h"
 
 namespace pink {
     std::string TokenToString(Token t)

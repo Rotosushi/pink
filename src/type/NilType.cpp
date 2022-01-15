@@ -1,4 +1,4 @@
-#include "type/NilType.hpp"
+#include "type/NilType.h"
 
 
 namespace pink {

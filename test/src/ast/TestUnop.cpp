@@ -1,7 +1,7 @@
-#include "Test.hpp"
-#include "ast/TestUnop.hpp"
-#include "ast/Unop.hpp"
-#include "ast/Int.hpp"
+#include "Test.h"
+#include "ast/TestUnop.h"
+#include "ast/Unop.h"
+#include "ast/Int.h"
 
 bool TestUnop(std::ostream& out)
 {

@@ -4,9 +4,9 @@
 #include "llvm/ADT/APInt.h" // llvm::Optional<>
 #include "llvm/ADT/DenseMap.h" // llvm::DenseMap<>
 
-#include "aux/StringInterner.hpp"
+#include "aux/StringInterner.h"
 
-#include "ops/BinopLiteral.hpp"
+#include "ops/BinopLiteral.h"
 
 
 namespace pink {

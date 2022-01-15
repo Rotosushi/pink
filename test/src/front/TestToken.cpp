@@ -1,6 +1,6 @@
-#include "Test.hpp"
-#include "front/TestToken.hpp"
-#include "front/Token.hpp"
+#include "Test.h"
+#include "front/TestToken.h"
+#include "front/Token.h"
 
 
 bool Testlet(std::string txt, pink::Token tok)

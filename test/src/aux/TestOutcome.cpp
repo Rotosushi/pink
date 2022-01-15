@@ -1,7 +1,7 @@
 
-#include "Test.hpp"
-#include "aux/TestOutcome.hpp"
-#include "aux/Outcome.hpp"
+#include "Test.h"
+#include "aux/TestOutcome.h"
+#include "aux/Outcome.h"
 
 bool TestOutcome(std::ostream& out)
 {

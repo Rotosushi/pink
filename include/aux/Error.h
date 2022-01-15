@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>
 
-#include "aux/Location.hpp"
+#include "aux/Location.h"
 
 namespace pink {
     class Error {
@@ -22,6 +22,8 @@ namespace pink {
         Error(const Error& other);
         Error(Kind k, const char* d, Location l);
         Error(Kind k, std::string& d, Location l);
+
+        Error& operator=(const Error& other);
 
         std::string ToString(const char* txt);
         std::string ToString(std::string& txt);

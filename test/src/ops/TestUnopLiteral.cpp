@@ -6,13 +6,13 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-#include "Test.hpp"
-#include "ops/TestUnopLiteral.hpp"
-#include "ops/UnopLiteral.hpp"
+#include "Test.h"
+#include "ops/TestUnopLiteral.h"
+#include "ops/UnopLiteral.h"
 
-#include "aux/Environment.hpp"
+#include "aux/Environment.h"
 
-#include "type/IntType.hpp"
+#include "type/IntType.h"
 
 pink::Outcome<llvm::Value*, pink::Error> test_literal_fn(llvm::Value* term, pink::Environment& env)
 {

@@ -3,10 +3,10 @@
 
 #include "llvm/IR/Value.h"
 
-#include "aux/Error.hpp"
-#include "aux/Outcome.hpp"
+#include "aux/Error.h"
+#include "aux/Outcome.h"
 
-#include "type/Type.hpp"
+#include "type/Type.h"
 
 namespace pink {
     class Environment;

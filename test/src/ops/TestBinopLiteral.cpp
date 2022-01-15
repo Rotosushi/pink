@@ -5,11 +5,11 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-#include "Test.hpp"
-#include "ops/TestBinopLiteral.hpp"
-#include "ops/BinopLiteral.hpp"
+#include "Test.h"
+#include "ops/TestBinopLiteral.h"
+#include "ops/BinopLiteral.h"
 
-#include "aux/Environment.hpp"
+#include "aux/Environment.h"
 
 pink::Outcome<llvm::Value*, pink::Error> test_binop_literal_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
 {

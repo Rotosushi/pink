@@ -1,21 +1,12 @@
 #include <utility>
 
-#include "aux/SymbolTable.hpp"
+#include "aux/SymbolTable.h"
 
 namespace pink {
     SymbolTable::SymbolTable()
         : map(), outer(nullptr)
     {
 
-    }
-
-    SymbolTable::SymbolTable(const SymbolTable& other)
-        : outer(other.outer)
-    {
-        for (auto pair : other.map)
-        {
-            map.insert(std::make_pair(pair.first, pair.second->Clone()));
-        }
     }
 
     SymbolTable::SymbolTable(SymbolTable* o)
@@ -26,14 +17,7 @@ namespace pink {
 
     SymbolTable::~SymbolTable()
     {
-        // The SymbolTable assumes ownership of the bound terms.
-        for (auto pair : map)
-        {
-            Ast* term = pair.second;
-
-            if (term != nullptr)
-                delete term;
-        }
+        
     }
 
     SymbolTable* SymbolTable::OuterScope()
@@ -41,16 +25,16 @@ namespace pink {
         return outer;
     }
 
-    llvm::Optional<Ast*> SymbolTable::Lookup(InternedString symbol)
+    llvm::Optional<llvm::Value*> SymbolTable::Lookup(InternedString symbol)
     {
         auto iter = map.find(symbol);
         if (iter == map.end())
-            return llvm::Optional<Ast*>();
+            return llvm::Optional<llvm::Value*>();
         else
-            return llvm::Optional<Ast*>(iter->second);
+            return llvm::Optional<llvm::Value*>(iter->second);
     }
 
-    void SymbolTable::Bind(InternedString symbol, Ast* term)
+    void SymbolTable::Bind(InternedString symbol, llvm::Value* term)
     {
         map.insert(std::make_pair(symbol, term));
     }
@@ -63,14 +47,6 @@ namespace pink {
             return;
         else
         {
-            // The SymbolTable assumes ownership of the bound terms.
-            // so we must free that memory before we can remove the
-            // entry from the DenseMap
-            Ast* term = iter->second;
-
-            if (term != nullptr)
-                delete term;
-
             map.erase(iter);
         }
     }

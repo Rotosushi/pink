@@ -1,4 +1,4 @@
-#include "ast/Binop.hpp"
+#include "ast/Binop.h"
 
 
 namespace pink {

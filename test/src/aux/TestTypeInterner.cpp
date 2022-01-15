@@ -1,7 +1,7 @@
 
-#include "Test.hpp"
-#include "aux/TestTypeInterner.hpp"
-#include "aux/TypeInterner.hpp"
+#include "Test.h"
+#include "aux/TestTypeInterner.h"
+#include "aux/TypeInterner.h"
 
 bool TestTypeInterner(std::ostream& out)
 {

@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "type/Type.hpp"
+#include "type/Type.h"
 
 namespace pink {
     class IntType : public Type {

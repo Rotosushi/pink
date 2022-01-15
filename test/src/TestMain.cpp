@@ -1,5 +1,5 @@
 
-#include "Test.hpp"
+#include "Test.h"
 
 /*
     Tests don't ensure that the code is correct,

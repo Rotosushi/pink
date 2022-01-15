@@ -1,7 +1,7 @@
-#include "Test.hpp"
-#include "ast/TestInt.hpp"
+#include "Test.h"
+#include "ast/TestInt.h"
 
-#include "ast/Int.hpp"
+#include "ast/Int.h"
 
 
 bool TestInt(std::ostream& out)

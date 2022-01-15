@@ -1,5 +1,5 @@
 
-#include "ast/Bind.hpp"
+#include "ast/Bind.h"
 
 namespace pink {
     Bind::Bind(Location l, InternedString i, Ast* t)

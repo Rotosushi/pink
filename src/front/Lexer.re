@@ -1,5 +1,5 @@
 
-#include "front/Lexer.hpp"
+#include "front/Lexer.h"
 
 namespace pink {
     Lexer::Lexer()
@@ -134,6 +134,7 @@ namespace pink {
 
                 ":"     { UpdateLoc(); return Token::Colon; }
                 "="     { UpdateLoc(); return Token::Equals; }
+                ":="    { UpdateLoc(); return Token::ColonEq; }
                 "("     { UpdateLoc(); return Token::LParen; }
                 ")"     { UpdateLoc(); return Token::RParen; }
 

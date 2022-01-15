@@ -4,9 +4,9 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 
-#include "aux/StringInterner.hpp"
+#include "aux/StringInterner.h"
 
-#include "ops/UnopLiteral.hpp"
+#include "ops/UnopLiteral.h"
 
 namespace pink {
     class UnopTable {

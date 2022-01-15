@@ -1,4 +1,4 @@
-#include "type/Type.hpp"
+#include "type/Type.h"
 
 namespace pink {
     Type::Type(Type::Kind k)

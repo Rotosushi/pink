@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
 
-#include "type/Type.hpp"
+#include "type/Type.h"
 
 namespace pink {
-    class NilType : public Type {
+    class BoolType : public Type {
     public:
-        NilType();
-        virtual ~NilType();
+        BoolType();
+        virtual ~BoolType();
 
         static bool classof(const Type* t);
 

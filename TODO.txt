@@ -4,7 +4,6 @@ TODOs in no particular order:
 	# finish v0.0.1
 		needs:
 			Parser
-			Primitive Operators (Kernel)
 			REPL
 
 	# refactor the makefile into a cmake file

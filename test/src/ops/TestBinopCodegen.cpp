@@ -6,13 +6,13 @@
 #include "llvm/Target/TargetMachine.h"
 
 
-#include "Test.hpp"
-#include "ops/TestBinopCodegen.hpp"
-#include "ops/BinopCodegen.hpp"
+#include "Test.h"
+#include "ops/TestBinopCodegen.h"
+#include "ops/BinopCodegen.h"
 
-#include "aux/Environment.hpp"
+#include "aux/Environment.h"
 
-#include "type/IntType.hpp"
+#include "type/IntType.h"
 
 pink::Outcome<llvm::Value*, pink::Error> test_binop_codegen_fn(llvm::Value* left, llvm::Value* right, pink::Environment& env)
 {

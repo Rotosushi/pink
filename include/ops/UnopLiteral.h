@@ -4,7 +4,7 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 
-#include "ops/UnopCodegen.hpp"
+#include "ops/UnopCodegen.h"
 
 namespace pink {
     class UnopLiteral {

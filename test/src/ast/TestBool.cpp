@@ -1,7 +1,7 @@
-#include "Test.hpp"
-#include "ast/TestBool.hpp"
+#include "Test.h"
+#include "ast/TestBool.h"
 
-#include "ast/Bool.hpp"
+#include "ast/Bool.h"
 
 bool TestBool(std::ostream& out)
 {

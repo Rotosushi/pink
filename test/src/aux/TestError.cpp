@@ -1,7 +1,7 @@
-#include "Test.hpp"
-#include "aux/TestError.hpp"
+#include "Test.h"
+#include "aux/TestError.h"
 
-#include "aux/Error.hpp"
+#include "aux/Error.h"
 
 bool TestError(std::ostream& out)
 {

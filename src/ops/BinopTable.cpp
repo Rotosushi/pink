@@ -1,4 +1,4 @@
-#include "ops/BinopTable.hpp"
+#include "ops/BinopTable.h"
 
 namespace pink {
     BinopTable::BinopTable()

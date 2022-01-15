@@ -1,7 +1,7 @@
-#include "Test.hpp"
-#include "aux/TestStringInterner.hpp"
+#include "Test.h"
+#include "aux/TestStringInterner.h"
 
-#include "aux/StringInterner.hpp"
+#include "aux/StringInterner.h"
 
 /*
     This unit test might be a little redundant given that

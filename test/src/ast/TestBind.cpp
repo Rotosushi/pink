@@ -1,8 +1,8 @@
-#include "Test.hpp"
-#include "ast/TestBind.hpp"
+#include "Test.h"
+#include "ast/TestBind.h"
 
-#include "ast/Nil.hpp"
-#include "ast/Bind.hpp"
+#include "ast/Nil.h"
+#include "ast/Bind.h"
 
 bool TestBind(std::ostream& out)
 {

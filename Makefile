@@ -32,7 +32,7 @@ LFLAGS=-g -stdlib=libstdc++ -std=c++17 -fuse-ld=lld `llvm-config-13 --ldflags --
 
 MAIN_OBJS=build/Pink.o
 AST0_OBJS=build/Ast.o build/Nil.o build/Bool.o build/Int.o build/Variable.o
-AST1_OBJS=build/Bind.o build/Binop.o build/Unop.o
+AST1_OBJS=build/Bind.o build/Binop.o build/Unop.o build/Assignment.o
 AST_OBJS=$(AST0_OBJS) $(AST1_OBJS)
 TYP0_OBJS=build/Type.o build/NilType.o build/IntType.o build/BoolType.o
 TYPE_OBJS=$(TYP0_OBJS)
@@ -120,7 +120,7 @@ binop_primitives:
 	$(CC) $(CFLAGS) src/kernel/BinopPrimitives.cpp -o build/BinopPrimitives.o
 
 # Build Rules for the AST, representing typable statements
-ast: nil bool int variable bind binop unop
+ast: nil bool int variable bind binop unop assignment
 	$(CC) $(CFLAGS) src/ast/Ast.cpp -o build/Ast.o
 
 nil:
@@ -143,6 +143,9 @@ binop:
 
 unop:
 	$(CC) $(CFLAGS) src/ast/Unop.cpp -o build/Unop.o
+	
+assignment:
+	$(CC) $(CFLAGS) src/ast/Assignment.cpp -o build/Assignment.o
 
 # Build Rules for the Types
 type: nil_type int_type bool_type
@@ -186,7 +189,7 @@ TEST_KRN0_OBJS=test/build/TestUnopPrimitives.o test/build/TestBinopPrimitives.o
 TEST_KRNL_OBJS=$(TEST_KRN0_OBJS)
 TEST_AST0_OBJS=test/build/TestAstAndNil.o test/build/TestBool.o test/build/TestInt.o
 TEST_AST1_OBJS=test/build/TestVariable.o test/build/TestBind.o test/build/TestBinop.o
-TEST_AST2_OBJS=test/build/TestUnop.o
+TEST_AST2_OBJS=test/build/TestUnop.o test/build/TestAssignment.o
 TEST_AST_OBJS=$(TEST_AST0_OBJS) $(TEST_AST1_OBJS) $(TEST_AST2_OBJS)
 TEST_TYP0_OBJS=test/build/TestTypeAndNilType.o test/build/TestIntType.o
 TEST_TYP1_OBJS=test/build/TestBoolType.o
@@ -273,7 +276,7 @@ test_binop_primitives:
 	$(CC) $(CFLAGS) test/src/kernel/TestBinopPrimitives.cpp -o test/build/TestBinopPrimitives.o
 
 # unit tests for the abstract syntax tree.
-test_ast: test_bool test_int test_variable test_bind test_binop test_unop
+test_ast: test_bool test_int test_variable test_bind test_binop test_unop test_assignment
 	$(CC) $(CFLAGS) test/src/ast/TestAstAndNil.cpp -o test/build/TestAstAndNil.o
 
 test_bool:
@@ -293,6 +296,9 @@ test_binop:
 
 test_unop:
 	$(CC) $(CFLAGS) test/src/ast/TestUnop.cpp -o test/build/TestUnop.o
+	
+test_assignment:
+	$(CC) $(CFLAGS) test/src/ast/TestAssignment.cpp -o test/build/TestAssignment.o
 
 
 # unit tests for the separate Type

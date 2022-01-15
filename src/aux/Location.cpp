@@ -1,5 +1,5 @@
 
-#include "aux/Location.hpp"
+#include "aux/Location.h"
 
 
 namespace pink {

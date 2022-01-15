@@ -1,4 +1,4 @@
-#include "ast/Nil.hpp"
+#include "ast/Nil.h"
 
 namespace pink {
     Nil::Nil(Location l)

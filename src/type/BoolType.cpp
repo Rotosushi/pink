@@ -1,4 +1,4 @@
-#include "type/BoolType.hpp"
+#include "type/BoolType.h"
 
 namespace pink {
     BoolType::BoolType()

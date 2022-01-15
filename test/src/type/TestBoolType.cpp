@@ -1,6 +1,6 @@
-#include "type/TestBoolType.hpp"
+#include "type/TestBoolType.h"
 
-#include "type/BoolType.hpp"
+#include "type/BoolType.h"
 
 bool TestBoolType(std::ostream& out)
 {

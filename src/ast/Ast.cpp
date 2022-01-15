@@ -1,4 +1,4 @@
-#include "ast/Ast.hpp"
+#include "ast/Ast.h"
 
 
 namespace pink {

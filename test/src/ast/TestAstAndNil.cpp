@@ -1,9 +1,9 @@
 #include <string>
 #include <sstream>
 
-#include "Test.hpp"
-#include "ast/TestAstAndNil.hpp"
-#include "ast/Nil.hpp"
+#include "Test.h"
+#include "ast/TestAstAndNil.h"
+#include "ast/Nil.h"
 
 
 bool TestAstAndNil(std::ostream& out)

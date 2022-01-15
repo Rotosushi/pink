@@ -6,13 +6,13 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-#include "Test.hpp"
-#include "ops/TestUnopCodegen.hpp"
-#include "ops/UnopCodegen.hpp"
+#include "Test.h"
+#include "ops/TestUnopCodegen.h"
+#include "ops/UnopCodegen.h"
 
-#include "aux/Environment.hpp"
+#include "aux/Environment.h"
 
-#include "type/IntType.hpp"
+#include "type/IntType.h"
 
 pink::Outcome<llvm::Value*, pink::Error> test_codegen_fn(llvm::Value* term, pink::Environment& env)
 {

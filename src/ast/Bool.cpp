@@ -1,4 +1,4 @@
-#include "ast/Bool.hpp"
+#include "ast/Bool.h"
 
 namespace pink {
     Bool::Bool(Location l, bool b)

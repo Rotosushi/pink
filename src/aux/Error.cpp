@@ -1,4 +1,4 @@
-#include "aux/Error.hpp"
+#include "aux/Error.h"
 
 namespace pink {
     Error::Error(const Error& other)
@@ -17,6 +17,14 @@ namespace pink {
         : kind(k), dsc(d), loc(l)
     {
 
+    }
+
+    Error& Error::operator=(const Error& other)
+    {
+        kind = other.kind;
+        dsc  = other.dsc;
+        loc  = other.loc;
+        return *this;
     }
 
     std::string Error::ToString(const char* txt)

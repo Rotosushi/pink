@@ -1,5 +1,5 @@
-#include "kernel/BinopPrimitives.hpp"
-#include "ops/BinopTable.hpp"
+#include "kernel/BinopPrimitives.h"
+#include "ops/BinopTable.h"
 
 namespace pink {
     Outcome<llvm::Value*, Error> BinopIntAdd(llvm::Value* left, llvm::Value* right, Environment& env)

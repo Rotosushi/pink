@@ -1,8 +1,8 @@
-#include "Test.hpp"
-#include "ast/TestBinop.hpp"
+#include "Test.h"
+#include "ast/TestBinop.h"
 
-#include "ast/Binop.hpp"
-#include "ast/Int.hpp"
+#include "ast/Binop.h"
+#include "ast/Int.h"
 
 bool TestBinop(std::ostream& out)
 {

@@ -1,10 +1,10 @@
 #pragma once
 #include <string>
 
-#include "type/Type.hpp"
-#include "type/NilType.hpp"
-#include "type/BoolType.hpp"
-#include "type/IntType.hpp"
+#include "type/Type.h"
+#include "type/NilType.h"
+#include "type/BoolType.h"
+#include "type/IntType.h"
 
 
 namespace pink {

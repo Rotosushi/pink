@@ -1,4 +1,4 @@
-#include "aux/StringInterner.hpp"
+#include "aux/StringInterner.h"
 
 
 namespace pink {

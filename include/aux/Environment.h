@@ -8,15 +8,15 @@
 #include "llvm/IR/IRBuilder.h"
 
 
-#include "aux/Error.hpp"
-#include "aux/StringInterner.hpp"
-#include "aux/SymbolTable.hpp"
-#include "aux/TypeInterner.hpp"
+#include "aux/Error.h"
+#include "aux/StringInterner.h"
+#include "aux/SymbolTable.h"
+#include "aux/TypeInterner.h"
 
-#include "ops/BinopTable.hpp"
-#include "ops/UnopTable.hpp"
+#include "ops/BinopTable.h"
+#include "ops/UnopTable.h"
 
-//#include "front/Parser.hpp"
+//#include "front/Parser.h"
 
 //#TODO Finish This after all the files above
 

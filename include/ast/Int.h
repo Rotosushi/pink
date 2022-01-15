@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "ast/Ast.hpp"
+#include "ast/Ast.h"
 
 namespace pink {
     class Int : public Ast {

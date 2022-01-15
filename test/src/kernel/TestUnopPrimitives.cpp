@@ -5,10 +5,10 @@
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
-#include "Test.hpp"
+#include "Test.h"
 
-#include "kernel/TestUnopPrimitives.hpp"
-#include "kernel/UnopPrimitives.hpp"
+#include "kernel/TestUnopPrimitives.h"
+#include "kernel/UnopPrimitives.h"
 
 
 bool TestUnopPrimitives(std::ostream& out)

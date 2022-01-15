@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 
-#include "aux/Location.hpp"
-#include "front/Token.hpp"
+#include "aux/Location.h"
+#include "front/Token.h"
 
 namespace pink {
     class Lexer {

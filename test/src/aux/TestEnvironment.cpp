@@ -1,9 +1,9 @@
-#include "Test.hpp"
-#include "aux/TestEnvironment.hpp"
-#include "aux/Environment.hpp"
-#include "aux/Error.hpp"
+#include "Test.h"
+#include "aux/TestEnvironment.h"
+#include "aux/Environment.h"
+#include "aux/Error.h"
 
-#include "ast/Nil.hpp"
+#include "ast/Nil.h"
 
 #include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
 #include "llvm/Support/TargetRegistry.h" // llvm::TargetRegistry::lookupTarget();
@@ -83,11 +83,11 @@ bool TestEnvironment(std::ostream& out)
     result &= Test(out, "Environment::types", type->ToString() == std::string("Nil"));
 
     pink::Location l(0, 7, 0, 10);
-    pink::Nil* nil = new pink::Nil(l);
+    llvm::Value* nil = env.ir_builder.getFalse();
 
     env.bindings.Bind(symb, nil);
 
-    llvm::Optional<pink::Ast*> term = env.bindings.Lookup(symb);
+    llvm::Optional<llvm::Value*> term = env.bindings.Lookup(symb);
 
     // since they point to the same memory, nil, and the bound
     // term's pointer values compare equal if everything works.

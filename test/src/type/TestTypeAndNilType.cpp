@@ -1,6 +1,6 @@
-#include "type/TestTypeAndNilType.hpp"
+#include "type/TestTypeAndNilType.h"
 
-#include "type/NilType.hpp"
+#include "type/NilType.h"
 
 
 bool TestTypeAndNilType(std::ostream& out)

@@ -1,4 +1,4 @@
-#include "type/IntType.hpp"
+#include "type/IntType.h"
 
 namespace pink {
     IntType::IntType()

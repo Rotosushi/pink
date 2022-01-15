@@ -1,7 +1,7 @@
 
-#include "kernel/UnopPrimitives.hpp"
+#include "kernel/UnopPrimitives.h"
 
-#include "ops/UnopTable.hpp"
+#include "ops/UnopTable.h"
 
 namespace pink {
     Outcome<llvm::Value*, Error> UnopIntNegate(llvm::Value* term, Environment& env)

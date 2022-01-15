@@ -1,17 +1,15 @@
 #pragma once
 #include <string>
+#include <iostream>
 
-#include "aux/StringInterner.hpp"
-#include "ast/Ast.hpp"
+#include "ast/Ast.h"
 
 namespace pink {
-    class Bind : public Ast {
+    // represents the literal value nil
+    class Nil : public Ast {
     public:
-        InternedString symbol;
-        Ast* term;
-
-        Bind(Location l, InternedString i, Ast* t);
-        virtual ~Bind();
+        Nil(Location l);
+        virtual ~Nil();
 
         virtual Ast* Clone() override;
 
