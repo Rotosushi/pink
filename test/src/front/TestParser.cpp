@@ -41,7 +41,7 @@ bool TestParser(std::ostream& out)
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder(context);
 
-    llvm::InitializeAllTargetInfos();
+    //llvm::InitializeAllTargetInfos();
     llvm::InitializeNativeTarget();
     llvm::InitializeNativeTargetAsmPrinter();
     llvm::InitializeNativeTargetAsmParser();

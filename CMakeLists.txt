@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 cmake_policy(SET CMP0076 NEW)
 
 # finding and setting up LLVM to be linked into this project
-find_package(LLVM REQUIRED)
+find_package(LLVM REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -29,8 +29,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # llvm-config --components, which according to 
 # https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project
 # should be the way to see what is valid to place in this field.
-llvm_map_components_to_libnames(llvm_libs all native nativecodegen)
-
+llvm_map_components_to_libnames(llvm_libs all support core native)
 
 # use re2c to generate 'Lexer.cpp' from 'Lexer.re'
 execute_process(COMMAND re2c src/front/Lexer.re -o src/front/Lexer.cpp
@@ -80,6 +79,7 @@ target_sources(pink PUBLIC
 			   src/front/Parser.cpp
 			   )
 
+add_subdirectory(test)
 
 target_link_libraries(pink ${llvm_libs})
 

@@ -2,6 +2,10 @@
 #include "front/Token.h"
 
 namespace pink {
+	/*
+		Error reporting/Status Dumping subroutine for 
+		examining the state of the Lexer/Parser
+	*/
     std::string TokenToString(Token t)
     {
         switch (t)
@@ -29,6 +33,16 @@ namespace pink {
         }
     }
     
+    /*
+    	Only returns false on Token::Error,
+    	every other token is considered a 
+    	valid token. This function mainly 
+    	exists so that we can use an assignment 
+    	statement within the while conditions 
+    	within Parser::ParseInfix. which are there 
+    	so that we are peeking the next token 
+    	while we parse an infix expression.
+    */
     bool TokenToBool(Token t)
     {
     	switch (t)

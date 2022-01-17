@@ -9,3 +9,27 @@ TODOs in no particular order:
 
 	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions
 		and when i use -stdlib=libstdc++ it does not.
+		
+	# find out why 'all-targets' is not a valid library to link against
+		when using llvm_map_components_to_libnames() in a cmake file,
+		despite it being emmitted by llvm-config --components.
+		This should be done if this project ever wants to use llvm 
+		to emit code for a non-native architecture. 
+		if I specify all names emmitted from a call to llvm-config --components 
+		i get a bunch of linker errors that look like:
+		(/usr/bin/ld: cannot find -lLLVMjit
+		 /usr/bin/ld: cannot find -lLLVMx86
+		 etc..)
+		and when I specify less names, then i get classic 
+		 /usr/bin/ld: "..undefined reference to llvm::...(...)"
+		function not found errors.
+		so the current known bare minimum list is 
+		llvm_map_components_to_libnames(llvm_libs all support core native)
+		which gets the project to link, unless we call functions in llvm 
+		like:
+		llvm::InitializeAllTargetInfos();
+		llvm::InitializeAllTargets();
+		etc...
+		which again bring back the undefined function linker errors.
+		the fix for this currently is that we don't even emit native code 
+		yet, so we can safely burn this bridge when we get to it later.
