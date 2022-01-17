@@ -1,0 +1,4 @@
+
+
+#define pink_VERSION_MAJOR @pink_VERSION_MAJOR@
+#define pink_VERSION_MINOR @pink_VERSION_MINOR@
