@@ -46,13 +46,13 @@ namespace pink {
 
     Outcome<llvm::Value*, Error> BinopBoolAnd(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateLogicalAnd(left, right, "land"));
+        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateAnd(left, right, "land"));
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopBoolOr(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateLogicalOr(left, right, "lor"));
+        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateOr(left, right, "lor"));
         return result;
     }
 
