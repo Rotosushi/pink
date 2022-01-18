@@ -32,44 +32,16 @@ bool TestTypeAndNilType(std::ostream& out)
 
     pink::NilType a;
 
-    if (a.getKind() == pink::Type::Kind::Nil)
-    {
-        out << "\tTest: NilType::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: NilType::GetKind(): Failed\n";
-    }
-
-    if (a.classof(&a))
-    {
-        out << "\tTest: NilType::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: NilType::classof(): Failed\n";
-    }
+	result &= Test(out, "NilType::getKind()", a.getKind() == pink::Type::Kind::Nil);
+    
+	result &= Test(out, "NilType::classof()", a.classof(&a));
 
 
-    std::string nil_type = "Nil";
+    std::string nil_type_str = "Nil";
 
+	result &= Test(out, "NilType::ToString()", a.ToString() == nil_type_str)
 
-    if (a.ToString() == nil_type)
-    {
-        out << "\tTest: NilType::ToString(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: NilType::ToString(): Failed\n";
-    }
-
-    if (result)
-        out << "Test: pink::Type and pink::NilType: Passed\n";
-    else
-        out << "Test: pink::Type and pink::NilType: Failed\n";
+	result &= Test(out, "pink::Type, pink::NilType", result);
     out << "\n-----------------------\n";
     return result;
 }

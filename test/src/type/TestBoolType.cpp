@@ -30,44 +30,15 @@ bool TestBoolType(std::ostream& out)
 
     pink::BoolType a;
 
-    if (a.getKind() == pink::Type::Kind::Bool)
-    {
-        out << "\tTest: BoolType::GetKind(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: BoolType::GetKind(): Failed\n";
-    }
+	result &= Test(out, "BoolType::getKind()", a.getKind() == pink::Type::Kind::Bool);
 
-    if (a.classof(&a))
-    {
-        out << "\tTest: BoolType::classof(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: BoolType::classof(): Failed\n";
-    }
+	result &= Test(out, "BoolType::classf()", a.classof(&a));
 
+    std::string bool_type_str = "Bool";
 
-    std::string bool_type = "Bool";
+	result &= Test(out, "BoolType::ToString()", a.ToString() == bool_type_str);
 
-
-    if (a.ToString() == bool_type)
-    {
-        out << "\tTest: BoolType::ToString(): Passed\n";
-    }
-    else
-    {
-        result = false;
-        out << "\tTest: BoolType::ToString(): Failed\n";
-    }
-
-    if (result)
-        out << "Test: pink::BoolType: Passed\n";
-    else
-        out << "Test: pink::BoolType: Failed\n";
+	result &= Test(out, "pink::BoolType", result);
     out << "\n-----------------------\n";
     return result;
 }
