@@ -25,18 +25,18 @@ namespace pink {
         return outer;
     }
 
-    llvm::Optional<llvm::Value*> SymbolTable::Lookup(InternedString symbol)
+    llvm::Optional<std::pair<Type*, llvm::Value*>> SymbolTable::Lookup(InternedString symbol)
     {
         auto iter = map.find(symbol);
         if (iter == map.end())
-            return llvm::Optional<llvm::Value*>();
+            return llvm::Optional<std::pair<Type*, llvm::Value*>>();
         else
-            return llvm::Optional<llvm::Value*>(iter->second);
+            return llvm::Optional<std::pair<Type*, llvm::Value*>>(iter->second);
     }
 
-    void SymbolTable::Bind(InternedString symbol, llvm::Value* term)
+    void SymbolTable::Bind(InternedString symbol, Type* type, llvm::Value* term)
     {
-        map.insert(std::make_pair(symbol, term));
+        map.insert(std::make_pair(symbol, std::make_pair(type, term)));
     }
 
     void SymbolTable::Unbind(InternedString symbol)

@@ -2,6 +2,8 @@
 
 #include "type/BoolType.h"
 
+#include "Test.h"
+
 bool TestBoolType(std::ostream& out)
 {
     bool result = true;

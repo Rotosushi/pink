@@ -128,7 +128,7 @@ bool TestParser(std::ostream& out)
     result &= Test(out, "Parser::Parse(Assignment)", 
     	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Assignment>(term)));
     
-    parser_result = parser.Parse("-1", env);
+    parser_result = parser.Parse("!true", env);
     
     result &= Test(out, "Parser::Parse(unary expression)", 
     	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Unop>(term)));
@@ -138,7 +138,7 @@ bool TestParser(std::ostream& out)
     result &= Test(out, "Parser::Parse(binary expression)", 
     	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Binop>(term)));
     	
-    parser_result = parser.Parse("3 + 3 * 4 == 3 * (2 + 3)", env);
+    parser_result = parser.Parse("6 + 3 * 4 == 3 * 2 + 12", env);
     
     result &= Test(out, "Parser::Parse(complex binary expression)",
     	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Binop>(term)));

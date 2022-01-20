@@ -20,7 +20,7 @@ namespace pink {
 
     virtual std::string ToString() override;
 
-    // virtual std::variant<pink::Error, pink::Type*> Getype(Environment& e) = 0;
+    virtual Outcome<Type*, Error> Getype(Environment& env) override;
     // virtual std::variant<pink::Error, llvm::Value*> ToLLVM(Environment& e) = 0;
     };
 }

@@ -27,6 +27,14 @@ bool TestSymbolTable(std::ostream& out)
 
         -) Bind validly binds a symbol to a particular term because
             -) Lookup of an existing symbol returns that symbols binding
+            
+        #TODO
+        -) Lookup finds symbols bound in the scope above, a property of
+        	Lexical scoping.
+        #TODO
+        -) A local lookup will pnly search for names bound within the 
+        	current scope, so we can tell the difference between 
+        	free and bound names within scopes.
 
         -) Unbind successfully removes a particular binding because
             -) Lookup of a nonexisting symbol returns the empty optional
@@ -94,16 +102,17 @@ bool TestSymbolTable(std::ostream& out)
 
     pink::Location l(0, 5, 0, 7);
     llvm::Value* nil = env.ir_builder.getFalse();
+    pink::Type*  nil_t = env.types.GetNilType();
     pink::InternedString x = env.symbols.Intern("x");
 
-    env.bindings.Bind(x, nil);
-    llvm::Optional<llvm::Value*> s0 = env.bindings.Lookup(x);
+    env.bindings.Bind(x, nil_t, nil);
+    llvm::Optional<std::pair<pink::Type*, llvm::Value*>> s0 = env.bindings.Lookup(x);
 
     result &= Test(out, "SymbolTable::Bind()", s0.hasValue());
-    result &= Test(out, "SymbolTable::Lookup()", *s0 == nil);
+    result &= Test(out, "SymbolTable::Lookup()", (*s0).first == nil_t && (*s0).second == nil);
 
     env.bindings.Unbind(x);
-    llvm::Optional<llvm::Value*> s1 = env.bindings.Lookup(x);
+    llvm::Optional<std::pair<pink::Type*, llvm::Value*>> s1 = env.bindings.Lookup(x);
 
     result &= Test(out, "SymbolTable::Unbind()", !s1.hasValue());
 

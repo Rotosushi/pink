@@ -1,5 +1,7 @@
 #include "ast/Bool.h"
 
+#include "aux/Environment.h"
+
 namespace pink {
     Bool::Bool(Location l, bool b)
         : Ast(Ast::Kind::Bool, l), value(b)
@@ -28,5 +30,18 @@ namespace pink {
             return std::string("true");
         else
             return std::string("false");
+    }
+    
+    /*
+       ---------------------
+    	env |- true : Bool 
+    	
+       ---------------------
+    	env |- false : Bool
+    */
+    Outcome<Type*, Error> Bool::Getype(Environment& env)
+    {
+    	Outcome<Type*, Error> result(env.types.GetBoolType());
+    	return result;
     }
 }

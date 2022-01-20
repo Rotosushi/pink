@@ -28,4 +28,14 @@ namespace pink {
         std::string result = left->ToString() + " = " + right->ToString();
         return result;
     }
+    
+    /*
+    	env |- lhs : Tl, rhs : Tr, Tl == Tr, lhs is-assignable 
+      ---------------------------------------------------------
+      				  env |- lhs = rhs : Tl 
+    */
+    Outcome<Type*, Error> Assignment::Getype(Environment& env)
+    {
+    
+    }
 }

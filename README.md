@@ -1,6 +1,6 @@
 Pink is a proof of concept programming language frontend, using llvm as it's backend.
 
-For my Grandfather (1945 - 2022)
+For my Grandfather (1944 - 2022)
 
 the makefile should build on almost any linux disro,
 the only requirements are:
@@ -9,13 +9,13 @@ the only requirements are:
 
 running:
 
-mkdir build
+mkdir build &&
 make
 
 builds the program.
 
 running:
-mkdir test/build
+mkdir test/build &&
 make test
 
 builds the tests.
@@ -23,9 +23,9 @@ builds the tests.
 
 A cmake file has been added which should also build the program,
 
-mkdir build 
-cd build 
-cmake ..
+mkdir build &&
+cd build  &&
+cmake .. &&
 cmake --build . 
 
 will build the program and the tests currently.

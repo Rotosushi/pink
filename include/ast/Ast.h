@@ -9,8 +9,10 @@
 #include "aux/Error.h"
 #include "aux/Outcome.h"
 
+#include "type/Type.h"
+
 namespace pink {
-    class AstDispatcher;
+    class Environment;
 
     class Ast {
     public:
@@ -49,13 +51,8 @@ namespace pink {
 		*/
         virtual std::string ToString() = 0;
 
-        // instead of using two separate functions which are virtual throughout
-        // the Ast type heirarchy, we could define two kinds of visitor which
-        // accomplish the same result. and this would only require one virtual
-        // method to be defined for the entire Ast type heirarchy. Well,
-        // since we want to return two separate types here, we must use two
-        // separate names.
-        //virtual std::variant<pink::Error, pink::Type*> Getype(Environment& e) = 0;
+        
+        virtual Outcome<Type*, Error> Getype(Environment& e) = 0;
         //virtual std::variant<pink::Error, llvm::Value*> ToLLVM(Environment& e) = 0;
     };
 }

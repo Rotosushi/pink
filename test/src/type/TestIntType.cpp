@@ -2,6 +2,8 @@
 
 #include "type/IntType.h"
 
+#include "Test.h"
+
 bool TestIntType(std::ostream& out)
 {
     bool result = true;

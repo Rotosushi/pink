@@ -26,4 +26,14 @@ namespace pink {
     {
         return std::string(op) + right->ToString();
     }
+    
+    /*
+    	    env |- rhs : Tr, op : Tr -> T
+      ----------------------------------------
+      			env |- op rhs : T
+    */
+    Outcome<Type*, Error> Unop::Getype(Environment& env)
+    {
+    
+    }
 }

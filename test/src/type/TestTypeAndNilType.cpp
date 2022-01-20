@@ -2,6 +2,8 @@
 
 #include "type/NilType.h"
 
+#include "Test.h"
+
 
 bool TestTypeAndNilType(std::ostream& out)
 {
@@ -39,7 +41,7 @@ bool TestTypeAndNilType(std::ostream& out)
 
     std::string nil_type_str = "Nil";
 
-	result &= Test(out, "NilType::ToString()", a.ToString() == nil_type_str)
+	result &= Test(out, "NilType::ToString()", a.ToString() == nil_type_str);
 
 	result &= Test(out, "pink::Type, pink::NilType", result);
     out << "\n-----------------------\n";

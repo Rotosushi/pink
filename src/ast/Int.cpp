@@ -1,6 +1,8 @@
 
 #include "ast/Int.h"
 
+#include "aux/Environment.h"
+
 namespace pink {
     Int::Int(Location l, int i)
         : Ast(Ast::Kind::Int, l), value(i)
@@ -26,5 +28,15 @@ namespace pink {
     std::string Int::ToString()
     {
         return std::to_string(value);
+    }
+    
+    /*
+       ----------------------
+    	env |- [0-9]+ : Int
+    */
+    Outcome<Type*, Error> Int::Getype(Environment& env)
+    {
+    	Outcome<Type*, Error> result(env.types.GetIntType());
+    	return result;
     }
 }

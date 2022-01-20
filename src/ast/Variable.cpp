@@ -1,10 +1,6 @@
 #include "ast/Variable.h"
 
-/*
-    TODO:   Move each file in the header and source directory
-    into the appropriate subfolders. src/ast/Int.cpp include/ast/Bool.h etc...
-    includ/aux/StringInterner.h
-*/
+
 namespace pink {
     Variable::Variable(Location l, InternedString s)
         : Ast(Ast::Kind::Variable, l), symbol(s)
@@ -32,4 +28,13 @@ namespace pink {
         return std::string(symbol);
     }
 
+	/*
+		env |- x is-in env, x : T
+	  -----------------------------
+			  env |- x : T
+	*/
+	Outcome<Type*, Error> Variable::Getype(Environment& env)
+	{
+		
+	}
 }

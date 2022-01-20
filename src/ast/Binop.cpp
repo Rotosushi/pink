@@ -41,4 +41,14 @@ namespace pink {
     		
         return result;
     }
+    
+    /*
+    	env |- lhs : Tl, rhs : Tr, op : Tl -> Tr -> T
+      --------------------------------------------------
+      			  env |- lhs op rhs : T
+    */
+    Outcome<Type*, Error> Binop::Getype(Environment& env)
+    {
+    
+    }
 }

@@ -1,6 +1,8 @@
 
 #include "ast/Bind.h"
 
+#include "aux/Environment.h"
+
 namespace pink {
     Bind::Bind(Location l, InternedString i, Ast* t)
         : Ast(Ast::Kind::Bind, l), symbol(i), term(t)
@@ -30,5 +32,15 @@ namespace pink {
     std::string Bind::ToString()
     {
         return std::string(symbol) += " := " + term->ToString();
+    }
+    
+    /*
+    	env |- t : T, x is-not-in env.bindings
+    	---------------------------------------
+    		  env |- x := t : T, x : T
+    */
+    Outcome<Type*, Error> Bind::Getype(Environment& env)
+    {
+
     }
 }

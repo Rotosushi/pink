@@ -18,5 +18,7 @@ namespace pink {
     static bool classof(const Ast* t);
 
     virtual std::string ToString() override;
+    
+    virtual Outcome<Type*, Error> Getype(Environment& env) override;
     };
 }

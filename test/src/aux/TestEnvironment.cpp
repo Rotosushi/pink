@@ -85,13 +85,13 @@ bool TestEnvironment(std::ostream& out)
     pink::Location l(0, 7, 0, 10);
     llvm::Value* nil = env.ir_builder.getFalse();
 
-    env.bindings.Bind(symb, nil);
+    env.bindings.Bind(symb, type, nil);
 
-    llvm::Optional<llvm::Value*> term = env.bindings.Lookup(symb);
+    llvm::Optional<std::pair<pink::Type*, llvm::Value*>> term = env.bindings.Lookup(symb);
 
     // since they point to the same memory, nil, and the bound
     // term's pointer values compare equal if everything works.
-    result &= Test(out, "Environment::bindings", term.hasValue() && *term == nil);
+    result &= Test(out, "Environment::bindings", term.hasValue() && (*term).first == type && (*term).second == nil);
 
 
     result &= Test(out, "Environment::target_triple", env.target_triple == target_triple);
