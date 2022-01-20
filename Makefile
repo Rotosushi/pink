@@ -338,5 +338,5 @@ clean:
 
 # make a git commit
 commit:
-	git add include/* src/* test/include/* test/src/* docs/* Makefile TODO.txt README.md
+	git add include/* src/* test/include/* test/src/* docs/* Makefile TODO.txt README.md CMakeLists.txt test/CMakeLists.txt
 	git commit

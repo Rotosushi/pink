@@ -35,9 +35,7 @@ llvm_map_components_to_libnames(llvm_libs all support core native)
 execute_process(COMMAND re2c src/front/Lexer.re -o src/front/Lexer.cpp
 				WORKING_DIRECTORY ${pink_SOURCE_DIR})
 
-#TODO: figure out how to build the tests alongside the main project,
-#		but only when the correct argument is passed into the call to 
-#		cmake.
+
 # building the actual project
 include_directories(include)
 
@@ -79,6 +77,9 @@ target_sources(pink PUBLIC
 			   src/front/Parser.cpp
 			   )
 
+#TODO: figure out how to build the tests alongside the main project,
+#		but only when the correct argument is passed into the call to 
+#		cmake.
 add_subdirectory(test)
 
 target_link_libraries(pink ${llvm_libs})
