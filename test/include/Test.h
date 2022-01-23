@@ -86,6 +86,10 @@ bool Test(std::ostream& out, std::string test_name, bool test);
     test routines that are going to be evaluated. Then, for each
     test that passed or failed, the corresponding bit is set in
     the return value.
+    
+    #TODO: refactor RunTests, and each unit test function to take 
+    an Environment&, so we only have to run that initialization code 
+    once.
 */
 size_t RunTests(std::ostream& out, size_t flags);
 void PrintPassedTests(std::ostream& out, size_t flags);

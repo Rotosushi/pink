@@ -38,9 +38,41 @@ namespace pink {
     	env |- t : T, x is-not-in env.bindings
     	---------------------------------------
     		  env |- x := t : T, x : T
+    		  
+    	note: Typeing a binding expression is distinct 
+    		from evaluating it. and it is only when we 
+    		have both type and value that we can construct 
+    		a binding in the symboltable.
     */
     Outcome<Type*, Error> Bind::Getype(Environment& env)
     {
-
+    	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env.bindings.Lookup(symbol));
+    
+    	if (!bound.hasValue())
+    	{
+			Outcome<Type*, Error> term_result = term->Getype(env);
+			
+			if (term_result)
+			{
+				Outcome<Type*, Error> result(term_result.GetOne());
+				return result;
+			}
+			else 
+			{
+				return term_result;
+			}
+		}
+		else 
+		{
+			// #TODO: if the binding term has the same type as what the symbol 
+			//  is already bound to, we could treat the binding as equivalent 
+			//  to an assignment here.
+			Outcome<Type*, Error> result(
+				Error(Error::Kind::Type, 
+					  std::string("[") + symbol + std::string("] is already bound to [")
+					  	+ bound->first->ToString() + std::string("]"),
+					  loc));
+			return result;
+		}
     }
 }

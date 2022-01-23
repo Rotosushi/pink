@@ -21,8 +21,11 @@
 	facilitate that directly. On windows in particular there are several 
 	workarounds, like MinGW/CygWin (whichever is still supported) or the 
 	Windows Subsystem for Linux, which runs a full linux OS within the 
-	host windows system. and again, for Apple devices I have no idea
-	what is actually available.
+	host windows system. For apple devices it seems like there is a 
+	workaround with macports? 
+	https://stackoverflow.com/questions/402377/using-getopts-to-process-long-and-short-command-line-options
+	This requires an additional dependency for installation on OSX computers
+	however. 
 	
 	So, since this is a small project of just me so far, releasing only 
 	on Linux to begin seems like a fine option.

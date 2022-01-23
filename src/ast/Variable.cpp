@@ -1,5 +1,5 @@
 #include "ast/Variable.h"
-
+#include "aux/Environment.h"
 
 namespace pink {
     Variable::Variable(Location l, InternedString s)
@@ -35,6 +35,17 @@ namespace pink {
 	*/
 	Outcome<Type*, Error> Variable::Getype(Environment& env)
 	{
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings.Lookup(symbol);
 		
+		if (bound.hasValue())
+		{
+			Outcome<Type*, Error> result(bound->first);
+			return result;
+		}
+		else 
+		{
+			Outcome<Type*, Error> result(Error(Error::Kind::Type, std::string("[") + symbol + std::string("] not bound in environment"), loc));
+			return result;
+		}
 	}
 }

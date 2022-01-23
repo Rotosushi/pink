@@ -1,5 +1,5 @@
 #include "ast/Binop.h"
-
+#include "aux/Environment.h"
 
 namespace pink {
     Binop::Binop(Location& loc, InternedString o, Ast* l, Ast* r)
@@ -49,6 +49,42 @@ namespace pink {
     */
     Outcome<Type*, Error> Binop::Getype(Environment& env)
     {
-    
+    	// Get the type of both sides
+    	Outcome<Type*, Error> lhs_result(left->Getype(env));
+    	
+    	if (!lhs_result)
+    		return lhs_result;
+    		
+    	Outcome<Type*, Error> rhs_result(right->Getype(env));
+    	
+    	if (!rhs_result)
+    		return rhs_result;
+    		
+    	// find the operator present between both sides in the env 
+    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env.binops.Lookup(op);
+    	
+    	if (!binop)
+    	{
+    		Outcome<Type*, Error> result(Error(Error::Kind::Type,
+    			std::string("[") + op + std::string("] not bound in env"),
+    			loc));
+    		return result;
+    	}
+    	
+    	// find the instance of the operator given the type of both sides
+    	llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal = binop->second->Lookup(lhs_result.GetOne(), rhs_result.GetOne());
+    	
+    	if (!literal)
+    	{
+    		Outcome<Type*, Error> result(Error(Error::Kind::Type,
+    			std::string("[") + op + std::string("] has no overload for the given types [")
+    				+ lhs_result.GetOne()->ToString() + ", " + rhs_result.GetOne()->ToString() + "]",
+    				loc));
+    		return result;
+    	}
+    	
+    	// return the result type of calling the operator given the types of both sides
+    	Outcome<Type*, Error> result(literal->second->result_type);
+    	return result;
     }
 }
