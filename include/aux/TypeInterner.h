@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 
 #include "type/Type.h"
 #include "type/NilType.h"
@@ -10,13 +11,13 @@
 namespace pink {
     class TypeInterner {
     private:
-        NilType*  nil_type;
-        BoolType* bool_type;
-        IntType*  int_type;
+        std::unique_ptr<NilType>  nil_type;
+        std::unique_ptr<BoolType> bool_type;
+        std::unique_ptr<IntType>  int_type;
 
     public:
         TypeInterner();
-        TypeInterner(const TypeInterner& other);
+        TypeInterner(const TypeInterner& other) = delete;
         ~TypeInterner();
 
         NilType*  GetNilType();

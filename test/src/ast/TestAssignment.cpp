@@ -46,6 +46,11 @@ bool TestAssignment(std::ostream& out)
     if (!target)
     {
         pink::FatalError(error.data(), __FILE__, __LINE__);
+        return false; // this suppresses a linter warning from clang-tidy 
+        			  // even though FatalError() calls exit(1), and so 
+        			  // this return statement is unreachable code.
+        			  // TODO: figure out how to mark FatalError as a 
+        			  // program endpoint.
     }
 
     std::string cpu = "x86-64";

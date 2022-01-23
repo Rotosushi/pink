@@ -46,6 +46,7 @@ bool TestInt(std::ostream& out)
     if (!target)
     {
         pink::FatalError(error.data(), __FILE__, __LINE__);
+        return false;
     }
 
     std::string cpu = "x86-64";

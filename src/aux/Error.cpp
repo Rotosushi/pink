@@ -70,9 +70,7 @@ namespace pink {
 
         for (size_t i = 0; i < txt.size(); i++)
         {
-            if (i < loc.firstColumn)
-                result += "-";
-            else if (i > loc.lastColumn)
+            if ((i < loc.firstColumn) || (i > loc.lastColumn))
                 result += "-";
             else
                 result += "^";

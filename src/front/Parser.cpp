@@ -26,7 +26,7 @@
 
 namespace pink {
     Parser::Parser()
-        : lexer()
+        : lexer(), tok(Token::Error), loc(), txt()
     {
 
     }

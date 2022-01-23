@@ -34,6 +34,13 @@
     
     either way we still need to do some extra work to gather up any 
     arguments to the presented options.
+    
+    we might define a class which is constructed by ParseCLIOptions,
+    which stores all of the data retrieved from the options themselves.
+    THis class could also house the code for printing the help and version 
+    information, and then we can use this class throughout the rest of the 
+    compiler, whenever configuration information that can be influenced 
+    from the command line is needed.
 */
 
 constexpr auto CLIOPT_HELP    = 0x0001;

@@ -4,6 +4,7 @@ TODOs in no particular order:
 	# finish v0.0.1
 		needs:
 			REPL
+			Codegen to LLVM IR
 
 	# refactor the makefile into a cmake file
 
@@ -32,4 +33,5 @@ TODOs in no particular order:
 		etc...
 		which again bring back the undefined function linker errors.
 		the fix for this currently is that we don't even emit native code 
-		yet, so we can safely burn this bridge when we get to it later.
+		yet, so we can safely burn this bridge when we get to it once 
+		we try to add codegeneration for non-native targets.

@@ -8,23 +8,14 @@ namespace pink {
 
     }
 
-    TypeInterner::TypeInterner(const TypeInterner& other)
-        : nil_type(other.nil_type), bool_type(other.bool_type),
-          int_type(other.int_type)
-    {
-
-    }
-
     TypeInterner::~TypeInterner()
     {
-        delete nil_type;
-        delete bool_type;
-        delete int_type;
+
     }
 
     NilType*  TypeInterner::GetNilType()
     {
-        if (nil_type == nullptr)
+        if (nil_type.get() == nullptr)
             nil_type = new NilType();
 
         return nil_type;
@@ -32,7 +23,7 @@ namespace pink {
 
     BoolType* TypeInterner::GetBoolType()
     {
-        if (bool_type == nullptr)
+        if (bool_type.get() == nullptr)
             bool_type = new BoolType();
 
         return bool_type;
@@ -40,7 +31,7 @@ namespace pink {
 
     IntType*   TypeInterner::GetIntType()
     {
-        if (int_type == nullptr)
+        if (int_type.get() == nullptr)
             int_type = new IntType();
 
         return int_type;

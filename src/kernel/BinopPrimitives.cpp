@@ -79,7 +79,7 @@ namespace pink {
 
         Associativity left_assoc = Associativity::Left;
 
-        env.binops.Register(cmpeq, 1, left_assoc, int_ty, int_ty, int_ty, BinopIntEq);
+        env.binops.Register(cmpeq, 1, left_assoc, int_ty, int_ty, bool_ty, BinopIntEq);
         env.binops.Register(cmpeq, 1, left_assoc, bool_ty, bool_ty, bool_ty, BinopBoolEq);
         env.binops.Register(land,  2, left_assoc, bool_ty, bool_ty, bool_ty, BinopBoolAnd);
         env.binops.Register(lor,   2, left_assoc, bool_ty, bool_ty, bool_ty, BinopBoolOr);

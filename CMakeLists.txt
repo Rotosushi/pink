@@ -10,6 +10,8 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+add_compile_options(-Wall -g)
+
 cmake_policy(SET CMP0076 NEW)
 
 # finding and setting up LLVM to be linked into this project
