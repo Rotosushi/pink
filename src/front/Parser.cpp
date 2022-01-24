@@ -43,37 +43,37 @@ namespace pink {
         txt = lexer.yytxt();
     }
 
-    Outcome<Ast*, Error> Parser::Parse(std::string str, Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, Environment& env)
     {
         lexer.SetBuf(str);
         nexttok(); // prime the lexers
-        Outcome<Ast*, Error> result (ParseTerm(env));
-        return result;
+        return ParseTerm(env);
     }
 
-    Outcome<Ast*, Error> Parser::ParseTerm(Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(Environment& env)
     {
-        Outcome<Ast*, Error> result (ParseAffix(env));
-        return result;
+        return ParseAffix(env);
     }
 
-    Outcome<Ast*, Error> Parser::ParseAffix(Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(Environment& env)
     {
         Location left_loc = loc; // save the location of the lhs of this affix expr
-		Outcome<Ast*, Error> left(ParseBasic(env)); // parse the initial term
+		Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env)); // parse the initial term
 		
 		if (!left) // if the previous parse failed, return the error immediately
-			return left;
+			return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
 		
         if (tok == Token::Op) // we assume this is a binary operator appearing after a basic term
         {
         	// Handle the entire binop expression with the Infix Parser
-            Outcome<Ast*, Error> result(ParseInfix(left.GetOne(), 0, env));
-            return result; // pass or fail, return the result of parsing a binop expression.
+            return ParseInfix(std::move(left.GetOne()), 0, env); // pass or fail, return the result of parsing a binop expression.
         }
         
 		// the single term we parsed at the beginning is the result of this parse.
-		return left;
+		if (left)
+			return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
+		else
+			return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
     }
     
     
@@ -82,13 +82,13 @@ namespace pink {
     	going from this pseudo-code:
     	https://en.wikipedia.org/wiki/Operator-precedence_parser
     */
-    Outcome<Ast*, Error> Parser::ParseInfix(Ast* lhs, Precedence precedence, Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence, Environment& env)
     {
-    	Outcome<Ast*, Error> result(lhs);
+    	Outcome<std::unique_ptr<Ast>, Error> result(std::move(lhs));
     	Token peek_tok;
-    	InternedString peek_str;
+    	InternedString peek_str = nullptr;
     	llvm::Optional<std::pair<InternedString, BinopLiteral*>> peek_opt;
-    	BinopLiteral* peek_lit;
+    	BinopLiteral* peek_lit = nullptr;
     	
     	while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op)  
     		&& (peek_str = env.operators.Intern(txt))
@@ -101,10 +101,10 @@ namespace pink {
     		
     		nexttok(); // eat the operator, Token::Op 
     		
-    		Outcome<Ast*, Error> rhs = ParseBasic(env);
+    		Outcome<std::unique_ptr<Ast>, Error> rhs = ParseBasic(env);
     		
     		if (!rhs)
-    			return rhs; 
+    			return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo()); 
     			
     		while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op) 
     			&& (peek_str = env.operators.Intern(txt))
@@ -114,20 +114,28 @@ namespace pink {
     				|| ((peek_lit->associativity == Associativity::Right)
     				&& (peek_lit->precedence == op_lit->precedence))))
     		{
-    			rhs = ParseInfix(rhs.GetOne(), peek_lit->precedence, env);
+    			Outcome<std::unique_ptr<Ast>, Error> temp(ParseInfix(std::move(rhs.GetOne()), peek_lit->precedence, env));
     			
-    			if (!rhs)
-    				return rhs; 
+    			if (!temp)
+    				return Outcome<std::unique_ptr<Ast>, Error>(temp.GetTwo());
+    			else 
+    			{
+    				rhs = Outcome<std::unique_ptr<Ast>, Error>(std::move(temp.GetOne()));
+    			}
     		}
     		
     		Location binop_loc(op_loc.firstLine, op_loc.firstColumn, loc.firstLine, loc.firstColumn);
-    		result = Outcome<Ast*, Error>(new Binop(binop_loc, op_str, result.GetOne(),  rhs.GetOne()));
+    		result = Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Binop>(binop_loc, op_str, std::move(result.GetOne()),  std::move(rhs.GetOne())));
     	}
-    	return result;
+    	
+    	if (result)
+    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    	else 
+    		return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
     }
     
     
-    Outcome<Ast*, Error> Parser::ParseBasic(Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBasic(Environment& env)
     {
     	switch(tok)
     	{
@@ -143,33 +151,43 @@ namespace pink {
     		{
     			nexttok(); // eat the ':='
     			
-    			Outcome<Ast*, Error> rhs(ParseAffix(env)); // parse the right hand side of the binding
+    			Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env)); // parse the right hand side of the binding
     			
     			if (!rhs)
-    				return rhs;
+    				return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
     				
     			Location bind_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-    			Outcome<Ast*, Error> result(new Bind(bind_loc, id, rhs.GetOne()));
-    			return result;
+    			Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bind>(bind_loc, id, std::move(rhs.GetOne())));
+    			
+    			if (result)
+    				return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    			else 
+    				return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
     		}
     		else if (tok == Token::Equals) // an assignment expression
         	{
 		        nexttok(); // eat '='
 
-		        Outcome<Ast*, Error> rhs(ParseTerm(env));
+		        Outcome<std::unique_ptr<Ast>, Error> rhs(ParseTerm(env));
 		        
 		        if (!rhs)
-		        	return rhs;
+		        	return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
 		        
 		        // loc holds the location of the rhs of the term after the above call to ParseTerm
 		        Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-		        Outcome<Ast*, Error> result(new Assignment(assign_loc, new Variable(lhs_loc, id), rhs.GetOne()));
-		        return result;
+		        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<Variable>(lhs_loc, id), std::move(rhs.GetOne())));
+		        if (result)
+    				return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    			else 
+    				return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
         	}
         	else // this identifer was simply a variable reference 
         	{
-        		Outcome<Ast*, Error> result(new Variable(lhs_loc, id));
-        		return result;
+        		Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Variable>(lhs_loc, id));
+        		if (result)
+    				return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    			else 
+    				return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
         	}
         	break;
     	}
@@ -182,34 +200,38 @@ namespace pink {
     		nexttok(); // eat the op
     		
     		// unops all bind to their immediate right hand side
-    		Outcome<Ast*, Error> rhs(ParseBasic(env));    	
+    		Outcome<std::unique_ptr<Ast>, Error> rhs(ParseBasic(env));    	
     		
     		if (!rhs)
-    			return rhs;
+    			return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
     			
     		Location unop_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-    		Outcome<Ast*, Error> result(new Unop(unop_loc, op, rhs.GetOne()));
-    		return result;
+    		Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Unop>(unop_loc, op, std::move(rhs.GetOne())));
+    		if (result)
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    		else 
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
     	}
     	
     	case Token::LParen:
     	{
     		nexttok(); // eat the '('
     		
-    		Outcome<Ast*, Error> result(ParseAffix(env));
+    		Outcome<std::unique_ptr<Ast>, Error> result(ParseAffix(env));
     		
     		if (!result)
-    			return result;
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
     			
     		if (tok != Token::RParen)
     		{
-    			Outcome<Ast*, Error> error(Error(Error::Kind::Syntax, "Missing Closing Parenthesis", loc));
-    			return error;
+    			Error error(Error::Kind::Syntax, "Missing Closing Parenthesis", loc);
+    			Outcome<std::unique_ptr<Ast>, Error> result(error);
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
     		}
     		else 
     		{
     			nexttok(); // eat the ')'
-    			return result;
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
     		}
     	}
     	
@@ -217,8 +239,11 @@ namespace pink {
     	{	
     		Location lhs_loc = loc;
     		nexttok(); // eat 'nil'
-    		Outcome<Ast*, Error> result(new Nil(lhs_loc));
-    		return result;
+    		Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Nil>(lhs_loc));
+    		if (result)
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    		else 
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
     	}
     	
       
@@ -227,29 +252,39 @@ namespace pink {
         	Location lhs_loc = loc;
         	int value = std::stoi(txt);
         	nexttok(); // eat '42'
-        	Outcome<Ast*, Error> result(new Int(lhs_loc, value));
-        	return result;
+        	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Int>(lhs_loc, value));
+        	if (result)
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    		else 
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
         }
         
         case Token::True:
         {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "true"
-        	Outcome<Ast*, Error> result(new Bool(lhs_loc, true));
-        	return result;
+        	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, true));
+        	if (result)
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    		else 
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
         }
         
         case Token::False:
         {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "false"
-        	Outcome<Ast*, Error> result(new Bool(lhs_loc, false));
-        	return result;
+        	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, false));
+        	if (result)
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    		else 
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
         }
         
     	default:
     	{
-    		return Outcome<Ast*, Error>(Error(Error::Kind::Syntax, "Unknown Basic Token:" + TokenToString(tok), loc));
+    		Error error(Error::Kind::Syntax, "Unknown Basic Token:" + TokenToString(tok), loc);
+    		return Outcome<std::unique_ptr<Ast>, Error>(error);
     	}
     	} // !switch(tok)
     }
@@ -285,7 +320,8 @@ namespace pink {
         
     	default:
     	{
-    		return Outcome<Type*, Error>(Error(Error::Kind::Syntax, "Unknown Type Token:" + TokenToString(tok), loc));
+    		Error error(Error::Kind::Syntax, "Unknown Type Token:" + TokenToString(tok), loc);
+    		return Outcome<Type*, Error>(error);
     	}
     	}
     }

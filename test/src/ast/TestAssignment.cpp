@@ -1,4 +1,4 @@
-
+#include <memory>
 
 #include "Test.h"
 #include "ast/TestAssignment.h"
@@ -86,27 +86,29 @@ bool TestAssignment(std::ostream& out)
     pink::Location ll(0, 0, 0, 1);
     pink::Location rl(0, 4, 0, 7);
     pink::Location al(0, 0, 0, 7);
-    pink::Variable* var = new pink::Variable(ll, symb);
-	pink::Nil* nil = new pink::Nil(rl);
+    std::unique_ptr<pink::Ast> var = std::make_unique<pink::Variable>(ll, symb);
+    pink::Ast* var_p = var.get();
+	std::unique_ptr<pink::Ast> nil = std::make_unique<pink::Nil>(rl);
+	pink::Ast* nil_p = nil.get();
 	
 	llvm::Value* nil_v = env.ir_builder.getFalse();
     pink::Type*  nil_t = env.types.GetNilType();
     
     env.bindings.Bind(symb, nil_t, nil_v);
 	
-	pink::Assignment* ass = new pink::Assignment(al, var, nil);
+	std::unique_ptr<pink::Assignment> ass = std::make_unique<pink::Assignment>(al, std::move(var), std::move(nil));
 	
 	result &= Test(out, "Assignment::getKind()", ass->getKind() == pink::Ast::Kind::Assignment);
 	
-	result &= Test(out, "Assignment::classof()", ass->classof(ass));
+	result &= Test(out, "Assignment::classof()", ass->classof(ass.get()));
 	
 	result &= Test(out, "Assignment::GetLoc()", ass->GetLoc() == al);
 	
-	result &= Test(out, "Assignment::left", ass->left == var);
+	result &= Test(out, "Assignment::left", ass->left.get() == var_p);
 	
-	result &= Test(out, "Assignment::right", ass->right == nil);
+	result &= Test(out, "Assignment::right", ass->right.get() == nil_p);
 	
-	std::string ass_str = var->ToString() + " = " + nil->ToString();
+	std::string ass_str = var_p->ToString() + " = " + nil_p->ToString();
 	
 	result &= Test(out, "Assignment::ToString()", ass->ToString() == ass_str);
 	

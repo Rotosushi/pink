@@ -16,24 +16,24 @@ namespace pink {
     NilType*  TypeInterner::GetNilType()
     {
         if (nil_type.get() == nullptr)
-            nil_type = new NilType();
+            nil_type = std::make_unique<NilType>();
 
-        return nil_type;
+        return nil_type.get();
     }
 
     BoolType* TypeInterner::GetBoolType()
     {
         if (bool_type.get() == nullptr)
-            bool_type = new BoolType();
+            bool_type = std::make_unique<BoolType>();
 
-        return bool_type;
+        return bool_type.get();
     }
 
     IntType*   TypeInterner::GetIntType()
     {
         if (int_type.get() == nullptr)
-            int_type = new IntType();
+            int_type = std::make_unique<IntType>();
 
-        return int_type;
+        return int_type.get();
     }
 }

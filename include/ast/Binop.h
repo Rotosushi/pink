@@ -7,14 +7,14 @@
 namespace pink {
     class Binop : public Ast {
     public:
-        InternedString op;
-        Ast*           left;
-        Ast*           right;
+        InternedString       op;
+        std::unique_ptr<Ast> left;
+        std::unique_ptr<Ast> right;
 
-    Binop(Location& loc, InternedString o, Ast* l, Ast* r);
+    Binop(Location& loc, InternedString o, std::unique_ptr<Ast> l, std::unique_ptr<Ast> r);
     virtual ~Binop();
 
-    virtual Ast* Clone() override;
+    virtual std::unique_ptr<Ast> Clone() override;
 
     static bool classof(const Ast* t);
 

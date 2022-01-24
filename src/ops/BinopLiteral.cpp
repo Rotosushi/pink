@@ -11,16 +11,12 @@ namespace pink {
     BinopLiteral::BinopLiteral(Precedence p, Associativity a, Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn)
     : precedence(p), associativity(a)
     {
-        overloads.insert(std::make_pair(std::make_pair(left_t, right_t), new BinopCodegen(ret_t, fn)));
+        overloads.insert(std::make_pair(std::make_pair(left_t, right_t), std::make_unique<BinopCodegen>(ret_t, fn)));
     }
 
     BinopLiteral::~BinopLiteral()
     {
         // BinopLiteral Manages the memory for the BinopCodegens held in the table
-        for (auto pair : overloads)
-        {
-            delete pair.second;
-        }
     }
 
     std::pair<std::pair<Type*, Type*>, BinopCodegen*> BinopLiteral::Register(Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn)
@@ -29,12 +25,12 @@ namespace pink {
 
         if (iter == overloads.end())
         {
-            auto pair = overloads.insert(std::make_pair(std::make_pair(left_t, right_t), new BinopCodegen(ret_t, fn)));
-            return *(pair.first);
+            auto pair = overloads.insert(std::make_pair(std::make_pair(left_t, right_t), std::make_unique<BinopCodegen>(ret_t, fn)));
+            return std::make_pair(pair.first->first, pair.first->second.get());
         }
         else
         {
-            return *(iter);
+            return std::make_pair(iter->first, iter->second.get());
         }
     }
 
@@ -44,7 +40,6 @@ namespace pink {
 
         if (iter != overloads.end())
         {
-            delete iter->second;
             overloads.erase(iter);
         }
     }
@@ -56,6 +51,6 @@ namespace pink {
         if (iter == overloads.end())
             return llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>>();
         else
-            return llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>>(*iter);
+            return llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>>(std::make_pair(iter->first, iter->second.get()));
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <utility> // std::pair
+#include <memory>  // std::unique_ptr
 
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
@@ -13,7 +14,7 @@ namespace pink {
     private:
         // because pink::Types are interned, std::pair<>::operator ==
         // works how we would want it too.
-        llvm::DenseMap<std::pair<Type*, Type*>, BinopCodegen*> overloads;
+        llvm::DenseMap<std::pair<Type*, Type*>, std::unique_ptr<BinopCodegen>> overloads;
 
     public:
         Precedence precedence;

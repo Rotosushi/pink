@@ -73,7 +73,7 @@ bool TestBool(std::ostream& out)
                           target_triple, data_layout, context, module, builder);
 
     pink::Location l0(0, 3, 0, 9);
-    pink::Bool* b0 = new pink::Bool(l0, true);
+    std::unique_ptr<pink::Bool> b0 = std::make_unique<pink::Bool>(l0, true);
     pink::Type* bool_t = env.types.GetBoolType(); 
 
     /*
@@ -96,7 +96,7 @@ bool TestBool(std::ostream& out)
     */
     result &= Test(out, "Bool::GetKind()", b0->getKind() == pink::Ast::Kind::Bool);
 
-    result &= Test(out, "Bool::classof()", b0->classof(b0));
+    result &= Test(out, "Bool::classof()", b0->classof(b0.get()));
 
     pink::Location l1(l0);
     pink::Location bl(b0->GetLoc());
@@ -109,8 +109,6 @@ bool TestBool(std::ostream& out)
     pink::Outcome<pink::Type*, pink::Error> bool_type = b0->Getype(env);
     
     result &= Test(out, "Bool::Getype()", bool_type && bool_type.GetOne() == bool_t);
-
-    delete b0;
 
     result &= Test(out, "pink::Result", result);
     out << "\n-----------------------\n";

@@ -8,12 +8,12 @@ namespace pink {
     class Bind : public Ast {
     public:
         InternedString symbol;
-        Ast* term;
+        std::unique_ptr<Ast> term;
 
-        Bind(Location l, InternedString i, Ast* t);
+        Bind(Location l, InternedString i, std::unique_ptr<Ast> t);
         virtual ~Bind();
 
-        virtual Ast* Clone() override;
+        virtual std::unique_ptr<Ast> Clone() override;
 
         static bool classof(const Ast* a);
 

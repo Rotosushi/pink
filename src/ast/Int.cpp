@@ -15,9 +15,9 @@ namespace pink {
 
     }
 
-    Ast* Int::Clone()
+    std::unique_ptr<Ast> Int::Clone()
     {
-        return new Int(loc, value);
+        return std::make_unique<Int>(loc, value);
     }
 
     bool Int::classof(const Ast* a)
@@ -36,7 +36,8 @@ namespace pink {
     */
     Outcome<Type*, Error> Int::Getype(Environment& env)
     {
-    	Outcome<Type*, Error> result(env.types.GetIntType());
+    	Type* int_type = env.types.GetIntType();
+    	Outcome<Type*, Error> result(int_type);
     	return result;
     }
 }

@@ -23,15 +23,15 @@ namespace pink {
         // from the next token in the buffer.
         void nexttok();
 
-        Outcome<Ast*, Error> ParseTerm(Environment& env);
-        Outcome<Ast*, Error> ParseAffix(Environment& env);
-        Outcome<Ast*, Error> ParseInfix(Ast* right, Precedence precedence, Environment& env);
-        Outcome<Ast*, Error> ParseBasic(Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseTerm(Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseAffix(Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseInfix(std::unique_ptr<Ast> right, Precedence precedence, Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseBasic(Environment& env);
         Outcome<Type*, Error> ParseBasicType(Environment& env);
     public:
         Parser();
         ~Parser();
 
-        Outcome<Ast*, Error> Parse(std::string str, Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> Parse(std::string str, Environment& env);
     };
 }

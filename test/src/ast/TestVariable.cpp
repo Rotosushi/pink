@@ -79,7 +79,7 @@ bool TestVariable(std::ostream& out)
     env.bindings.Bind(v, nil_t, nil);
     
     pink::Location l0(0, 3, 0, 7);
-    pink::Variable* v0 = new pink::Variable(l0, v);
+    std::unique_ptr<pink::Variable> v0 = std::make_unique<pink::Variable>(l0, v);
 
     /*
         The Ast class itself only provides a small
@@ -101,7 +101,7 @@ bool TestVariable(std::ostream& out)
     */
     result &= Test(out, "Variable::GetKind()", v0->getKind() == pink::Ast::Kind::Variable);
 
-    result &= Test(out, "Variable::classof()", v0->classof(v0));
+    result &= Test(out, "Variable::classof()", v0->classof(v0.get()));
 
     pink::Location l1(l0);
     pink::Location vl(v0->GetLoc());
@@ -114,8 +114,6 @@ bool TestVariable(std::ostream& out)
     pink::Outcome<pink::Type*, pink::Error> variable_type = v0->Getype(env);
     
     result &= Test(out, "Variable::Getype()", variable_type && variable_type.GetOne() == nil_t);
-
-    delete v0;
 
     result &= Test(out, "pink::Variable", result);
     out << "\n-----------------------\n";

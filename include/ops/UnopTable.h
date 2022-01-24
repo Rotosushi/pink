@@ -1,5 +1,6 @@
 #pragma once
 #include <utility> // std::pair
+#include <memory>  // std::unique_ptr
 
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
@@ -12,7 +13,7 @@ namespace pink {
     class UnopTable {
     private:
         // https://llvm.org/doxygen/DenseMap_8h.html
-        llvm::DenseMap<InternedString, UnopLiteral*> table;
+        llvm::DenseMap<InternedString, std::unique_ptr<UnopLiteral>> table;
 
     public:
         UnopTable();

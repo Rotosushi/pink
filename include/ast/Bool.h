@@ -11,7 +11,7 @@ namespace pink {
         Bool(Location l, bool b);
         virtual ~Bool();
 
-        virtual Ast* Clone() override;
+        virtual std::unique_ptr<Ast> Clone() override;
 
         static bool classof(const Ast* a);
 

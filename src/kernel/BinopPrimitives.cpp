@@ -4,55 +4,64 @@
 namespace pink {
     Outcome<llvm::Value*, Error> BinopIntAdd(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateAdd(left, right, "iadd"));
+    	llvm::Value* value = env.ir_builder.CreateAdd(left, right, "iadd");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopIntSub(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateSub(left, right, "isub"));
+    	llvm::Value* value = env.ir_builder.CreateSub(left, right, "isub");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopIntMul(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateMul(left, right, "imul"));
+    	llvm::Value* value = env.ir_builder.CreateMul(left, right, "imul");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopIntSDiv(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateSDiv(left, right, "idiv"));
+    	llvm::Value* value = env.ir_builder.CreateSDiv(left, right, "idiv");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopIntMod(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateSRem(left, right, "imod"));
+    	llvm::Value* value = env.ir_builder.CreateSRem(left, right, "imod");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopIntEq(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateICmpEQ(left, right, "idiv"));
+    	llvm::Value* value = env.ir_builder.CreateICmpEQ(left, right, "idiv");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopBoolEq(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateICmpEQ(left, right, "idiv"));
+    	llvm::Value* value = env.ir_builder.CreateICmpEQ(left, right, "idiv");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopBoolAnd(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateAnd(left, right, "land"));
+    	llvm::Value* value = env.ir_builder.CreateAnd(left, right, "and");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> BinopBoolOr(llvm::Value* left, llvm::Value* right, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateOr(left, right, "lor"));
+    	llvm::Value* value = env.ir_builder.CreateOr(left, right, "or");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 

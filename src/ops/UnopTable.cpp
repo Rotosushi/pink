@@ -12,12 +12,8 @@ namespace pink {
     {
         /*
             UnopTable manages the memory for the Unop Literals
-            that are registered.
+            that are registered through std::unique_ptrs.
         */
-        for (auto pair : table)
-        {
-            delete pair.second;
-        }
     }
 
     std::pair<InternedString, UnopLiteral*> UnopTable::Register(InternedString op)
@@ -26,12 +22,12 @@ namespace pink {
 
         if (iter != table.end())
         {
-            return *iter;
+            return std::make_pair(iter->first, iter->second.get());
         }
         else
         {
-            auto pair = table.insert(std::make_pair(op, new UnopLiteral()));
-            return *(pair.first);
+            auto pair = table.insert(std::make_pair(op, std::make_unique<UnopLiteral>()));
+            return std::make_pair(pair.first->first, pair.first->second.get());
         }
     }
 
@@ -42,12 +38,12 @@ namespace pink {
         if (iter != table.end())
         {
             iter->second->Register(arg_t, ret_t, fn);
-            return *iter;
+            return std::make_pair(iter->first, iter->second.get());
         }
         else
         {
-            auto pair = table.insert(std::make_pair(op, new UnopLiteral(arg_t, ret_t, fn)));
-            return *(pair.first);
+            auto pair = table.insert(std::make_pair(op, std::make_unique<UnopLiteral>(arg_t, ret_t, fn)));
+            return std::make_pair(pair.first->first, pair.first->second.get());
         }
     }
 
@@ -59,9 +55,8 @@ namespace pink {
         {
             /*
                 UnopTable manages the memory for the Unop Literals
-                that are registered.
+                that are registered through std::unique_ptrs.
             */
-            delete iter->second;
             table.erase(iter);
         }
     }
@@ -73,6 +68,6 @@ namespace pink {
         if (iter == table.end())
             return llvm::Optional<std::pair<InternedString, UnopLiteral*>>();
         else
-            return llvm::Optional<std::pair<InternedString, UnopLiteral*>>(*iter);
+            return llvm::Optional<std::pair<InternedString, UnopLiteral*>>(std::make_pair(iter->first, iter->second.get()));
     }
 }

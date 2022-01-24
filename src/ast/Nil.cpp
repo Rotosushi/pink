@@ -14,9 +14,9 @@ namespace pink {
 
     }
 
-    Ast* Nil::Clone()
+    std::unique_ptr<Ast> Nil::Clone()
     {
-        return new Nil(loc);
+        return std::make_unique<Nil>(loc);
     }
 
     bool Nil::classof(const Ast* a)
@@ -35,7 +35,8 @@ namespace pink {
     */
     Outcome<Type*, Error> Nil::Getype(Environment& env)
     {
-    	Outcome<Type*, Error> result(env.types.GetNilType());
+    	Type* nil_type = env.types.GetNilType();
+    	Outcome<Type*, Error> result(nil_type);
     	return result;
     }
 }

@@ -14,9 +14,9 @@ namespace pink {
 
     }
 
-    Ast* Bool::Clone()
+    std::unique_ptr<Ast> Bool::Clone()
     {
-        return new Bool(loc, value);
+        return std::make_unique<Bool>(loc, value);
     }
 
     bool Bool::classof(const Ast* a)
@@ -41,7 +41,8 @@ namespace pink {
     */
     Outcome<Type*, Error> Bool::Getype(Environment& env)
     {
-    	Outcome<Type*, Error> result(env.types.GetBoolType());
+    	Type* bool_type = env.types.GetBoolType();
+    	Outcome<Type*, Error> result(bool_type);
     	return result;
     }
 }

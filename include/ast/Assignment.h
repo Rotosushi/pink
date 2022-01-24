@@ -5,15 +5,15 @@
 namespace pink {
     class Assignment : public Ast {
     public:
-        Ast* left;
-        Ast* right;
+        std::unique_ptr<Ast> left;
+        std::unique_ptr<Ast> right;
 
-        Assignment(Location loc, Ast* left, Ast* right);
+        Assignment(Location loc, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right);
         ~Assignment();
         
         static bool classof(const Ast* ast);
 
-        virtual Ast* Clone() override;
+        virtual std::unique_ptr<Ast> Clone() override;
         virtual std::string ToString() override;
         
         virtual Outcome<Type*, Error> Getype(Environment& env) override;

@@ -72,8 +72,10 @@ bool TestBind(std::ostream& out)
     pink::InternedString v = env.symbols.Intern("v");
     pink::Location l0(0, 0, 0, 5);
     pink::Location l1(0, 6, 0, 9);
-    pink::Nil*  n0 = new pink::Nil(l1);
-    pink::Bind* b0 = new pink::Bind(l0, v, n0);
+    std::unique_ptr<pink::Nil> n0 = std::make_unique<pink::Nil>(l1);
+    pink::Ast* n0_p = n0.get();
+    
+    std::unique_ptr<pink::Bind> b0 = std::make_unique<pink::Bind>(l0, v, std::move(n0));
 
     /*
     The Ast class itself only provides a small
@@ -100,24 +102,22 @@ bool TestBind(std::ostream& out)
     */
 
     result &= Test(out, "Bind::GetKind()", b0->getKind() == pink::Ast::Kind::Bind);
-    result &= Test(out, "Bind::classof()", b0->classof(b0));
+    result &= Test(out, "Bind::classof()", b0->classof(b0.get()));
 
     pink::Location l2(l0);
     pink::Location bl(b0->GetLoc());
     result &= Test(out, "Bind::GetLoc()", bl == l2);
 
     result &= Test(out, "Bind::symbol", b0->symbol == v);
-    result &= Test(out, "Bind::term", b0->term == n0);
+    result &= Test(out, "Bind::term", b0->term.get() == n0_p);
 
-    std::string bind_str = std::string(v) + std::string(" := ") + n0->ToString();
+    std::string bind_str = std::string(v) + std::string(" := ") + n0_p->ToString();
 
     result &= Test(out, "Bind::ToString()", b0->ToString() == bind_str);
     
     pink::Outcome<pink::Type*, pink::Error> bind_type = b0->Getype(env);
     
     result &= Test(out, "Bind::Getype()", bind_type && bind_type.GetOne() == env.types.GetNilType());
-
-    delete b0;
 
     result &= Test(out, "pink::Bind", result);
     out << "\n-----------------------\n";

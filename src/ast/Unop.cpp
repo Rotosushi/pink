@@ -2,8 +2,8 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    Unop::Unop(Location& loc, InternedString o, Ast* r)
-        : Ast(Ast::Kind::Unop, loc), op(o), right(r)
+    Unop::Unop(Location& loc, InternedString o, std::unique_ptr<Ast> r)
+        : Ast(Ast::Kind::Unop, loc), op(o), right(std::move(r))
     {
 
     }
@@ -13,9 +13,9 @@ namespace pink {
 
     }
 
-    Ast* Unop::Clone()
+    std::unique_ptr<Ast> Unop::Clone()
     {
-        return new Unop(loc, op, right->Clone());
+        return std::make_unique<Unop>(loc, op, right->Clone());
     }
 
     bool Unop::classof(const Ast* t)
@@ -46,9 +46,10 @@ namespace pink {
     	
     	if (!unop)
     	{
-    		Outcome<Type*, Error> result(Error(Error::Kind::Type,
+    		Error error(Error::Kind::Type,
     			std::string("[") + op + std::string("] not bound in env"), 
-    			loc));
+    			loc);
+    		Outcome<Type*, Error> result(error);
     		return result;
     	}
     	
@@ -57,10 +58,11 @@ namespace pink {
     	
     	if (!literal)
     	{
-    		Outcome<Type*, Error> result(Error(Error::Kind::Type,
+    		Error error(Error::Kind::Type,
     			std::string("[") + op + std::string("] has no overload for given type [")
     				+ rhs_result.GetOne()->ToString() + "]",
-    			loc));
+    			loc);
+    		Outcome<Type*, Error> result(error);
     		return result;
     	}
     	

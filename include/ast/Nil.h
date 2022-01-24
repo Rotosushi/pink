@@ -11,7 +11,7 @@ namespace pink {
         Nil(Location l);
         virtual ~Nil();
 
-        virtual Ast* Clone() override;
+        virtual std::unique_ptr<Ast> Clone() override;
 
         static bool classof(const Ast* a);
 

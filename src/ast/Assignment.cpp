@@ -2,16 +2,15 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    Assignment::Assignment(Location loc, Ast* left, Ast* right)
-        : Ast(Ast::Kind::Assignment, loc), left(left), right(right)
+    Assignment::Assignment(Location loc, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
+        : Ast(Ast::Kind::Assignment, loc), left(std::move(left)), right(std::move(right))
     {
 
     }
 
     Assignment::~Assignment()
     {
-        delete left;
-        delete right;
+
     }
     
     bool Assignment::classof(const Ast* ast)
@@ -19,9 +18,9 @@ namespace pink {
     	return ast->getKind() == Ast::Kind::Assignment;
 	}
 
-    Ast* Assignment::Clone()
+    std::unique_ptr<Ast> Assignment::Clone()
     {
-        return new Assignment(loc, left->Clone(), right->Clone());
+        return std::make_unique<Assignment>(loc, left->Clone(), right->Clone());
     }
 
     std::string Assignment::ToString()
@@ -56,11 +55,11 @@ namespace pink {
     	// make sure the left and right hand sides are the same type
     	if (lhs_result.GetOne() != rhs_result.GetOne())
     	{
-    		Outcome<Type*, Error> result(Error(
+    		Error error(
     			Error::Kind::Type,
     			std::string("[") + lhs_result.GetOne()->ToString() + std::string("] is not equivalent to type [") + rhs_result.GetOne()->ToString() + std::string("]"),
-    			loc));
-    		return result;
+    			loc);
+    		return Outcome<Type*, Error>(error);
     	}
     	else 
     	{

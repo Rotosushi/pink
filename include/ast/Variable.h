@@ -12,7 +12,7 @@ namespace pink {
         Variable(Location l, InternedString symbol);
         virtual ~Variable();
 
-        virtual Ast* Clone() override;
+        virtual std::unique_ptr<Ast> Clone() override;
 
         static bool classof(const Ast* a);
 

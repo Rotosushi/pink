@@ -8,12 +8,12 @@ namespace pink {
     class Unop : public Ast {
     public:
         InternedString op;
-        Ast* right;
+        std::unique_ptr<Ast> right;
 
-    Unop(Location& loc, InternedString o, Ast* r);
+    Unop(Location& loc, InternedString o, std::unique_ptr<Ast> r);
     virtual ~Unop();
 
-    virtual Ast* Clone() override;
+    virtual std::unique_ptr<Ast> Clone() override;
 
     static bool classof(const Ast* t);
 

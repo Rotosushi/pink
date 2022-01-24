@@ -73,7 +73,7 @@ bool TestInt(std::ostream& out)
 
 	pink::Type* int_t = env.types.GetIntType();
     pink::Location l0(0, 3, 0, 7);
-    pink::Int* i0 = new pink::Int(l0, 42);
+    std::unique_ptr<pink::Int> i0 = std::make_unique<pink::Int>(l0, 42);
 
     /*
         The Ast class itself only provides a small
@@ -95,7 +95,7 @@ bool TestInt(std::ostream& out)
     */
     result &= Test(out, "Int::GetKind()", i0->getKind() == pink::Ast::Kind::Int);
 
-    result &= Test(out, "Int::classof()", i0->classof(i0));
+    result &= Test(out, "Int::classof()", i0->classof(i0.get()));
 
     pink::Location l1(l0);
     pink::Location il(i0->GetLoc());
@@ -108,9 +108,7 @@ bool TestInt(std::ostream& out)
     pink::Outcome<pink::Type*, pink::Error> int_type = i0->Getype(env);
     
     result &= Test(out, "Int::Getype()", int_type && int_type.GetOne() == int_t);
-
-    delete i0;
-
+    
     result &= Test(out, "pink::Int", result);
     out << "\n-----------------------\n";
     return result;

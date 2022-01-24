@@ -6,13 +6,15 @@
 namespace pink {
     Outcome<llvm::Value*, Error> UnopIntNegate(llvm::Value* term, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateNeg(term, "neg"));
+    	llvm::Value* value = env.ir_builder.CreateNeg(term, "neg");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 
     Outcome<llvm::Value*, Error> UnopBoolNegate(llvm::Value* term, Environment& env)
     {
-        Outcome<llvm::Value*, Error> result(env.ir_builder.CreateNot(term, "not"));
+    	llvm::Value* value = env.ir_builder.CreateNot(term, "not");
+        Outcome<llvm::Value*, Error> result(value);
         return result;
     }
 

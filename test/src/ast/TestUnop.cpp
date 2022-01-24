@@ -79,8 +79,9 @@ bool TestUnop(std::ostream& out)
     pink::Location l1(0, 2, 0, 3);
     pink::Location l3(0, 0, 0, 3);
     pink::Type* int_t = env.types.GetIntType();
-    pink::Int*  i0 = new pink::Int(l1, 1);
-    pink::Unop* u0 = new pink::Unop(l3, minus, i0);
+    std::unique_ptr<pink::Int> i0 = std::make_unique<pink::Int>(l1, 1);
+    pink::Ast* i0_p = i0.get();
+    std::unique_ptr<pink::Unop> u0 = std::make_unique<pink::Unop>(l3, minus, std::move(i0));
 
     /*
     The Ast class itself only provides a small
@@ -107,24 +108,22 @@ bool TestUnop(std::ostream& out)
     */
     result &= Test(out, "Unop::GetKind()", u0->getKind() == pink::Ast::Kind::Unop);
 
-    result &= Test(out, "Unop::classof()", u0->classof(u0));
+    result &= Test(out, "Unop::classof()", u0->classof(u0.get()));
 
     pink::Location ul(u0->GetLoc());
     result &= Test(out, "Unop::GetLoc()", ul == l3);
 
     result &= Test(out, "Unop::symbol", u0->op == minus);
 
-    result &= Test(out, "Unop::term", u0-> right == i0);
+    result &= Test(out, "Unop::term", u0->right.get() == i0_p);
 
-    std::string unop_str = std::string(minus) + i0->ToString();
+    std::string unop_str = std::string(minus) + i0_p->ToString();
 
     result &= Test(out, "Unop::ToString()", u0->ToString() == unop_str);
     
     pink::Outcome<pink::Type*, pink::Error> unop_type = u0->Getype(env);
     
     result &= Test(out, "Unop::Getype()", unop_type && unop_type.GetOne() == int_t);
-
-    delete u0;
 
     result &= Test(out, "pink::Unop", result);
     out << "\n-----------------------\n";

@@ -1,5 +1,5 @@
 #pragma once
-
+#include <utility> //
 #include "aux/Error.h"
 
 namespace pink {
@@ -23,23 +23,27 @@ namespace pink {
     private:
         bool which;
         union {
-            T one;
-            U two;
+            mutable T one;
+            mutable U two;
         };
 
     public:
         Outcome() = delete;
         ~Outcome();
-        Outcome(T t);
-        Outcome(U u);
+        Outcome(const T& t);
+        Outcome(T&& t);
+        Outcome(const U& u);
+        Outcome(U&& u);
         Outcome(const Outcome& other);
+        Outcome(Outcome&& other);
 
         Outcome& operator=(const Outcome& other);
+        Outcome& operator=(Outcome&& other);
         operator bool();
         bool GetWhich();
 
-        T GetOne();
-        U GetTwo();
+        T& GetOne();
+        U& GetTwo();
     };
 
     template <class T, class U>
@@ -47,20 +51,36 @@ namespace pink {
     {
 
     }
-
+    
     template <class T, class U>
-    Outcome<T, U>::Outcome(T t)
+    Outcome<T, U>::Outcome(const T& t)
         : which(true), one(t)
     {
 
     }
 
+
     template <class T, class U>
-    Outcome<T, U>::Outcome(U u)
+    Outcome<T, U>::Outcome(T&& t)
+        : which(true), one(std::forward<T>(t))
+    {
+
+    }
+    
+    template <class T, class U>
+    Outcome<T, U>::Outcome(const U& u)
         : which(false), two(u)
     {
 
     }
+
+    template <class T, class U>
+    Outcome<T, U>::Outcome(U&& u)
+        : which(false), two(std::forward<U>(u))
+    {
+
+    }
+
 
     template <class T, class U>
     Outcome<T, U>::Outcome(const Outcome& other)
@@ -70,6 +90,16 @@ namespace pink {
             one = other.one;
         else
             two = other.two;
+    }
+    
+    template <class T, class U>
+    Outcome<T, U>::Outcome(Outcome&& other)
+    	: which(other.which)
+    {
+    	if (which)
+    		one = other.one;
+    	else 
+    		two = other.two;
     }
 
     template <class T, class U>
@@ -81,6 +111,19 @@ namespace pink {
             one = other.one;
         else
             two = other.two;
+           
+        return *this;
+    }
+    
+    template <class T, class U>
+    Outcome<T, U>& Outcome<T, U>::operator=(Outcome&& other)
+    {
+        which = other.which;
+
+        if (which)
+            one = std::move(other.one);
+        else
+            two = std::move(other.two);
            
         return *this;
     }
@@ -98,7 +141,7 @@ namespace pink {
     }
 
     template <class T, class U>
-    T Outcome<T, U>::GetOne()
+    T& Outcome<T, U>::GetOne()
     {
         if (which)
             return one;
@@ -111,7 +154,7 @@ namespace pink {
     }
 
     template <class T, class U>
-    U Outcome<T, U>::GetTwo()
+    U& Outcome<T, U>::GetTwo()
     {
         if (which)
         {

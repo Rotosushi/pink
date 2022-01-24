@@ -114,6 +114,10 @@ namespace pink {
         int=[0-9]+;
     */
 
+	// NOLINTBEGIN(cppcoreguidelines-avoid-goto)
+	// re2c uses gotos to implement the lexer, as all of the 
+	// gotos are from generated code, we are trusting re2c to 
+	// use gotos in a safe and sane way here.
     Token Lexer::yylex()
     {
         while (1)
@@ -144,4 +148,5 @@ namespace pink {
             */
         }
     }
+    // NOLINTEND(cppcoreguidelines-avoid-goto)
 }

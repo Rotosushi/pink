@@ -82,9 +82,11 @@ bool TestBinop(std::ostream& out)
     pink::Location l2(0, 4, 0, 5);
     pink::Location l3(0, 0, 0, 5);
     pink::Type*  int_t = env.types.GetIntType();
-    pink::Int*   i0 = new pink::Int(l0, 1);
-    pink::Int*   i1 = new pink::Int(l2, 1);
-    pink::Binop* b0 = new pink::Binop(l3, plus, i0, i1);
+    std::unique_ptr<pink::Int> i0 = std::make_unique<pink::Int>(l0, 1);
+    pink::Ast* i0_p = i0.get();
+    std::unique_ptr<pink::Int> i1 = std::make_unique<pink::Int>(l2, 1);
+    pink::Ast* i1_p = i1.get();
+    std::unique_ptr<pink::Binop> b0 = std::make_unique<pink::Binop>(l3, plus, std::move(i0), std::move(i1));
 
     /*
     The Ast class itself only provides a small
@@ -111,7 +113,7 @@ bool TestBinop(std::ostream& out)
     */
     result &= Test(out, "Binop::GetKind()", b0->getKind() == pink::Ast::Kind::Binop);
 
-    result &= Test(out, "Binop::classof()", b0->classof(b0));
+    result &= Test(out, "Binop::classof()", b0->classof(b0.get()));
 
     pink::Location bl(b0->GetLoc());
 
@@ -119,18 +121,16 @@ bool TestBinop(std::ostream& out)
 
     result &= Test(out, "Binop::symbol", b0->op == plus);
 
-    result &= Test(out, "Binop::term", b0->left == i0 && b0->right == i1);
+    result &= Test(out, "Binop::left, Binop::right", b0->left.get() == i0_p && b0->right.get() == i1_p);
 
 
-    std::string binop_str = i0->ToString() + " " + std::string(plus) + " " + i1->ToString();
+    std::string binop_str = i0_p->ToString() + " " + std::string(plus) + " " + i1_p->ToString();
 
     result &= Test(out, "Binop::ToString()", b0->ToString() == binop_str);
     
     pink::Outcome<pink::Type*, pink::Error> binop_type = b0->Getype(env);
     
     result &= Test(out, "Binop::Getype()", binop_type && binop_type.GetOne() == int_t);
-
-    delete b0;
 
     result &= Test(out, "pink::Binop", result);
     out << "\n-----------------------\n";

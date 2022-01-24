@@ -25,7 +25,7 @@ bool TestUnopCodegen(std::ostream& out)
 {
     bool result = true;
     out << "\n-----------------------\n";
-    out << "Testing and pink::UnopCodegen: \n";
+    out << "Testing pink::UnopCodegen: \n";
 
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -77,7 +77,7 @@ bool TestUnopCodegen(std::ostream& out)
     pink::Environment env(symbols, operators, types, bindings, binops, unops,
                           target_triple, data_layout, context, module, builder);
 
-    pink::Type* ty = new pink::IntType();
+    pink::Type* ty = env.types.GetIntType();
     pink::UnopCodegen unop_gen(ty, test_codegen_fn);
 
     result &= Test(out, "UnopCodegen::result_type", unop_gen.result_type == ty);
@@ -85,7 +85,7 @@ bool TestUnopCodegen(std::ostream& out)
 
     pink::Outcome<llvm::Value*, pink::Error> v = unop_gen.generate(nullptr, env);
 
-    result &= Test(out, "UnopCodegen::generate", !v.GetWhich());
+    result &= Test(out, "UnopCodegen::generate", unop_gen.generate == test_codegen_fn && !v);
 
     result &= Test(out, "pink::UnopCodegen", result);
     out << "\n-----------------------\n";

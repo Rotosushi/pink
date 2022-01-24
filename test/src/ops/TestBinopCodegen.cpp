@@ -83,8 +83,10 @@ bool TestBinopCodegen(std::ostream& out)
     pink::BinopCodegen binop_codegen(ty, test_binop_codegen_fn);
 
     result &= Test(out, "BinopCodegen::result_type", binop_codegen.result_type == ty);
+    
+    pink::Outcome<llvm::Value*, pink::Error> gen = binop_codegen.generate(nullptr, nullptr, env);
 
-    result &= Test(out, "BinopCodegen::generate", binop_codegen.generate == test_binop_codegen_fn);
+    result &= Test(out, "BinopCodegen::generate", binop_codegen.generate == test_binop_codegen_fn && !gen);
 
 
     result &= Test(out, "pink::BinopCodegen", result);

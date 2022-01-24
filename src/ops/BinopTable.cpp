@@ -8,11 +8,8 @@ namespace pink {
     }
 
     BinopTable::~BinopTable()
-    {
-        for (auto pair : table)
-        {
-            delete pair.second;
-        }
+    { 
+    
     }
 
     std::pair<InternedString, BinopLiteral*> BinopTable::Register(InternedString op, Precedence p, Associativity a)
@@ -21,12 +18,12 @@ namespace pink {
 
         if (iter == table.end())
         {
-            auto pair = table.insert(std::make_pair(op, new BinopLiteral(p, a)));
-            return *(pair.first);
+            auto pair = table.insert(std::make_pair(op, std::make_unique<BinopLiteral>(p, a)));
+            return std::make_pair(pair.first->first, pair.first->second.get());
         }
         else
         {
-            return *(iter);
+            return std::make_pair(iter->first, iter->second.get());
         }
     }
 
@@ -36,15 +33,15 @@ namespace pink {
 
         if (iter == table.end())
         {
-            auto pair = table.insert(std::make_pair(op, new BinopLiteral(p, a, left_t, right_t, ret_t, fn)));
-            return *(pair.first);
+            auto pair = table.insert(std::make_pair(op, std::make_unique<BinopLiteral>(p, a, left_t, right_t, ret_t, fn)));
+            return std::make_pair(pair.first->first, pair.first->second.get());
         }
         else
         {
             // register the new overload to the already registered binop
             // as a convienience for the caller of this procedure.
             iter->second->Register(left_t, right_t, ret_t, fn);
-            return *(iter);
+            return std::make_pair(iter->first, iter->second.get());
         }
     }
 
@@ -54,7 +51,6 @@ namespace pink {
 
         if (iter != table.end())
         {
-            delete iter->second;
             table.erase(iter);
         }
     }
@@ -66,6 +62,6 @@ namespace pink {
         if (iter == table.end())
             return llvm::Optional<std::pair<InternedString, BinopLiteral*>>();
         else
-            return llvm::Optional<std::pair<InternedString, BinopLiteral*>>(*iter);
+            return llvm::Optional<std::pair<InternedString, BinopLiteral*>>(std::make_pair(iter->first, iter->second.get()));
     }
 }

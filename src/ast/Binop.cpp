@@ -2,21 +2,20 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    Binop::Binop(Location& loc, InternedString o, Ast* l, Ast* r)
-        : Ast(Ast::Kind::Binop, loc), op(o), left(l), right(r)
+    Binop::Binop(Location& loc, InternedString o, std::unique_ptr<Ast> l, std::unique_ptr<Ast> r)
+        : Ast(Ast::Kind::Binop, loc), op(o), left(std::move(l)), right(std::move(r))
     {
 
     }
 
     Binop::~Binop()
     {
-        delete left;
-        delete right;
+
     }
 
-    Ast* Binop::Clone()
+    std::unique_ptr<Ast> Binop::Clone()
     {
-        return new Binop(loc, op, left->Clone(), right->Clone());
+        return std::make_unique<Binop>(loc, op, left->Clone(), right->Clone());
     }
 
     bool Binop::classof(const Ast* t)
@@ -65,9 +64,10 @@ namespace pink {
     	
     	if (!binop)
     	{
-    		Outcome<Type*, Error> result(Error(Error::Kind::Type,
+    		Error error(Error::Kind::Type,
     			std::string("[") + op + std::string("] not bound in env"),
-    			loc));
+    			loc);
+    		Outcome<Type*, Error> result(error);
     		return result;
     	}
     	
@@ -76,10 +76,11 @@ namespace pink {
     	
     	if (!literal)
     	{
-    		Outcome<Type*, Error> result(Error(Error::Kind::Type,
+    		Error error(Error::Kind::Type,
     			std::string("[") + op + std::string("] has no overload for the given types [")
     				+ lhs_result.GetOne()->ToString() + ", " + rhs_result.GetOne()->ToString() + "]",
-    				loc));
+    				loc);
+    		Outcome<Type*, Error> result(error);
     		return result;
     	}
     	

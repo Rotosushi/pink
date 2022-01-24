@@ -13,9 +13,9 @@ namespace pink {
 
     }
 
-    Ast* Variable::Clone()
+    std::unique_ptr<Ast> Variable::Clone()
     {
-        return new Variable(loc, symbol);
+        return std::make_unique<Variable>(loc, symbol);
     }
 
     bool Variable::classof(const Ast* a)
@@ -44,7 +44,8 @@ namespace pink {
 		}
 		else 
 		{
-			Outcome<Type*, Error> result(Error(Error::Kind::Type, std::string("[") + symbol + std::string("] not bound in environment"), loc));
+			Error error(Error::Kind::Type, std::string("[") + symbol + std::string("] not bound in environment"), loc);
+			Outcome<Type*, Error> result(error);
 			return result;
 		}
 	}

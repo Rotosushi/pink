@@ -1,5 +1,5 @@
 #pragma once
-
+#include <memory>
 #include <string>
 #include <iostream>
 
@@ -41,9 +41,10 @@ namespace pink {
         Kind getKind() const;
         Location GetLoc() const;
 
-        virtual Ast* Clone() = 0;
+        virtual std::unique_ptr<Ast> Clone() = 0;
 
 		/*
+		#TODO
 			This function ends up doing a lot of 
 			intermediate allocations and concatenations,
 			perhaps we could rewrite this to use 

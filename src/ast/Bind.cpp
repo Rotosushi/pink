@@ -4,8 +4,8 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    Bind::Bind(Location l, InternedString i, Ast* t)
-        : Ast(Ast::Kind::Bind, l), symbol(i), term(t)
+    Bind::Bind(Location l, InternedString i, std::unique_ptr<Ast> t)
+        : Ast(Ast::Kind::Bind, l), symbol(i), term(std::move(t))
     {
 
     }
@@ -16,12 +16,12 @@ namespace pink {
     */
     Bind::~Bind()
     {
-        delete (term);
+    
     }
 
-    Ast* Bind::Clone()
+    std::unique_ptr<Ast> Bind::Clone()
     {
-        return new Bind(loc, symbol, term->Clone());
+        return std::make_unique<Bind>(loc, symbol, term->Clone());
     }
 
     bool Bind::classof(const Ast* a)
@@ -67,11 +67,11 @@ namespace pink {
 			// #TODO: if the binding term has the same type as what the symbol 
 			//  is already bound to, we could treat the binding as equivalent 
 			//  to an assignment here.
-			Outcome<Type*, Error> result(
-				Error(Error::Kind::Type, 
+			Error error(Error::Kind::Type, 
 					  std::string("[") + symbol + std::string("] is already bound to [")
 					  	+ bound->first->ToString() + std::string("]"),
-					  loc));
+					  loc);
+			Outcome<Type*, Error> result(error);
 			return result;
 		}
     }

@@ -1,5 +1,6 @@
 #pragma once
 #include <utility> // std::pair
+#include <memory>  // std::shared_ptr
 
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
@@ -10,7 +11,7 @@ namespace pink {
     class UnopLiteral {
     private:
         // https://llvm.org/doxygen/DenseMap_8h.html
-        llvm::DenseMap<Type*, UnopCodegen*> overloads;
+        llvm::DenseMap<Type*, std::unique_ptr<UnopCodegen>> overloads;
 
     public:
         UnopLiteral();

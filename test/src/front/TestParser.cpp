@@ -97,57 +97,57 @@ bool TestParser(std::ostream& out)
     		Parses Parenthesized expressions
     */       
     
-    pink::Outcome<pink::Ast*, pink::Error> parser_result(parser.Parse("nil", env));
+    pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result(parser.Parse("nil", env));
     
     pink::Ast* term = nullptr;
     
     result &= Test(out, "Parser::Parse(Nil)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Nil>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Nil>(term)));
                           
     parser_result = parser.Parse("10", env);
     
     result &= Test(out, "Parser::Parse(Int)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Int>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Int>(term)));
     	
     parser_result = parser.Parse("true", env);
     
     result &= Test(out, "Parser::Parse(Bool)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Bool>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Bool>(term)));
     
     parser_result = parser.Parse("x", env);
     
     result &= Test(out, "Parser::Parse(Variable)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Variable>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Variable>(term)));
     
     parser_result = parser.Parse("x := 1", env);
     
     result &= Test(out, "Parser::Parse(Bind)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Bind>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Bind>(term)));
     
     parser_result = parser.Parse("x = 2", env);
     
     result &= Test(out, "Parser::Parse(Assignment)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Assignment>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Assignment>(term)));
     
     parser_result = parser.Parse("!true", env);
     
     result &= Test(out, "Parser::Parse(unary expression)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Unop>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Unop>(term)));
     	
     parser_result = parser.Parse("1 + 1", env);
     
     result &= Test(out, "Parser::Parse(binary expression)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Binop>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Binop>(term)));
     	
     parser_result = parser.Parse("6 + 3 * 4 == 3 * 2 + 12", env);
     
     result &= Test(out, "Parser::Parse(complex binary expression)",
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Binop>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Binop>(term)));
     
     parser_result = parser.Parse("(1 + 1) - (1 + 1)", env);
     
     result &= Test(out, "Parser::Parse(parenthesized expression)", 
-    	(parser_result) && (term = parser_result.GetOne()) && (llvm::isa<pink::Binop>(term)));
+    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Binop>(term)));
     
     result &= Test(out, "pink::Parser", result);
     out << "\n-----------------------\n";

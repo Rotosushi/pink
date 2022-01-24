@@ -1,5 +1,6 @@
 #pragma once
 #include <utility> // std::pair<>
+#include <memory>  // std::unique_ptr
 
 #include "llvm/ADT/APInt.h" // llvm::Optional<>
 #include "llvm/ADT/DenseMap.h" // llvm::DenseMap<>
@@ -12,7 +13,7 @@
 namespace pink {
     class BinopTable {
     private:
-        llvm::DenseMap<InternedString, BinopLiteral*> table;
+        llvm::DenseMap<InternedString, std::unique_ptr<BinopLiteral>> table;
 
     public:
         BinopTable();
