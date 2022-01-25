@@ -3,16 +3,24 @@ TODOs in no particular order:
 
 	# finish v0.0.1
 		needs:
+			CLIOptions
 			REPL
 			Codegen to LLVM IR
 
-	# refactor the makefile into a cmake file
+	# Refactor CmakeLists.txt to build all of the application logic into a library
+		then compile pink (the executable) by linking pink.cpp against the library, 
+		then modify test/CMakeLists.txt to link against that same library, 
+		this should prevent the unit tests from building all of the application 
+		logic again when we build pink-test (the executable), which should speed up 
+		build times considerably.
+	
+	
 
 	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions
 		and when i use -stdlib=libstdc++ it does not.
 		
 	# find out why 'all-targets' is not a valid library to link against
-		when using llvm_map_components_to_libnames() in a cmake file,
+		when using llvm_map_components_to_libnames() in the cmake file,
 		despite it being emmitted by llvm-config --components.
 		This should be done if this project ever wants to use llvm 
 		to emit code for a non-native architecture. 
