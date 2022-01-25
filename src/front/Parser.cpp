@@ -45,6 +45,9 @@ namespace pink {
 
     Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, Environment& env)
     {
+    	tok = Token::Error;
+    	loc = Location();
+    	txt = "";
         lexer.SetBuf(str);
         nexttok(); // prime the lexers
         return ParseTerm(env);
@@ -68,12 +71,8 @@ namespace pink {
         	// Handle the entire binop expression with the Infix Parser
             return ParseInfix(std::move(left.GetOne()), 0, env); // pass or fail, return the result of parsing a binop expression.
         }
-        
-		// the single term we parsed at the beginning is the result of this parse.
-		if (left)
-			return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
-		else
-			return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
+        else // the single term we parsed at the beginning is the result of this parse.
+        	return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
     }
     
     
@@ -124,14 +123,35 @@ namespace pink {
     			}
     		}
     		
+    		// in the case where the binop is not known already, 
+    		// we cannot continue to parse the potential binop expression.
+    		// since this case break out of the while loop above, this is 
+    		// the place in the code to check for it occuring
+    		if (!peek_opt.hasValue())
+    		{
+				Error error(Error::Kind::Syntax,
+					std::string("[") + peek_str + std::string("] binop is unknown, and thus has no precedence to parse against"),
+					loc);
+				return Outcome<std::unique_ptr<Ast>, Error>(error);
+    		}
+    		
     		Location binop_loc(op_loc.firstLine, op_loc.firstColumn, loc.firstLine, loc.firstColumn);
     		result = Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Binop>(binop_loc, op_str, std::move(result.GetOne()),  std::move(rhs.GetOne())));
     	}
     	
-    	if (result)
-    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    	else 
-    		return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+    	// in the case where the binop is not known already, 
+		// we cannot continue to parse the potential binop expression.
+		// since this case break out of the while loop above, this is 
+		// the place in the code to check for it occuring
+    	if (!peek_opt.hasValue())
+    	{
+    		Error error(Error::Kind::Syntax,
+    			std::string("[") + peek_str + std::string("] binop is unknown, and thus has no precedence to parse against"),
+    			loc);
+    		return Outcome<std::unique_ptr<Ast>, Error>(error);
+    	}
+    	
+    	return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
     }
     
     
@@ -159,10 +179,7 @@ namespace pink {
     			Location bind_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
     			Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bind>(bind_loc, id, std::move(rhs.GetOne())));
     			
-    			if (result)
-    				return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    			else 
-    				return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
     		}
     		else if (tok == Token::Equals) // an assignment expression
         	{
@@ -176,18 +193,14 @@ namespace pink {
 		        // loc holds the location of the rhs of the term after the above call to ParseTerm
 		        Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
 		        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<Variable>(lhs_loc, id), std::move(rhs.GetOne())));
-		        if (result)
-    				return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    			else 
-    				return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+		        
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         	}
         	else // this identifer was simply a variable reference 
         	{
         		Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Variable>(lhs_loc, id));
-        		if (result)
-    				return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    			else 
-    				return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+    			
+    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         	}
         	break;
     	}
@@ -207,10 +220,8 @@ namespace pink {
     			
     		Location unop_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
     		Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Unop>(unop_loc, op, std::move(rhs.GetOne())));
-    		if (result)
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    		else 
-    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+
+    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
     	}
     	
     	case Token::LParen:
@@ -240,10 +251,9 @@ namespace pink {
     		Location lhs_loc = loc;
     		nexttok(); // eat 'nil'
     		Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Nil>(lhs_loc));
-    		if (result)
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    		else 
-    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+    		
+    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+
     	}
     	
       
@@ -253,10 +263,8 @@ namespace pink {
         	int value = std::stoi(txt);
         	nexttok(); // eat '42'
         	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Int>(lhs_loc, value));
-        	if (result)
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    		else 
-    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+
+    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         }
         
         case Token::True:
@@ -264,10 +272,8 @@ namespace pink {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "true"
         	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, true));
-        	if (result)
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    		else 
-    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+        	
+    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         }
         
         case Token::False:
@@ -275,10 +281,8 @@ namespace pink {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "false"
         	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, false));
-        	if (result)
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    		else 
-    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+
+    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         }
         
     	default:

@@ -27,6 +27,7 @@ bool TestUnopLiteral(std::ostream& out)
     out << "\n-----------------------\n";
     out << "Testing pink::UnopLiteral: \n";
 
+	pink::Parser         parser;
     pink::StringInterner symbols;
     pink::StringInterner operators;
     pink::TypeInterner   types;
@@ -74,7 +75,7 @@ bool TestUnopLiteral(std::ostream& out)
     llvm::Module      module("TestEnvironment", context);
 
 
-    pink::Environment env(symbols, operators, types, bindings, binops, unops,
+    pink::Environment env(parser, symbols, operators, types, bindings, binops, unops,
                           target_triple, data_layout, context, module, builder);
 
     pink::Type* ty = env.types.GetIntType();

@@ -28,6 +28,7 @@ bool TestUnopTable(std::ostream& out)
     out << "\n-----------------------\n";
     out << "Testing pink::UnopTable: \n";
 
+	pink::Parser         parser;
     pink::StringInterner symbols;
     pink::StringInterner operators;
     pink::TypeInterner   types;
@@ -75,7 +76,7 @@ bool TestUnopTable(std::ostream& out)
     llvm::Module      module("TestEnvironment", context);
 
 
-    pink::Environment env(symbols, operators, types, bindings, binops, unops,
+    pink::Environment env(parser, symbols, operators, types, bindings, binops, unops,
                           target_triple, data_layout, context, module, builder);
 
     pink::InternedString minus = env.operators.Intern("-");

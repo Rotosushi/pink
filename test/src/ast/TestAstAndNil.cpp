@@ -21,6 +21,7 @@ bool TestAstAndNil(std::ostream& out)
     out << "\n-----------------------\n";
     out << "Testing pink::Ast and pink::Nil: \n";
     
+    pink::Parser         parser;
     pink::StringInterner symbols;
     pink::StringInterner operators;
     pink::TypeInterner   types;
@@ -68,7 +69,7 @@ bool TestAstAndNil(std::ostream& out)
     llvm::Module      module("TestEnvironment", context);
 
 
-    pink::Environment env(symbols, operators, types, bindings, binops, unops,
+    pink::Environment env(parser, symbols, operators, types, bindings, binops, unops,
                           target_triple, data_layout, context, module, builder);
 
     /*

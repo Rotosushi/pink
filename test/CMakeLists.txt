@@ -87,6 +87,7 @@ target_sources(pink-test PUBLIC
 			   src/type/TestBoolType.cpp
 			   src/kernel/TestBinopPrimitives.cpp
 			   src/kernel/TestUnopPrimitives.cpp
+			   src/kernel/TestFirstPhase.cpp
 			   src/front/TestToken.cpp
 			   src/front/TestLexer.cpp
 			   src/front/TestParser.cpp

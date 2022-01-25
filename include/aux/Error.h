@@ -8,6 +8,7 @@ namespace pink {
     class Error {
     public:
         enum class Kind {
+        	Default,
             Syntax,
             Type,
             Semantic,
@@ -19,6 +20,7 @@ namespace pink {
         Location    loc;
 
     public:
+    	Error();
         Error(const Error& other);
         Error(Kind k, const char* d, Location l);
         Error(Kind k, std::string d, Location l);

@@ -1,3 +1,4 @@
+#pragma once
 #include "aux/Error.h"   // pink::Error
 #include "aux/Outcome.h" // pink::Outcome<>
 

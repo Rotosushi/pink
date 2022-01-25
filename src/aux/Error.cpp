@@ -1,6 +1,12 @@
 #include "aux/Error.h"
 
 namespace pink {
+	Error::Error()
+		: kind(Error::Kind::Default), dsc(), loc()
+	{
+	
+	}
+
     Error::Error(const Error& other)
         : kind(other.kind), dsc(other.dsc), loc(other.loc)
     {
@@ -39,6 +45,12 @@ namespace pink {
 
         switch(kind)
         {
+        	case Kind::Default:
+        	{
+        		result += "Default Error: ";
+        		break;
+        	}
+        	
             case Kind::Syntax:
             {
                 result += "Syntax Error: ";

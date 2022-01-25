@@ -22,10 +22,8 @@ namespace pink {
     class Outcome {
     private:
         bool which;
-        union {
-            mutable T one;
-            mutable U two;
-        };
+        mutable T one;
+        mutable U two;
 
     public:
         Outcome() = delete;
@@ -54,7 +52,7 @@ namespace pink {
     
     template <class T, class U>
     Outcome<T, U>::Outcome(const T& t)
-        : which(true), one(t)
+        : which(true), one(t), two()
     {
 
     }
@@ -62,21 +60,21 @@ namespace pink {
 
     template <class T, class U>
     Outcome<T, U>::Outcome(T&& t)
-        : which(true), one(std::forward<T>(t))
+        : which(true), one(std::forward<T>(t)), two()
     {
 
     }
     
     template <class T, class U>
     Outcome<T, U>::Outcome(const U& u)
-        : which(false), two(u)
+        : which(false), one(), two(u)
     {
 
     }
 
     template <class T, class U>
     Outcome<T, U>::Outcome(U&& u)
-        : which(false), two(std::forward<U>(u))
+        : which(false), one(), two(std::forward<U>(u))
     {
 
     }

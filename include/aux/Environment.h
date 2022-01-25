@@ -16,9 +16,8 @@
 #include "ops/BinopTable.h"
 #include "ops/UnopTable.h"
 
-//#include "front/Parser.h"
+#include "front/Parser.h"
 
-//#TODO Finish This after all the files above
 
 
 namespace pink {
@@ -30,7 +29,7 @@ namespace pink {
     */
     class Environment {
     public:
-        // Parser parser;
+        Parser&			   parser;
         StringInterner&    symbols;
         StringInterner&    operators;
         TypeInterner&      types;
@@ -43,7 +42,7 @@ namespace pink {
         llvm::Module&      module;
         llvm::IRBuilder<>& ir_builder;
 
-        Environment(StringInterner& si, StringInterner& oi, TypeInterner& ti,
+        Environment(Parser& p, StringInterner& si, StringInterner& oi, TypeInterner& ti,
                     SymbolTable& sy, BinopTable& bt, UnopTable& ut,
                     std::string& tt, llvm::DataLayout& dl,
                     llvm::LLVMContext& ct, llvm::Module& md,

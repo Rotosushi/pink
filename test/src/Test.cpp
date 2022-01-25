@@ -34,6 +34,7 @@
 
 #include "kernel/TestUnopPrimitives.h"
 #include "kernel/TestBinopPrimitives.h"
+#include "kernel/TestFirstPhase.h"
 
 /*
     This is a super basic funclet, which simply saves
@@ -270,6 +271,12 @@ size_t RunTests(std::ostream& out, size_t flags)
         if (TestBinopPrimitives(out))
             result |= TEST_BINOP_PRIMITIVES;
     }
+    
+    if ((flags & TEST_FIRST_PHASE) > 0)
+    {
+    	if (TestFirstPhase(out))
+    		result |= TEST_FIRST_PHASE;
+    }
 
 
     return result;
@@ -347,6 +354,7 @@ void PrintPassedTests(std::ostream& out, size_t test_results)
     */
     result &= Test(out, "pink::UnopPrimitives", test_results & TEST_UNOP_PRIMITIVES);
     result &= Test(out, "pink::BinopPrimitives", test_results & TEST_BINOP_PRIMITIVES);
+    result &= Test(out, "pink First Phase", test_results & TEST_FIRST_PHASE);
 
     Test(out, "pink::Test", result);
 }

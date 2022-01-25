@@ -26,7 +26,7 @@ namespace pink {
 
     std::string Bool::ToString()
     {
-        if (value == true)
+        if (value)
             return std::string("true");
         else
             return std::string("false");

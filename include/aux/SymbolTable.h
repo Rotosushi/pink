@@ -127,7 +127,7 @@ namespace pink {
 
         llvm::Optional<std::pair<Type*, llvm::Value*>> Lookup(InternedString symbol);
 
-        void Bind(InternedString symbol, Type* type, llvm::Value* value);
+        void Bind(InternedString symbol, Type* type, llvm::Value* term);
         void Unbind(InternedString symbol);
     };
 }

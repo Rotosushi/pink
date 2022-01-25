@@ -70,6 +70,7 @@ constexpr auto TEST_PARSER			  = 0x0200'0000;
 // kernel tests
 constexpr auto TEST_UNOP_PRIMITIVES   = 0x0400'0000;
 constexpr auto TEST_BINOP_PRIMITIVES  = 0x0800'0000;
+constexpr auto TEST_FIRST_PHASE       = 0x1000'0000;
 
 
 constexpr auto TEST_ALL               = 0xFFFF'FFFF;
@@ -92,4 +93,4 @@ bool Test(std::ostream& out, std::string test_name, bool test);
     once.
 */
 size_t RunTests(std::ostream& out, size_t flags);
-void PrintPassedTests(std::ostream& out, size_t flags);
+void PrintPassedTests(std::ostream& out, size_t test_results);
