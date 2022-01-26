@@ -6,13 +6,6 @@ TODOs in no particular order:
 			CLIOptions
 			REPL
 			Codegen to LLVM IR
-
-	# Refactor CmakeLists.txt to build all of the application logic into a library
-		then compile pink (the executable) by linking pink.cpp against the library, 
-		then modify test/CMakeLists.txt to link against that same library, 
-		this should prevent the unit tests from building all of the application 
-		logic again when we build pink-test (the executable), which should speed up 
-		build times considerably.
 	
 	
 

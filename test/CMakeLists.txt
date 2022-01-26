@@ -28,39 +28,7 @@ include_directories(include ../include)
 
 add_executable(pink-test src/TestMain.cpp)
 
-
 target_sources(pink-test PUBLIC 
-			   ../src/ast/Assignment.cpp
-			   ../src/ast/Ast.cpp
-			   ../src/ast/Bind.cpp
-			   ../src/ast/Binop.cpp
-			   ../src/ast/Bool.cpp
-			   ../src/ast/Int.cpp
-			   ../src/ast/Nil.cpp
-			   ../src/ast/Unop.cpp
-			   ../src/ast/Variable.cpp
-			   ../src/aux/Environment.cpp
-			   ../src/aux/Error.cpp
-			   ../src/aux/Location.cpp
-			   ../src/aux/Outcome.cpp
-			   ../src/aux/StringInterner.cpp
-			   ../src/aux/SymbolTable.cpp
-			   ../src/aux/TypeInterner.cpp
-			   ../src/ops/BinopCodegen.cpp
-			   ../src/ops/BinopLiteral.cpp
-			   ../src/ops/BinopTable.cpp
-			   ../src/ops/UnopCodegen.cpp
-			   ../src/ops/UnopLiteral.cpp
-			   ../src/ops/UnopTable.cpp
-			   ../src/kernel/BinopPrimitives.cpp
-			   ../src/kernel/UnopPrimitives.cpp
-			   ../src/type/Type.cpp
-			   ../src/type/BoolType.cpp
-			   ../src/type/IntType.cpp
-			   ../src/type/NilType.cpp
-			   ../src/front/Lexer.cpp 
-			   ../src/front/Token.cpp
-			   ../src/front/Parser.cpp
 			   src/Test.cpp
 			   src/ast/TestAssignment.cpp
 			   src/ast/TestAstAndNil.cpp
@@ -94,7 +62,7 @@ target_sources(pink-test PUBLIC
 			   )
 
 
-target_link_libraries(pink-test ${llvm_libs})
+target_link_libraries(pink-test ${llvm_libs} pinkLib)
 
 
 target_include_directories(pink-test PUBLIC

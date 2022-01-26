@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # CMake project properties
-project(pink VERSION 0.1)
+project(pink VERSION 0.1 DESCRIPTION "A small Programming Language, Exploring Functions as Values")
 
 set(CMAKE_C_STANDARD 11)
 # since this project uses some c++17 features
@@ -43,50 +43,63 @@ include_directories(include)
 
 configure_file(include/PinkConfig.h.in PinkConfig.h)
 
+
+add_library(pinkLib STATIC
+		    src/ast/Assignment.cpp
+		    src/ast/Ast.cpp
+		    src/ast/Bind.cpp
+		    src/ast/Binop.cpp
+		    src/ast/Bool.cpp
+		    src/ast/Int.cpp
+		    src/ast/Nil.cpp
+		    src/ast/Unop.cpp
+		    src/ast/Variable.cpp
+		    src/aux/Environment.cpp
+		    src/aux/Error.cpp
+		    src/aux/Location.cpp
+		    src/aux/Outcome.cpp
+		    src/aux/StringInterner.cpp
+		    src/aux/SymbolTable.cpp
+		    src/aux/TypeInterner.cpp
+		    src/ops/BinopCodegen.cpp
+		    src/ops/BinopLiteral.cpp
+		    src/ops/BinopTable.cpp
+		    src/ops/UnopCodegen.cpp
+		    src/ops/UnopLiteral.cpp
+		    src/ops/UnopTable.cpp
+		    src/kernel/BinopPrimitives.cpp
+		    src/kernel/UnopPrimitives.cpp
+		    src/type/Type.cpp
+		    src/type/BoolType.cpp
+		    src/type/IntType.cpp
+		    src/type/NilType.cpp
+		    src/front/Lexer.cpp 
+		    src/front/Token.cpp
+		    src/front/Parser.cpp
+		   )
+			   
+
+set_target_properties(pinkLib PROPERTIES SOVERSION ${PROJECT_VERSION})
+
+set_target_properties(pinkLib PROPERTIES PUBLIC_HEADER include/pinkLib.h)
+
+set_target_properties(pinkLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
+
+target_include_directories(pinkLib PUBLIC include)
+
+			   
 add_executable(pink src/Pink.cpp)
 
-target_sources(pink PUBLIC 
-			   src/ast/Assignment.cpp
-			   src/ast/Ast.cpp
-			   src/ast/Bind.cpp
-			   src/ast/Binop.cpp
-			   src/ast/Bool.cpp
-			   src/ast/Int.cpp
-			   src/ast/Nil.cpp
-			   src/ast/Unop.cpp
-			   src/ast/Variable.cpp
-			   src/aux/Environment.cpp
-			   src/aux/Error.cpp
-			   src/aux/Location.cpp
-			   src/aux/Outcome.cpp
-			   src/aux/StringInterner.cpp
-			   src/aux/SymbolTable.cpp
-			   src/aux/TypeInterner.cpp
-			   src/ops/BinopCodegen.cpp
-			   src/ops/BinopLiteral.cpp
-			   src/ops/BinopTable.cpp
-			   src/ops/UnopCodegen.cpp
-			   src/ops/UnopLiteral.cpp
-			   src/ops/UnopTable.cpp
-			   src/kernel/BinopPrimitives.cpp
-			   src/kernel/UnopPrimitives.cpp
-			   src/type/Type.cpp
-			   src/type/BoolType.cpp
-			   src/type/IntType.cpp
-			   src/type/NilType.cpp
-			   src/front/Lexer.cpp 
-			   src/front/Token.cpp
-			   src/front/Parser.cpp
-			   )
 
+target_link_libraries(pink ${llvm_libs} pinkLib)
+
+target_include_directories(pink PUBLIC
+						   "${PROJECT_BINARY_DIR}"
+						   include
+						  )
+						  
 #TODO: figure out how to build the tests alongside the main project,
 #		but only when the correct argument is passed into the call to 
 #		cmake.
 add_subdirectory(test)
-
-target_link_libraries(pink ${llvm_libs})
-
-target_include_directories(pink PUBLIC
-						   "${PROJECT_BINARY_DIR}"
-						  )
 
