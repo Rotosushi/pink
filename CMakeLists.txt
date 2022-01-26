@@ -41,7 +41,7 @@ execute_process(COMMAND re2c src/front/Lexer.re -o src/front/Lexer.cpp
 # building the actual project
 include_directories(include)
 
-configure_file(include/PinkConfig.h.in PinkConfig.h)
+configure_file(include/PinkConfig.h.in ../include/PinkConfig.h)
 
 
 add_library(pinkLib STATIC
@@ -54,6 +54,7 @@ add_library(pinkLib STATIC
 		    src/ast/Nil.cpp
 		    src/ast/Unop.cpp
 		    src/ast/Variable.cpp
+		    src/aux/CLIOptions.cpp
 		    src/aux/Environment.cpp
 		    src/aux/Error.cpp
 		    src/aux/Location.cpp
