@@ -45,4 +45,18 @@ namespace pink {
     	Outcome<Type*, Error> result(bool_type);
     	return result;
     }
+    
+    /*
+    	---------------------
+    	env |- true : i1 (1) 
+    	
+       ---------------------
+    	env |- false : i1 (0)
+    */
+    Outcome<llvm::Value*, Error> Bool::Codegen(Environment& env)
+    {
+    	llvm::Value* bool_value = env.ir_builder.getInt1(value);
+    	Outcome<llvm::Value*, Error> result(bool_value);
+    	return result;
+    }
 }

@@ -11,6 +11,8 @@
 
 #include "type/Type.h"
 
+#include "llvm/IR/Value.h"
+
 namespace pink {
     class Environment;
 
@@ -52,8 +54,13 @@ namespace pink {
 		*/
         virtual std::string ToString() = 0;
 
-        
+        /*
+        	#TODO: Getype can be made to cache 
+        		the computed type in the Ast 
+        		class itself, which should save
+        		on computation within Codegen.
+        */
         virtual Outcome<Type*, Error> Getype(Environment& e) = 0;
-        //virtual std::variant<pink::Error, llvm::Value*> ToLLVM(Environment& e) = 0;
+        virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) = 0;
     };
 }

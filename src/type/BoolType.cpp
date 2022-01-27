@@ -1,4 +1,5 @@
 #include "type/BoolType.h"
+#include "aux/Environment.h"
 
 namespace pink {
     BoolType::BoolType()
@@ -25,5 +26,10 @@ namespace pink {
     std::string BoolType::ToString()
     {
         return std::string("Bool");
+    }
+    
+    Outcome<llvm::Type*, Error> BoolType::Codegen(Environment& env)
+    {
+    	return Outcome<llvm::Type*, Error>(env.ir_builder.getInt1Ty());
     }
 }

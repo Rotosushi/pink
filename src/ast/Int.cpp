@@ -40,4 +40,15 @@ namespace pink {
     	Outcome<Type*, Error> result(int_type);
     	return result;
     }
+    
+    /*
+       ----------------------
+    	env |- [0-9]+ : i64 (value)
+    */
+    Outcome<llvm::Value*, Error> Int::Codegen(Environment& env)
+    {
+    	llvm::Value* int_value = env.ir_builder.getInt64(value);
+    	Outcome<llvm::Value*, Error> result(int_value);
+    	return result;
+    }
 }

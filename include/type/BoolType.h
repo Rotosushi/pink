@@ -13,5 +13,7 @@ namespace pink {
 
         virtual bool operator==(Type& other) override;
         virtual std::string ToString() override;
+        
+        virtual Outcome<llvm::Type*, Error> Codegen(Environment& env) override;
     };
 }

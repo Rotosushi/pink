@@ -39,4 +39,15 @@ namespace pink {
     	Outcome<Type*, Error> result(nil_type);
     	return result;
     }
+    
+    /*
+    	---------------------
+    	env |- nil : i1 (0)
+    */
+    Outcome<llvm::Value*, Error> Nil::Codegen(Environment& env)
+    {
+    	llvm::Value* nil_value = env.ir_builder.getFalse();
+    	Outcome<llvm::Value*, Error> result(nil_value);
+    	return result;
+    }
 }

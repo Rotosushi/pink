@@ -1,7 +1,12 @@
 #pragma once
 #include <string>
 
+#include "aux/Outcome.h"
+
+#include "llvm/IR/Type.h"
+
 namespace pink {
+	class Environment;
     class Type {
     public:
         // https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
@@ -29,5 +34,7 @@ namespace pink {
         */
         virtual bool operator ==(Type& other) = 0;
         virtual std::string ToString() = 0;
+        
+        virtual Outcome<llvm::Type*, Error> Codegen(Environment& env) = 0;
     };
 }

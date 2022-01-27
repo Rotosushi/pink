@@ -110,6 +110,18 @@ namespace pink {
 			}
 		}
 	
+		if (input_file == "")
+		{
+			out << "input file is required." << std::endl;
+			exit(0);
+		}
+		
+		// give a default name to the output file.
+		if (output_file == "")
+		{
+			output_file = input_file + ".pink";
+		}
+	
 		return CLIOptions(input_file, output_file, verbose == 1);
 	}
 

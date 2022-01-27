@@ -1,5 +1,5 @@
 #include "type/NilType.h"
-
+#include "aux/Environment.h"
 
 namespace pink {
     NilType::NilType()
@@ -26,5 +26,10 @@ namespace pink {
     std::string NilType::ToString()
     {
         return std::string("Nil");
+    }
+    
+    Outcome<llvm::Type*, Error> NilType::Codegen(Environment& env)
+    {
+    	return Outcome<llvm::Type*, Error>(env.ir_builder.getInt1Ty());
     }
 }

@@ -17,5 +17,6 @@ namespace pink {
         virtual std::string ToString() override;
         
         virtual Outcome<Type*, Error> Getype(Environment& env) override;
+        virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
     };
 }

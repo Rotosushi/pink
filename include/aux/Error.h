@@ -35,4 +35,5 @@ namespace pink {
     };
 
     void FatalError(const char* dsc, const char* file, size_t line);
+	void FatalError(std::string dsc, const char* file, size_t line);
 }

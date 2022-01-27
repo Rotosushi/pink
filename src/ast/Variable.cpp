@@ -49,4 +49,21 @@ namespace pink {
 			return result;
 		}
 	}
+	
+	Outcome<llvm::Value*, Error> Variable::Codegen(Environment& env)
+	{
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings.Lookup(symbol);
+		
+		if (bound.hasValue())
+		{
+			Outcome<llvm::Value*, Error> result(bound->second);
+			return result;
+		}
+		else 
+		{
+			Error error(Error::Kind::Semantic, std::string("[") + symbol + std::string("] not bound in environment"), loc);
+			Outcome<llvm::Value*, Error> result(error);
+			return result;
+		}
+	}
 }

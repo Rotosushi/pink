@@ -3,11 +3,14 @@ TODOs in no particular order:
 
 	# finish v0.0.1
 		needs:
-			CLIOptions
-			REPL
+			REPL? or compile from source file?
 			Codegen to LLVM IR
-	
-	
+			module level functions need to be implemented before we can properly test the rest of the codegeneration
+			facilities, which means that to get something a bit more substantial we are going to need to implement 
+			the concept of a lambda as a wrapper around said module level functions. 
+			main has to be an exception to the way we were planning on implementing functions in a general 
+			sense. But this marks the start of developing actual generated code! :)	
+
 
 	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions
 		and when i use -stdlib=libstdc++ it does not.

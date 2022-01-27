@@ -110,4 +110,10 @@ namespace pink {
         std::cerr << "Fatal Error in file: " << file << ", line: " << line << ": " << dsc << std::endl;
         exit(1);
     }
+    
+    void FatalError(std::string dsc, const char* file, size_t line)
+    {
+        std::cerr << "Fatal Error in file: " << file << ", line: " << line << ": " << dsc << std::endl;
+        exit(1);
+    }
 }
