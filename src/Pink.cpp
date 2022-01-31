@@ -98,39 +98,48 @@ int main(int argc, char** argv)
 		pink::FatalError("Could not open output file [" + options.output_file + "] because of an error: " + error_message.str(), __FILE__, __LINE__);
 		return 1;
 	}
-
-	std::getline(infile, inbuf, '\n');
 	
-	pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env.parser.Parse(inbuf, env);
-	
-	if (!term)
+	while (!infile.eof())
 	{
-		term.GetTwo().Print(std::cout, inbuf);
-	}
-	else 
-	{
-		pink::Outcome<pink::Type*, pink::Error> type = term.GetOne()->Getype(env);
+		// #TODO: make this part more robust, handling some amount of errors before aborting.
+		// #TODO: extract as much input as we can, then parse, instead of doing it line by line
+		// #TODO: make the extraction method handle the case where we are parsing a file that 
+		//			is too big to fit in memory, and still carry over the state of the parser 
+		//			after we refill the input buffer.
+		std::getline(infile, inbuf, '\n');
 		
-		if (!type) 
+		pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env.parser.Parse(inbuf, env);
+		
+		if (!term)
 		{
-			type.GetTwo().Print(std::cout, inbuf);
+			term.GetTwo().Print(std::cout, inbuf);
+			break;
 		}
 		else 
 		{
-			pink::Outcome<llvm::Value*, pink::Error> value = term.GetOne()->Codegen(env);
+			pink::Outcome<pink::Type*, pink::Error> type = term.GetOne()->Getype(env);
 			
-			if (!value)
+			if (!type) 
 			{
-				value.GetTwo().Print(std::cout, inbuf);
+				type.GetTwo().Print(std::cout, inbuf);
+				break;
 			}
 			else 
 			{
-				// simply print out what code was generated,
-				// #TODO: make this part more robust, handling some amount of errors before aborting.
-				env.module.print(outfile, nullptr);
+				pink::Outcome<llvm::Value*, pink::Error> value = term.GetOne()->Codegen(env);
+				
+				if (!value)
+				{
+					value.GetTwo().Print(std::cout, inbuf);
+					break;
+				}
 			}
 		}
 	}
+	
+	// simply print out what code was generated,
+	
+	env.module.print(outfile, nullptr);
 	
 	infile.close();
 	outfile.close();

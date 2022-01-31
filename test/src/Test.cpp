@@ -23,6 +23,7 @@
 #include "ast/TestBinop.h"
 #include "ast/TestUnop.h"
 #include "ast/TestAssignment.h"
+#include "ast/TestBlock.h"
 
 #include "type/TestTypeAndNilType.h"
 #include "type/TestIntType.h"
@@ -214,6 +215,12 @@ size_t RunTests(std::ostream& out, size_t flags)
 		if (TestAssignment(out))
 			result |= TEST_ASSIGNMENT;
 	}
+	
+	if ((flags & TEST_BLOCK) > 0)
+	{
+		if (TestBlock(out))
+			result |= TEST_BLOCK;
+	}
 
     /*
         Type Tests
@@ -334,6 +341,7 @@ void PrintPassedTests(std::ostream& out, size_t test_results)
     result &= Test(out, "pink::Binop",          test_results & TEST_BINOP);
     result &= Test(out, "pink::Unop",           test_results & TEST_UNOP);
     result &= Test(out, "pink::Assignment",     test_results & TEST_ASSIGNMENT);
+    result &= Test(out, "pink::Block",			test_results & TEST_BLOCK);
 
     /*
         Type Tests

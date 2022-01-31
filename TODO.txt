@@ -3,13 +3,25 @@ TODOs in no particular order:
 
 	# finish v0.0.1
 		needs:
-			REPL? or compile from source file?
-			Codegen to LLVM IR
-			module level functions need to be implemented before we can properly test the rest of the codegeneration
-			facilities, which means that to get something a bit more substantial we are going to need to implement 
-			the concept of a lambda as a wrapper around said module level functions. 
-			main has to be an exception to the way we were planning on implementing functions in a general 
-			sense. But this marks the start of developing actual generated code! :)	
+			-REPL and/or compile from source file
+			
+			- Each statement that cannot appear at the top level scope,
+				(everything except binding statments and other declarations)
+			  must have an error added to codegen to make sure we don't 
+			  segfault when we try and construct something like a binop, which 
+			  requires a llvm::BasicBlock to be inserted into, if there is 
+			  no llvm::BasicBlock the program segfaults, hence we should be 
+			  catching that behavior as an error instead of letting the program 
+			  crash.
+			  
+			-Codegen to LLVM IR
+			
+			-module level functions need to be implemented before we can properly test codegeneration
+			which means that to get something a bit more substantial we are going to need to implement 
+			the concept of a lambda as a wrapper around said module level functions. This isn't really new,
+			however we now know for sure that main has to be an exception to the way we were 
+			planning on implementing functions in general. 
+			But this marks the start of developing actual generated code! :)	
 
 
 	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions

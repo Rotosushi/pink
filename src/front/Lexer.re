@@ -132,6 +132,7 @@ namespace pink {
                 "false" { UpdateLoc(); return Token::False; }
                 "Bool"  { UpdateLoc(); return Token::BoolType; }
 
+				";"		{ UpdateLoc(); return Token::Semicolon; }
                 ":"     { UpdateLoc(); return Token::Colon; }
                 "="     { UpdateLoc(); return Token::Equals; }
                 ":="    { UpdateLoc(); return Token::ColonEq; }

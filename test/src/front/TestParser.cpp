@@ -20,6 +20,7 @@
 #include "ast/Bind.h"
 #include "ast/Binop.h"
 #include "ast/Unop.h"
+#include "ast/Block.h"
 
 #include "kernel/UnopPrimitives.h"
 #include "kernel/BinopPrimitives.h"
@@ -98,56 +99,108 @@ bool TestParser(std::ostream& out)
     */       
     
     pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result(parser.Parse("nil", env));
-    
+    pink::Block* block = nullptr;
+    pink::Block::iterator iter;
     pink::Ast* term = nullptr;
     
+    
     result &= Test(out, "Parser::Parse(Nil)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Nil>(term)));
+    		(parser_result) 
+    	 && ((term  = parser_result.GetOne().get()) != nullptr) 
+    	 && ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	 && ((iter  = block->begin()) != block->end())
+    	 && (llvm::isa<pink::Nil>(iter->get())));
                           
     parser_result = parser.Parse("10", env);
     
     result &= Test(out, "Parser::Parse(Int)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Int>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter  = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Int>(iter->get())));
     	
     parser_result = parser.Parse("true", env);
     
     result &= Test(out, "Parser::Parse(Bool)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Bool>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter  = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Bool>(iter->get())));
     
     parser_result = parser.Parse("x", env);
     
     result &= Test(out, "Parser::Parse(Variable)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Variable>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Variable>(iter->get())));
     
     parser_result = parser.Parse("x := 1", env);
     
     result &= Test(out, "Parser::Parse(Bind)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Bind>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end()) 
+    	&& (llvm::isa<pink::Bind>(iter->get())));
     
     parser_result = parser.Parse("x = 2", env);
     
     result &= Test(out, "Parser::Parse(Assignment)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Assignment>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Assignment>(iter->get())));
     
     parser_result = parser.Parse("!true", env);
     
     result &= Test(out, "Parser::Parse(unary expression)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Unop>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Unop>(iter->get())));
     	
     parser_result = parser.Parse("1 + 1", env);
     
     result &= Test(out, "Parser::Parse(binary expression)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Binop>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Binop>(iter->get())));
     	
     parser_result = parser.Parse("6 + 3 * 4 == 3 * 2 + 12", env);
     
     result &= Test(out, "Parser::Parse(complex binary expression)",
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Binop>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Binop>(iter->get())));
     
     parser_result = parser.Parse("(1 + 1) - (1 + 1)", env);
     
     result &= Test(out, "Parser::Parse(parenthesized expression)", 
-    	(parser_result) && (term = parser_result.GetOne().get()) && (llvm::isa<pink::Binop>(term)));
+    	   (parser_result) 
+    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Binop>(iter->get())));
+    	
+    parser_result = parser.Parse("x := 1; x + 1;", env);
+    
+    result &= Test(out, "Parser::Parse(block expression)",
+    	   (parser_result)
+    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Bind>(iter->get()))
+    	&& (llvm::isa<pink::Binop>((++iter)->get())));
     
     result &= Test(out, "pink::Parser", result);
     out << "\n-----------------------\n";

@@ -78,6 +78,7 @@ namespace pink {
 		}
     }
     
+    
     /*
     	constructs a new variable with the name associated with the bind expression.
     	if the current symboltable in the global scope, then we construct a global 

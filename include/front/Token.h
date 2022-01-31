@@ -9,6 +9,7 @@ namespace pink {
         Id,
         Op,
 
+		Semicolon,
         Colon,
         ColonEq,
         Equals,

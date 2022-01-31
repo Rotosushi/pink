@@ -8,6 +8,7 @@
 #include "ast/Assignment.h"
 #include "ast/Binop.h"
 #include "ast/Unop.h"
+#include "ast/Block.h"
 
 // Values
 #include "ast/Bool.h"
@@ -48,14 +49,59 @@ namespace pink {
     	tok = Token::Error;
     	loc = Location();
     	txt = "";
-        lexer.SetBuf(str);
-        nexttok(); // prime the lexers
-        return ParseTerm(env);
+    	
+    	if (str != txt)
+    	{
+		    lexer.SetBuf(str);
+		    nexttok(); // prime the lexers
+		    return ParseTerm(env);
+        }
+        else
+        {
+        	// nothing is in the input text, so we signal that by constructing a nil literal.
+        	// we could also construct a special Ast node 'Empty' which has the type 'Nil'
+        	// but that would not be materially different than a nil literal.
+        	// a nil literal appearing at the end of a file then on it's own would generate no code.
+        	// which means the empty text at the end of an input file would also generate no code. 		
+    		return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Nil>(loc));
+        }
     }
 
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(Environment& env)
     {
-        return ParseAffix(env);
+    	std::vector<std::unique_ptr<Ast>> stmnts;
+    	Outcome<std::unique_ptr<Ast>, Error> result(Error(Error::Kind::Default, "Default Error", loc));
+    	Location left_loc = loc;
+    	
+    	do {
+    		if (tok == Token::Semicolon)
+    		{
+    			nexttok(); // eat ';'
+    		}
+    		// this isn't an else if to catch the case where we have a 
+    		// statment which is followed by a semicolon which ends the 
+    		// block. "x := 1; x + 1;" and "x := 1; x + 1" should both 
+    		// end the block. whereas "x := 1 x + 1" would be an error,
+    		// however when we add application terms, this would parse 
+    		// as applying '1' and passing in the argument 'x' which 
+    		// would be an application error, as integers cannot be applied.
+    		if (tok == Token::End)
+    		{
+    			break;
+    		}
+    		
+    		// parse a statement
+    		result = ParseAffix(env);
+    		
+    		if (!result)
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+    		
+    		// add it to the current block
+    		stmnts.emplace_back(std::move(result.GetOne()));
+    	} while (tok == Token::Semicolon);
+    	
+    	Location block_loc(left_loc.firstLine, left_loc.firstColumn, loc.firstLine, loc.firstColumn);
+    	return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Block>(block_loc, stmnts));
     }
 
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(Environment& env)
@@ -185,7 +231,7 @@ namespace pink {
         	{
 		        nexttok(); // eat '='
 
-		        Outcome<std::unique_ptr<Ast>, Error> rhs(ParseTerm(env));
+		        Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env));
 		        
 		        if (!rhs)
 		        	return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());

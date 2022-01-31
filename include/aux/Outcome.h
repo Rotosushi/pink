@@ -22,8 +22,8 @@ namespace pink {
     class Outcome {
     private:
         bool which;
-        mutable T one;
-        mutable U two;
+        T one;
+        U two;
 
     public:
         Outcome() = delete;

@@ -13,8 +13,7 @@
 *.userprefs
 build/
 test/build/
-Pink
-Test
+test/input/
 old_c_src/
 old_cpp_src/
 

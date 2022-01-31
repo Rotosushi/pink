@@ -38,6 +38,7 @@ target_sources(pink-test PUBLIC
 			   src/ast/TestInt.cpp
 			   src/ast/TestUnop.cpp
 			   src/ast/TestVariable.cpp
+			   src/ast/TestBlock.cpp
 			   src/aux/TestEnvironment.cpp
 			   src/aux/TestError.cpp
 			   src/aux/TestOutcome.cpp

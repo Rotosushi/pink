@@ -49,6 +49,7 @@ add_library(pinkLib STATIC
 		    src/ast/Ast.cpp
 		    src/ast/Bind.cpp
 		    src/ast/Binop.cpp
+		    src/ast/Block.cpp
 		    src/ast/Bool.cpp
 		    src/ast/Int.cpp
 		    src/ast/Nil.cpp

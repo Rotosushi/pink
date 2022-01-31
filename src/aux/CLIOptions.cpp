@@ -119,7 +119,14 @@ namespace pink {
 		// give a default name to the output file.
 		if (output_file == "")
 		{
-			output_file = input_file + ".pink";
+			// TODO: compute the extension to give the file 
+			// based upon what kind of output the program has 
+			// been requested to produce, the current default 
+			// is llvm assembly while the program is getting 
+			// working, the target default is going to be an 
+			// executable, with no extension. and object files 
+			// are going to have the .o extension.
+			output_file = input_file + ".s";
 		}
 	
 		return CLIOptions(input_file, output_file, verbose == 1);
