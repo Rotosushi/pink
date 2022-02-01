@@ -44,7 +44,7 @@
 	
 	--emit-llvm, --optimization-level ..., --use-linker ..., etc..
 	
-	
+	#TODO: add support for multiple input files
 */
 
 namespace pink {

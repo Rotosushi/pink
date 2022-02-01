@@ -78,6 +78,7 @@ add_library(pinkLib STATIC
 		    src/front/Lexer.cpp 
 		    src/front/Token.cpp
 		    src/front/Parser.cpp
+		    src/core/Compile.cpp
 		   )
 			   
 

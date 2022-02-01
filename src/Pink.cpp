@@ -1,30 +1,38 @@
 
-#include <iostream>
-
 #include "aux/CLIOptions.h"
-
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <system_error>
-#include "aux/Error.h"
 #include "aux/Environment.h"
+
+#include "core/Compile.h"
 
 #include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
 #include "llvm/Support/TargetRegistry.h" // llvm::TargetRegistry::lookupTarget();
 #include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h" // llvm::raw_fd_stream
+
 
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
 
+
 int main(int argc, char** argv)
 {
+	// Parse the command line options
 	pink::CLIOptions options = pink::ParseCLIOptions(std::cout, argc, argv);
 	
-	/*
-		TODO: Refactor this into something better. (REPL or Multiline file input)
-	*/
+	// Set up the default environment.
+	// #TODO: figure out how to make this a bit cleaner from the perspective of main itself.
+	// some function that would let us say 
+	// Environment env(NativeEnvironment(CLIOptions));
+	// or something similar. (i like that the environment only holds references,
+	// from the perspective of typing functions, as a function builds 
+	// a new environment to pass in while typing the body. and the environment 
+	// is cheaper to construct if it is only references, however, we now must 
+	// hold all of the members somewhere in memory, which happens to be in the 
+	// main subroutine right now, but if we want to translate multiple files 
+	// simultaneously, that will need multiple environments, one per file. (I think)
+	// in this case, it becomes a bit more cumbersome to define multiple environments 
+	// within a single scope. So defining a function that would alleviate this 
+	// somewhat would be awesome. dynamic allocations of each member seems like a 
+	// great start.
 	pink::Parser         parser;
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -75,74 +83,9 @@ int main(int argc, char** argv)
 
     pink::Environment env(parser, symbols, operators, types, bindings, binops, unops,
                           target_triple, data_layout, context, module, builder);
-                          
-	std::fstream infile;
-	std::string  inbuf;
-	
-	infile.open(options.input_file);
-
-	if (!infile.is_open())
-	{
-		pink::FatalError("Could not open input file" + options.input_file, __FILE__, __LINE__);
-		return 1;
-	}
-	
-	std::error_code outfile_error;
-	llvm::raw_fd_stream outfile(options.output_file, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
-	
-	if (outfile_error)
-	{
-		std::stringstream error_message;
-		
-		error_message << outfile_error;
-		pink::FatalError("Could not open output file [" + options.output_file + "] because of an error: " + error_message.str(), __FILE__, __LINE__);
-		return 1;
-	}
-	
-	while (!infile.eof())
-	{
-		// #TODO: make this part more robust, handling some amount of errors before aborting.
-		// #TODO: extract as much input as we can, then parse, instead of doing it line by line
-		// #TODO: make the extraction method handle the case where we are parsing a file that 
-		//			is too big to fit in memory, and still carry over the state of the parser 
-		//			after we refill the input buffer.
-		std::getline(infile, inbuf, '\n');
-		
-		pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env.parser.Parse(inbuf, env);
-		
-		if (!term)
-		{
-			term.GetTwo().Print(std::cout, inbuf);
-			break;
-		}
-		else 
-		{
-			pink::Outcome<pink::Type*, pink::Error> type = term.GetOne()->Getype(env);
-			
-			if (!type) 
-			{
-				type.GetTwo().Print(std::cout, inbuf);
-				break;
-			}
-			else 
-			{
-				pink::Outcome<llvm::Value*, pink::Error> value = term.GetOne()->Codegen(env);
-				
-				if (!value)
-				{
-					value.GetTwo().Print(std::cout, inbuf);
-					break;
-				}
-			}
-		}
-	}
-	
-	// simply print out what code was generated,
-	
-	env.module.print(outfile, nullptr);
-	
-	infile.close();
-	outfile.close();
+                 
+    // Call the main driver code         
+	Compile(options, env);
 
     return 0;
 }
