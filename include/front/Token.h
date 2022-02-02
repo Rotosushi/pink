@@ -4,25 +4,29 @@
 namespace pink {
     enum class Token {
         Error,
-        End,
+        End, // EOF
 
-        Id,
-        Op,
+        Id,  // [a-zA-Z_][a-zA-Z0-9_]*
+        Op,  // [+\-*\\%<=>&|\^!~@$]+
 
-		Semicolon,
-        Colon,
-        ColonEq,
-        Equals,
-        LParen,
-        RParen,
+		Semicolon, // ';'
+        Colon,     // ':'
+        ColonEq,   // ':='
+        Equals,    // '='
+        LParen,    // '('
+        RParen,    // ')'
+        LBrace,	   // '{'
+        RBrace,    // '}'
 
-        Nil,
-        NilType,
-        Int,
-        IntType,
-        True,
-        False,
-        BoolType,
+        Nil,     // "nil"
+        NilType, // "Nil"
+        Int,     // [0-9]+
+        IntType, // "Int"
+        True,    // "true"
+        False,   // "false"
+        BoolType,// "Bool"
+        
+        Fn,
     };
 
     std::string TokenToString(Token t);

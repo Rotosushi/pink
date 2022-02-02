@@ -22,8 +22,7 @@
 
 bool TestBlock(std::ostream& out)
 {
-bool result = true;
-    result = true;
+	bool result = true;
 
     out << "\n-----------------------\n";
     out << "Testing pink::Block: \n";
@@ -95,20 +94,20 @@ bool result = true;
     pink::Type*  bool_t = env.types.GetBoolType();
     
     std::unique_ptr<pink::Bool> bool0 = std::make_unique<pink::Bool>(l1, true);
-    pink::Ast* bool0_p = bool0.get();
+    //pink::Ast* bool0_p = bool0.get();
     
     std::unique_ptr<pink::Bind> d0 = std::make_unique<pink::Bind>(l2, var_x, std::move(bool0));
-    pink::Ast* d0_p = d0.get();
+    //pink::Ast* d0_p = d0.get();
     
     
     std::unique_ptr<pink::Int> i1 = std::make_unique<pink::Int>(l3, 3);
-    pink::Ast* i1_p = i1.get();
+    //pink::Ast* i1_p = i1.get();
     
     std::unique_ptr<pink::Int> i2 = std::make_unique<pink::Int>(l4, 5);
-    pink::Ast* i2_p = i2.get();
+    //pink::Ast* i2_p = i2.get();
     
     std::unique_ptr<pink::Binop> b0 = std::make_unique<pink::Binop>(l5, plus, std::move(i1), std::move(i2));
-    pink::Ast* b0_p = b0.get();
+    //pink::Ast* b0_p = b0.get();
     
     std::vector<std::unique_ptr<pink::Ast>> stmts;
     stmts.emplace_back(std::move(d0));

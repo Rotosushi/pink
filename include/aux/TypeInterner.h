@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include <string>
 #include <memory>
 
@@ -6,6 +7,7 @@
 #include "type/NilType.h"
 #include "type/BoolType.h"
 #include "type/IntType.h"
+#include "type/FunctionType.h"
 
 
 namespace pink {
@@ -14,6 +16,7 @@ namespace pink {
         std::unique_ptr<NilType>  nil_type;
         std::unique_ptr<BoolType> bool_type;
         std::unique_ptr<IntType>  int_type;
+        std::vector<std::unique_ptr<FunctionType>> function_types;
 
     public:
         TypeInterner();
@@ -23,6 +26,7 @@ namespace pink {
         NilType*  GetNilType();
         BoolType* GetBoolType();
         IntType*  GetIntType();
+        FunctionType* GetFunctionType(Type* r, std::vector<Type*> a);
     };
 
 }

@@ -28,6 +28,7 @@ namespace pink {
         Outcome<std::unique_ptr<Ast>, Error> ParseAffix(Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseInfix(std::unique_ptr<Ast> right, Precedence precedence, Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseBasic(Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseFunction(Environment& env); // #TODO
         Outcome<Type*, Error> ParseBasicType(Environment& env);
     public:
         Parser();

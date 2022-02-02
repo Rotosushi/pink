@@ -13,7 +13,7 @@ namespace pink {
 
     }
 
-    NilType*  TypeInterner::GetNilType()
+    NilType* TypeInterner::GetNilType()
     {
         if (nil_type.get() == nullptr)
             nil_type = std::make_unique<NilType>();
@@ -29,11 +29,29 @@ namespace pink {
         return bool_type.get();
     }
 
-    IntType*   TypeInterner::GetIntType()
+    IntType* TypeInterner::GetIntType()
     {
         if (int_type.get() == nullptr)
             int_type = std::make_unique<IntType>();
 
         return int_type.get();
+    }
+    
+    FunctionType* TypeInterner::GetFunctionType(Type* r, std::vector<Type*> a)
+    {
+    	std::unique_ptr<FunctionType> possibility = std::make_unique<FunctionType>(r, a);
+    
+    	for (auto& ft : function_types)
+    	{
+    		if (possibility->EqualTo(ft.get()))
+    		{
+    			return ft.get();
+    		}
+    	}
+    	
+    	FunctionType* result = possibility.get();
+    	function_types.emplace_back(std::move(possibility));
+    	
+    	return result;
     }
 }

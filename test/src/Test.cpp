@@ -24,10 +24,12 @@
 #include "ast/TestUnop.h"
 #include "ast/TestAssignment.h"
 #include "ast/TestBlock.h"
+#include "ast/TestFunction.h"
 
 #include "type/TestTypeAndNilType.h"
 #include "type/TestIntType.h"
 #include "type/TestBoolType.h"
+#include "type/TestFunctionType.h"
 
 #include "front/TestToken.h"
 #include "front/TestLexer.h"
@@ -221,6 +223,12 @@ size_t RunTests(std::ostream& out, size_t flags)
 		if (TestBlock(out))
 			result |= TEST_BLOCK;
 	}
+	
+	if ((flags & TEST_FUNCTION) > 0)
+	{
+		if (TestFunction(out))
+			result |= TEST_FUNCTION;
+	}
 
     /*
         Type Tests
@@ -241,6 +249,12 @@ size_t RunTests(std::ostream& out, size_t flags)
     {
         if (TestBoolType(out))
             result |= TEST_BOOL_TYPE;
+    }
+    
+    if ((flags & TEST_FUNCTION_TYPE) > 0)
+    {
+    	if (TestFunctionType(out))
+    		result |= TEST_FUNCTION_TYPE;
     }
 
     /*
@@ -342,6 +356,7 @@ void PrintPassedTests(std::ostream& out, size_t test_results)
     result &= Test(out, "pink::Unop",           test_results & TEST_UNOP);
     result &= Test(out, "pink::Assignment",     test_results & TEST_ASSIGNMENT);
     result &= Test(out, "pink::Block",			test_results & TEST_BLOCK);
+    result &= Test(out, "pink::Function",		test_results & TEST_FUNCTION);
 
     /*
         Type Tests
@@ -349,6 +364,7 @@ void PrintPassedTests(std::ostream& out, size_t test_results)
     result &= Test(out, "pink::Type, pink::NilType", test_results & TEST_TYPE_AND_NIL_TYPE);
     result &= Test(out, "pink::IntType",             test_results & TEST_INT_TYPE);
     result &= Test(out, "pink::BoolType",            test_results & TEST_BOOL_TYPE);
+    result &= Test(out, "pink::FunctionType",		 test_results & TEST_FUNCTION_TYPE);
 
     /*
         Frontend Tests

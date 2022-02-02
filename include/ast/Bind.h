@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 
 #include "aux/StringInterner.h"
 #include "ast/Ast.h"

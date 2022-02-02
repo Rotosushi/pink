@@ -11,7 +11,7 @@ namespace pink {
 
         static bool classof(const Type* t);
 
-        virtual bool operator==(Type& other) override;
+        virtual bool EqualTo(Type* other) override;
         virtual std::string ToString() override;
         
         virtual Outcome<llvm::Type*, Error> Codegen(Environment& env) override;

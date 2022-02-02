@@ -16,4 +16,13 @@ namespace pink {
     {
 
     }
+    
+    Environment::Environment(Environment& env, SymbolTable& sy)
+    	: parser(env.parser), symbols(env.symbols), operators(env.operators),
+    	  types(env.types), bindings(sy), binops(env.binops), unops(env.unops),
+    	  target_triple(env.target_triple), data_layout(env.data_layout),
+    	  context(env.context), module(env.module), ir_builder(env.ir_builder)
+    {
+    
+    }
 }

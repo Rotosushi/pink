@@ -39,6 +39,7 @@ target_sources(pink-test PUBLIC
 			   src/ast/TestUnop.cpp
 			   src/ast/TestVariable.cpp
 			   src/ast/TestBlock.cpp
+			   src/ast/TestFunction.cpp
 			   src/aux/TestEnvironment.cpp
 			   src/aux/TestError.cpp
 			   src/aux/TestOutcome.cpp
@@ -54,6 +55,7 @@ target_sources(pink-test PUBLIC
 			   src/type/TestTypeAndNilType.cpp
 			   src/type/TestIntType.cpp
 			   src/type/TestBoolType.cpp
+			   src/type/TestFunctionType.cpp
 			   src/kernel/TestBinopPrimitives.cpp
 			   src/kernel/TestUnopPrimitives.cpp
 			   src/kernel/TestFirstPhase.cpp

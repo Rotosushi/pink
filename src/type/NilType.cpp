@@ -18,9 +18,9 @@ namespace pink {
         return t->getKind() == Type::Kind::Nil;
     }
 
-    bool NilType::operator==(Type& other)
+    bool NilType::EqualTo(Type* other)
     {
-        return other.getKind() == Type::Kind::Nil;
+        return other->getKind() == Type::Kind::Nil;
     }
 
     std::string NilType::ToString()

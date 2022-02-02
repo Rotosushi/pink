@@ -93,6 +93,14 @@ namespace pink {
         These are the definitions of the parsing
         primitives that re2c uses, such that we
         can interoperate between c++ and re2c
+        
+        # TODO: i think this regex will allow for identifiers 
+        	like: this-is-an-ident, follow-with-hyphen
+        	but dissallow idents like:
+        		-unop-application-not-an-ident,
+        		binop-application-not-an-ident- more-text
+        		 
+        id=[a-zA-Z_]([-]?[a-zA-Z0-9_])*;
     */
     /*!re2c
         re2c:api:style = free-form;
@@ -109,7 +117,7 @@ namespace pink {
         re2c:define:YYRESTORE = "(cursor = marker);";
         re2c:define:YYLESSTHAN = "(end > (end - cursor));";
 
-        id=[a-zA-Z_] [a-zA-Z0-9_]*;
+        id=[a-zA-Z_][a-zA-Z0-9_]*;
         op=[+\-*\\%<=>&|\^!~@$]+;
         int=[0-9]+;
     */
@@ -131,6 +139,8 @@ namespace pink {
                 "true"  { UpdateLoc(); return Token::True; }
                 "false" { UpdateLoc(); return Token::False; }
                 "Bool"  { UpdateLoc(); return Token::BoolType; }
+                
+                "fn"	{ UpdateLoc(); return Token::Fn; }
 
 				";"		{ UpdateLoc(); return Token::Semicolon; }
                 ":"     { UpdateLoc(); return Token::Colon; }
@@ -138,6 +148,8 @@ namespace pink {
                 ":="    { UpdateLoc(); return Token::ColonEq; }
                 "("     { UpdateLoc(); return Token::LParen; }
                 ")"     { UpdateLoc(); return Token::RParen; }
+                "{"		{ UpdateLoc(); return Token::LBrace; }
+                "}"		{ UpdateLoc(); return Token::RBrace; }
                 
                 id      { UpdateLoc(); return Token::Id; }
                 op      { UpdateLoc(); return Token::Op; }

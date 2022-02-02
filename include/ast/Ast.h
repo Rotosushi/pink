@@ -24,6 +24,7 @@ namespace pink {
             Bind,
             Assignment,
             Block,
+            Function,
 
             Binop,
             Unop,
@@ -52,6 +53,10 @@ namespace pink {
 			intermediate allocations and concatenations,
 			perhaps we could rewrite this to use 
 			llvm::Twine or something similar?
+			
+		#TODO
+			This function should be aware of the level of 
+			nesting, and properly indent the code it emits.
 		*/
         virtual std::string ToString() = 0;
 

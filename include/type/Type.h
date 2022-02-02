@@ -14,6 +14,8 @@ namespace pink {
             Nil,
             Bool,
             Int,
+            
+            Function,
         };
 
     protected:
@@ -30,9 +32,9 @@ namespace pink {
             comparison as a replacement for simple equality.
             However, types still need to sometimes be compared
             structurally, for instance within the type interner
-            itself. This is accomplished with the overloaded operator==
+            itself. This is accomplished with EqualTo
         */
-        virtual bool operator ==(Type& other) = 0;
+        virtual bool EqualTo(Type* other) = 0;
         virtual std::string ToString() = 0;
         
         virtual Outcome<llvm::Type*, Error> Codegen(Environment& env) = 0;

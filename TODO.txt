@@ -23,6 +23,9 @@ TODOs in no particular order:
 			planning on implementing functions in general. 
 			But this marks the start of developing actual generated code! :)	
 
+		- Ast -> .dot 
+			for looking at the trees in a graph, could be neat for 
+			code analysis
 
 	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions
 		and when i use -stdlib=libstdc++ it does not.

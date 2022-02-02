@@ -126,6 +126,7 @@ namespace pink {
         SymbolTable* OuterScope();
 
         llvm::Optional<std::pair<Type*, llvm::Value*>> Lookup(InternedString symbol);
+        llvm::Optional<std::pair<Type*, llvm::Value*>> LookupLocal(InternedString symbol);
 
         void Bind(InternedString symbol, Type* type, llvm::Value* term);
         void Unbind(InternedString symbol);

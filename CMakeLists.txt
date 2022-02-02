@@ -50,6 +50,7 @@ add_library(pinkLib STATIC
 		    src/ast/Bind.cpp
 		    src/ast/Binop.cpp
 		    src/ast/Block.cpp
+		    src/ast/Function.cpp
 		    src/ast/Bool.cpp
 		    src/ast/Int.cpp
 		    src/ast/Nil.cpp
@@ -75,6 +76,7 @@ add_library(pinkLib STATIC
 		    src/type/BoolType.cpp
 		    src/type/IntType.cpp
 		    src/type/NilType.cpp
+		    src/type/FunctionType.cpp
 		    src/front/Lexer.cpp 
 		    src/front/Token.cpp
 		    src/front/Parser.cpp

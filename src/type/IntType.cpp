@@ -18,9 +18,9 @@ namespace pink {
         return t->getKind() == Type::Kind::Int;
     }
 
-    bool IntType::operator==(Type& other)
+    bool IntType::EqualTo(Type* other)
     {
-        return other.getKind() == Type::Kind::Int;
+        return other->getKind() == Type::Kind::Int;
     }
 
     std::string IntType::ToString()
