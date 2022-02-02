@@ -86,7 +86,9 @@ namespace pink {
     		// however when we add application terms, this would parse 
     		// as applying '1' and passing in the argument 'x' which 
     		// would be an application error, as integers cannot be applied.
-    		if (tok == Token::End)
+    		// inside the body of a function, we parse a full term, which 
+    		// means that terms can end with an EOF or a '}'
+    		if (tok == Token::End || tok == Token::RBrace)
     		{
     			break;
     		}
@@ -443,6 +445,8 @@ namespace pink {
 			Error error(Error::Kind::Syntax, "Expected '}' to end the function body", loc);
 			return Outcome<std::unique_ptr<Ast>, Error>(error);
 		}
+		
+		nexttok(); // eat '}'
 		
 		Location fn_loc = {lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn};
 		

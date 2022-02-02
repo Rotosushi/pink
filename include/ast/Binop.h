@@ -6,6 +6,9 @@
 
 namespace pink {
     class Binop : public Ast {
+    private:
+    	virtual Outcome<Type*, Error> GetypeV(Environment& env) override;
+    
     public:
         InternedString       op;
         std::unique_ptr<Ast> left;
@@ -20,7 +23,7 @@ namespace pink {
 
     virtual std::string ToString() override;
 
-    virtual Outcome<Type*, Error> Getype(Environment& env) override;
+    
     virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
     };
 }

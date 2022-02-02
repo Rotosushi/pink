@@ -1,6 +1,6 @@
 
 #include "ast/Block.h"
-
+#include "aux/Environment.h"
 
 namespace pink {
 	Block::Block(Location loc)
@@ -70,7 +70,7 @@ namespace pink {
 			env |- s0; s1; ...; sn; : Tn
 	
 	*/
-	Outcome<Type*, Error> Block::Getype(Environment& env)
+	Outcome<Type*, Error> Block::GetypeV(Environment& env)
 	{
 		Outcome<Type*, Error> result(Error(Error::Kind::Default, "Default Error", loc));
 		
@@ -81,6 +81,17 @@ namespace pink {
 			if (!result)
 				return result;
 		}
+		
+		// calling Getype on any bind expressions within this block 
+		// will have created false bindings, such that later expressions
+		// using the previous ones will be able to be properly bound.
+		// so we clean those up here before returning the final type.
+		for (InternedString fbnd : env.false_bindings)
+		{
+			env.bindings.Unbind(fbnd);
+		}
+		// since we removed them, clear them from the list.
+		env.false_bindings.clear();
 		
 		return result;
 	}

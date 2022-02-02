@@ -33,7 +33,7 @@ namespace pink {
     	--------------------
     	  env |- nil : Nil
     */
-    Outcome<Type*, Error> Nil::Getype(Environment& env)
+    Outcome<Type*, Error> Nil::GetypeV(Environment& env)
     {
     	Type* nil_type = env.types.GetNilType();
     	Outcome<Type*, Error> result(nil_type);

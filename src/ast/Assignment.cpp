@@ -39,7 +39,7 @@ namespace pink {
       		are going to be pointers to places that can be assigned,
       		either llvm::AllocaInsts*, or llvm::GlobalVariable*
     */
-    Outcome<Type*, Error> Assignment::Getype(Environment& env)
+    Outcome<Type*, Error> Assignment::GetypeV(Environment& env)
     {
     	// make sure we can type both sides
     	Outcome<Type*, Error> lhs_type(left->Getype(env));

@@ -230,6 +230,15 @@ bool TestParser(std::ostream& out)
     	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
     	&& ((iter = block->begin()) != block->end())
     	&& (llvm::isa<pink::Function>(iter->get())));
+    	
+    parser_result = parser.Parse("fn add(x: Int, y: Int, z: Int) { a := x + y; a == z }", env);
+    
+    result &= Test(out, "Parser::Parse(Function, multi-arg, multi-line)",
+    	   (parser_result)
+    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Function>(iter->get())));
     
     result &= Test(out, "pink::Parser", result);
     out << "\n-----------------------\n";

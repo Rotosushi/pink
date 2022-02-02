@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <variant>
+#include <vector>
 
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/LLVMContext.h"
@@ -29,6 +29,7 @@ namespace pink {
     */
     class Environment {
     public:
+    	std::vector<InternedString> false_bindings;
         Parser&			   parser;
         StringInterner&    symbols;
         StringInterner&    operators;
@@ -41,6 +42,7 @@ namespace pink {
         llvm::LLVMContext& context;
         llvm::Module&      module;
         llvm::IRBuilder<>& ir_builder;
+        llvm::Function*    current_fn;
 
         Environment(Parser& p, StringInterner& si, StringInterner& oi, TypeInterner& ti,
                     SymbolTable& sy, BinopTable& bt, UnopTable& ut,
@@ -48,8 +50,10 @@ namespace pink {
                     llvm::LLVMContext& ct, llvm::Module& md,
                     llvm::IRBuilder<>& ib);
         
+        Environment(Environment& env, SymbolTable& sy);
+        
         // convience constructor for building an   
         // Environment around an inner scope.     
-        Environment(Environment& env, SymbolTable& sy);
+        Environment(Environment& env, SymbolTable& sy, llvm::IRBuilder<>& ib, llvm::Function* cf);
     };
 }

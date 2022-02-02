@@ -356,13 +356,21 @@ bool TestFirstPhase(std::ostream& out)
 					&& (getype_result = term->Getype(env))
 					&& (getype_result.GetOne() == env.types.GetIntType()));
 					
+	parser_result = env.parser.Parse("z := x;", env);
+	
+	result &= Test(out, "Parser::Parse(Block, reusing existing binding in a new expression), Getype(New binding has same type as old binding)",
+					   (parser_result)
+					&& ((term = parser_result.GetOne().get()) != nullptr)
+					&& (getype_result = term->Getype(env))
+					&& (getype_result.GetOne() == env.types.GetBoolType()));
+					
 	pink::Type* nil_t  = env.types.GetNilType();
 	pink::Type* int_t  = env.types.GetIntType();
 	pink::Type* bool_t = env.types.GetBoolType();
 	
 	std::vector<pink::Type*> args_t({nil_t});
 	pink::Type* simplest_fn_t = env.types.GetFunctionType(nil_t, args_t);
-	parser_result = env.parser.Parse("fn simplest(){nil}");
+	parser_result = env.parser.Parse("fn simplest(){nil}", env);
 	
 	result &= Test(out, "Parser::Parse(Function, no-arg), Getpe(Nil -> Nil)",
 					   (parser_result)
@@ -371,9 +379,60 @@ bool TestFirstPhase(std::ostream& out)
 					&& ((iter  = block->begin()) != block->end())
 					&& (llvm::isa<pink::Function>(iter->get()))
 					&& (getype_result = term->Getype(env)) /* pink::Outcome<>::operator bool */
-					&& 
+					&& (getype_result.GetOne() == simplest_fn_t));
 					
+	args_t = {int_t, int_t};
+	pink::Type* basic_fn_t = env.types.GetFunctionType(int_t, args_t);
+	parser_result = env.parser.Parse("fn basic(x: Int, y: Int){x + y}", env);
 	
+	result &= Test(out, "Parser::Parse(Function, two arg, same result type), Getpe(Int -> Int -> Int)",
+					   (parser_result)
+					&& ((term  = parser_result.GetOne().get()) != nullptr)
+					&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr) 
+					&& ((iter  = block->begin()) != block->end())
+					&& (llvm::isa<pink::Function>(iter->get()))
+					&& (getype_result = term->Getype(env)) /* pink::Outcome<>::operator bool */
+					&& (getype_result.GetOne() == basic_fn_t));
+
+	//args_t = {int_t, int_t};
+	pink::Type* comparison_fn_t = env.types.GetFunctionType(bool_t, args_t);
+	parser_result = env.parser.Parse("fn compEq(x: Int, y: Int){x == y}", env);
+	
+	result &= Test(out, "Parser::Parse(Function, two arg, different result type), Getpe(Int -> Int -> Bool)",
+					   (parser_result)
+					&& ((term  = parser_result.GetOne().get()) != nullptr)
+					&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr) 
+					&& ((iter  = block->begin()) != block->end())
+					&& (llvm::isa<pink::Function>(iter->get()))
+					&& (getype_result = term->Getype(env)) /* pink::Outcome<>::operator bool */
+					&& (getype_result.GetOne() == comparison_fn_t));
+					
+	args_t = {int_t, int_t, int_t};
+	pink::Type* complex_fn_t = env.types.GetFunctionType(bool_t, args_t);
+	parser_result = env.parser.Parse("fn complex(a: Int, b: Int, c: Int){ x := a + b; x == c }", env);
+
+	result &= Test(out, "Parser::Parse(Function, three arg, different result type, mutiple lines, local binding), Getpe(Int -> Int -> Int -> Bool)",
+					   (parser_result)
+					&& ((term  = parser_result.GetOne().get()) != nullptr)
+					&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr) 
+					&& ((iter  = block->begin()) != block->end())
+					&& (llvm::isa<pink::Function>(iter->get()))
+					&& (getype_result = term->Getype(env)) /* pink::Outcome<>::operator bool */
+					&& (getype_result.GetOne() == complex_fn_t));
+					
+	args_t = {int_t, int_t};
+	pink::Type* global_fn_t = env.types.GetFunctionType(bool_t, args_t);
+	parser_result = env.parser.Parse("fn global(a: Int, b: Int){(a == b) == x}", env);
+	
+	result &= Test(out, "Parser::Parse(Function, two arg, different result type, uses global variable), Getpe(Int -> Int -> Bool)",
+					   (parser_result)
+					&& ((term  = parser_result.GetOne().get()) != nullptr)
+					&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr) 
+					&& ((iter  = block->begin()) != block->end())
+					&& (llvm::isa<pink::Function>(iter->get()))
+					&& (getype_result = term->Getype(env)) /* pink::Outcome<>::operator bool */
+					&& (getype_result.GetOne() == global_fn_t));
+					
 
 	result &= Test(out, "pink First Phase", result);
 

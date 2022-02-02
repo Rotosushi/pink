@@ -33,7 +33,7 @@ namespace pink {
       ----------------------------------------
       			env |- op rhs : T
     */
-    Outcome<Type*, Error> Unop::Getype(Environment& env)
+    Outcome<Type*, Error> Unop::GetypeV(Environment& env)
     {
     	// get the type of the rhs
     	Outcome<Type*, Error> rhs_result(right->Getype(env));

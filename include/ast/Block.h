@@ -8,6 +8,9 @@
 
 namespace pink {
 	class Block : public Ast {
+	private:
+		virtual Outcome<Type*, Error> GetypeV(Environment& e) override;
+	
 	public:
 		std::vector<std::unique_ptr<Ast>> statements;
 		
@@ -26,7 +29,7 @@ namespace pink {
 		virtual std::unique_ptr<Ast> Clone() override;
 		virtual std::string ToString() override;
 		
-		virtual Outcome<Type*, Error> Getype(Environment& e) override;
+		
 		virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
 	};
 }

@@ -37,6 +37,10 @@ namespace pink {
     protected:
         const Kind kind;
         Location   loc;
+        Type*      type;
+        
+    private:
+    	virtual Outcome<Type*, Error> GetypeV(Environment& env) = 0;
 
     public:
         Ast(const Kind k, Location l);
@@ -66,7 +70,7 @@ namespace pink {
         		class itself, which should save
         		on computation within Codegen.
         */
-        virtual Outcome<Type*, Error> Getype(Environment& e) = 0;
+        Outcome<Type*, Error> Getype(Environment& e);
         virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) = 0;
     };
 }

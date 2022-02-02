@@ -18,6 +18,9 @@ namespace pink {
 		solution all up front. (which should also help me stay motivated)
 	*/
 	class Function : public Ast {
+	private:
+		virtual Outcome<Type*, Error> GetypeV(Environment& env) override;
+	
 	public:
 		InternedString name;
 		std::vector<std::pair<InternedString, Type*>> arguments;
@@ -38,7 +41,7 @@ namespace pink {
 		
 		virtual std::string ToString() override;
 		
-		virtual Outcome<Type*, Error> Getype(Environment& env) override;
+		
 		virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
 	};
 }

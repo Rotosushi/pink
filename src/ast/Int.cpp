@@ -34,7 +34,7 @@ namespace pink {
        ----------------------
     	env |- [0-9]+ : Int
     */
-    Outcome<Type*, Error> Int::Getype(Environment& env)
+    Outcome<Type*, Error> Int::GetypeV(Environment& env)
     {
     	Type* int_type = env.types.GetIntType();
     	Outcome<Type*, Error> result(int_type);

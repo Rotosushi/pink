@@ -33,7 +33,7 @@ namespace pink {
 	  -----------------------------
 			  env |- x : T
 	*/
-	Outcome<Type*, Error> Variable::Getype(Environment& env)
+	Outcome<Type*, Error> Variable::GetypeV(Environment& env)
 	{
 		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings.Lookup(symbol);
 		
@@ -56,7 +56,16 @@ namespace pink {
 		
 		if (bound.hasValue())
 		{
-			Outcome<llvm::Value*, Error> result(bound->second);
+			Outcome<llvm::Type*, Error> llvm_type_result = bound->first->Codegen(env);
+			
+			if (!llvm_type_result)
+			{
+				return Outcome<llvm::Value*, Error>(llvm_type_result.GetTwo());
+			}
+			
+			llvm::LoadInst* loaded_value = env.ir_builder.CreateLoad(llvm_type_result.GetOne(), bound->second);
+			
+			Outcome<llvm::Value*, Error> result(loaded_value);
 			return result;
 		}
 		else 

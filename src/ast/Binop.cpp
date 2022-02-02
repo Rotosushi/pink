@@ -46,7 +46,7 @@ namespace pink {
       --------------------------------------------------
       			  env |- lhs op rhs : T
     */
-    Outcome<Type*, Error> Binop::Getype(Environment& env)
+    Outcome<Type*, Error> Binop::GetypeV(Environment& env)
     {
     	// Get the type of both sides
     	Outcome<Type*, Error> lhs_result(left->Getype(env));

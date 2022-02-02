@@ -4,6 +4,9 @@
 
 namespace pink {
     class Assignment : public Ast {
+    private:
+    	virtual Outcome<Type*, Error> GetypeV(Environment& env) override;
+    
     public:
         std::unique_ptr<Ast> left;
         std::unique_ptr<Ast> right;
@@ -16,7 +19,7 @@ namespace pink {
         virtual std::unique_ptr<Ast> Clone() override;
         virtual std::string ToString() override;
         
-        virtual Outcome<Type*, Error> Getype(Environment& env) override;
+       
         virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
     };
 }

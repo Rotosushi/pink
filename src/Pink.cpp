@@ -2,6 +2,9 @@
 #include "aux/CLIOptions.h"
 #include "aux/Environment.h"
 
+#include "kernel/BinopPrimitives.h"
+#include "kernel/UnopPrimitives.h"
+
 #include "core/Compile.h"
 
 #include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
@@ -83,6 +86,9 @@ int main(int argc, char** argv)
 
     pink::Environment env(parser, symbols, operators, types, bindings, binops, unops,
                           target_triple, data_layout, context, module, builder);
+    
+    pink::InitializeBinopPrimitives(env);
+    pink::InitializeUnopPrimitives(env);
                  
     // Call the main driver code         
 	Compile(options, env);

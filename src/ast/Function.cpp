@@ -2,6 +2,8 @@
 #include "ast/Function.h"
 #include "aux/Environment.h"
 
+#include "llvm/IR/Verifier.h"
+
 
 namespace pink {
 		Function::Function(Location l, 
@@ -40,7 +42,7 @@ namespace pink {
 		{
 			std::string result;
 			
-			result += std::string("fn") + name;
+			result += std::string("fn ") + name;
 			
 			result += " (";
 			
@@ -71,7 +73,7 @@ namespace pink {
 		 -----------------------------------------------------------------------------
 			env |- 'fn' name '(' a0: T0, a1: T1, ..., an : Tn ')' '{' body '} : Tb
 		*/
-		Outcome<Type*, Error> Function::Getype(Environment& env)
+		Outcome<Type*, Error> Function::GetypeV(Environment& env)
 		{
 			// first, construct a bunch of false bindings with the correct Types.
 			// such that we can properly Type the body, which presumably uses said bindings.
@@ -125,7 +127,93 @@ namespace pink {
 		
 		Outcome<llvm::Value*, Error> Function::Codegen(Environment& env)
 		{
-		
+			/*
+				first, get the functions prototype/declaration from the module
+				
+				set the env.current_fn to this function.
+				
+				set up a new local env relative to the local scope of this function.
+				
+				then, construct the first basic block within the function 
+				and set the ir_builder's insertion point to that.
+				
+				then, Codegen the body of the function.
+				
+				using the value returned from Codegen'ing the body, construct a return statement.
+				
+				return the function itself as the result of Codegen.
+			*/
+			Outcome<Type*, Error> getype_result = this->Getype(env);
+			
+			if (!getype_result)
+			{
+				return Outcome<llvm::Value*, Error>(getype_result.GetTwo());
+			}
+			
+			Outcome<llvm::Type*, Error> ty_codegen_result = getype_result.GetOne()->Codegen(env);
+			
+			if (!ty_codegen_result)
+			{
+				return Outcome<llvm::Value*, Error>(ty_codegen_result.GetTwo());
+			}
+			
+			llvm::FunctionType* function_ty = llvm::cast<llvm::FunctionType>(ty_codegen_result.GetOne());
+			
+			llvm::Function* function = llvm::Function::Create(function_ty, 
+															  llvm::Function::ExternalLinkage, 
+															  name, 
+															  env.module);
+			
+			
+			
+			// create the entry block of this function.
+			llvm::BasicBlock* entryblock = llvm::BasicBlock::Create(env.context, "entry", function);
+			llvm::BasicBlock::iterator entrypoint = entryblock->getFirstInsertionPt();
+			
+			// set up a local irbuilder to insert instructions into this function.
+			llvm::IRBuilder local_builder(entryblock, entrypoint);
+			
+			Environment local_env(env, bindings, local_builder, function); // set up the local_environment for this function
+			
+			std::vector<std::pair<llvm::Value*, llvm::Value*>> arg_ptrs;
+			// construct stack space for all arguments to the function 
+			for (int i = 0; i < function->arg_size(); i++)
+			{
+				llvm::Argument* arg = function->getArg(i);
+				llvm::Value* arg_ptr = local_builder.CreateAlloca(arg->getType(),
+																  local_env.data_layout.getAllocaAddrSpace(),
+																  nullptr,
+																  arg->getName());
+				
+				arg_ptrs.emplace_back(arg, arg_ptr);												  
+			}
+			
+			// make sure all instructions that are not Allocas are placed after 
+			// all the allocas
+			for (int i = 0; i < arg_ptrs.size(); i++)
+			{
+				local_builder.CreateStore(arg_ptrs[i].first, arg_ptrs[i].second, false);
+				
+				local_env.bindings.Bind(arguments[i].first, arguments[i].second, arg_ptrs[i].second);
+			}
+			
+			
+			// now we can Codegen the body of the function relative to the local environment
+			Outcome<llvm::Value*, Error> body_result = body->Codegen(local_env);
+			
+			if (!body_result)
+			{
+				return body_result;
+			}
+			
+			// use the value returned by the body to construct a return statement 
+			local_builder.CreateRet(body_result.GetOne());
+			
+			// call verifyFunction to validate the generated code for consistency 
+			llvm::verifyFunction(*function);
+			
+			// return the function as the result of code generation
+			return Outcome<llvm::Value*, Error>(function);
 		}
 }
 

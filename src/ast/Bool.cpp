@@ -39,7 +39,7 @@ namespace pink {
        ---------------------
     	env |- false : Bool
     */
-    Outcome<Type*, Error> Bool::Getype(Environment& env)
+    Outcome<Type*, Error> Bool::GetypeV(Environment& env)
     {
     	Type* bool_type = env.types.GetBoolType();
     	Outcome<Type*, Error> result(bool_type);

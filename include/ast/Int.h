@@ -5,6 +5,9 @@
 
 namespace pink {
     class Int : public Ast {
+    private:
+    	virtual Outcome<Type*, Error> GetypeV(Environment& e) override;
+    
     public:
         int value;
 
@@ -17,7 +20,7 @@ namespace pink {
 
         virtual std::string ToString() override;
 
-        virtual Outcome<Type*, Error> Getype(Environment& e) override;
+        
         virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
     };
 }

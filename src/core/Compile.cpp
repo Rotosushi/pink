@@ -64,7 +64,6 @@ namespace pink {
 		//			is too big to fit in memory, and still carry over the state of the parser 
 		//			after we refill the input buffer.
 		
-		
 		pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env.parser.Parse(inbuf, env);
 		
 		if (!term)

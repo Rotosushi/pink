@@ -91,7 +91,7 @@ bool TestBlock(std::ostream& out)
     pink::Location l5(0, 11, 0, 16); // Location of the Binop
     pink::Location l6(0, 0, 0, 16); // Location of the Block
     pink::Type*  int_t = env.types.GetIntType();
-    pink::Type*  bool_t = env.types.GetBoolType();
+    //pink::Type*  bool_t = env.types.GetBoolType();
     
     std::unique_ptr<pink::Bool> bool0 = std::make_unique<pink::Bool>(l1, true);
     //pink::Ast* bool0_p = bool0.get();
@@ -125,17 +125,11 @@ bool TestBlock(std::ostream& out)
  	pink::Block::iterator iter = block->begin();
  	
  	result &= Test(out, "Block::iterator", iter != block->end());
- 	
- 	pink::Outcome<pink::Type*, pink::Error> getype_outcome = (*iter)->Getype(env);
- 	
- 	result &= Test(out, "Block::statements", 
- 				   (getype_outcome) 
- 				&& (getype_outcome.GetOne() == bool_t)
- 				&& (getype_outcome = (*(++iter))->Getype(env))
- 				&& (getype_outcome.GetOne() == int_t));
+    
+    pink::Outcome<pink::Type*, pink::Error> getype_outcome(pink::Error(pink::Error::Kind::Default, "", pink::Location()));
     
     result &= Test(out, "Block::Getype()",
-    			   (getype_outcome == block->Getype(env))
+    			   (getype_outcome = block->Getype(env))
     			&& (getype_outcome.GetOne() == int_t));
     
     result &= Test(out, "pink::Block", result);
