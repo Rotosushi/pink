@@ -13,6 +13,7 @@
 #include "ast/Binop.h"
 #include "ast/Unop.h"
 #include "ast/Block.h"
+#include "ast/Function.h"
 
 #include "kernel/UnopPrimitives.h"
 #include "kernel/BinopPrimitives.h"
@@ -354,6 +355,25 @@ bool TestFirstPhase(std::ostream& out)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (getype_result = term->Getype(env))
 					&& (getype_result.GetOne() == env.types.GetIntType()));
+					
+	pink::Type* nil_t  = env.types.GetNilType();
+	pink::Type* int_t  = env.types.GetIntType();
+	pink::Type* bool_t = env.types.GetBoolType();
+	
+	std::vector<pink::Type*> args_t({nil_t});
+	pink::Type* simplest_fn_t = env.types.GetFunctionType(nil_t, args_t);
+	parser_result = env.parser.Parse("fn simplest(){nil}");
+	
+	result &= Test(out, "Parser::Parse(Function, no-arg), Getpe(Nil -> Nil)",
+					   (parser_result)
+					&& ((term  = parser_result.GetOne().get()) != nullptr)
+					&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr) 
+					&& ((iter  = block->begin()) != block->end())
+					&& (llvm::isa<pink::Function>(iter->get()))
+					&& (getype_result = term->Getype(env)) /* pink::Outcome<>::operator bool */
+					&& 
+					
+	
 
 	result &= Test(out, "pink First Phase", result);
 

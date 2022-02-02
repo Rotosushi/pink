@@ -9,6 +9,7 @@ namespace pink {
         Id,  // [a-zA-Z_][a-zA-Z0-9_]*
         Op,  // [+\-*\\%<=>&|\^!~@$]+
 
+		Comma,     // ','
 		Semicolon, // ';'
         Colon,     // ':'
         ColonEq,   // ':='
@@ -26,7 +27,7 @@ namespace pink {
         False,   // "false"
         BoolType,// "Bool"
         
-        Fn,
+        Fn,      // 'fn'
     };
 
     std::string TokenToString(Token t);

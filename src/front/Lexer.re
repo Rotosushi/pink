@@ -142,6 +142,7 @@ namespace pink {
                 
                 "fn"	{ UpdateLoc(); return Token::Fn; }
 
+				","		{ UpdateLoc(); return Token::Comma; }
 				";"		{ UpdateLoc(); return Token::Semicolon; }
                 ":"     { UpdateLoc(); return Token::Colon; }
                 "="     { UpdateLoc(); return Token::Equals; }

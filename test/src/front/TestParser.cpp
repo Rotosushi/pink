@@ -21,6 +21,7 @@
 #include "ast/Binop.h"
 #include "ast/Unop.h"
 #include "ast/Block.h"
+#include "ast/Function.h"
 
 #include "kernel/UnopPrimitives.h"
 #include "kernel/BinopPrimitives.h"
@@ -201,6 +202,34 @@ bool TestParser(std::ostream& out)
     	&& ((iter = block->begin()) != block->end())
     	&& (llvm::isa<pink::Bind>(iter->get()))
     	&& (llvm::isa<pink::Binop>((++iter)->get())));
+    	
+    parser_result = parser.Parse("fn one() { 1 }", env);
+    
+    result &= Test(out, "Parser::Parse(Function, no arg)",
+    	   (parser_result)
+    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Function>(iter->get())));
+    	
+    	
+    parser_result = parser.Parse("fn inc(x: Int) { x + 1 }", env);
+    
+    result &= Test(out, "Parser::Parse(Function, single arg)",
+    	   (parser_result)
+    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Function>(iter->get())));
+    	
+    parser_result = parser.Parse("fn add(x: Int, y: Int, z: Int) { x + y + z }", env);
+    
+    result &= Test(out, "Parser::Parse(Function, multi-arg)",
+    	   (parser_result)
+    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
+    	&& ((iter = block->begin()) != block->end())
+    	&& (llvm::isa<pink::Function>(iter->get())));
     
     result &= Test(out, "pink::Parser", result);
     out << "\n-----------------------\n";

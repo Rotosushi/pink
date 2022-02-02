@@ -46,9 +46,33 @@ bool TestLexer(std::ostream& out)
 
     result &= TestToken(out, lex, pink::Token::Op, loc, str);
 
+	str = ",";
+	
+	result &= TestToken(out, lex, pink::Token::Comma, loc, str);
+	
+	str = ";";
+	
+	result &= TestToken(out, lex, pink::Token::Semicolon, loc, str);
+
     str = ":";
 
     result &= TestToken(out, lex, pink::Token::Colon, loc, str);
+    
+    str = "(";
+    
+    result &= TestToken(out, lex, pink::Token::LParen, loc, str);
+    
+    str = ")";
+    
+    result &= TestToken(out, lex, pink::Token::RParen, loc, str);
+    
+    str = "{";
+    
+    result &= TestToken(out, lex, pink::Token::LBrace, loc, str);
+    
+    str = "}";
+    
+    result &= TestToken(out, lex, pink::Token::RBrace, loc, str);
 
     str = "=";
 
@@ -62,6 +86,11 @@ bool TestLexer(std::ostream& out)
 
     result &= TestToken(out, lex, pink::Token::RParen, loc, str);
 
+	str = ":=";
+    loc = {0, 0, 0, 2};
+    
+    result &= TestToken(out, lex, pink::Token::ColonEq, loc, str);
+	
 
     // each time the size of the text being lexed changes, so
     // will the resulting location emitted from the lexer,
@@ -97,6 +126,11 @@ bool TestLexer(std::ostream& out)
     loc = {0, 0, 0, 4};
 
     result &= TestToken(out, lex, pink::Token::BoolType, loc, str);
+    
+    str = "fn";
+    loc = {0, 0, 0, 2};
+    
+    result &= TestToken(out, lex, pink::Token::Fn, loc, str);
 
 
     result &= Test(out, "pink::Lexer", result);

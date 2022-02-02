@@ -9,6 +9,7 @@
 #include "ast/Binop.h"
 #include "ast/Unop.h"
 #include "ast/Block.h"
+#include "ast/Function.h"
 
 // Values
 #include "ast/Bool.h"
@@ -331,6 +332,11 @@ namespace pink {
     		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         }
         
+        case Token::Fn:
+        {
+        	return ParseFunction(env);
+        }
+        
     	default:
     	{
     		Error error(Error::Kind::Syntax, "Unknown Basic Token:" + TokenToString(tok), loc);
@@ -338,6 +344,146 @@ namespace pink {
     	}
     	} // !switch(tok)
     }
+    
+    
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseFunction(Environment& env)
+    {
+    	InternedString name = nullptr;
+    	std::vector<std::pair<InternedString, Type*>> args;
+    	std::unique_ptr<Ast> body(nullptr);
+    	Location lhs_loc = loc;
+    	
+    	if (env.bindings.OuterScope() != nullptr)
+    	{
+			Error error(Error::Kind::Syntax, "Functions can only be defined at the global scope", loc);
+			return Outcome<std::unique_ptr<Ast>, Error>(error);    	
+    	}
+    	
+    	
+    	if (tok != Token::Fn)
+    	{
+    		Error error(Error::Kind::Syntax, "Functions must begin with 'fn'", loc);
+    		return Outcome<std::unique_ptr<Ast>, Error>(error);
+    	}
+    	
+    	nexttok(); // eat 'fn'
+    	
+    	
+    	if (tok != Token::Id)
+    	{
+    		Error error(Error::Kind::Syntax, "Functions must have a name", loc);
+    		return Outcome<std::unique_ptr<Ast>, Error>(error);
+    	}
+    	
+    	name = env.symbols.Intern(txt); // intern the functions name
+		
+		nexttok(); // eat 'Id'
+		
+		if (tok != Token::LParen)
+		{
+			Error error(Error::Kind::Syntax, "Expected '(' for the argument list", loc);
+			return Outcome<std::unique_ptr<Ast>, Error>(error);
+		}
+		
+		nexttok(); // eat '('
+		
+		if (tok == Token::Id) // beginning of the argument list
+		{
+			do {
+				if (tok == Token::Comma)
+				{
+					nexttok(); // eat ','
+				}
+			
+				Outcome<std::pair<InternedString, Type*>, Error> arg_res = ParseArgument(env);
+				
+				if (!arg_res)
+				{
+					return Outcome<std::unique_ptr<Ast>, Error>(arg_res.GetTwo());
+				}
+				
+				args.emplace_back(arg_res.GetOne());
+			} while (tok == Token::Comma);
+		}
+		else // consider it a no argument function.
+		{
+			// give the function a dummy argument, so we can call it passing 'nil' aka '()'
+			InternedString arg_name = env.symbols.Intern("nil_arg");
+			Type* arg_type = env.types.GetNilType();
+			args.emplace_back(std::make_pair(arg_name, arg_type));
+		}
+		
+		
+		if (tok != Token::RParen)
+		{
+			Error error(Error::Kind::Syntax, "Expected ')' to end the argument list", loc);
+			return Outcome<std::unique_ptr<Ast>, Error>(error);
+		}
+		
+		nexttok(); // eat ')'
+		
+		if (tok != Token::LBrace)
+		{
+			Error error(Error::Kind::Syntax, "Expected '{' to begin the function body", loc);
+			return Outcome<std::unique_ptr<Ast>, Error>(error);
+		}
+		
+		nexttok(); // eat '{'
+		
+		// parse the body of the function.
+		Outcome<std::unique_ptr<Ast>, Error> body_res = ParseTerm(env);
+		
+		if (!body_res)
+		{
+			return Outcome<std::unique_ptr<Ast>, Error>(body_res.GetTwo());
+		}
+		
+		if (tok != Token::RBrace)
+		{
+			Error error(Error::Kind::Syntax, "Expected '}' to end the function body", loc);
+			return Outcome<std::unique_ptr<Ast>, Error>(error);
+		}
+		
+		Location fn_loc = {lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn};
+		
+		// we have all the parts, build the function.
+		return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Function>(fn_loc, name, args, std::move(body_res.GetOne()), &env.bindings));		
+    }
+    
+    
+    
+    Outcome<std::pair<InternedString, Type*>, Error> Parser::ParseArgument(Environment& env)
+    {
+    	InternedString name;
+
+    	if (tok != Token::Id)
+    	{
+    		Error error(Error::Kind::Syntax, "Expected a Identifier for the argument", loc);
+    		return Outcome<std::pair<InternedString, Type*>, Error>(error);
+    	}
+    	
+    	name = env.symbols.Intern(txt);
+    	
+    	nexttok(); // eat 'Id'
+    	
+    	if (tok != Token::Colon)
+    	{
+    		Error error(Error::Kind::Syntax, "Expected a ':' for the arguments type annotation", loc);
+    		return Outcome<std::pair<InternedString, Type*>, Error>(error);
+    	}
+    	
+    	nexttok(); // eat ':'
+    	
+    	Outcome<Type*, Error> type_res = ParseBasicType(env);
+    	
+    	if (!type_res)
+    	{
+    		return Outcome<std::pair<InternedString, Type*>, Error>(type_res.GetTwo());
+    	}
+    	
+    	return Outcome<std::pair<InternedString, Type*>, Error>(std::make_pair(name, type_res.GetOne()));
+    }
+    
     
     
     Outcome<Type*, Error> Parser::ParseBasicType(Environment& env)
