@@ -118,7 +118,8 @@ namespace pink {
     		// only to a pointer, pointing to a valid memory location in the modules global 
     		// space or the local stack frame, so check that we can cast the lhs (the assignee)
     		// to a llvm::PointerType.
-    		if (!llvm::isa<llvm::PointerType>(lhs_type.GetOne()))
+    		if (!llvm::isa<llvm::AllocaInst>(lhs_value.GetOne())) 
+    		 //|| (!llvm::isa<llvm::GlobalVariable>(lhs_value.GetOne())))
     		{
     			Error error(
     				Error::Kind::Semantic,

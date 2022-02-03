@@ -57,6 +57,7 @@ add_library(pinkLib STATIC
 		    src/ast/Nil.cpp
 		    src/ast/Unop.cpp
 		    src/ast/Variable.cpp
+		    src/ast/VarRef.cpp
 		    src/aux/CLIOptions.cpp
 		    src/aux/Environment.cpp
 		    src/aux/Error.cpp

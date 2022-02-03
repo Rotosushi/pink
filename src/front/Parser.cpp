@@ -4,6 +4,7 @@
 
 // Syntactic Forms
 #include "ast/Variable.h"
+#include "ast/VarRef.h"
 #include "ast/Bind.h"
 #include "ast/Assignment.h"
 #include "ast/Binop.h"
@@ -241,7 +242,7 @@ namespace pink {
 		        
 		        // loc holds the location of the rhs of the term after the above call to ParseTerm
 		        Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-		        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<Variable>(lhs_loc, id), std::move(rhs.GetOne())));
+		        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<VarRef>(lhs_loc, id), std::move(rhs.GetOne())));
 		        
     			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         	}

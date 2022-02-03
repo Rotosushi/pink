@@ -21,6 +21,7 @@ namespace pink {
         // https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
         enum class Kind {
             Variable,
+            VarRef,
             Bind,
             Assignment,
             Block,
