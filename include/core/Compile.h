@@ -2,7 +2,7 @@
 
 #include "aux/CLIOptions.h"
 #include "aux/Environment.h"
-
+#include "llvm/Target/TargetMachine.h"
 
 /*
 	Handle the Translation of a file into an output format.
@@ -33,7 +33,7 @@
 
 namespace pink {
 
-void Compile(CLIOptions& options, Environment& env);
+void Compile(CLIOptions& options, Environment& env, llvm::TargetMachine* target_machine);
 
 }
 

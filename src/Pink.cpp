@@ -21,21 +21,7 @@ int main(int argc, char** argv)
 	// Parse the command line options
 	pink::CLIOptions options = pink::ParseCLIOptions(std::cout, argc, argv);
 	
-	// Set up the default environment.
-	// #TODO: figure out how to make this a bit cleaner from the perspective of main itself.
-	// some function that would let us say 
-	// Environment env(NativeEnvironment(CLIOptions));
-	// or something similar. (i like that the environment only holds references,
-	// from the perspective of typing functions, as a function builds 
-	// a new environment to pass in while typing the body. and the environment 
-	// is cheaper to construct if it is only references, however, we now must 
-	// hold all of the members somewhere in memory, which happens to be in the 
-	// main subroutine right now, but if we want to translate multiple files 
-	// simultaneously, that will need multiple environments, one per file. (I think)
-	// in this case, it becomes a bit more cumbersome to define multiple environments 
-	// within a single scope. So defining a function that would alleviate this 
-	// somewhat would be awesome. dynamic allocations of each member seems like a 
-	// great start.
+	// Set up the global environment
 	pink::Parser         parser;
     pink::StringInterner symbols;
     pink::StringInterner operators;
@@ -82,6 +68,9 @@ int main(int argc, char** argv)
 
     llvm::DataLayout data_layout(target_machine->createDataLayout());
     llvm::Module      module(options.input_file, context);
+    
+    module.setTargetTriple(target_triple);
+    module.setDataLayout(data_layout);
 
 
     pink::Environment env(parser, symbols, operators, types, bindings, binops, unops,
@@ -91,7 +80,7 @@ int main(int argc, char** argv)
     pink::InitializeUnopPrimitives(env);
                  
     // Call the main driver code         
-	Compile(options, env);
+	Compile(options, env, target_machine);
 
     return 0;
 }

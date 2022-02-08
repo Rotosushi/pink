@@ -6,8 +6,10 @@
 
 
 namespace pink {
-	CLIOptions::CLIOptions(std::string infile, std::string outfile, bool verbose)
-		: input_file(infile), output_file(outfile), verbose(verbose)
+	CLIOptions::CLIOptions(std::string infile, std::string outfile, bool verbose, bool emit_asm, bool emit_obj, bool emit_llvm, bool cannonical_llvm, llvm::OptimizationLevel optimization_level, bool link)
+		: input_file(infile), output_file(outfile), verbose(verbose),
+		  emit_assembly(emit_asm), emit_object(emit_obj), emit_llvm(emit_llvm),
+		  cannonical_llvm(cannonical_llvm), optimization_level(optimization_level), link(link)
 	{
 	
 	}
@@ -26,29 +28,43 @@ namespace pink {
 			<< "-v, --version: print version information and exit.\n"
 			<< "--verbose: set verbose program output (defaults to brief output).\n"
 			<< "--brief: reset verbose program output (this is the default behavior).\n"
-			<< "-i, --infile, --input: specifies the input source filename.\n"
-			<< "-o, --outfile, --output: specifies the output filename.\n"
+			<< "-i <arg>, --infile <arg>, --input <arg>: specifies the input source filename.\n"
+			<< "-o <arg>, --outfile <arg>, --output <arg>: specifies the output filename.\n"
+			<< "-O <arg>, --optimize <arg>: specifies the optimization level to use.\n\t valid arguments are:\n\t\t 0 (none),\n\t\t 1 (limited),\n\t\t 2 (regular),\n\t\t 3 (high, may affect compile times),\n\t\t s (small code size), \n\t\t z (very small code size, increases run times)\n"
+			<< "-C --cannonical-llvm: Emits llvm IR in the cannonical SSA form, disabling all optimizations, this overrides any -O options\n"
 			<< std::endl;
 	}
 
 	CLIOptions ParseCLIOptions(std::ostream& out, int argc, char** argv)
 	{
-		const char* short_options = "hvi:o:";
+		const char* short_options = "hvi:o:O:Llcs";
 		
 		std::string input_file;
 		std::string output_file;
 		int verbose = 0;
+		bool emit_llvm = false;
+		bool emit_asm  = false;
+		bool emit_obj  = true;
+		bool cannonical_llvm = false;
+		llvm::OptimizationLevel optimization_level = 
+			llvm::OptimizationLevel::O0;
+		bool link = true;
 		
 		static struct option long_options[] = 
 		{
-			{"verbose", no_argument,       &verbose, 1 }, // getopt_long returns zero in this case
-			{"brief",   no_argument,       &verbose, 0 },
-			{"help",    no_argument,       nullptr, 'h'},
-			{"version", no_argument,       nullptr, 'v'},
-			{"infile",  required_argument, nullptr, 'i'},
-			{"input",   required_argument, nullptr, 'i'},
-			{"outfile", required_argument, nullptr, 'o'},
-			{"output",  required_argument, nullptr, 'o'},
+			{"verbose",  no_argument,       &verbose, 1 }, // getopt_long returns zero in this case
+			{"brief",      no_argument,       &verbose, 0 },
+			{"help",       no_argument,       nullptr, 'h'},
+			{"version",    no_argument,       nullptr, 'v'},
+			{"infile",     required_argument, nullptr, 'i'},
+			{"input",      required_argument, nullptr, 'i'},
+			{"outfile",    required_argument, nullptr, 'o'},
+			{"output",     required_argument, nullptr, 'o'},
+			{"optimize",   required_argument, nullptr, 'O'},
+			{"cannonical-llvm", no_argument,  nullptr, 'L'},
+			{"emit-llvm",  no_argument,       nullptr, 'l'},
+			{"emit-asm",   no_argument,       nullptr, 's'},
+			{"emit-obj",   no_argument,       nullptr, 'c'},
 			{0,         0,           0,       0}
 		};
 		
@@ -96,6 +112,83 @@ namespace pink {
 					break;
 				}
 				
+				case 'L':
+				{
+					cannonical_llvm = true;
+					emit_llvm = true;
+					link = false;
+					break;
+				}
+				
+				case 'l':
+				{
+					emit_llvm = true;
+					link = false;
+					break;
+				}
+				
+				case 'c':
+				{
+					emit_obj  = true;
+					link = false;
+					break;
+				}
+				
+				case 's':
+				{
+					emit_asm  = true;
+					link = false;
+					break;
+				}				
+				
+				case 'O':
+				{
+					switch(optarg[0])
+					{
+						case '0':
+						{
+							optimization_level = llvm::OptimizationLevel::O0;
+							break;
+						}
+						
+						case '1':
+						{
+							optimization_level = llvm::OptimizationLevel::O1;
+							break;
+						}
+						
+						case '2':
+						{
+							optimization_level = llvm::OptimizationLevel::O2;
+							break;
+						}
+						
+						case '3':
+						{
+							optimization_level = llvm::OptimizationLevel::O3;
+							break;
+						}
+						
+						case 's':
+						{
+							optimization_level = llvm::OptimizationLevel::Os;
+							break;
+						}
+						
+						case 'z':
+						{
+							optimization_level = llvm::OptimizationLevel::Oz;
+							break;
+						}
+						
+						default: 
+						{
+							FatalError("Option: " + std::string(optarg) + " is not a valid optimization level, use one of: 0, 1, 2, 3, s, z", __FILE__, __LINE__);
+						}
+					}
+					break;
+				}
+				
 				case '?': 
 				{
 					// the unknown option case, getopt_long printed an error message already
@@ -104,7 +197,7 @@ namespace pink {
 				
 				default:
 				{
-					FatalError("Error while parsing options", __FILE__, __LINE__);
+					FatalError("Error while parsing option: " + std::string(optarg), __FILE__, __LINE__);
 					break;
 				}
 			}
@@ -119,17 +212,10 @@ namespace pink {
 		// give a default name to the output file.
 		if (output_file == "")
 		{
-			// TODO: compute the extension to give the file 
-			// based upon what kind of output the program has 
-			// been requested to produce, the current default 
-			// is llvm assembly while the program is getting 
-			// working, the target default is going to be an 
-			// executable, with no extension. and object files 
-			// are going to have the .o extension.
-			output_file = input_file + ".s";
+			output_file = input_file;
 		}
 	
-		return CLIOptions(input_file, output_file, verbose == 1);
+		return CLIOptions(input_file, output_file, verbose == 1, emit_asm, emit_obj, emit_llvm, cannonical_llvm, optimization_level, link);
 	}
 
 }

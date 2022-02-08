@@ -96,7 +96,15 @@ namespace pink {
 				return res_res;
 			}
 			
-			llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetOne(), llvm_args, /* isVarArg */ false);
-			return Outcome<llvm::Type*, Error>(fn_ty);
+			if (llvm_args.size() > 0)
+			{
+				llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetOne(), llvm_args, /* isVarArg */ false);
+				return Outcome<llvm::Type*, Error>(fn_ty);
+			}
+			else 
+			{
+				llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetOne(), /* isVararg */ false);
+				return Outcome<llvm::Type*, Error>(fn_ty);
+			}
 		}
 }

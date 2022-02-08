@@ -50,10 +50,12 @@ namespace pink {
                     llvm::LLVMContext& ct, llvm::Module& md,
                     llvm::IRBuilder<>& ib);
         
+        // convience constructor for building an   
+        // Environment around an inner scope. 
         Environment(Environment& env, SymbolTable& sy);
         
         // convience constructor for building an   
-        // Environment around an inner scope.     
+        // Environment around an inner scope. 
         Environment(Environment& env, SymbolTable& sy, llvm::IRBuilder<>& ib, llvm::Function* cf);
     };
 }

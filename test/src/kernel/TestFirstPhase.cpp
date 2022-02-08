@@ -368,11 +368,11 @@ bool TestFirstPhase(std::ostream& out)
 	pink::Type* int_t  = env.types.GetIntType();
 	pink::Type* bool_t = env.types.GetBoolType();
 	
-	std::vector<pink::Type*> args_t({nil_t});
+	std::vector<pink::Type*> args_t;
 	pink::Type* simplest_fn_t = env.types.GetFunctionType(nil_t, args_t);
 	parser_result = env.parser.Parse("fn simplest(){nil}", env);
 	
-	result &= Test(out, "Parser::Parse(Function, no-arg), Getpe(Nil -> Nil)",
+	result &= Test(out, "Parser::Parse(Function, no-arg), Getpe(() -> Nil)",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr) 

@@ -2,6 +2,10 @@
 #include <string>
 #include <iostream>
 
+#include "llvm/Passes/PassBuilder.h" // llvm::PassBuilder
+#include "llvm/Passes/OptimizationLevel.h"
+
+
 /*
 	In order to handle program options like --version or -v, etc...
 	
@@ -54,15 +58,18 @@ namespace pink {
 			std::string input_file;
 			std::string output_file;
 			bool verbose;
-			// bool emit_llvm;
-			// bool emit_object_file;
+			bool emit_assembly;
+			bool emit_object;
+			bool emit_llvm;
 			// bool emit_executable; // this is the default. only one of the emit_* can be set to true during an evaluation of pink.
-			// int optimization_level;
+			bool cannonical_llvm;
+			llvm::OptimizationLevel optimization_level;
+			bool link;
 			// std::string lli-options;
 			// std::string linker-name;
 			// etc...
 			
-		CLIOptions(std::string infile, std::string outfile, bool verbose);
+		CLIOptions(std::string infile, std::string outfile, bool verbose, bool emit_assembly, bool emit_object, bool emit_llvm, bool cannonical_llvm, llvm::OptimizationLevel optimization_level, bool link);
 	};
 
 	CLIOptions ParseCLIOptions(std::ostream& out, int argc, char** argv);

@@ -116,35 +116,37 @@ namespace pink {
     	{
     		// we have the correct types, however we cannot assign to a literal value here,
     		// only to a pointer, pointing to a valid memory location in the modules global 
-    		// space or the local stack frame, so check that we can cast the lhs (the assignee)
-    		// to a llvm::PointerType.
-    		if (!llvm::isa<llvm::AllocaInst>(lhs_value.GetOne())) 
-    		 //|| (!llvm::isa<llvm::GlobalVariable>(lhs_value.GetOne())))
+    		// space or the local stack frame, so we check that the bound value 
+    		// is able to be assigned to.
+    		if (llvm::isa<llvm::AllocaInst>(lhs_value.GetOne()) 
+    		|| (llvm::isa<llvm::GlobalVariable>(lhs_value.GetOne())))
     		{
-    			Error error(
-    				Error::Kind::Semantic,
-    				std::string("[") + lhs_type_result.GetOne()->ToString() + std::string("] is not an assignable type"), 
-    				loc);
+				llvm::Value* right_value = nullptr;
+				
+				// if the right hand side is a pointer type, then it's a variable, and we have to 
+				// construct a load to get the value before we assign.
+				if (llvm::isa<llvm::PointerType>(rhs_type.GetOne()))
+				{
+					right_value = env.ir_builder.CreateLoad(rhs_type.GetOne(), rhs_value.GetOne());
+				}
+				else // otherwise the value is there directly.
+				{
+					right_value = rhs_value.GetOne();
+				}
+				
+				env.ir_builder.CreateStore(right_value, lhs_value.GetOne());
+				
+				// return the value of the right hand side as the result to support nesting assignment
+				return Outcome<llvm::Value*, Error>(right_value);
+    		}
+    		else 
+    		{
+				Error error(
+						Error::Kind::Semantic,
+						std::string("[") + lhs_type_result.GetOne()->ToString() + std::string("] is not an assignable type"), 
+						loc);
     			return Outcome<llvm::Value*, Error>(error);
     		}
-    		
-    		llvm::Value* right_value = nullptr;
-    		
-    		// if the right hand side is a pointer type, then it's a variable, and we have to 
-    		// construct a load to get the value before we assign.
-    		if (llvm::isa<llvm::PointerType>(rhs_type.GetOne()))
-    		{
-    			right_value = env.ir_builder.CreateLoad(rhs_type.GetOne(), rhs_value.GetOne());
-    		}
-    		else // otherwise the value is there directly.
-    		{
-    			right_value = rhs_value.GetOne();
-    		}
-    		
-    		env.ir_builder.CreateStore(right_value, lhs_value.GetOne());
-    		
-    		// return the value of the right hand side as the result to support nesting assignment
-    		return Outcome<llvm::Value*, Error>(right_value);
     	}
     }
 }

@@ -15,27 +15,52 @@ add_compile_options(-Wall -g -fstandalone-debug)
 cmake_policy(SET CMP0076 NEW)
 
 # finding and setting up LLVM to be linked into this project
-find_package(LLVM REQUIRED CONFIG)
+find_package(LLVM 14 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 include_directories(${LLVM_INCLUDE_DIRS})
+
+message(STATUS "llvm include directories ${LLVM_INCLUDE_DIRS}")
+
+message (STATUS "llvm library directories ${LLVM_LIBRARY_DIRS}")
+
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
-# TODO: figure out precisely which llvm components that 
-# the project needs to link against to build.
-# TODO: setting the variable here to 'all-targets' didn't work 
-# despite the fact that all and all-targets were emmitted by 
-# llvm-config --components, which according to 
-# https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project
-# should be the way to see what is valid to place in this field.
-llvm_map_components_to_libnames(llvm_libs all support core native)
+# link against all llvm libraries available.
+execute_process(
+	COMMAND llvm-config-14 --libs 
+	OUTPUT_VARIABLE llvm_libs
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-# use re2c to generate 'Lexer.cpp' from 'Lexer.re'
-execute_process(COMMAND re2c src/front/Lexer.re -o src/front/Lexer.cpp
-				WORKING_DIRECTORY ${pink_SOURCE_DIR})
+execute_process(
+	COMMAND llvm-config-14 --cxxflags
+	OUTPUT_VARIABLE llvm_cxxflags
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+add_compile_options(${llvm_cxxflags})
+
+execute_process(
+	COMMAND llvm-config-14 --ldflags --system-libs 
+	OUTPUT_VARIABLE llvm_ldflags
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+add_link_options(${llvm_ldflags} "--verbose")
+
+
+# use re2c to generate 'Lexer.cpp' from 'Lexer.re',
+# Lexer.cpp is then needed to build the static library
+add_custom_command(
+	COMMAND re2c src/front/Lexer.re -o src/front/Lexer.cpp
+	OUTPUT ${pink_SOURCE_DIR}/src/front/Lexer.cpp
+	DEPENDS ${pink_SOURCE_DIR}/src/front/Lexer.re
+	WORKING_DIRECTORY ${pink_SOURCE_DIR}
+)
 
 
 
@@ -45,7 +70,7 @@ include_directories(include)
 configure_file(include/PinkConfig.h.in ../include/PinkConfig.h)
 
 
-add_library(pinkLib STATIC
+add_library(libpink STATIC
 		    src/ast/Assignment.cpp
 		    src/ast/Ast.cpp
 		    src/ast/Bind.cpp
@@ -86,19 +111,35 @@ add_library(pinkLib STATIC
 		   )
 			   
 
-set_target_properties(pinkLib PROPERTIES SOVERSION ${PROJECT_VERSION})
+set_target_properties(libpink PROPERTIES SOVERSION ${PROJECT_VERSION})
 
-set_target_properties(pinkLib PROPERTIES PUBLIC_HEADER include/pinkLib.h)
+set_target_properties(libpink PROPERTIES PUBLIC_HEADER include/libpink.h)
 
-set_target_properties(pinkLib PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
+set_target_properties(libpink PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
 
-target_include_directories(pinkLib PUBLIC include)
 
+set_property(
+	TARGET libpink 
+	APPEND
+	PROPERTY ADDITIONAL_CLEAN_FILES src/front/Lexer.cpp
+)
+
+
+target_include_directories(libpink PUBLIC include)
+
+target_link_libraries(libpink
+${LLVM_LIBRARY_DIRS}/liblldELF.a
+${LLVM_LIBRARY_DIRS}/liblldCommon.a
+${llvm_libs}
+libz.a
+)
 			   
 add_executable(pink src/Pink.cpp)
 
 
-target_link_libraries(pink ${llvm_libs} pinkLib)
+target_link_libraries(pink
+libpink
+)
 
 target_include_directories(pink PUBLIC
 						   "${PROJECT_BINARY_DIR}"

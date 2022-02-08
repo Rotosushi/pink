@@ -22,8 +22,6 @@ include_directories(${LLVM_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
 
-llvm_map_components_to_libnames(llvm_libs all support core native)
-
 include_directories(include ../include)
 
 add_executable(pink-test src/TestMain.cpp)
@@ -65,7 +63,7 @@ target_sources(pink-test PUBLIC
 			   )
 
 
-target_link_libraries(pink-test ${llvm_libs} pinkLib)
+target_link_libraries(pink-test libpink)
 
 
 target_include_directories(pink-test PUBLIC

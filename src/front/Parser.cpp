@@ -311,7 +311,7 @@ namespace pink {
         {
         	Location lhs_loc = loc;
         	int value = std::stoi(txt);
-        	nexttok(); // eat '42'
+        	nexttok(); // eat '[0-9]+'
         	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Int>(lhs_loc, value));
 
     		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
@@ -408,15 +408,10 @@ namespace pink {
 				args.emplace_back(arg_res.GetOne());
 			} while (tok == Token::Comma);
 		}
-		else // consider it a no argument function.
-		{
-			// give the function a dummy argument, so we can call it passing 'nil' aka '()'
-			InternedString arg_name = env.symbols.Intern("nil_arg");
-			Type* arg_type = env.types.GetNilType();
-			args.emplace_back(std::make_pair(arg_name, arg_type));
-		}
 		
-		
+		// handle the case where we just parsed an argument list, and 
+		// the case where we parsed a no argument argument list, either 
+		// way the next token must be ')'
 		if (tok != Token::RParen)
 		{
 			Error error(Error::Kind::Syntax, "Expected ')' to end the argument list", loc);
