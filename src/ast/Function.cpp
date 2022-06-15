@@ -11,7 +11,7 @@ namespace pink {
 						   std::vector<std::pair<InternedString, Type*>> a,
 						   std::unique_ptr<Ast> b,
 						   SymbolTable* p)
-			: Ast(Ast::Kind::Function, l), name(n), arguments(a), body(std::move(b)), bindings(p)
+			: Ast(Ast::Kind::Function, l), name(n), arguments(a), body(std::move(b)), bindings(std::make_shared<SymbolTable>(p))
 		{
 		
 		}
@@ -23,7 +23,7 @@ namespace pink {
 		
 		std::unique_ptr<Ast> Function::Clone()
 		{
-			std::unique_ptr<Ast> result = std::make_unique<Function>(loc, name, arguments, body->Clone(), bindings.OuterScope());
+			std::unique_ptr<Ast> result = std::make_unique<Function>(loc, name, arguments, body->Clone(), bindings->OuterScope());
 			return result;
 		}
 		
@@ -73,7 +73,7 @@ namespace pink {
 		 -----------------------------------------------------------------------------
 			env |- 'fn' name '(' a0: T0, a1: T1, ..., an : Tn ')' '{' body '} : Tb
 		*/
-		Outcome<Type*, Error> Function::GetypeV(Environment& env)
+		Outcome<Type*, Error> Function::GetypeV(std::shared_ptr<Environment> env)
 		{
 			// first, construct a bunch of false bindings with the correct Types.
 			// such that we can properly Type the body, which presumably uses said bindings.
@@ -93,11 +93,11 @@ namespace pink {
 			// construct the false bindings, with no real llvm::Value*
 			for (auto& pair : arguments)
 			{
-				bindings.Bind(pair.first, pair.second, nullptr); 
+				bindings->Bind(pair.first, pair.second, nullptr); 
 			}
 			
 			// build a new environment around the functions symboltable, such that we have syntactic scoping.
-			Environment inner_env(env, bindings); 
+      std::shared_ptr<Environment> inner_env = std::make_shared<Environment>(env, bindings); 
 			
 			// type the body with respect to the inner_env
 			Outcome<Type*, Error> body_result = body->Getype(inner_env);
@@ -105,7 +105,7 @@ namespace pink {
 			// remove the false bindings before returning;
 			for (auto& pair : arguments)
 			{
-				bindings.Unbind(pair.first); 
+				bindings->Unbind(pair.first); 
 			}
 			
 			if (!body_result)
@@ -121,11 +121,11 @@ namespace pink {
 				arg_types.emplace_back(pair.second);
 			}
 			
-			FunctionType* func_ty = env.types.GetFunctionType(body_result.GetOne(), arg_types);
+			FunctionType* func_ty = env->types->GetFunctionType(body_result.GetOne(), arg_types);
 			return Outcome<Type*, Error>(func_ty);
 		}
 		
-		Outcome<llvm::Value*, Error> Function::Codegen(Environment& env)
+		Outcome<llvm::Value*, Error> Function::Codegen(std::shared_ptr<Environment> env)
 		{
 			/*
 				first, get the functions prototype/declaration from the module
@@ -162,26 +162,27 @@ namespace pink {
 			llvm::Function* function = llvm::Function::Create(function_ty, 
 															  llvm::Function::ExternalLinkage, 
 															  name, 
-															  env.module);
+															  *env->module);
 			
 			
 			
 			// create the entry block of this function.
-			llvm::BasicBlock* entryblock = llvm::BasicBlock::Create(env.context, "entry", function);
+			llvm::BasicBlock* entryblock = llvm::BasicBlock::Create(*env->context, "entry", function);
 			llvm::BasicBlock::iterator entrypoint = entryblock->getFirstInsertionPt();
 			
 			// set up a local irbuilder to insert instructions into this function.
-			llvm::IRBuilder local_builder(entryblock, entrypoint);
+      std::shared_ptr<llvm::IRBuilder<>> local_builder = std::make_shared<llvm::IRBuilder<>>(entryblock, entrypoint);
 			
-			Environment local_env(env, bindings, local_builder, function); // set up the local_environment for this function
+      // set up the local_environment for this function
+      std::shared_ptr<Environment> local_env = std::make_shared<Environment>(env, bindings, local_builder, function); 
 			
 			std::vector<std::pair<llvm::Value*, llvm::Value*>> arg_ptrs;
 			// construct stack space for all arguments to the function 
 			for (int i = 0; i < function->arg_size(); i++)
 			{
 				llvm::Argument* arg = function->getArg(i);
-				llvm::Value* arg_ptr = local_builder.CreateAlloca(arg->getType(),
-																  local_env.data_layout.getAllocaAddrSpace(),
+				llvm::Value* arg_ptr = local_builder->CreateAlloca(arg->getType(),
+																  local_env->data_layout.getAllocaAddrSpace(),
 																  nullptr,
 																  arg->getName());
 				
@@ -192,9 +193,9 @@ namespace pink {
 			// all the allocas
 			for (int i = 0; i < arg_ptrs.size(); i++)
 			{
-				local_builder.CreateStore(arg_ptrs[i].first, arg_ptrs[i].second, false);
+				local_builder->CreateStore(arg_ptrs[i].first, arg_ptrs[i].second, false);
 				
-				local_env.bindings.Bind(arguments[i].first, arguments[i].second, arg_ptrs[i].second);
+				local_env->bindings->Bind(arguments[i].first, arguments[i].second, arg_ptrs[i].second);
 			}
 			
 			
@@ -207,7 +208,7 @@ namespace pink {
 			}
 			
 			// use the value returned by the body to construct a return statement 
-			local_builder.CreateRet(body_result.GetOne());
+			local_builder->CreateRet(body_result.GetOne());
 			
 			// call verifyFunction to validate the generated code for consistency 
 			llvm::verifyFunction(*function);

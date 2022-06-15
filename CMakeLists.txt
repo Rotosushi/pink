@@ -2,8 +2,9 @@
 # general project properties
 cmake_minimum_required(VERSION 3.10)
 
-# CMake project properties
-project(pink VERSION 0.1 DESCRIPTION "A small Programming Language, Exploring Functions as Values")
+# we need to use LANGUAGES C CXX to get cmake to stop complaining 
+# about not finding the termInfo package. 
+project(pink LANGUAGES C CXX VERSION 0.1 DESCRIPTION "A small Programming Language, Exploring Functions as Values")
 
 set(CMAKE_C_STANDARD 11)
 # since this project uses some c++17 features
@@ -15,7 +16,7 @@ add_compile_options(-Wall -g -fstandalone-debug)
 cmake_policy(SET CMP0076 NEW)
 
 # finding and setting up LLVM to be linked into this project
-find_package(LLVM 14 REQUIRED CONFIG)
+find_package(LLVM 15 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -31,13 +32,13 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # link against all llvm libraries available.
 execute_process(
-	COMMAND llvm-config-14 --libs 
+	COMMAND llvm-config --libs 
 	OUTPUT_VARIABLE llvm_libs
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 execute_process(
-	COMMAND llvm-config-14 --cxxflags
+	COMMAND llvm-config --cxxflags
 	OUTPUT_VARIABLE llvm_cxxflags
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
@@ -45,12 +46,23 @@ execute_process(
 add_compile_options(${llvm_cxxflags})
 
 execute_process(
-	COMMAND llvm-config-14 --ldflags --system-libs 
+	COMMAND llvm-config --ldflags
 	OUTPUT_VARIABLE llvm_ldflags
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-add_link_options(${llvm_ldflags} "--verbose")
+separate_arguments(llvm_ldflags)
+
+execute_process(
+  COMMAND llvm-config --system-libs
+  OUTPUT_VARIABLE llvm_syslibs
+  OUTPUT_STRIP_TRAILING_WHITESPACE  
+)
+
+separate_arguments(llvm_syslibs)
+
+add_link_options(${llvm_ldflags} ${llvm_syslibs} "--verbose")
+
 
 
 # use re2c to generate 'Lexer.cpp' from 'Lexer.re',

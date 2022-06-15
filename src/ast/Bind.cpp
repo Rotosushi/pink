@@ -46,7 +46,7 @@ namespace pink {
     		have both type and value that we can construct 
     		a binding in the symboltable.
     */
-    Outcome<Type*, Error> Bind::GetypeV(Environment& env)
+    Outcome<Type*, Error> Bind::GetypeV(std::shared_ptr<Environment> env)
     {
     	/*
     		 for the case of a binding statement, which declares a new variable,
@@ -70,7 +70,7 @@ namespace pink {
     		 		symbol than the global name would. all this would be transparent to 
     		 		the programmer, and would only be on a 'opt-in' basis.
     	*/
-    	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env.bindings.LookupLocal(symbol));
+    	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env->bindings->LookupLocal(symbol));
     
     	if (!bound.hasValue())
     	{
@@ -80,9 +80,9 @@ namespace pink {
 			{
 				// construct a false binding so we can properly 
 				// type statements that occur later within the same block.
-				env.false_bindings.push_back(symbol);
+				env->false_bindings.push_back(symbol);
 				
-				env.bindings.Bind(symbol, term_type.GetOne(), nullptr); // construct a false binding to type later statements within this same block.
+				env->bindings->Bind(symbol, term_type.GetOne(), nullptr); // construct a false binding to type later statements within this same block.
 				
 				Outcome<Type*, Error> result(term_type.GetOne());
 				return result;
@@ -114,9 +114,9 @@ namespace pink {
     	is associated with a function, i.e. is a local scope, then we allocate the 
     	new variable on the stack by constructing an alloca.
     */
-    Outcome<llvm::Value*, Error> Bind::Codegen(Environment& env)
+    Outcome<llvm::Value*, Error> Bind::Codegen(std::shared_ptr<Environment> env)
     {
-    	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env.bindings.LookupLocal(symbol));
+    	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env->bindings->LookupLocal(symbol));
     
     	if (!bound.hasValue())
     	{
@@ -142,15 +142,15 @@ namespace pink {
 			
 			llvm::Value* ptr = nullptr;
 			
-			if (env.current_fn == nullptr) // this is the global scope, construct a global
+			if (env->current_function == nullptr) // this is the global scope, construct a global
 			{
 				// global_value is the address of the value in question, and has to be retrieved directly from the module,
 				//	which should be fine, as the ir_builder will also be associated with the same module.
 				// in the case of a global variable, the name is bound to the address of 
 				// the global variable's location constructed w.r.t. the module.
-				ptr = env.module.getOrInsertGlobal(symbol, term_type.GetOne());
+				ptr = env->module->getOrInsertGlobal(symbol, term_type.GetOne());
 				
-				llvm::GlobalVariable* global = env.module.getGlobalVariable(symbol);
+				llvm::GlobalVariable* global = env->module->getGlobalVariable(symbol);
 				
 				if (llvm::isa<llvm::Constant>(term_value.GetOne()))
 				{
@@ -165,7 +165,7 @@ namespace pink {
 			}
 			else // this is a local scope, so construct a local binding
 			{
-				llvm::BasicBlock* insertion_block = &(env.current_fn->getEntryBlock());
+				llvm::BasicBlock* insertion_block = &(env->current_function->getEntryBlock());
 				llvm::BasicBlock::iterator insertion_point = insertion_block->getFirstInsertionPt();
 				
 				// create a new builder to not mess with the previous ones insertion point.
@@ -176,17 +176,17 @@ namespace pink {
 				// in the case of a local symbol the name is bound to the address of 
 				// the local variables location, constructed w.r.t. the current function.
 				ptr = local_builder.CreateAlloca(term_type.GetOne(), 
-												   env.data_layout.getAllocaAddrSpace(), 
+												   env->data_layout.getAllocaAddrSpace(), 
 												   nullptr, 
 												   symbol);
 				
 				// we can store the value into the stack (alloca) at some 
 				// point after we construct it. in this case, relative to 
 				// where the bind declaration is located syntactically.
-				env.ir_builder.CreateStore(term_value.GetOne(), ptr, symbol);
+				env->builder->CreateStore(term_value.GetOne(), ptr, symbol);
 			}
 			// we use term_type_result, as that holds a pink::Type*, which is what Bind expects.
-			env.bindings.Bind(symbol, term_type_result.GetOne(), ptr); // bind the symbol to the newly created value
+			env->bindings->Bind(symbol, term_type_result.GetOne(), ptr); // bind the symbol to the newly created value
 			
 			return Outcome<llvm::Value*, Error>(term_value); // return the value stored to support nested binds.
 		}

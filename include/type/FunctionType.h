@@ -17,6 +17,6 @@ namespace pink {
 		virtual bool EqualTo(Type* other) override;
 		virtual std::string ToString() override;
 		
-		virtual Outcome<llvm::Type*, Error> Codegen(Environment& env) override;
+		virtual Outcome<llvm::Type*, Error> Codegen(std::shared_ptr<Environment> env) override;
 	};
 }

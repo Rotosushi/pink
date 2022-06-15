@@ -28,8 +28,8 @@ namespace pink {
         return std::string("Bool");
     }
     
-    Outcome<llvm::Type*, Error> BoolType::Codegen(Environment& env)
+    Outcome<llvm::Type*, Error> BoolType::Codegen(std::shared_ptr<Environment> env)
     {
-    	return Outcome<llvm::Type*, Error>(env.ir_builder.getInt1Ty());
+    	return Outcome<llvm::Type*, Error>(env->builder->getInt1Ty());
     }
 }

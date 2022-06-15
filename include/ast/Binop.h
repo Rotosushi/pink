@@ -7,23 +7,22 @@
 namespace pink {
     class Binop : public Ast {
     private:
-    	virtual Outcome<Type*, Error> GetypeV(Environment& env) override;
+    	virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
     
     public:
-        InternedString       op;
-        std::unique_ptr<Ast> left;
-        std::unique_ptr<Ast> right;
+      InternedString       op;
+      std::unique_ptr<Ast> left;
+      std::unique_ptr<Ast> right;
 
-    Binop(Location& loc, InternedString o, std::unique_ptr<Ast> l, std::unique_ptr<Ast> r);
-    virtual ~Binop();
+      Binop(Location& loc, InternedString o, std::unique_ptr<Ast> l, std::unique_ptr<Ast> r);
+      virtual ~Binop();
 
-    virtual std::unique_ptr<Ast> Clone() override;
+      virtual std::unique_ptr<Ast> Clone() override;
 
-    static bool classof(const Ast* t);
+      static bool classof(const Ast* t);
 
-    virtual std::string ToString() override;
+      virtual std::string ToString() override;
 
-    
-    virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
+      virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
     };
 }

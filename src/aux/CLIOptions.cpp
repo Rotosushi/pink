@@ -6,13 +6,36 @@
 
 
 namespace pink {
-	CLIOptions::CLIOptions(std::string infile, std::string outfile, bool verbose, bool emit_asm, bool emit_obj, bool emit_llvm, bool cannonical_llvm, llvm::OptimizationLevel optimization_level, bool link)
+	CLIOptions::CLIOptions(
+      std::string infile, 
+      std::string outfile, 
+      bool verbose, 
+      bool emit_asm, 
+      bool emit_obj, 
+      bool emit_llvm, 
+      llvm::OptimizationLevel optimization_level,
+      bool link)
 		: input_file(infile), output_file(outfile), verbose(verbose),
 		  emit_assembly(emit_asm), emit_object(emit_obj), emit_llvm(emit_llvm),
-		  cannonical_llvm(cannonical_llvm), optimization_level(optimization_level), link(link)
+		  optimization_level(optimization_level), link(link)
 	{
 	
 	}
+
+
+  /*
+   *  This function searches for the first '.' appearing in the 
+   *  given input string and returns the string containing 
+   *  everything up to that point. if there is no '.' in the 
+   *  input string, then the entire string is returned.
+   *
+   *
+   */
+  std::string RemoveTrailingExtensions(std::string filename)
+  {
+    auto it = std::find(filename.begin(), filename.end(), '.');
+    return std::string(filename.begin(), it);
+  }
 	
 	void PrintVersion(std::ostream& out)
 	{
@@ -31,13 +54,18 @@ namespace pink {
 			<< "-i <arg>, --infile <arg>, --input <arg>: specifies the input source filename.\n"
 			<< "-o <arg>, --outfile <arg>, --output <arg>: specifies the output filename.\n"
 			<< "-O <arg>, --optimize <arg>: specifies the optimization level to use.\n\t valid arguments are:\n\t\t 0 (none),\n\t\t 1 (limited),\n\t\t 2 (regular),\n\t\t 3 (high, may affect compile times),\n\t\t s (small code size), \n\t\t z (very small code size, increases run times)\n"
-			<< "-C --cannonical-llvm: Emits llvm IR in the cannonical SSA form, disabling all optimizations, this overrides any -O options\n"
-			<< std::endl;
+			<< "-L --emit-only-llvm: emit llvm IR instead of an executable\n"
+			<< "-l --emit-llvm:      emit llvm IR in addition to an executable\n\n"
+      << "-S --emit-only-asm:  emit target assembly instead of an executable\n"
+      << "-s --emit-asm:       emit target assembly in addition to an executable\n\n"
+      << "-C --emit-only-obj:  emit an object file instead of an executable\n"
+      << "-c --emit-obj:       emit an object file instead of an executable\n\n"
+      << std::endl;
 	}
 
-	CLIOptions ParseCLIOptions(std::ostream& out, int argc, char** argv)
+  std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv)
 	{
-		const char* short_options = "hvi:o:O:Llcs";
+		const char* short_options = "hvi:o:O:LlCcSs";
 		
 		std::string input_file;
 		std::string output_file;
@@ -45,14 +73,12 @@ namespace pink {
 		bool emit_llvm = false;
 		bool emit_asm  = false;
 		bool emit_obj  = true;
-		bool cannonical_llvm = false;
-		llvm::OptimizationLevel optimization_level = 
-			llvm::OptimizationLevel::O0;
+		llvm::OptimizationLevel optimization_level = llvm::OptimizationLevel::O0;
 		bool link = true;
 		
 		static struct option long_options[] = 
 		{
-			{"verbose",  no_argument,       &verbose, 1 }, // getopt_long returns zero in this case
+			{"verbose",    no_argument,       &verbose, 1 }, // getopt_long returns zero in this case
 			{"brief",      no_argument,       &verbose, 0 },
 			{"help",       no_argument,       nullptr, 'h'},
 			{"version",    no_argument,       nullptr, 'v'},
@@ -61,10 +87,12 @@ namespace pink {
 			{"outfile",    required_argument, nullptr, 'o'},
 			{"output",     required_argument, nullptr, 'o'},
 			{"optimize",   required_argument, nullptr, 'O'},
-			{"cannonical-llvm", no_argument,  nullptr, 'L'},
-			{"emit-llvm",  no_argument,       nullptr, 'l'},
-			{"emit-asm",   no_argument,       nullptr, 's'},
-			{"emit-obj",   no_argument,       nullptr, 'c'},
+			{"emit-only-llvm", no_argument, nullptr, 'L'},
+			{"emit-llvm",      no_argument, nullptr, 'l'},
+      {"emit-only-asm",  no_argument, nullptr, 'S'},
+      {"emit-asm",       no_argument, nullptr, 's'},
+      {"emit-only-obj",  no_argument, nullptr, 'C'},
+			{"emit-obj",   no_argument,     nullptr, 'c'},
 			{0,         0,           0,       0}
 		};
 		
@@ -111,10 +139,9 @@ namespace pink {
 					output_file = optarg;
 					break;
 				}
-				
+
 				case 'L':
 				{
-					cannonical_llvm = true;
 					emit_llvm = true;
 					link = false;
 					break;
@@ -123,21 +150,32 @@ namespace pink {
 				case 'l':
 				{
 					emit_llvm = true;
-					link = false;
 					break;
 				}
+
+        case 'C':
+        {
+          emit_obj = true;
+          link = false;
+          break;
+        }
 				
 				case 'c':
 				{
-					emit_obj  = true;
-					link = false;
+					emit_obj = true;
 					break;
 				}
+
+        case 'S':
+        {
+          emit_asm = true;
+          link = false;
+          break;
+        }
 				
 				case 's':
 				{
 					emit_asm  = true;
-					link = false;
 					break;
 				}				
 				
@@ -212,10 +250,21 @@ namespace pink {
 		// give a default name to the output file.
 		if (output_file == "")
 		{
-			output_file = input_file;
+      // given a filename like "/my/favorite/directory/my_file.p"
+      // output_file should equal "/my/favorite/directory/my_file"
+			output_file = RemoveTrailingExtensions(input_file);
 		}
 	
-		return CLIOptions(input_file, output_file, verbose == 1, emit_asm, emit_obj, emit_llvm, cannonical_llvm, optimization_level, link);
+		return std::make_shared<CLIOptions>(
+        input_file, 
+        output_file, 
+        verbose == 1,
+        emit_asm, 
+        emit_obj, 
+        emit_llvm, 
+        optimization_level, 
+        link
+        );
 	}
 
 }

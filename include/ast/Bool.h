@@ -6,7 +6,7 @@
 namespace pink {
     class Bool : public Ast {
     private:
-    	virtual Outcome<Type*, Error> GetypeV(Environment& e) override;
+    	virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> e) override;
     
     public:
         bool value;
@@ -21,6 +21,6 @@ namespace pink {
         virtual std::string ToString() override;
 
         
-        virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
+        virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
     };
 }

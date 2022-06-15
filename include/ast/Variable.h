@@ -7,7 +7,7 @@
 namespace pink {
     class Variable : public Ast {
     private:
-    	virtual Outcome<Type*, Error> GetypeV(Environment& env) override;
+    	virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
     	
     public:
         InternedString symbol;
@@ -22,6 +22,6 @@ namespace pink {
         virtual std::string ToString() override;
 
         
-        virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
+        virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
     };
 }

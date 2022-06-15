@@ -33,9 +33,9 @@ namespace pink {
 	  -----------------------------
 			  env |- x : T
 	*/
-	Outcome<Type*, Error> Variable::GetypeV(Environment& env)
+	Outcome<Type*, Error> Variable::GetypeV(std::shared_ptr<Environment> env)
 	{
-		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings.Lookup(symbol);
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env->bindings->Lookup(symbol);
 		
 		if (bound.hasValue())
 		{
@@ -50,9 +50,9 @@ namespace pink {
 		}
 	}
 	
-	Outcome<llvm::Value*, Error> Variable::Codegen(Environment& env)
+	Outcome<llvm::Value*, Error> Variable::Codegen(std::shared_ptr<Environment> env)
 	{
-		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings.Lookup(symbol);
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env->bindings->Lookup(symbol);
 		
 		if (bound.hasValue())
 		{
@@ -63,7 +63,7 @@ namespace pink {
 				return Outcome<llvm::Value*, Error>(llvm_type_result.GetTwo());
 			}
 			
-			llvm::LoadInst* loaded_value = env.ir_builder.CreateLoad(llvm_type_result.GetOne(), bound->second);
+			llvm::LoadInst* loaded_value = env->builder->CreateLoad(llvm_type_result.GetOne(), bound->second);
 			
 			Outcome<llvm::Value*, Error> result(loaded_value);
 			return result;

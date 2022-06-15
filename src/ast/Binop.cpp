@@ -46,7 +46,7 @@ namespace pink {
       --------------------------------------------------
       			  env |- lhs op rhs : T
     */
-    Outcome<Type*, Error> Binop::GetypeV(Environment& env)
+    Outcome<Type*, Error> Binop::GetypeV(std::shared_ptr<Environment> env)
     {
     	// Get the type of both sides
     	Outcome<Type*, Error> lhs_result(left->Getype(env));
@@ -60,7 +60,7 @@ namespace pink {
     		return rhs_result;
     		
     	// find the operator present between both sides in the env 
-    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env.binops.Lookup(op);
+    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env->binops->Lookup(op);
     	
     	if (!binop)
     	{
@@ -90,41 +90,48 @@ namespace pink {
     }
     
     
-    Outcome<llvm::Value*, Error> Binop::Codegen(Environment& env)
+    Outcome<llvm::Value*, Error> Binop::Codegen(std::shared_ptr<Environment> env)
     {
-    // Get the type and value of both sides
+      // Get the type and value of both sides
     	Outcome<Type*, Error> lhs_type_result(left->Getype(env));
     	
     	if (!lhs_type_result)
     		return Outcome<llvm::Value*, Error>(lhs_type_result.GetTwo());
-    		
+
+
     	Outcome<llvm::Type*, Error> lhs_type = lhs_type_result.GetOne()->Codegen(env);
     	
     	if (!lhs_type)
     		return Outcome<llvm::Value*, Error>(lhs_type.GetTwo());
     		
+
     	Outcome<llvm::Value*, Error> lhs_value(left->Codegen(env));
     	
     	if (!lhs_value)
     		return lhs_value;
-    		
+    	
+
+
     	Outcome<Type*, Error> rhs_type_result(right->Getype(env));
     	
     	if (!rhs_type_result)
     		return Outcome<llvm::Value*, Error>(rhs_type_result.GetTwo());
-    		
+    
+
     	Outcome<llvm::Type*, Error> rhs_type = rhs_type_result.GetOne()->Codegen(env);
     		
     	if (!rhs_type)
     		return Outcome<llvm::Value*, Error>(rhs_type.GetTwo());
-    		
+  
+
     	Outcome<llvm::Value*, Error> rhs_value(right->Codegen(env));
     	
     	if (!rhs_value)
     		return rhs_value;
-    		
+  
+
     	// find the operator present between both sides in the env 
-    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env.binops.Lookup(op);
+    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env->binops->Lookup(op);
     	
     	if (!binop)
     	{

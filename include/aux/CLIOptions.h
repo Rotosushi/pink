@@ -1,4 +1,5 @@
 #pragma once 
+#include <memory>
 #include <string>
 #include <iostream>
 
@@ -62,16 +63,23 @@ namespace pink {
 			bool emit_object;
 			bool emit_llvm;
 			// bool emit_executable; // this is the default. only one of the emit_* can be set to true during an evaluation of pink.
-			bool cannonical_llvm;
 			llvm::OptimizationLevel optimization_level;
 			bool link;
 			// std::string lli-options;
 			// std::string linker-name;
 			// etc...
 			
-		CLIOptions(std::string infile, std::string outfile, bool verbose, bool emit_assembly, bool emit_object, bool emit_llvm, bool cannonical_llvm, llvm::OptimizationLevel optimization_level, bool link);
+		CLIOptions(
+        std::string infile, 
+        std::string outfile,
+        bool verbose, 
+        bool emit_assembly, 
+        bool emit_object, 
+        bool emit_llvm,
+        llvm::OptimizationLevel optimization_level,
+        bool link);
 	};
 
-	CLIOptions ParseCLIOptions(std::ostream& out, int argc, char** argv);
+  std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv);
 
 }

@@ -2,5 +2,5 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    void InitializeBinopPrimitives(Environment& env);
+    void InitializeBinopPrimitives(std::shared_ptr<Environment> env);
 }

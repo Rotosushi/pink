@@ -7,11 +7,13 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
 
+#include "llvm/Target/TargetMachine.h"
 
 #include "aux/Error.h"
 #include "aux/StringInterner.h"
 #include "aux/SymbolTable.h"
 #include "aux/TypeInterner.h"
+#include "aux/CLIOptions.h"
 
 #include "ops/BinopTable.h"
 #include "ops/UnopTable.h"
@@ -29,33 +31,55 @@ namespace pink {
     */
     class Environment {
     public:
-    	std::vector<InternedString> false_bindings;
-        Parser&			   parser;
-        StringInterner&    symbols;
-        StringInterner&    operators;
-        TypeInterner&      types;
-        SymbolTable&       bindings;
-        BinopTable&        binops;
-        UnopTable&         unops;
-        std::string&       target_triple;
-        llvm::DataLayout&  data_layout;
-        llvm::LLVMContext& context;
-        llvm::Module&      module;
-        llvm::IRBuilder<>& ir_builder;
-        llvm::Function*    current_fn;
+      std::vector<InternedString>        false_bindings;
+      std::shared_ptr<CLIOptions>        options;
+      std::shared_ptr<Parser>            parser;
+      std::shared_ptr<StringInterner>    symbols;
+      std::shared_ptr<StringInterner>    operators;
+      std::shared_ptr<TypeInterner>      types;
+      std::shared_ptr<SymbolTable>       bindings;
+      std::shared_ptr<BinopTable>        binops;
+      std::shared_ptr<UnopTable>         unops;
+      std::shared_ptr<llvm::LLVMContext> context;
+      std::shared_ptr<llvm::Module>      module;
+      std::shared_ptr<llvm::IRBuilder<>> builder;
+      llvm::TargetMachine*               target_machine;
+      const llvm::DataLayout             data_layout;
+      llvm::Function*                    current_function;
 
-        Environment(Parser& p, StringInterner& si, StringInterner& oi, TypeInterner& ti,
-                    SymbolTable& sy, BinopTable& bt, UnopTable& ut,
-                    std::string& tt, llvm::DataLayout& dl,
-                    llvm::LLVMContext& ct, llvm::Module& md,
-                    llvm::IRBuilder<>& ib);
-        
-        // convience constructor for building an   
-        // Environment around an inner scope. 
-        Environment(Environment& env, SymbolTable& sy);
-        
-        // convience constructor for building an   
-        // Environment around an inner scope. 
-        Environment(Environment& env, SymbolTable& sy, llvm::IRBuilder<>& ib, llvm::Function* cf);
+      Environment(
+        std::shared_ptr<CLIOptions>                  options,
+        std::shared_ptr<Parser>                      parser,
+        std::shared_ptr<StringInterner>              symbols,
+        std::shared_ptr<StringInterner>              operators,
+        std::shared_ptr<TypeInterner>                types,
+        std::shared_ptr<SymbolTable>                 bindings,
+        std::shared_ptr<BinopTable>                  binops,
+        std::shared_ptr<UnopTable>                   unops,
+        std::shared_ptr<llvm::LLVMContext>           context,
+        std::shared_ptr<llvm::Module>                module,
+        std::shared_ptr<llvm::IRBuilder<>>           builder,
+        llvm::TargetMachine*                         target_machine,
+        const llvm::DataLayout                       data_layout
+        );
+      // convience constructor for building an   
+      // Environment around an inner scope. 
+      Environment(
+        std::shared_ptr<Environment> env,
+        std::shared_ptr<SymbolTable> symbols
+        );
+      
+      // convience constructor for building an   
+      // Environment around an inner scope. 
+      Environment(
+        std::shared_ptr<Environment> env,
+        std::shared_ptr<SymbolTable> symbols,
+        std::shared_ptr<llvm::IRBuilder<>> builder,
+        llvm::Function* current_function
+        );
     };
+
+
+    std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options);
+
 }

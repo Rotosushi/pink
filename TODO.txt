@@ -1,56 +1,19 @@
 
-TODOs in no particular order:
 
-	# finish v0.0.1
-		needs:
-			-REPL and/or compile from source file
-			
-			- Each statement that cannot appear at the top level scope,
-				(everything except binding statments and other declarations)
-			  must have an error added to codegen to make sure we don't 
-			  segfault when we try and construct something like a binop, which 
-			  requires a llvm::BasicBlock to be inserted into, if there is 
-			  no llvm::BasicBlock the program segfaults, hence we should be 
-			  catching that behavior as an error instead of letting the program 
-			  crash.
-			  
-			-Codegen to LLVM IR
-			
-			-module level functions need to be implemented before we can properly test codegeneration
-			which means that to get something a bit more substantial we are going to need to implement 
-			the concept of a lambda as a wrapper around said module level functions. This isn't really new,
-			however we now know for sure that main has to be an exception to the way we were 
-			planning on implementing functions in general. 
-			But this marks the start of developing actual generated code! :)	
+# v0.0.1 
+  -> Emit a working executable
+  -> fix any memory leaks present now before adding anything new to the
+     language
+    (and the new cycle for adding to or updating the 
+      language goes as follows:
+      -1> add a small peice
+      -2> write tests for functionality and get it bug free
+      -3> run it under valgrind to check for memory leaks and get it leak free
+     )
 
-		- Ast -> .dot 
-			for looking at the trees in a graph, could be neat for 
-			code analysis
 
-	# find out why when i use -stdlib=libc++ ld.lld fails to find some llvm functions
-		and when i use -stdlib=libstdc++ it does not.
-		
-	# find out why 'all-targets' is not a valid library to link against
-		when using llvm_map_components_to_libnames() in the cmake file,
-		despite it being emmitted by llvm-config --components.
-		This should be done if this project ever wants to use llvm 
-		to emit code for a non-native architecture. 
-		if I specify all names emmitted from a call to llvm-config --components 
-		i get a bunch of linker errors that look like:
-		(/usr/bin/ld: cannot find -lLLVMjit
-		 /usr/bin/ld: cannot find -lLLVMx86
-		 etc..)
-		and when I specify less names, then i get classic 
-		 /usr/bin/ld: "..undefined reference to llvm::...(...)"
-		function not found errors.
-		so the current known bare minimum list is 
-		llvm_map_components_to_libnames(llvm_libs all support core native)
-		which gets the project to link, unless we call functions in llvm 
-		like:
-		llvm::InitializeAllTargetInfos();
-		llvm::InitializeAllTargets();
-		etc...
-		which again bring back the undefined function linker errors.
-		the fix for this currently is that we don't even emit native code 
-		yet, so we can safely burn this bridge when we get to it once 
-		we try to add codegeneration for non-native targets.
+
+
+
+
+--

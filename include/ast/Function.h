@@ -19,13 +19,13 @@ namespace pink {
 	*/
 	class Function : public Ast {
 	private:
-		virtual Outcome<Type*, Error> GetypeV(Environment& env) override;
+		virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
 	
 	public:
 		InternedString name;
 		std::vector<std::pair<InternedString, Type*>> arguments;
 		std::unique_ptr<Ast> body;
-		SymbolTable bindings;
+    std::shared_ptr<SymbolTable> bindings;
 		
 		Function(Location l, 
 				 InternedString n, 
@@ -42,6 +42,6 @@ namespace pink {
 		virtual std::string ToString() override;
 		
 		
-		virtual Outcome<llvm::Value*, Error> Codegen(Environment& env) override;
+		virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
 	};
 }

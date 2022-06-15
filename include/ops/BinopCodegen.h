@@ -16,7 +16,7 @@ namespace pink {
     // pink::Environment.
     class Environment;
 
-    typedef Outcome<llvm::Value*, Error> (*BinopCodegenFn)(llvm::Value* left, llvm::Value* right, Environment& env);
+    typedef Outcome<llvm::Value*, Error> (*BinopCodegenFn)(llvm::Value* left, llvm::Value* right, std::shared_ptr<Environment> env);
 
     class BinopCodegen {
     public:

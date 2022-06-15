@@ -17,7 +17,7 @@ namespace pink {
 	// not need an Outcome type to wrap any potential 
 	// errors, as the body of a generator is always
 	// going to succeed. 
-    typedef Outcome<llvm::Value*, Error> (*UnopCodegenFn)(llvm::Value* term, Environment& env);
+    typedef Outcome<llvm::Value*, Error> (*UnopCodegenFn)(llvm::Value* term, std::shared_ptr<Environment> env);
 
     class UnopCodegen {
     public:

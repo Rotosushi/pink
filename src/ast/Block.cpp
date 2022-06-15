@@ -70,7 +70,7 @@ namespace pink {
 			env |- s0; s1; ...; sn; : Tn
 	
 	*/
-	Outcome<Type*, Error> Block::GetypeV(Environment& env)
+	Outcome<Type*, Error> Block::GetypeV(std::shared_ptr<Environment> env)
 	{
 		Outcome<Type*, Error> result(Error(Error::Kind::Default, "Default Error", loc));
 		
@@ -86,12 +86,12 @@ namespace pink {
 		// will have created false bindings, such that later expressions
 		// using the previous ones will be able to be properly bound.
 		// so we clean those up here before returning the final type.
-		for (InternedString fbnd : env.false_bindings)
+		for (InternedString fbnd : env->false_bindings)
 		{
-			env.bindings.Unbind(fbnd);
+			env->bindings->Unbind(fbnd);
 		}
 		// since we removed them, clear them from the list.
-		env.false_bindings.clear();
+		env->false_bindings.clear();
 		
 		return result;
 	}
@@ -100,7 +100,7 @@ namespace pink {
 	/*
 		The value of a block is the value of it's last statement.
 	*/
-	Outcome<llvm::Value*, Error> Block::Codegen(Environment& env)
+	Outcome<llvm::Value*, Error> Block::Codegen(std::shared_ptr<Environment> env)
 	{
 		Outcome<llvm::Value*, Error> result(Error(Error::Kind::Default, "Default Error", loc));
 		

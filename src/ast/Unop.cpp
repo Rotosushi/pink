@@ -33,7 +33,7 @@ namespace pink {
       ----------------------------------------
       			env |- op rhs : T
     */
-    Outcome<Type*, Error> Unop::GetypeV(Environment& env)
+    Outcome<Type*, Error> Unop::GetypeV(std::shared_ptr<Environment> env)
     {
     	// get the type of the rhs
     	Outcome<Type*, Error> rhs_result(right->Getype(env));
@@ -42,7 +42,7 @@ namespace pink {
     		return rhs_result;
     	
     	// find the operator used in the env
-    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env.unops.Lookup(op);
+    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env->unops->Lookup(op);
     	
     	if (!unop)
     	{
@@ -79,7 +79,7 @@ namespace pink {
       			env |- op rhs : unop.generate(rhs.value)
 
     */
-    Outcome<llvm::Value*, Error> Unop::Codegen(Environment& env)
+    Outcome<llvm::Value*, Error> Unop::Codegen(std::shared_ptr<Environment> env)
     {
     	// get the type of the right hand side for operator lookup
     	Outcome<Type*, Error> rhs_type(right->Getype(env));
@@ -94,7 +94,7 @@ namespace pink {
     		return rhs_value;
     		
     	// find the literal
-    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env.unops.Lookup(op);
+    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env->unops->Lookup(op);
     	
     	if (!unop)
     	{

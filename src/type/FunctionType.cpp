@@ -73,7 +73,7 @@ namespace pink {
 			return str;
 		}
 		
-		Outcome<llvm::Type*, Error> FunctionType::Codegen(Environment& env)
+		Outcome<llvm::Type*, Error> FunctionType::Codegen(std::shared_ptr<Environment> env)
 		{
 			std::vector<llvm::Type*> llvm_args;
 			

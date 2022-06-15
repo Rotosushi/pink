@@ -34,9 +34,9 @@ namespace pink {
 	  -----------------------------
 			  env |- x : T
 	*/
-	Outcome<Type*, Error> VarRef::GetypeV(Environment& env)
+	Outcome<Type*, Error> VarRef::GetypeV(std::shared_ptr<Environment> env)
 	{
-		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings.Lookup(symbol);
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env->bindings->Lookup(symbol);
 		
 		if (bound.hasValue())
 		{
@@ -51,9 +51,9 @@ namespace pink {
 		}
 	}
 	
-	Outcome<llvm::Value*, Error> VarRef::Codegen(Environment& env)
+	Outcome<llvm::Value*, Error> VarRef::Codegen(std::shared_ptr<Environment> env)
 	{
-		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings.Lookup(symbol);
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env->bindings->Lookup(symbol);
 		
 		if (bound.hasValue())
 		{			
