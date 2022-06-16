@@ -16,6 +16,8 @@ build/
 test/CMakeFiles/
 test/Makefile
 *.cmake
+*.swp
+*.swo
 test/build/
 test/input/
 old_c_src/
