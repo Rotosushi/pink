@@ -26,17 +26,17 @@ namespace pink {
         // from the next token in the buffer.
         void nexttok();
 
-        Outcome<std::unique_ptr<Ast>, Error> ParseTerm(Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseAffix(Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseInfix(std::unique_ptr<Ast> right, Precedence precedence, Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseBasic(Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseFunction(Environment& env);
-        Outcome<std::pair<InternedString, Type*>, Error> ParseArgument(Environment& env);
-        Outcome<Type*, Error> ParseBasicType(Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseTerm(std::shared_ptr<Environment> env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseAffix(std::shared_ptr<Environment> env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseInfix(std::unique_ptr<Ast> right, Precedence precedence, std::shared_ptr<Environment> env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseBasic(std::shared_ptr<Environment> env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseFunction(std::shared_ptr<Environment> env);
+        Outcome<std::pair<InternedString, Type*>, Error> ParseArgument(std::shared_ptr<Environment> env);
+        Outcome<Type*, Error> ParseBasicType(std::shared_ptr<Environment> env);
     public:
         Parser();
         ~Parser();
 
-        Outcome<std::unique_ptr<Ast>, Error> Parse(std::string str, Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> Parse(std::string str, std::shared_ptr<Environment> env);
     };
 }

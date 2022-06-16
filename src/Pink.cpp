@@ -3,11 +3,15 @@
 #include "aux/Environment.h"
 
 #include "core/Compile.h"
+// #TODO: add a separate 'emit' step by factoring out the 
+// file writing code from Compile()
+#include "core/Link.h"
 
+#include "llvm/Support/TargetSelect.h"
 
 int main(int argc, char** argv)
 {
-	pink::CLIOptions options = pink::ParseCLIOptions(std::cout, argc, argv);
+  std::shared_ptr<pink::CLIOptions> options = pink::ParseCLIOptions(std::cout, argc, argv);
 	
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
@@ -17,9 +21,10 @@ int main(int argc, char** argv)
   llvm::InitializeAllDisassemblers();
 
   std::shared_ptr<pink::Environment> env = pink::NewGlobalEnv(options);
-               
-    // Call the main driver code         
-	Compile(options, env, target_machine);
+                        
+  pink::Compile(env);
+
+  pink::Link(env);
 
   return 0;
 }

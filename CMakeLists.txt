@@ -11,7 +11,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_compile_options(-Wall -g -fstandalone-debug)
+add_compile_options(-Wall -gdwarf-4 -fstandalone-debug)
 
 cmake_policy(SET CMP0076 NEW)
 
@@ -61,7 +61,6 @@ execute_process(
 
 separate_arguments(llvm_syslibs)
 
-add_link_options(${llvm_ldflags} ${llvm_syslibs} "--verbose")
 
 
 
@@ -120,6 +119,7 @@ add_library(libpink STATIC
 		    src/front/Token.cpp
 		    src/front/Parser.cpp
 		    src/core/Compile.cpp
+        src/core/Link.cpp
 		   )
 			   
 
@@ -136,6 +136,7 @@ set_property(
 	PROPERTY ADDITIONAL_CLEAN_FILES src/front/Lexer.cpp
 )
 
+target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} "--verbose")
 
 target_include_directories(libpink PUBLIC include)
 
@@ -143,11 +144,11 @@ target_link_libraries(libpink
 ${LLVM_LIBRARY_DIRS}/liblldELF.a
 ${LLVM_LIBRARY_DIRS}/liblldCommon.a
 ${llvm_libs}
-libz.a
 )
 			   
 add_executable(pink src/Pink.cpp)
 
+target_link_options(pink PUBLIC "--verbose")
 
 target_link_libraries(pink
 libpink

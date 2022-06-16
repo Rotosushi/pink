@@ -33,7 +33,7 @@
 
 namespace pink {
 
-void Compile(CLIOptions& options, Environment& env, llvm::TargetMachine* target_machine);
+  void Compile(std::shared_ptr<Environment> env);
 
 }
 

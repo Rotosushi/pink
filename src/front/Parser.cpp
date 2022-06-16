@@ -46,7 +46,7 @@ namespace pink {
         txt = lexer.yytxt();
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, std::shared_ptr<Environment> env)
     {
     	tok = Token::Error;
     	loc = Location();
@@ -69,7 +69,7 @@ namespace pink {
         }
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(std::shared_ptr<Environment> env)
     {
     	std::vector<std::unique_ptr<Ast>> stmnts;
     	Outcome<std::unique_ptr<Ast>, Error> result(Error(Error::Kind::Default, "Default Error", loc));
@@ -108,13 +108,13 @@ namespace pink {
     	return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Block>(block_loc, stmnts));
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(std::shared_ptr<Environment> env)
     {
-        Location left_loc = loc; // save the location of the lhs of this affix expr
-		Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env)); // parse the initial term
+      Location left_loc = loc; // save the location of the lhs of this affix expr
+		  Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env)); // parse the initial term
 		
-		if (!left) // if the previous parse failed, return the error immediately
-			return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
+		  if (!left) // if the previous parse failed, return the error immediately
+			  return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
 		
         if (tok == Token::Op) // we assume this is a binary operator appearing after a basic term
         {
@@ -131,7 +131,7 @@ namespace pink {
     	going from this pseudo-code:
     	https://en.wikipedia.org/wiki/Operator-precedence_parser
     */
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence, Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence, std::shared_ptr<Environment> env)
     {
     	Outcome<std::unique_ptr<Ast>, Error> result(std::move(lhs));
     	Token peek_tok;
@@ -140,8 +140,8 @@ namespace pink {
     	BinopLiteral* peek_lit = nullptr;
     	
     	while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op)  
-    		&& (peek_str = env.operators.Intern(txt))
-    		&& (peek_opt = env.binops.Lookup(peek_str)) && (peek_opt.hasValue()) 
+    		&& (peek_str = env->operators->Intern(txt))
+    		&& (peek_opt = env->binops->Lookup(peek_str)) && (peek_opt.hasValue()) 
     		&& (peek_lit = peek_opt->second) && (peek_lit->precedence >= precedence))
     	{
     		InternedString op_str = peek_str;
@@ -156,8 +156,8 @@ namespace pink {
     			return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo()); 
     			
     		while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op) 
-    			&& (peek_str = env.operators.Intern(txt))
-    			&& (peek_opt = env.binops.Lookup(peek_str)) && (peek_opt.hasValue())
+    			&& (peek_str = env->operators->Intern(txt))
+    			&& (peek_opt = env->binops->Lookup(peek_str)) && (peek_opt.hasValue())
     			&& (peek_lit = peek_opt->second) 
     			&& ((peek_lit->precedence > op_lit->precedence) 
     				|| ((peek_lit->associativity == Associativity::Right)
@@ -205,14 +205,14 @@ namespace pink {
     }
     
     
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBasic(Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBasic(std::shared_ptr<Environment> env)
     {
     	switch(tok)
     	{
     	case Token::Id:
     	{
     		Location lhs_loc = loc; // save the beginning location
-    		InternedString id = env.symbols.Intern(txt); // Intern the identifier
+    		InternedString id = env->symbols->Intern(txt); // Intern the identifier
     		
     		nexttok(); // eat the identifier
     		
@@ -258,7 +258,7 @@ namespace pink {
     	case Token::Op: // an operator appearing in the basic position is a unop.
     	{
     		Location lhs_loc = loc; // save the lhs location
-    		InternedString op = env.operators.Intern(txt);
+    		InternedString op = env->operators->Intern(txt);
     		
     		nexttok(); // eat the op
     		
@@ -349,14 +349,14 @@ namespace pink {
     }
     
     
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseFunction(Environment& env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseFunction(std::shared_ptr<Environment> env)
     {
     	InternedString name = nullptr;
     	std::vector<std::pair<InternedString, Type*>> args;
     	std::unique_ptr<Ast> body(nullptr);
     	Location lhs_loc = loc;
     	
-    	if (env.bindings.OuterScope() != nullptr)
+    	if (env->bindings->OuterScope() != nullptr)
     	{
 			Error error(Error::Kind::Syntax, "Functions can only be defined at the global scope", loc);
 			return Outcome<std::unique_ptr<Ast>, Error>(error);    	
@@ -378,7 +378,7 @@ namespace pink {
     		return Outcome<std::unique_ptr<Ast>, Error>(error);
     	}
     	
-    	name = env.symbols.Intern(txt); // intern the functions name
+    	name = env->symbols->Intern(txt); // intern the functions name
 		
 		nexttok(); // eat 'Id'
 		
@@ -447,12 +447,17 @@ namespace pink {
 		Location fn_loc = {lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn};
 		
 		// we have all the parts, build the function.
-		return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Function>(fn_loc, name, args, std::move(body_res.GetOne()), &env.bindings));		
+		return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Function>(fn_loc,
+                                                                           name, 
+                                                                           args, 
+                                                                           std::move(body_res.GetOne()), 
+                                                                           env->bindings.get())
+                                               );		
     }
     
     
     
-    Outcome<std::pair<InternedString, Type*>, Error> Parser::ParseArgument(Environment& env)
+    Outcome<std::pair<InternedString, Type*>, Error> Parser::ParseArgument(std::shared_ptr<Environment> env)
     {
     	InternedString name;
 
@@ -462,7 +467,7 @@ namespace pink {
     		return Outcome<std::pair<InternedString, Type*>, Error>(error);
     	}
     	
-    	name = env.symbols.Intern(txt);
+    	name = env->symbols->Intern(txt);
     	
     	nexttok(); // eat 'Id'
     	
@@ -486,7 +491,7 @@ namespace pink {
     
     
     
-    Outcome<Type*, Error> Parser::ParseBasicType(Environment& env)
+    Outcome<Type*, Error> Parser::ParseBasicType(std::shared_ptr<Environment> env)
     {
     	switch(tok)
     	{
@@ -494,7 +499,7 @@ namespace pink {
         {
         	Location lhs_loc = loc;
         	nexttok(); // eat 'Nil'
-        	Outcome<Type*, Error> result(env.types.GetNilType());
+        	Outcome<Type*, Error> result(env->types->GetNilType());
         	return result;
         }
         
@@ -502,7 +507,7 @@ namespace pink {
         {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "Int"
-        	Outcome<Type*, Error> result(env.types.GetIntType());
+        	Outcome<Type*, Error> result(env->types->GetIntType());
         	return result;
         }
         
@@ -510,7 +515,7 @@ namespace pink {
         {
         	Location lhs_loc = loc;
         	nexttok(); // Eat "Bool"
-        	Outcome<Type*, Error> result(env.types.GetBoolType());
+        	Outcome<Type*, Error> result(env->types->GetBoolType());
         	return result;
         }
         
