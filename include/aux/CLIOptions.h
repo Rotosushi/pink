@@ -68,7 +68,8 @@ namespace pink {
 			// std::string lli-options;
 			// std::string linker-name;
 			// etc...
-			
+    CLIOptions();    
+
 		CLIOptions(
         std::string infile, 
         std::string outfile,

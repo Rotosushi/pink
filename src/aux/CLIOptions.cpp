@@ -6,6 +6,19 @@
 
 
 namespace pink {
+  CLIOptions::CLIOptions()
+    : input_file(), 
+      output_file(), 
+      verbose(false),
+      emit_assembly(false),
+      emit_object(true),
+      emit_llvm(false),
+      optimization_level(llvm::OptimizationLevel::O0),
+      link(true)
+  {
+
+  }
+
 	CLIOptions::CLIOptions(
       std::string infile, 
       std::string outfile, 
@@ -23,7 +36,7 @@ namespace pink {
 	}
 
 
-  /*
+  /* 
    *  This function searches for the first '.' appearing in the 
    *  given input string and returns the string containing 
    *  everything up to that point. if there is no '.' in the 
@@ -65,7 +78,7 @@ namespace pink {
 
   std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv)
 	{
-		const char* short_options = "hvi:o:O:LlCcSs";
+		const char* short_options = "hvi:o:O:lcs";
 		
 		std::string input_file;
 		std::string output_file;
@@ -87,11 +100,8 @@ namespace pink {
 			{"outfile",    required_argument, nullptr, 'o'},
 			{"output",     required_argument, nullptr, 'o'},
 			{"optimize",   required_argument, nullptr, 'O'},
-			{"emit-only-llvm", no_argument, nullptr, 'L'},
 			{"emit-llvm",      no_argument, nullptr, 'l'},
-      {"emit-only-asm",  no_argument, nullptr, 'S'},
       {"emit-asm",       no_argument, nullptr, 's'},
-      {"emit-only-obj",  no_argument, nullptr, 'C'},
 			{"emit-obj",   no_argument,     nullptr, 'c'},
 			{0,         0,           0,       0}
 		};
@@ -139,45 +149,29 @@ namespace pink {
 					output_file = optarg;
 					break;
 				}
-
-				case 'L':
-				{
-					emit_llvm = true;
-					link = false;
-					break;
-				}
 				
 				case 'l':
 				{
 					emit_llvm = true;
-					break;
-				}
-
-        case 'C':
-        {
-          emit_obj = true;
-          link = false;
+				  emit_obj  = false;
+          link      = false;
           break;
-        }
+				}
 				
 				case 'c':
 				{
 					emit_obj = true;
+          link = false;
 					break;
 				}
 
-        case 'S':
+        case 's':
         {
           emit_asm = true;
+          emit_obj = false;
           link = false;
           break;
-        }
-				
-				case 's':
-				{
-					emit_asm  = true;
-					break;
-				}				
+        }				
 				
 				case 'O':
 				{
@@ -243,8 +237,24 @@ namespace pink {
 	
 		if (input_file == "")
 		{
-			out << "input file is required." << std::endl;
-			exit(0);
+      // optind now the index of the first 
+      // argv element that is not an option.
+      char * option = argv[optind];
+      if (option != nullptr)
+      {
+        input_file = option; // assume that option is the name of an input file.
+                             // this is okay, because this is the intended
+                             // command line usage of this program.
+        // #TODO: input_file needs to be a std::vector<std::string> and we 
+        // need to collect multiple input files together into a single output 
+        // program. However, that is a few steps ahead of where we are right at 
+        // the moment. 
+      }
+      else
+      {
+			  FatalError("input file is required", __FILE__, __LINE__);
+		    exit(0);
+      }
 		}
 		
 		// give a default name to the output file.

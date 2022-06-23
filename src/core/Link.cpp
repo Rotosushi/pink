@@ -1,4 +1,7 @@
 
+#include "llvm/Support/raw_os_ostream.h"
+
+#include "lld/Common/Driver.h"
 
 #include "core/Link.h"
 

@@ -3,7 +3,7 @@
 #include "aux/Environment.h"
 
 #include "llvm/IR/Verifier.h"
-
+#include "llvm/IR/InlineAsm.h"
 
 namespace pink {
 		Function::Function(Location l, 
@@ -206,10 +206,139 @@ namespace pink {
 			{
 				return body_result;
 			}
-			
-			// use the value returned by the body to construct a return statement 
-			local_builder->CreateRet(body_result.GetOne());
-			
+		
+       
+      if (std::string(name) == "main")
+      {
+        // construct the following inline assembly for a syscall to exit.
+        // #NOTE: this is very non-portable, and will need to be made
+        // separately for each release platform and OS choice.
+        // #PORTABILITY
+
+        // however, for the moment, inline asm works in llvm by constructing
+        // the llvm::InlineAsm node with the correct asm string and constraints 
+        // string (specified:
+        // llvm.org/docs/LangRef.html#inline-assembler-expressions)
+        // and each asm string must then be used as the argument to 
+        // a call instruction, this call instruction is how we direct 
+        // local variables into the assembly itself. so for this particular 
+        // case, we want to pass it the return value of the body of the
+        // function.
+        //
+        // then, the actual assembly we want to emit is:
+        //  mov rax, 60
+        //  mov rdi, $0
+        //  syscall
+        //
+        // because we are only ever using the asm within a 'call' instruction,
+        // each instruction, in and of itself, has a 'function type' that is,
+        // a type which describes the arguments to and resulting value type of 
+        // the instruction itself.
+        // 
+        //  mov rax, 60 
+        // takes no arguments (void), because the value is immediate, and returns an
+        // integer type.
+        //
+        //  mov rdi, $0
+        // takes a single integer as argument, via $0, which indexes the
+        // argument list itself, and takes the first available argument.
+        // it returns an integer just like the above instruction.
+        //
+        //  syscall
+        // takes no arguments (void), and returns it's result in rax.
+        // in this particular case, we are calling exit(), which does 
+        // not return into our program.
+        //
+        
+
+        llvm::Type* int64Ty = local_builder->getInt64Ty();
+        llvm::Type* voidTy  = local_builder->getVoidTy();
+
+        std::vector<llvm::Type*> intArgsTy = { int64Ty };
+        std::vector<llvm::Type*> noArgsTy  = {};
+
+        llvm::FunctionType* iasm0Ty = llvm::FunctionType::get(int64Ty, noArgsTy, false);
+        llvm::FunctionType* iasm1Ty = llvm::FunctionType::get(int64Ty, intArgsTy, false);
+        llvm::FunctionType* iasm2Ty = llvm::FunctionType::get(voidTy, noArgsTy, false);
+        
+        if (!llvm::InlineAsm::Verify(iasm0Ty, "={rax}"))
+        {
+          FatalError("constraint code for iasm0Ty not valid", __FILE__, __LINE__);
+        }
+
+        if (!llvm::InlineAsm::Verify(iasm1Ty, "={rdi},i"))
+        {
+          FatalError("constraint code for iasm1Ty not valid", __FILE__, __LINE__);
+        }
+
+        if (!llvm::InlineAsm::Verify(iasm2Ty, ""))
+        {
+          FatalError("constraint code for iasm2Ty not valid", __FILE__, __LINE__);
+        }
+        
+        llvm::InlineAsm* iasm0 = llvm::InlineAsm::get(iasm0Ty, 
+                                                      "mov $$60, %rax",
+                                                      "={rax}", // this says the instruction writes an immediate int to rax
+                                                      true,  // hasSideEffects
+                                                      false, // isAlignStack
+                                                      llvm::InlineAsm::AsmDialect::AD_ATT,
+                                                      false); // canThrow
+         
+        llvm::InlineAsm* iasm1 = llvm::InlineAsm::get(iasm1Ty, 
+                                                      "mov $0, %rdi",
+                                                      "i,={rdi}", // this says the instruction writes an argument, 
+                                                                  // which is an immediate integer, to rdi
+                                                      true,  // hasSideEffects
+                                                      false, // isAlignStack
+                                                      llvm::InlineAsm::AsmDialect::AD_ATT,
+                                                      false); // canThrow
+
+        llvm::InlineAsm* iasm2 = llvm::InlineAsm::get(iasm2Ty, 
+                                                      "syscall",
+                                                      "", // syscall uses no data, and does not return in this case, 
+                                                          // other times it's return value is within rax.
+                                                      true,  // hasSideEffect
+                                                      false, // isAlignStack
+                                                      llvm::InlineAsm::AsmDialect::AD_ATT,
+                                                      false); // canThrow
+ 
+        //llvm::IRBuilderBase::InsertPoint ip = local_builder->saveIP();
+
+        //local_builder->SetInsertPoint(entryblock, entryblock->getFirstInsertionPt());
+
+        //llvm::Value* returnValAlloc   = local_builder->CreateAlloca(int64Ty,
+        //                                                            local_env->data_layout.getAllocaAddrSpace());
+
+        //local_builder->restoreIP(ip);
+
+
+        //local_builder->CreateStore(body_result.GetOne(), returnValAlloc);
+
+        //llvm::Value* returnVal  = local_builder->CreateLoad(int64Ty, returnValAlloc);
+
+        
+        std::vector<llvm::Value*> iasm1Args = { body_result.GetOne() };
+
+        local_builder->CreateCall(iasm1Ty, iasm1, iasm1Args);
+
+        
+        local_builder->CreateCall(iasm0Ty, iasm0);
+        
+
+        local_builder->CreateCall(iasm2Ty, iasm2);
+       
+        // if this line is not here, the program segfaults when 
+        // we try and print the program to a file. I am really unsure 
+        // why this is, and the segfault happens deep in llvm.
+        local_builder->CreateRet(local_builder->getInt64(0));
+      }
+      else
+      {
+      
+			  // use the value returned by the body to construct a return statement 
+			  local_builder->CreateRet(body_result.GetOne());
+      }
+
 			// call verifyFunction to validate the generated code for consistency 
 			llvm::verifyFunction(*function);
 			

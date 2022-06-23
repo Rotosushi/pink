@@ -11,7 +11,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_compile_options(-Wall -gdwarf-4 -fstandalone-debug)
+add_compile_options(-Wall -O1 -gdwarf-4 -fstandalone-debug)
 
 cmake_policy(SET CMP0076 NEW)
 
@@ -136,7 +136,7 @@ set_property(
 	PROPERTY ADDITIONAL_CLEAN_FILES src/front/Lexer.cpp
 )
 
-target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} "--verbose")
+target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} )
 
 target_include_directories(libpink PUBLIC include)
 
@@ -148,7 +148,7 @@ ${llvm_libs}
 			   
 add_executable(pink src/Pink.cpp)
 
-target_link_options(pink PUBLIC "--verbose")
+#target_link_options(pink PUBLIC --verbose)
 
 target_link_libraries(pink
 libpink

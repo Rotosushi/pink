@@ -17,7 +17,8 @@
 #include "llvm/Passes/PassBuilder.h" // llvm::PassBuilder
 #include "llvm/Analysis/AliasAnalysis.h" // llvm::AAManager
 #include "llvm/Support/raw_ostream.h" // llvm::raw_fd_stream
-#include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/FileSystem.h"
+
 
 #include "lld/Common/Driver.h" // lld::elf::link
 
@@ -181,7 +182,9 @@ namespace pink {
 		
 		if (env->options->emit_assembly)
 		{
-		
+      llvm::SmallVector<char> buf;
+	    llvm::raw_svector_ostream outstream(buf);
+
 			std::error_code outfile_error;
 			llvm::raw_fd_ostream outfile(assemblyoutfilename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
 			
@@ -194,7 +197,14 @@ namespace pink {
 			}
 			
 			llvm::legacy::PassManager asmPrintPass;
-			if (env->target_machine->addPassesToEmitFile(asmPrintPass, outfile, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile))
+      // addPassesToEmitFile(legacy::PassManager pass_manager,
+      //                     llvm::raw_fd_ostream& outfile,
+      //                     llvm::raw_fd_ostream* dwarfOutfile,
+      //                     llvm::CodeGenFileType CodeGenFileType,)
+      //
+      // notice the nullptr will need to be replaced with a pointer to the 
+      // dwarf object output file, once we emit debugging information.
+			if (env->target_machine->addPassesToEmitFile(asmPrintPass, outstream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile))
 			{
 				FatalError("the target_machine " 
                     + env->target_machine->getTargetTriple().str() 
@@ -204,9 +214,24 @@ namespace pink {
 			}
 			
 			asmPrintPass.run(*env->module);
-			
-			outfile.close();
-		}
+		
+      
+		  outfile << outstream.str();
+
+      if (outfile.has_error())
+      {
+        std::stringstream errmsg;
+        errmsg << outfile.error();
+        pink::FatalError("The output stream encountered an error: "
+                          + errmsg.str(),
+                          __FILE__,
+                          __LINE__);
+      }  
+      else 
+      {
+       outfile.close(); 
+		  }
+    }
 		
 		if (env->options->emit_object)
 		{	

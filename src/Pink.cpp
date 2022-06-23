@@ -11,8 +11,6 @@
 
 int main(int argc, char** argv)
 {
-  std::shared_ptr<pink::CLIOptions> options = pink::ParseCLIOptions(std::cout, argc, argv);
-	
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
@@ -20,6 +18,8 @@ int main(int argc, char** argv)
   llvm::InitializeAllAsmParsers();
   llvm::InitializeAllDisassemblers();
 
+  std::shared_ptr<pink::CLIOptions> options = pink::ParseCLIOptions(std::cout, argc, argv);
+	
   std::shared_ptr<pink::Environment> env = pink::NewGlobalEnv(options);
                         
   pink::Compile(env);

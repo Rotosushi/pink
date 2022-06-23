@@ -5,128 +5,69 @@
 
 #include "aux/Environment.h"
 
-#include "kernel/UnopPrimitives.h"
-
-#include "llvm/Support/Host.h" // llvm::sys::getProcessTriple()
-#include "llvm/Support/TargetRegistry.h" // llvm::TargetRegistry::lookupTarget();
-#include "llvm/Support/TargetSelect.h"
-
-#include "llvm/Target/TargetOptions.h"
-#include "llvm/Target/TargetMachine.h"
-
 bool TestUnop(std::ostream& out)
 {
-    bool result = true;
-    result = true;
+  bool result = true;
+  result = true;
 
-    out << "\n-----------------------\n";
-    out << "Testing pink::Unop: \n";
-    
-    pink::Parser         parser;
-    pink::StringInterner symbols;
-    pink::StringInterner operators;
-    pink::TypeInterner   types;
-    pink::SymbolTable    bindings;
-    pink::BinopTable     binops;
-    pink::UnopTable      unops;
+  out << "\n-----------------------\n";
+  out << "Testing pink::Unop: \n";
 
-    llvm::LLVMContext context;
-    llvm::IRBuilder<> builder(context);
+  auto options = std::make_shared<pink::CLIOptions>();
+  auto env = pink::NewGlobalEnv(options);
 
-    //llvm::InitializeAllTargetInfos();
-    llvm::InitializeNativeTarget();
-    llvm::InitializeNativeTargetAsmPrinter();
-    llvm::InitializeNativeTargetAsmParser();
-    llvm::InitializeNativeTargetDisassembler();
+  pink::InternedString minus = env->operators->Intern("-");
+  pink::Location l0(0, 0, 0, 1);
+  pink::Location l1(0, 2, 0, 3);
+  pink::Location l3(0, 0, 0, 3);
+  pink::Type* int_t = env->types->GetIntType();
+  std::unique_ptr<pink::Int> i0 = std::make_unique<pink::Int>(l1, 1);
+  pink::Ast* i0_p = i0.get();
+  std::unique_ptr<pink::Unop> u0 = std::make_unique<pink::Unop>(l3, minus, std::move(i0));
 
+  /*
+  The Ast class itself only provides a small
+  amount of the functionality of any given
+  syntax node.
 
-    std::string target_triple = llvm::sys::getProcessTriple();
+  tests:
 
-    std::string error;
-    const llvm::Target* target = llvm::TargetRegistry::lookupTarget(target_triple, error);
+  -) An Ast node constructed with a particular kind
+      holds that particular kind.
 
-    if (!target)
-    {
-        pink::FatalError(error.data(), __FILE__, __LINE__);
-        return false;
-    }
+  -) classof() meets specifications:
+      https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html#the-contract-of-classof
 
-    std::string cpu = "x86-64";
-    std::string cpu_features = "";
-    llvm::TargetOptions target_options;
-    llvm::Reloc::Model crm = llvm::Reloc::Model::PIC_;
-    llvm::CodeModel::Model code_model = llvm::CodeModel::Model::Small;
-    llvm::CodeGenOpt::Level opt_level = llvm::CodeGenOpt::Level::None;
+  -) An Ast node constructed with a particular Location
+      holds that particular Location.
 
-    llvm::TargetMachine* target_machine = target->createTargetMachine(target_triple,
-                                                                      cpu,
-                                                                      cpu_features,
-                                                                      target_options,
-                                                                      crm,
-                                                                      code_model,
-                                                                      opt_level);
+  -) Unop::symbol == symbol;
 
-    llvm::DataLayout data_layout(target_machine->createDataLayout());
-    llvm::Module      module("TestEnvironment", context);
+  -) Unop::right != nullptr;
 
+  -) Unop::ToString() == std::string(op) + i0->ToString();
 
-    pink::Environment env(parser, symbols, operators, types, bindings, binops, unops,
-                          target_triple, data_layout, context, module, builder);
-                          
-    pink::InitializeUnopPrimitives(env);
+  */
+  result &= Test(out, "Unop::GetKind()", u0->getKind() == pink::Ast::Kind::Unop);
 
-    pink::InternedString minus = env.operators.Intern("-");
-    pink::Location l0(0, 0, 0, 1);
-    pink::Location l1(0, 2, 0, 3);
-    pink::Location l3(0, 0, 0, 3);
-    pink::Type* int_t = env.types.GetIntType();
-    std::unique_ptr<pink::Int> i0 = std::make_unique<pink::Int>(l1, 1);
-    pink::Ast* i0_p = i0.get();
-    std::unique_ptr<pink::Unop> u0 = std::make_unique<pink::Unop>(l3, minus, std::move(i0));
+  result &= Test(out, "Unop::classof()", u0->classof(u0.get()));
 
-    /*
-    The Ast class itself only provides a small
-    amount of the functionality of any given
-    syntax node.
+  pink::Location ul(u0->GetLoc());
+  result &= Test(out, "Unop::GetLoc()", ul == l3);
 
-    tests:
+  result &= Test(out, "Unop::symbol", u0->op == minus);
 
-    -) An Ast node constructed with a particular kind
-        holds that particular kind.
+  result &= Test(out, "Unop::term", u0->right.get() == i0_p);
 
-    -) classof() meets specifications:
-        https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html#the-contract-of-classof
+  std::string unop_str = std::string(minus) + i0_p->ToString();
 
-    -) An Ast node constructed with a particular Location
-        holds that particular Location.
+  result &= Test(out, "Unop::ToString()", u0->ToString() == unop_str);
+  
+  pink::Outcome<pink::Type*, pink::Error> unop_type = u0->Getype(env);
+  
+  result &= Test(out, "Unop::Getype()", unop_type && unop_type.GetOne() == int_t);
 
-    -) Unop::symbol == symbol;
-
-    -) Unop::right != nullptr;
-
-    -) Unop::ToString() == std::string(op) + i0->ToString();
-
-    */
-    result &= Test(out, "Unop::GetKind()", u0->getKind() == pink::Ast::Kind::Unop);
-
-    result &= Test(out, "Unop::classof()", u0->classof(u0.get()));
-
-    pink::Location ul(u0->GetLoc());
-    result &= Test(out, "Unop::GetLoc()", ul == l3);
-
-    result &= Test(out, "Unop::symbol", u0->op == minus);
-
-    result &= Test(out, "Unop::term", u0->right.get() == i0_p);
-
-    std::string unop_str = std::string(minus) + i0_p->ToString();
-
-    result &= Test(out, "Unop::ToString()", u0->ToString() == unop_str);
-    
-    pink::Outcome<pink::Type*, pink::Error> unop_type = u0->Getype(env);
-    
-    result &= Test(out, "Unop::Getype()", unop_type && unop_type.GetOne() == int_t);
-
-    result &= Test(out, "pink::Unop", result);
-    out << "\n-----------------------\n";
-    return result;
+  result &= Test(out, "pink::Unop", result);
+  out << "\n-----------------------\n";
+  return result;
 }

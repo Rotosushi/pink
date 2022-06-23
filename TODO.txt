@@ -1,7 +1,6 @@
 
 
 # v0.0.1 
-  -> Emit a working executable
   -> fix any memory leaks present now before adding anything new to the
      language
     (and the new cycle for adding to or updating the 
@@ -10,7 +9,13 @@
       -2> write tests for functionality and get it bug free
       -3> run it under valgrind to check for memory leaks and get it leak free
      )
+  -> allow the programmer to specify an input file as a naked command line
+      argument, and don't try to open a file named 'pink'
 
+  -> the assembly within the main subroutine needs to tell the difference
+      between being given an immediate integer as the result value, (i)
+      and a load instruction from some given register, (r) so we can 
+      modify the inline assembly constraints to match.
 
 
 
