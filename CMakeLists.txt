@@ -11,7 +11,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_compile_options(-Wall -O1 -gdwarf-4 -fstandalone-debug)
+add_compile_options(-Wall -O0 -gdwarf-4 -fstandalone-debug)
 
 cmake_policy(SET CMP0076 NEW)
 
@@ -94,7 +94,8 @@ add_library(libpink STATIC
 		    src/ast/Unop.cpp
 		    src/ast/Variable.cpp
 		    src/ast/VarRef.cpp
-		    src/aux/CLIOptions.cpp
+        src/ast/Application.cpp
+        src/aux/CLIOptions.cpp
 		    src/aux/Environment.cpp
 		    src/aux/Error.cpp
 		    src/aux/Location.cpp

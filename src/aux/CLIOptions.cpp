@@ -55,7 +55,8 @@ namespace pink {
 		out << "pink version: " << pink_VERSION_MAJOR 
 		    << "." << pink_VERSION_MINOR << std::endl; 
 	}
-	
+
+
 	void PrintHelp(std::ostream& out)
 	{
 		out << "pink Usage: \n" 
@@ -78,6 +79,7 @@ namespace pink {
 
   std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv)
 	{
+    unsigned numopt = 0; // count of how many options we parsed
 		const char* short_options = "hvi:o:O:lcs";
 		
 		std::string input_file;
@@ -116,6 +118,9 @@ namespace pink {
 			if (option == -1)
 				break; // end of options.
 			
+      // we are about to handle an option, so up the count by one
+      numopt += 1;
+
 			switch(option)
 			{
 				case 0:
@@ -239,7 +244,26 @@ namespace pink {
 		{
       // optind now the index of the first 
       // argv element that is not an option.
-      char * option = argv[optind];
+      // and is not the name of the program being called
+      if (optind >= argc || (optind + 1 + numopt) >= argc)
+      {
+        FatalError("input file is required", __FILE__, __LINE__);
+      }
+
+      // getopt's manual states that the procedure permutes argv
+      // as it parses the arguments, that is true, it also says 
+      // that when it is done parsing it will return -1 and the 
+      // optind will be set to the first argument that is not an 
+      // option within argv. This is also true. However, the first 
+      // argument within argv that is not an option is the first 
+      // argument within argv, the name of the program being run 
+      // itself. Which means to get to the names of the files to be 
+      // compiled, which are being given on the command line, we have 
+      // to traverse to the other end of argv, to the other side of
+      // all of the options that getopt parsed. This is why we add 
+      // optind to numopt. however, we also need to account for one 
+      // more option, the first one
+      char * option = argv[optind + numopt + 1];
       if (option != nullptr)
       {
         input_file = option; // assume that option is the name of an input file.

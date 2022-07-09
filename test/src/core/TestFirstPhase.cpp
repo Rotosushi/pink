@@ -1,6 +1,6 @@
 
 #include "Test.h"
-#include "kernel/TestFirstPhase.h"
+#include "core/TestFirstPhase.h"
 #include "aux/Environment.h"
 
 #include "ast/Nil.h"

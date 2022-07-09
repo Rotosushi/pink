@@ -25,6 +25,7 @@
 #include "ast/TestAssignment.h"
 #include "ast/TestBlock.h"
 #include "ast/TestFunction.h"
+#include "ast/TestApplication.h"
 
 #include "type/TestTypeAndNilType.h"
 #include "type/TestIntType.h"
@@ -37,7 +38,9 @@
 
 #include "kernel/TestUnopPrimitives.h"
 #include "kernel/TestBinopPrimitives.h"
-#include "kernel/TestFirstPhase.h"
+
+#include "core/TestFirstPhase.h"
+#include "core/TestBasics.h"
 
 /*
     This is a super basic funclet, which simply saves
@@ -212,23 +215,29 @@ size_t RunTests(std::ostream& out, size_t flags)
             result |= TEST_UNOP;
     }
 
-	if ((flags & TEST_ASSIGNMENT) > 0)
-	{
-		if (TestAssignment(out))
-			result |= TEST_ASSIGNMENT;
-	}
-	
-	if ((flags & TEST_BLOCK) > 0)
-	{
-		if (TestBlock(out))
-			result |= TEST_BLOCK;
-	}
-	
-	if ((flags & TEST_FUNCTION) > 0)
-	{
-		if (TestFunction(out))
-			result |= TEST_FUNCTION;
-	}
+    if ((flags & TEST_ASSIGNMENT) > 0)
+    {
+      if (TestAssignment(out))
+        result |= TEST_ASSIGNMENT;
+    }
+    
+    if ((flags & TEST_BLOCK) > 0)
+    {
+      if (TestBlock(out))
+        result |= TEST_BLOCK;
+    }
+    
+    if ((flags & TEST_FUNCTION) > 0)
+    {
+      if (TestFunction(out))
+        result |= TEST_FUNCTION;
+    }
+
+    if ((flags & TEST_APPLICATION) > 0)
+    {
+      if (TestApplication(out))
+        result |= TEST_APPLICATION;
+    }
 
     /*
         Type Tests
@@ -292,11 +301,20 @@ size_t RunTests(std::ostream& out, size_t flags)
         if (TestBinopPrimitives(out))
             result |= TEST_BINOP_PRIMITIVES;
     }
-    
+   
+    /*
+     *  Core functionality tests
+     */ 
     if ((flags & TEST_FIRST_PHASE) > 0)
     {
     	if (TestFirstPhase(out))
     		result |= TEST_FIRST_PHASE;
+    }
+
+    if ((flags & TEST_BASICS) > 0)
+    {
+      if (TestBasics(out))
+        result |= TEST_BASICS;
     }
 
 
@@ -357,6 +375,7 @@ void PrintPassedTests(std::ostream& out, size_t test_results)
     result &= Test(out, "pink::Assignment",     test_results & TEST_ASSIGNMENT);
     result &= Test(out, "pink::Block",			test_results & TEST_BLOCK);
     result &= Test(out, "pink::Function",		test_results & TEST_FUNCTION);
+    result &= Test(out, "pink::Application", test_results & TEST_FUNCTION);
 
     /*
         Type Tests
@@ -378,7 +397,12 @@ void PrintPassedTests(std::ostream& out, size_t test_results)
     */
     result &= Test(out, "pink::UnopPrimitives", test_results & TEST_UNOP_PRIMITIVES);
     result &= Test(out, "pink::BinopPrimitives", test_results & TEST_BINOP_PRIMITIVES);
+    
+    /*
+     * Core functionality tests
+     */
     result &= Test(out, "pink First Phase", test_results & TEST_FIRST_PHASE);
+    result &= Test(out, "pink Basic core Functionality", test_results & TEST_BASICS);
 
     Test(out, "pink::Test", result);
 }

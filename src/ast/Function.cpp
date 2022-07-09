@@ -214,8 +214,12 @@ namespace pink {
         // #NOTE: this is very non-portable, and will need to be made
         // separately for each release platform and OS choice.
         // #PORTABILITY
+        // #TODO: refactor this section into a function call which then
+        // dispatches based upon which target language and OS we are emitting
+        // for. As of this early version this is an acceptable solution, as 
+        // our language only supports x86-64 on Linux.
 
-        // however, for the moment, inline asm works in llvm by constructing
+        // however, in general, inline asm works in llvm by constructing
         // the llvm::InlineAsm node with the correct asm string and constraints 
         // string (specified:
         // llvm.org/docs/LangRef.html#inline-assembler-expressions)
@@ -260,15 +264,55 @@ namespace pink {
         llvm::FunctionType* iasm0Ty = llvm::FunctionType::get(int64Ty, noArgsTy, false);
         llvm::FunctionType* iasm1Ty = llvm::FunctionType::get(int64Ty, intArgsTy, false);
         llvm::FunctionType* iasm2Ty = llvm::FunctionType::get(voidTy, noArgsTy, false);
-        
+       
+        llvm::Value* bodyVal = body_result.GetOne();
+        llvm::InlineAsm* iasm1 = nullptr;
+
+        // if the body of main is returning a constantInt that needs a slightly 
+        // different inline assembly expression from returning the result of an
+        // expression.
+        if ( llvm::isa<llvm::ConstantInt>(bodyVal) )
+        {
+          if (!llvm::InlineAsm::Verify(iasm1Ty, "={rdi},i"))
+          {
+            FatalError("constraint code for iasm1Ty not valid", __FILE__, __LINE__);
+          }
+         
+          iasm1 = llvm::InlineAsm::get(iasm1Ty, 
+                                       "mov $1, %rdi",
+                                       "={rdi},i", // this says the instruction writes an argument, 
+                                                   // which is an immediate integer, to rdi
+                                       true,  // hasSideEffects
+                                       false, // isAlignStack
+                                       llvm::InlineAsm::AsmDialect::AD_ATT,
+                                       false); // canThrow
+
+        }
+        else // we assume since main passed typechecking that the body_result is in fact 
+             // type Int, it's simply held within a register because of the
+             // actual shape of the body.  
+        {
+          if (!llvm::InlineAsm::Verify(iasm1Ty, "={rdi},r"))
+          {
+            FatalError("constraint code for iasm1Ty not valid", __FILE__, __LINE__);
+          }
+
+          iasm1 = llvm::InlineAsm::get(iasm1Ty, 
+                                       "mov $1, %rdi",
+                                       "={rdi},r", // this says the instruction writes an argument, 
+                                                   // which is an immediate integer, to rdi
+                                       true,  // hasSideEffects
+                                       false, // isAlignStack
+                                       llvm::InlineAsm::AsmDialect::AD_ATT,
+                                       false); // canThrow
+
+
+        }
+
+
         if (!llvm::InlineAsm::Verify(iasm0Ty, "={rax}"))
         {
           FatalError("constraint code for iasm0Ty not valid", __FILE__, __LINE__);
-        }
-
-        if (!llvm::InlineAsm::Verify(iasm1Ty, "={rdi},i"))
-        {
-          FatalError("constraint code for iasm1Ty not valid", __FILE__, __LINE__);
         }
 
         if (!llvm::InlineAsm::Verify(iasm2Ty, ""))
@@ -276,6 +320,7 @@ namespace pink {
           FatalError("constraint code for iasm2Ty not valid", __FILE__, __LINE__);
         }
         
+
         llvm::InlineAsm* iasm0 = llvm::InlineAsm::get(iasm0Ty, 
                                                       "mov $$60, %rax",
                                                       "={rax}", // this says the instruction writes an immediate int to rax
@@ -284,14 +329,6 @@ namespace pink {
                                                       llvm::InlineAsm::AsmDialect::AD_ATT,
                                                       false); // canThrow
          
-        llvm::InlineAsm* iasm1 = llvm::InlineAsm::get(iasm1Ty, 
-                                                      "mov $0, %rdi",
-                                                      "i,={rdi}", // this says the instruction writes an argument, 
-                                                                  // which is an immediate integer, to rdi
-                                                      true,  // hasSideEffects
-                                                      false, // isAlignStack
-                                                      llvm::InlineAsm::AsmDialect::AD_ATT,
-                                                      false); // canThrow
 
         llvm::InlineAsm* iasm2 = llvm::InlineAsm::get(iasm2Ty, 
                                                       "syscall",
@@ -300,23 +337,14 @@ namespace pink {
                                                       true,  // hasSideEffect
                                                       false, // isAlignStack
                                                       llvm::InlineAsm::AsmDialect::AD_ATT,
-                                                      false); // canThrow
- 
-        //llvm::IRBuilderBase::InsertPoint ip = local_builder->saveIP();
-
-        //local_builder->SetInsertPoint(entryblock, entryblock->getFirstInsertionPt());
-
-        //llvm::Value* returnValAlloc   = local_builder->CreateAlloca(int64Ty,
-        //                                                            local_env->data_layout.getAllocaAddrSpace());
-
-        //local_builder->restoreIP(ip);
-
-
-        //local_builder->CreateStore(body_result.GetOne(), returnValAlloc);
-
-        //llvm::Value* returnVal  = local_builder->CreateLoad(int64Ty, returnValAlloc);
-
-        
+                                                      false); // canThrow 
+        // initally the numbering followed the order we emitted, however
+        // rax is a commonly selected register for use by the compiler,
+        // and as such it selects rax as the place to store the results
+        // of common expressions, this causes us to overwrite the correct 
+        // return code when we load the rax register with the exit code 
+        // if we emit a call to iasm1 after emitting the call to 
+        // iasm0. hence the reversal.        
         std::vector<llvm::Value*> iasm1Args = { body_result.GetOne() };
 
         local_builder->CreateCall(iasm1Ty, iasm1, iasm1Args);
@@ -327,14 +355,17 @@ namespace pink {
 
         local_builder->CreateCall(iasm2Ty, iasm2);
        
+        // #NOTE: #TODO:
         // if this line is not here, the program segfaults when 
         // we try and print the program to a file. I am really unsure 
         // why this is, and the segfault happens deep in llvm.
+        // so, figure out why this happens and what we can do to 
+        // remove this line. this is in fact always dead code,
+        // so i am initailly unsure why this is even necessary.
         local_builder->CreateRet(local_builder->getInt64(0));
       }
       else
       {
-      
 			  // use the value returned by the body to construct a return statement 
 			  local_builder->CreateRet(body_result.GetOne());
       }

@@ -7,10 +7,16 @@
 // file writing code from Compile()
 #include "core/Link.h"
 
+//#include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/TargetSelect.h"
 
 int main(int argc, char** argv)
 {
+  // for some reason calling InitLLVM, in an attempt 
+  // to get llvm to clean up more of what it allocates, 
+  // causes a segmentation fault within AddPassesToEmitFile.
+  // llvm::InitLLVM(argc, argv);
+
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();

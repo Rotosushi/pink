@@ -1,23 +1,20 @@
 
 
 # v0.0.1 
-  -> fix any memory leaks present now before adding anything new to the
-     language
-    (and the new cycle for adding to or updating the 
-      language goes as follows:
-      -1> add a small peice
-      -2> write tests for functionality and get it bug free
-      -3> run it under valgrind to check for memory leaks and get it leak free
-     )
-  -> allow the programmer to specify an input file as a naked command line
-      argument, and don't try to open a file named 'pink'
+  -> Extend the test framework to handle running the compiler 
+      against test programs. Then write a few to check for 
+      more functionality
 
-  -> the assembly within the main subroutine needs to tell the difference
-      between being given an immediate integer as the result value, (i)
-      and a load instruction from some given register, (r) so we can 
-      modify the inline assembly constraints to match.
-
-
+  -> add a function call Ast and get that to emit valid code 
+      NOTE: this will be a c-style function call interface 
+            at first, we will then refactor this to use the 
+            calling convention we are going to define.
+            however i do not think this will require us to 
+            define a custom llvm calling convention, as 
+            I think it can be accomplished on top of a c-style
+            calling convention as long as functions are defined 
+            to have the correct type from the perspective of 
+            llvm.
 
 
 

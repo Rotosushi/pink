@@ -37,25 +37,25 @@ bool TestAssignment(std::ostream& out)
     
   env->bindings->Bind(symb, nil_t, nil_v);
 	
-	std::unique_ptr<pink::Assignment> ass = std::make_unique<pink::Assignment>(al, std::move(var), std::move(nil));
+	std::unique_ptr<pink::Assignment> asgn = std::make_unique<pink::Assignment>(al, std::move(var), std::move(nil));
 	
-	result &= Test(out, "Assignment::getKind()", ass->getKind() == pink::Ast::Kind::Assignment);
+	result &= Test(out, "Assignment::getKind()", asgn->getKind() == pink::Ast::Kind::Assignment);
 	
-	result &= Test(out, "Assignment::classof()", ass->classof(ass.get()));
+	result &= Test(out, "Assignment::classof()", asgn->classof(asgn.get()));
 	
-	result &= Test(out, "Assignment::GetLoc()", ass->GetLoc() == al);
+	result &= Test(out, "Assignment::GetLoc()", asgn->GetLoc() == al);
 	
-	result &= Test(out, "Assignment::left", ass->left.get() == var_p);
+	result &= Test(out, "Assignment::left", asgn->left.get() == var_p);
 	
-	result &= Test(out, "Assignment::right", ass->right.get() == nil_p);
+	result &= Test(out, "Assignment::right", asgn->right.get() == nil_p);
 	
-	std::string ass_str = var_p->ToString() + " = " + nil_p->ToString();
+	std::string asgn_str = var_p->ToString() + " = " + nil_p->ToString();
 	
-	result &= Test(out, "Assignment::ToString()", ass->ToString() == ass_str);
+	result &= Test(out, "Assignment::ToString()", asgn->ToString() == asgn_str);
 	
-	pink::Outcome<pink::Type*, pink::Error> ass_type = ass->Getype(env);
+	pink::Outcome<pink::Type*, pink::Error> asgn_type = asgn->Getype(env);
 	
-	result &= Test(out, "Assignment::Getype()", ass_type && ass_type.GetOne() == nil_t);
+	result &= Test(out, "Assignment::Getype()", asgn_type && asgn_type.GetOne() == nil_t);
 	
 	result &= Test(out, "pink::Assignment", result);
   out << "\n-----------------------\n";

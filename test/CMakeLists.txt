@@ -38,7 +38,8 @@ target_sources(pink-test PUBLIC
 			   src/ast/TestVariable.cpp
 			   src/ast/TestBlock.cpp
 			   src/ast/TestFunction.cpp
-			   src/aux/TestEnvironment.cpp
+         src/ast/TestApplication.cpp
+         src/aux/TestEnvironment.cpp
 			   src/aux/TestError.cpp
 			   src/aux/TestOutcome.cpp
 			   src/aux/TestStringInterner.cpp
@@ -56,10 +57,11 @@ target_sources(pink-test PUBLIC
 			   src/type/TestFunctionType.cpp
 			   src/kernel/TestBinopPrimitives.cpp
 			   src/kernel/TestUnopPrimitives.cpp
-			   src/kernel/TestFirstPhase.cpp
 			   src/front/TestToken.cpp
 			   src/front/TestLexer.cpp
 			   src/front/TestParser.cpp
+			   src/core/TestFirstPhase.cpp
+         src/core/TestBasics.cpp
 			   )
 
 

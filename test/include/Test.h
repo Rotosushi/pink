@@ -38,45 +38,47 @@
 */
 
 // auxilliary tests
-constexpr auto TEST_ERROR             = 0x0000'0001;
-constexpr auto TEST_OUTCOME           = 0x0000'0002;
-constexpr auto TEST_STRING_INTERNER   = 0x0000'0004;
-constexpr auto TEST_SYMBOL_TABLE      = 0x0000'0008;
-constexpr auto TEST_TYPE_INTERNER     = 0x0000'0010;
-constexpr auto TEST_ENVIRONMENT       = 0x0000'0020;
-constexpr auto TEST_UNOP_CODEGEN      = 0x0000'0040;
-constexpr auto TEST_UNOP_LITERAL      = 0x0000'0080;
-constexpr auto TEST_UNOP_TABLE        = 0x0000'0100;
-constexpr auto TEST_BINOP_CODEGEN     = 0x0000'0200;
-constexpr auto TEST_BINOP_LITERAL     = 0x0000'0400;
-constexpr auto TEST_BINOP_TABLE       = 0x0000'0800;
+constexpr auto TEST_ERROR             = 0x0000'0000'0001;
+constexpr auto TEST_OUTCOME           = 0x0000'0000'0002;
+constexpr auto TEST_STRING_INTERNER   = 0x0000'0000'0004;
+constexpr auto TEST_SYMBOL_TABLE      = 0x0000'0000'0008;
+constexpr auto TEST_TYPE_INTERNER     = 0x0000'0000'0010;
+constexpr auto TEST_ENVIRONMENT       = 0x0000'0000'0020;
+constexpr auto TEST_UNOP_CODEGEN      = 0x0000'0000'0040;
+constexpr auto TEST_UNOP_LITERAL      = 0x0000'0000'0080;
+constexpr auto TEST_UNOP_TABLE        = 0x0000'0000'0100;
+constexpr auto TEST_BINOP_CODEGEN     = 0x0000'0000'0200;
+constexpr auto TEST_BINOP_LITERAL     = 0x0000'0000'0400;
+constexpr auto TEST_BINOP_TABLE       = 0x0000'0000'0800;
 // abstract syntax tree tests
-constexpr auto TEST_AST_AND_NIL       = 0x0000'1000;
-constexpr auto TEST_BOOL              = 0x0000'2000;
-constexpr auto TEST_INT               = 0x0000'4000;
-constexpr auto TEST_VARIABLE          = 0x0000'8000;
-constexpr auto TEST_BIND              = 0x0001'0000;
-constexpr auto TEST_BINOP             = 0x0002'0000;
-constexpr auto TEST_UNOP              = 0x0004'0000;
-constexpr auto TEST_ASSIGNMENT 		  = 0x0008'0000;
-constexpr auto TEST_BLOCK			  = 0x0010'0000;
-constexpr auto TEST_FUNCTION          = 0x0020'0000;
+constexpr auto TEST_AST_AND_NIL       = 0x0000'0000'1000;
+constexpr auto TEST_BOOL              = 0x0000'0000'2000;
+constexpr auto TEST_INT               = 0x0000'0000'4000;
+constexpr auto TEST_VARIABLE          = 0x0000'0000'8000;
+constexpr auto TEST_BIND              = 0x0000'0001'0000;
+constexpr auto TEST_BINOP             = 0x0000'0002'0000;
+constexpr auto TEST_UNOP              = 0x0000'0004'0000;
+constexpr auto TEST_ASSIGNMENT 		    = 0x0000'0008'0000;
+constexpr auto TEST_BLOCK			        = 0x0000'0010'0000;
+constexpr auto TEST_FUNCTION          = 0x0000'0020'0000;
+constexpr auto TEST_APPLICATION       = 0x0000'0040'0000;
 // type tests
-constexpr auto TEST_TYPE_AND_NIL_TYPE = 0x0040'0000;
-constexpr auto TEST_INT_TYPE          = 0x0080'0000;
-constexpr auto TEST_BOOL_TYPE         = 0x0100'0000;
-constexpr auto TEST_FUNCTION_TYPE     = 0x0200'0000;
+constexpr auto TEST_TYPE_AND_NIL_TYPE = 0x0000'0080'0000;
+constexpr auto TEST_INT_TYPE          = 0x0000'0100'0000;
+constexpr auto TEST_BOOL_TYPE         = 0x0000'0200'0000;
+constexpr auto TEST_FUNCTION_TYPE     = 0x0000'0400'0000;
 // frontend tests
-constexpr auto TEST_TOKEN             = 0x0400'0000;
-constexpr auto TEST_LEXER             = 0x0800'0000;
-constexpr auto TEST_PARSER			  = 0x1000'0000;
+constexpr auto TEST_TOKEN             = 0x0000'0800'0000;
+constexpr auto TEST_LEXER             = 0x0000'1000'0000;
+constexpr auto TEST_PARSER			      = 0x0000'2000'0000;
 // kernel tests
-constexpr auto TEST_UNOP_PRIMITIVES   = 0x2000'0000;
-constexpr auto TEST_BINOP_PRIMITIVES  = 0x4000'0000;
-constexpr auto TEST_FIRST_PHASE       = 0x8000'0000;
+constexpr auto TEST_UNOP_PRIMITIVES   = 0x0000'4000'0000;
+constexpr auto TEST_BINOP_PRIMITIVES  = 0x0000'8000'0000;
+// core tests
+constexpr auto TEST_FIRST_PHASE       = 0x0001'0000'0000;
+constexpr auto TEST_BASICS            = 0x0002'0000'0000;
 
-
-constexpr auto TEST_ALL               = 0xFFFF'FFFF;
+constexpr auto TEST_ALL               = 0xFFFF'FFFF'FFFF;
 
 
 /*
@@ -97,3 +99,15 @@ bool Test(std::ostream& out, std::string test_name, bool test);
 */
 size_t RunTests(std::ostream& out, size_t flags);
 void PrintPassedTests(std::ostream& out, size_t test_results);
+
+
+
+
+
+
+
+
+
+
+
+/* ---------------------- */
