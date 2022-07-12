@@ -44,8 +44,10 @@ namespace pink {
     {
       result += arg->ToString();
       
-      if (i < arguments.size() - 1)
+      if (i < (arguments.size() - 1))
         result += " ";
+
+      i++;
     }
 
     return result;

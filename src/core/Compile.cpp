@@ -97,6 +97,43 @@ namespace pink {
 		//			is too big to fit in memory, and still carry over the state of the parser 
 		//			after we refill the input buffer.
 		
+    // Okay, this comment is for a refactor and will be removed/replaced afterwards.
+    // We need to work with a slightly different design of the parser
+    // subroutine. we need to somehow parse affix term, and then save the Ast,
+    // in the situation where we cannot type it because of
+    // a use-before-declaration error. 
+    // at the largest scale, it seems reasonable to simply hold each successive
+    // affix term that we parse in a std::vector, so we can then Codegen each
+    // of them once we can type everything.
+    // the real problem is, how can we separate the input text into segments to
+    // be parsed, when the parser is the best place to know when to break
+    // a statement? the only solution that comes to mind is to refactor the
+    // parser to a push parser, instead of a pull parser. so that we can break
+    // on a newline, and if the declaration is accross the newline we can
+    // simply parse the next line and then give it to the parser to continue 
+    // it's job.
+    // the only problem is, I do not know how to do that.
+    // my first inclination is to buffer everything we parse, 
+    // and when we fail because we want more text to parse 
+    // we simply break, hand control back up here, which can parse the next 
+    // line and then give it back to the parser, which then can continue to
+    // parse from where it was, but treating the new line of text as the 'rest'
+    // of the input.
+    // this process can then be repeated to handle multiple newlines for
+    // a given declaration. 
+    // the problem that i don't know how to solve is saving the state of the 
+    // parser to return here and get more input from the source file.
+    // We might be able to use a callback procedure. 
+    // like say we define a getline procedure which could be called within the
+    // parser itself that would fill in the new data. then, when we were
+    // parsing an reached end of input, we could delay failing by asking for
+    // more by calling this procedure. if after the call we had no more input,
+    // then we would fail. otherwise the procedure could append the new input
+    // into the buffer the parser was already parsing.
+    // we would need the filehandle within the procedure. which luckily enough 
+    // the file buffer itself will save the last read position for us.
+    // we also need the buffer to store the result into.
+    // but then we could hide the function call itself in gettok
 		pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env->parser->Parse(inbuf, env);
 		
 		if (!term)

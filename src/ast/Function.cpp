@@ -57,13 +57,13 @@ namespace pink {
 					result += ", ";
 			}
 						
-			result += ")\n";
+			result += ")";
 			
-			result += "{\n";
+			result += "{";
 			
 			result += body->ToString();
 			
-			result += "}\n";
+			result += "}";
 			
 			return result;
 		}

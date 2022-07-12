@@ -22,10 +22,53 @@ namespace pink {
         cursor = marker = token = buffer.begin();
     }
 
+    void Lexer::AppendBuf(std::string& buf)
+    {
+      // this procedure modifies the buffer we are currently parsing 
+      // by appending the text passed onto it.
+      // normally this is inadviseable, because if the string being 
+      // appened onto needs to reallocate its internal buffer to
+      // accomidate the new characters then any iterators into 
+      // said buffer will be invalidated, and we will not keep our 
+      // location within the buffer. this is a problem, because we 
+      // only want to add new text to lex, we don't want to destroy
+      // our position within the array. so we can keep lexing where 
+      // we left off. 
+      // to solve this problem we are going to take advantage of the 
+      // fact that when we perform the append operation, the original 
+      // text, and position of said text within the new buffer will 
+      // be identical to what it was before the append operation.
+      // this is because the append operation does not modify the 
+      // existing text, or its relative position within the buffer,
+      // it only adds new text after the end.
+      // thus if we store the distance that each iterator is into the 
+      // current buffer, after the append, we can 'restore' the position 
+      // of the iterators within the new buffer containing the 
+      // old text and the appended new text.
+      
+      // save the relative offsets of each iterator.
+      int cursor_dist = Distance(buffer, cursor);
+      int marker_dist = Distance(buffer, marker);
+      int token_dist  = Distance(buffer, token);
+      
+      buffer += buf; // perform the append operation, which may invalidate the iterators
+      
+      // construct new valid iterators, at their old relative offsets within the new string.
+      end    = buffer.end();
+      cursor = SeekIterator(buffer, cursor_dist);
+      marker = SeekIterator(buffer, marker_dist);
+      token  = SeekIterator(buffer, token_dist);
+    }
+
     void Lexer::Reset()
     {
         buffer.clear();
         end = cursor = marker = token = buffer.end();
+    }
+    
+    bool Lexer::EndOfInput()
+    {
+      return (end - cursor) == 0;
     }
 
     /*
@@ -66,6 +109,27 @@ namespace pink {
             }
         }
     }
+
+    int Lexer::Distance(std::string& buf, std::string::iterator it)
+    {
+      // the iterator points to somewhere in the array of characters,
+      // the beginning of the buffer is somewhere in memory. since the 
+      // data structure is a string, we know that the elements of memory 
+      // between the beginning and it are also members of this string.
+      // since the iterators are also just pointers, and pointers are 
+      // just integers, we can subtract the farther point, it, from the 
+      // closer point, buf.begin(), this results in the distance between the
+      // two iterators. that is the number of characters within the string 
+      // between the beginning and the iterator it.
+      return it - buf.begin();
+    }
+
+    std::string::iterator Lexer::SeekIterator(std::string& buf, int distance)
+    {
+      // return an iterator into the string some distance into the string.
+      return buf.begin() + distance;
+    }
+
 
     /*
         token points to the beginning of the
@@ -156,7 +220,7 @@ namespace pink {
                 op      { UpdateLoc(); return Token::Op; }
                 int     { UpdateLoc(); return Token::Int; }
                 
-                [ \t\n] { UpdateLoc(); continue; } // Whitespace
+                [ \t\n]+ { UpdateLoc(); continue; } // Whitespace
                 *       { UpdateLoc(); return Token::Error; } // Unknown Token
                 $       { UpdateLoc(); return Token::End; } // End of Input
             */

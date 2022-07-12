@@ -29,7 +29,7 @@
 
 namespace pink {
     Parser::Parser()
-        : lexer(), tok(Token::Error), loc(), txt()
+        : lexer(), tok(Token::Error), loc(), txt(), input_stream(nullptr)
     {
 
     }
@@ -39,11 +39,36 @@ namespace pink {
 
     }
 
+    std::string& Parser::GetBuf()
+    {
+      return lexer.GetBuf();
+    }
+
+    void Parser::yyfill()
+    {
+      if (lexer.EndOfInput())
+      {
+        std::string t;
+      
+        if (input_stream != nullptr)
+        {
+          std::getline(*input_stream, t, '\n');
+          lexer.AppendBuf(t);
+        }
+      } 
+    }
+
     void Parser::nexttok()
     {
         tok = lexer.yylex();
         loc = lexer.yyloc();
         txt = lexer.yytxt();
+    }
+
+    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, std::shared_ptr<Environment> env, std::istream* input_stream)
+    {
+      this->input_stream = input_stream;
+      return Parse(str, env);
     }
 
     Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, std::shared_ptr<Environment> env)
@@ -56,7 +81,7 @@ namespace pink {
     	{
 		    lexer.SetBuf(str);
 		    nexttok(); // prime the lexers
-		    return ParseTerm(env);
+		    return ParseAffix(env);
         }
         else
         {
@@ -69,45 +94,7 @@ namespace pink {
         }
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(std::shared_ptr<Environment> env)
-    {
-    	std::vector<std::unique_ptr<Ast>> stmnts;
-    	Outcome<std::unique_ptr<Ast>, Error> result(Error(Error::Kind::Default, "Default Error", loc));
-    	Location left_loc = loc;
-    	
-    	do {
-    		if (tok == Token::Semicolon)
-    		{
-    			nexttok(); // eat ';'
-    		}
-    		// this isn't an else if to catch the case where we have a 
-    		// statment which is followed by a semicolon which ends the 
-    		// block. "x := 1; x + 1;" and "x := 1; x + 1" should both 
-    		// end the block. whereas "x := 1 x + 1" would be an error,
-    		// however when we add application terms, this would parse 
-    		// as applying '1' and passing in the argument 'x' which 
-    		// would be an application error, as integers cannot be applied.
-    		// inside the body of a function, we parse a full term, which 
-    		// means that terms can end with an EOF or a '}'
-    		if (tok == Token::End || tok == Token::RBrace)
-    		{
-    			break;
-    		}
-    		
-    		// parse a statement
-    		result = ParseAffix(env);
-    		
-    		if (!result)
-    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
-    		
-    		// add it to the current block
-    		stmnts.emplace_back(std::move(result.GetOne()));
-    	} while (tok == Token::Semicolon);
-    	
-    	Location block_loc(left_loc.firstLine, left_loc.firstColumn, loc.firstLine, loc.firstColumn);
-    	return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Block>(block_loc, stmnts));
-    }
-
+    
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(std::shared_ptr<Environment> env)
     {
       Location left_loc = loc; // save the location of the lhs of this affix expr
@@ -232,27 +219,27 @@ namespace pink {
     			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
     		}
     		else if (tok == Token::Equals) // an assignment expression
-        	{
-		        nexttok(); // eat '='
+        {
+		      nexttok(); // eat '='
 
-		        Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env));
+		      Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env));
 		        
-		        if (!rhs)
-		        	return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
+		      if (!rhs)
+		        return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
 		        
 		        // loc holds the location of the rhs of the term after the above call to ParseTerm
-		        Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-		        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<VarRef>(lhs_loc, id), std::move(rhs.GetOne())));
+		      Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+		      Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<VarRef>(lhs_loc, id), std::move(rhs.GetOne())));
 		        
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-        	}
-        	else // this identifer was simply a variable reference 
-        	{
-        		Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Variable>(lhs_loc, id));
+    		  return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+        }
+        else // this identifer was simply a variable reference 
+        {
+          Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Variable>(lhs_loc, id));
     			
     			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-        	}
-        	break;
+        }
+        break;
     	}
     	
     	case Token::Op: // an operator appearing in the basic position is a unop.
@@ -307,38 +294,39 @@ namespace pink {
     	}
     	
       
-        case Token::Int:
-        {
-        	Location lhs_loc = loc;
-        	int value = std::stoi(txt);
-        	nexttok(); // eat '[0-9]+'
-        	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Int>(lhs_loc, value));
+      case Token::Int:
+      {
+        Location lhs_loc = loc;
+        int value = std::stoi(txt);
+        nexttok(); // eat '[0-9]+'
+      
+        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Int>(lhs_loc, value));
 
-    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-        }
+        return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+      }
         
-        case Token::True:
-        {
-        	Location lhs_loc = loc;
-        	nexttok(); // Eat "true"
-        	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, true));
-        	
-    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-        }
+      case Token::True:
+      {
+        Location lhs_loc = loc;
+        nexttok(); // Eat "true"
+        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, true));
         
-        case Token::False:
-        {
-        	Location lhs_loc = loc;
-        	nexttok(); // Eat "false"
-        	Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, false));
+        return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+      }
+      
+      case Token::False:
+      {
+        Location lhs_loc = loc;
+        nexttok(); // Eat "false"
+        Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, false));
 
-    		return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-        }
-        
-        case Token::Fn:
-        {
-        	return ParseFunction(env);
-        }
+        return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+      }
+      
+      case Token::Fn:
+      {
+        return ParseFunction(env);
+      }
         
     	default:
     	{
@@ -349,18 +337,85 @@ namespace pink {
     }
     
     
+    /*  block = '{' affix (';' affix (';')?)* '}'
+     *
+     *  
+     *
+     *
+     *
+     *
+     *
+     */
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBlock(std::shared_ptr<Environment> env)
+    {
+    	std::vector<std::unique_ptr<Ast>> stmnts;
+    	Outcome<std::unique_ptr<Ast>, Error> result(Error(Error::Kind::Default, "Default Error", loc));
+    	Location left_loc = loc;
+
+      if (tok != Token::LBrace)
+		  {
+			  Error error(Error::Kind::Syntax, "Expected '{' to begin a block", loc);
+			  return Outcome<std::unique_ptr<Ast>, Error>(error);
+		  }
+		
+		  nexttok(); // eat '{'
+    	
+    	do {
+        // eat the semicolon that caused this to loop.
+    		if (tok == Token::Semicolon)
+    		{
+    			nexttok(); // eat ';'
+    		}
+    		// this isn't an else if to catch the case where we have a 
+    		// statment which is followed by a semicolon which ends the 
+    		// block. "x := 1; x + 1;" and "x := 1; x + 1" should both 
+    		// end the block. whereas "x := 1 x + 1" would be an error,
+    		// however when we add application terms, this would parse 
+    		// as applying '1' and passing in the argument 'x' which 
+    		// would be an application error, as integers cannot be applied.
+    		// inside the body of a function, we parse a full term, which 
+    		// means that terms can end with an EOF or a '}'
+    		if (tok == Token::End || tok == Token::RBrace)
+    		{
+    			break;
+    		}
+    		
+    		// parse a statement
+    		result = ParseAffix(env);
+    		
+    		if (!result)
+    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+    		
+    		// add it to the current block
+    		stmnts.emplace_back(std::move(result.GetOne()));
+    	} while (tok == Token::Semicolon);
+    	
+    	Location block_loc(left_loc.firstLine, left_loc.firstColumn, loc.firstLine, loc.firstColumn);
+    	return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Block>(block_loc, stmnts));
+    }
+
+    
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseFunction(std::shared_ptr<Environment> env)
     {
     	InternedString name = nullptr;
     	std::vector<std::pair<InternedString, Type*>> args;
     	std::unique_ptr<Ast> body(nullptr);
     	Location lhs_loc = loc;
-    	
-    	if (env->bindings->OuterScope() != nullptr)
-    	{
-			Error error(Error::Kind::Syntax, "Functions can only be defined at the global scope", loc);
-			return Outcome<std::unique_ptr<Ast>, Error>(error);    	
-    	}
+    
+      // this does not actually work. we don't touch the bindings within a function 
+      // until typechecking. so this check will always pass even 
+      // if we are parsing a function definition which occurs inside 
+      // another function definition.
+    	//  if (env->bindings->OuterScope() != nullptr)
+    	//  {
+			//    Error error(Error::Kind::Syntax, "Functions can only be defined at the global scope", loc);
+			//    return Outcome<std::unique_ptr<Ast>, Error>(error);    	
+    	//  }
+      //
+      //  so we have two options, accept that we catch this particular error at
+      //  typechecking, and leave this commented out
+      //  or figure out a way to know we are parsing inside of a function
+      //  definition at the moment we try to parse a function definition.
     	
     	
     	if (tok != Token::Fn)
@@ -420,16 +475,10 @@ namespace pink {
 		
 		nexttok(); // eat ')'
 		
-		if (tok != Token::LBrace)
-		{
-			Error error(Error::Kind::Syntax, "Expected '{' to begin the function body", loc);
-			return Outcome<std::unique_ptr<Ast>, Error>(error);
-		}
-		
-		nexttok(); // eat '{'
+	
 		
 		// parse the body of the function.
-		Outcome<std::unique_ptr<Ast>, Error> body_res = ParseTerm(env);
+		Outcome<std::unique_ptr<Ast>, Error> body_res = ParseBlock(env);
 		
 		if (!body_res)
 		{
