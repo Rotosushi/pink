@@ -1,9 +1,6 @@
 
 
 # v0.0.1 
-  -> Extend the test framework to handle running the compiler 
-      against test programs. Then write a few to check for 
-      more functionality
 
   -> add a function call Ast and get that to emit valid code 
       NOTE: this will be a c-style function call interface 
@@ -17,5 +14,28 @@
             llvm.
 
 
+    -> to finish this we need the ability to bind the function name 
+        to a type within the symboltable, such that we can type function 
+        declarations which apply another function. whereas now we only bind 
+        names to llvm::Values during codegen.
 
+    -> in order to solve the problem of a function calling another before 
+        the other is defined we are adding use-before-definition at the global
+        scope
+
+      -> in order to add use-before-definition we have to modify the parser
+          such that we can hold an ill typed term in the case that the typeing 
+          error is specifically an undefined variable name.
+
+      -> to fully do this the parser can no longer simply assume that it has
+          all input within it's text buffer, and has to be modified so that it
+          asks for more input when it still needs more tokens to parse a term, and the
+          input buffer is empty.
+
+      -> then, when it finishes parsing a given string from a source file, it
+          will return control, we grab another line and then parse that as well.
+          in this way we can construct an array of terms which the parser has
+          constructed from a given source file, regardless of if we can type
+          all of them, this gives us the moment we need to allow
+          use-before-definition. 
 --
