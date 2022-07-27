@@ -5,35 +5,67 @@
 #include "aux/Location.h"
 
 namespace pink {
-    class Error {
+
+  class Error {
     public:
-        enum class Kind {
-        	Default,
-            Syntax,
-            Type,
-            Semantic,
-        };
+      enum Code 
+      {
+        None, // for building no arg errors which are needed to declare 
+              // an error term that may be overwritten in a lower scope.
+    
+        // syntax errors
+        EndOfFile,
+        MissingSemicolon,
+        MissingLParen,
+        MissingRParen,
+        MissingLBrace,
+        MissingRBrace,
+        MissingFn,
+        MissingFnName,
+        MissingArgName,
+        MissingArgType,
+        MissingArgColon,
+        UnknownBinop,
+        UnknownUnop,
+        UnknownBasicToken,
+        UnknownTypeToken,
 
-    private:
-        Kind        kind;
-        std::string dsc;
-        Location    loc;
+        // type errors
+        TypeCannotBeCalled,
+        ArgNumMismatch,
+        ArgTypeMismatch,
+        AssigneeTypeMismatch,
+        NameNotBoundInScope,
+        NameAlreadyBoundInScope,
+        
+        // semantic errors
+        ValueCannotBeAssigned,
+        NonConstGlobalInit
+      };
 
-    public:
-    	Error();
-        Error(const Error& other);
-        Error(Kind k, const char* d, Location l);
-        Error(Kind k, std::string d, Location l);
+  private:
+      Code   code;
+      Location    loc;
 
-        Error& operator=(const Error& other);
+      const char* CodeToErrText(Code code);
+ 
+  public:
+      Error();
+      Error(const Error& other);
+      Error(Code code, Location l);
+      //Error(Kind k, const char* d, Location l);
+      //Error(Kind k, std::string d, Location l);
 
-        std::string ToString(const char* txt);
-        std::string ToString(std::string& txt);
+      Error& operator=(const Error& other);
 
-        std::ostream& Print(std::ostream& out, std::string& txt);
-        std::ostream& Print(std::ostream& out, const char* txt);
-    };
 
-    void FatalError(const char* dsc, const char* file, size_t line);
-	void FatalError(std::string dsc, const char* file, size_t line);
+      std::string ToString(const char* txt);
+      std::string ToString(std::string& txt);
+
+      std::ostream& Print(std::ostream& out, std::string& txt);
+      std::ostream& Print(std::ostream& out, const char* txt);
+  };
+
+  void FatalError(const char* dsc, const char* file, size_t line);
+  void FatalError(std::string dsc, const char* file, size_t line);
 }

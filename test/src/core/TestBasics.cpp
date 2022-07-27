@@ -111,7 +111,10 @@ bool TestFile(std::string test_contents, int expected_value)
   };
 
   int prog_result = Run(exe_name.data(), exe_args);
+  
+  std::string obj_name = StripFilenameExtensions(filename) + ".o";
 
+  std::remove(obj_name.data());
   std::remove(filename.data());
   std::remove(exe_name.data());
 
@@ -155,6 +158,20 @@ bool TestBasics(std::ostream& out)
 
   srand(time(0));
 
+  /*  #TODO: when we give TestFile a string containing the exact same text 
+   *  as what is given below, that is
+   *  fn main () { some-number } 
+   *  except that we do not include the newline at the end, the linker fails to
+   *  find the function in the emitted file. now, this is strange behavior,
+   *  because we use std::getline to extract input, and running into the EOF
+   *  should also return whatever was picked up for parsing.
+   *  so i am confused as to why the compiler would treat these two situations
+   *  any differently from eachother. what is even stranger is that I cannot 
+   *  seem to make this situation happen when I create the test file using 
+   *  a standard text editor. (i tried vim and nano) it seems that the editors
+   *  save the file with an added newline even if I do not explicitly add one.
+   *
+   */
   for (int i = 0; i < 10; i++)
   {
     int num = rand() % 100; // random number between 0 and 100
@@ -163,7 +180,7 @@ bool TestBasics(std::ostream& out)
         out, 
         "Simple main [" + numstr + "]",
         TestFile(
-          std::string("fn main() { ") + numstr + " }",
+          std::string("fn main () { ") + numstr + "; };\n",
           num
         )
     );
@@ -180,7 +197,7 @@ bool TestBasics(std::ostream& out)
       out,
       "Addition: x (" + num1str + ") + y (" + num2str + ") = " + resstr,
       TestFile(
-        std::string("fn main() { ") + num1str + " + " + num2str + " }",
+        std::string("fn main () { ") + num1str + " + " + num2str + "; };\n",
         num1 + num2
         ) 
     );
@@ -197,7 +214,7 @@ bool TestBasics(std::ostream& out)
       out,
       "Multiplication: x (" + num1str + ") * y (" + num2str + ") = " + resstr,
       TestFile(
-        std::string("fn main() { ") + num1str + " * " + num2str + " }",
+        std::string("fn main () { ") + num1str + " * " + num2str + "; };\n",
         num1 * num2
         ) 
     );

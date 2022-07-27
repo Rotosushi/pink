@@ -64,11 +64,18 @@ namespace pink {
 		std::string FunctionType::ToString()
 		{
 			std::string str;
-			for (Type* ty : arguments)
-			{
-				str += ty->ToString() + " -> ";
-			}
-			
+      if (arguments.size() > 0)
+      {
+		  	for (Type* ty : arguments)
+			  {
+				  str += ty->ToString() + " -> ";
+			  }
+      }
+      else
+      {
+        str += "Void -> ";
+      }
+
 			str += result->ToString();
 			return str;
 		}

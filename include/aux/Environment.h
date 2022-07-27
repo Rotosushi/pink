@@ -79,7 +79,7 @@ namespace pink {
         );
     };
 
-
     std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options);
+    std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream* instream);
 
 }

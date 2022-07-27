@@ -115,12 +115,12 @@ namespace pink {
 			
 			// build the function type to return it.
 			std::vector<Type*> arg_types;
-			
-			for (auto& pair : arguments)
+
+      for (auto& pair : arguments)
 			{
-				arg_types.emplace_back(pair.second);
+			  arg_types.emplace_back(pair.second);
 			}
-			
+
 			FunctionType* func_ty = env->types->GetFunctionType(body_result.GetOne(), arg_types);
 			return Outcome<Type*, Error>(func_ty);
 		}

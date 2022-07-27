@@ -15,6 +15,11 @@ namespace pink {
         cursor = marker = token = buffer.begin();
     }
 
+    std::string& Lexer::GetBuf()
+    {
+      return buffer;
+    }
+
     void Lexer::SetBuf(std::string& buf)
     {
         buffer = buf;
@@ -26,7 +31,7 @@ namespace pink {
     {
       // this procedure modifies the buffer we are currently parsing 
       // by appending the text passed onto it.
-      // normally this is inadviseable, because if the string being 
+      // normally this is inadvisable, because if the string being 
       // appened onto needs to reallocate its internal buffer to
       // accomidate the new characters then any iterators into 
       // said buffer will be invalidated, and we will not keep our 

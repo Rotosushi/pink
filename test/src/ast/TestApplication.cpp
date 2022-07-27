@@ -1,3 +1,4 @@
+#include <sstream>
 
 #include "Test.h"
 #include "ast/TestApplication.h"
@@ -16,12 +17,15 @@ bool TestApplication(std::ostream& out)
   out << "Testing pink::Application: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env     = pink::NewGlobalEnv(options);
+  std::stringstream ss;
+  ss.str("fn add(x: Int, y: Int) { x + y }");
+  
+  auto env     = pink::NewGlobalEnv(options, &ss);
 
   // we need to define a function and then construct an application term
   // which calls the function.
 
-  pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> fn = env->parser->Parse("fn add(x: Int, y: Int) { x + y }", env);
+  pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> fn = env->parser->Parse(env);
 
   // 'add 5 7'
   pink::Location idloc(1, 0, 1, 2);

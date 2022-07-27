@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "Test.h"
 #include "front/TestParser.h"
 #include "front/Parser.h"
@@ -22,8 +24,34 @@ bool TestParser(std::ostream& out)
     out << "\n-----------------------\n";
     out << "Testing Pink::Parser: \n";
     
+  /*
+   *  so, the parser itself handles extracting each line and 
+   *  then parsing each one. allowing the calling code to simply 
+   *  set up the input_stream, and then repeatedly call the Parse 
+   *  method to parse each declaration. but what still hasn't been solved 
+   *  is multiple lines for a single declaration.
+   *  as of right now, the parser will fail to parse a declaration split over
+   *  multiple lines. what we need to do to solve this is to allow each point
+   *  within the parser that could potentially need more input than a single 
+   *  token to have the ability to ask for more input to finish the parse.
+   *  then should we be in the situation where we have partially parsed 
+   *  some declaration and we run into the end of the input, that part of 
+   *  the parser can ask the input stream for more input and then continue 
+   *  trying to parse. from that point, if there is no more input, then we 
+   *  have an unfinished declaration, or if the new source is incorrect we
+   *  still have an error.
+   *
+   */ 
+  std::stringstream ss;
+  ss.str(std::string("nil;\n10;\ntrue;\nx;\nx := 1;\nx = 2;\n!true;\n")
+       + std::string("1 + 1;\n6 + 3 * 4 == 3 * 2 + 12;\n")
+       + std::string("(1 + 1) - (1 + 1);\nfn one() { 1; };\n")
+       + std::string("fn inc(x: Int) { x + 1; };\n")
+       + std::string("fn add(x: Int, y: Int, z: Int) { x + y + z; };\n")
+       + std::string("fn fun(x: Int, y: Int, z: Int) { a := x + y; a == z; };\n")); 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env     = pink::NewGlobalEnv(options); 
+  auto env     = pink::NewGlobalEnv(options, &ss); 
+
 
   auto parser = env->parser;
     /*
@@ -39,147 +67,106 @@ bool TestParser(std::ostream& out)
     		Parses Parenthesized expressions
     */       
     
-    pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result(parser->Parse("nil", env));
-    pink::Block* block = nullptr;
-    pink::Block::iterator iter;
+    pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result(parser->Parse(env));
     pink::Ast* term = nullptr;
     
-    
-    result &= Test(out, "Parser::Parse(Nil)", 
+    result &= Test(out, "Parser::Parse(nil)", 
     		(parser_result) 
     	 && ((term  = parser_result.GetOne().get()) != nullptr) 
-    	 && ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	 && ((iter  = block->begin()) != block->end())
-    	 && (llvm::isa<pink::Nil>(iter->get())));
-                          
-    parser_result = parser->Parse("10", env);
+    	 && (llvm::isa<pink::Nil>(term)));
+
+    parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(Int)", 
+    result &= Test(out, "Parser::Parse(10)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter  = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Int>(iter->get())));
-    	
-    parser_result = parser->Parse("true", env);
+    	&& (llvm::isa<pink::Int>(term)));
+     
+    parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(Bool)", 
+    result &= Test(out, "Parser::Parse(true)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter  = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Bool>(iter->get())));
+    	&& (llvm::isa<pink::Bool>(term)));
     
-    parser_result = parser->Parse("x", env);
+    parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(Variable)", 
+    result &= Test(out, "Parser::Parse(x)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Variable>(iter->get())));
+    	&& (llvm::isa<pink::Variable>(term)));
     
-    parser_result = parser->Parse("x := 1", env);
+    parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(Bind)", 
+    result &= Test(out, "Parser::Parse(x := 1)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end()) 
-    	&& (llvm::isa<pink::Bind>(iter->get())));
+    	&& (llvm::isa<pink::Bind>(term)));
     
-    parser_result = parser->Parse("x = 2", env);
+    parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(Assignment)", 
+    result &= Test(out, "Parser::Parse(x = 2)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Assignment>(iter->get())));
+    	&& (llvm::isa<pink::Assignment>(term)));
     
-    parser_result = parser->Parse("!true", env);
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(unary expression)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Unop>(iter->get())));
-    	
-    parser_result = parser->Parse("1 + 1", env);
+    	&& (llvm::isa<pink::Unop>(term)));
+    
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(binary expression)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Binop>(iter->get())));
+    	&& (llvm::isa<pink::Binop>(term)));
     	
-    parser_result = parser->Parse("6 + 3 * 4 == 3 * 2 + 12", env);
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(complex binary expression)",
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Binop>(iter->get())));
+    	&& (llvm::isa<pink::Binop>(term)));
     
-    parser_result = parser->Parse("(1 + 1) - (1 + 1)", env);
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(parenthesized expression)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Binop>(iter->get())));
-    	
-    parser_result = parser->Parse("x := 1; x + 1;", env);
-    
-    result &= Test(out, "Parser::Parse(block expression)",
-    	   (parser_result)
-    	&& ((term = parser_result.GetOne().get()) != nullptr)
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Bind>(iter->get()))
-    	&& (llvm::isa<pink::Binop>((++iter)->get())));
-    	
-    parser_result = parser->Parse("fn one() { 1 }", env);
+    	&& (llvm::isa<pink::Binop>(term)));    
+
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(Function, no arg)",
     	   (parser_result)
     	&& ((term = parser_result.GetOne().get()) != nullptr)
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Function>(iter->get())));
+    	&& (llvm::isa<pink::Function>(term)));
     	
     	
-    parser_result = parser->Parse("fn inc(x: Int) { x + 1 }", env);
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(Function, single arg)",
     	   (parser_result)
     	&& ((term = parser_result.GetOne().get()) != nullptr)
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Function>(iter->get())));
+    	&& (llvm::isa<pink::Function>(term)));
     	
-    parser_result = parser->Parse("fn add(x: Int, y: Int, z: Int) { x + y + z }", env);
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(Function, multi-arg)",
     	   (parser_result)
     	&& ((term = parser_result.GetOne().get()) != nullptr)
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Function>(iter->get())));
+    	&& (llvm::isa<pink::Function>(term)));
     	
-    parser_result = parser->Parse("fn add(x: Int, y: Int, z: Int) { a := x + y; a == z }", env);
+    parser_result = parser->Parse(env);
     
     result &= Test(out, "Parser::Parse(Function, multi-arg, multi-line)",
     	   (parser_result)
     	&& ((term = parser_result.GetOne().get()) != nullptr)
-    	&& ((block = llvm::dyn_cast<pink::Block>(term)) != nullptr)
-    	&& ((iter = block->begin()) != block->end())
-    	&& (llvm::isa<pink::Function>(iter->get())));
-    
+    	&& (llvm::isa<pink::Function>(term)));
+
     result &= Test(out, "pink::Parser", result);
     out << "\n-----------------------\n";
     return result;

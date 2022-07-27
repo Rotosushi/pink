@@ -72,7 +72,7 @@ namespace pink {
 	*/
 	Outcome<Type*, Error> Block::GetypeV(std::shared_ptr<Environment> env)
 	{
-		Outcome<Type*, Error> result(Error(Error::Kind::Default, "Default Error", loc));
+		Outcome<Type*, Error> result(Error(Error::Code::None, loc));
 		
 		for (auto& stmt : statements)
 		{
@@ -102,7 +102,7 @@ namespace pink {
 	*/
 	Outcome<llvm::Value*, Error> Block::Codegen(std::shared_ptr<Environment> env)
 	{
-		Outcome<llvm::Value*, Error> result(Error(Error::Kind::Default, "Default Error", loc));
+		Outcome<llvm::Value*, Error> result(Error(Error::Code::None, loc));
 		
 		for (auto& stmt : statements)
 		{

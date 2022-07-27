@@ -97,7 +97,12 @@ namespace pink {
 
     std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options)
     {
-      auto parser    = std::make_shared<Parser>();
+      return NewGlobalEnv(options, nullptr);
+    }
+
+    std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream* instream)
+    {
+      auto parser    = std::make_shared<Parser>(instream);
       auto symbols   = std::make_shared<StringInterner>();
       auto operators = std::make_shared<StringInterner>();
       auto types     = std::make_shared<TypeInterner>();

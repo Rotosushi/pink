@@ -97,10 +97,7 @@ namespace pink {
 			// #TODO: if the binding term has the same type as what the symbol 
 			//  is already bound to, we could treat the binding as equivalent 
 			//  to an assignment instead of an error. different types would still be an error.
-			Error error(Error::Kind::Type, 
-					  std::string("[") + symbol + std::string("] is already bound to [")
-					  	+ bound->first->ToString() + std::string("]"),
-					  loc);
+			Error error(Error::Code::NameAlreadyBoundInScope, loc);
 			Outcome<Type*, Error> result(error);
 			return result;
 		}
@@ -159,7 +156,7 @@ namespace pink {
 				}
 				else 
 				{
-					Error error(Error::Kind::Semantic, "Global values must have constant initializers.", term->GetLoc());
+					Error error(Error::Code::NonConstGlobalInit, term->GetLoc());
 					return Outcome<llvm::Value*, Error>(error);
 				}
 			}
@@ -195,10 +192,7 @@ namespace pink {
 			// #TODO: if the binding term has the same type as what the symbol 
 			//  is already bound to, we could treat the binding as equivalent 
 			//  to an assignment here.
-			Error error(Error::Kind::Semantic, 
-					  std::string("[") + symbol + std::string("] is already bound to [")
-					  	+ bound->first->ToString() + std::string("]"),
-					  loc);
+			Error error(Error::Code::NameAlreadyBoundInScope, loc);
 			Outcome<llvm::Value*, Error> result(error);
 			return result;
 		}

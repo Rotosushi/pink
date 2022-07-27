@@ -46,13 +46,13 @@ bool TestLexer(std::ostream& out)
 
     result &= TestToken(out, lex, pink::Token::Op, loc, str);
 
-	str = ",";
+  	str = ",";
 	
-	result &= TestToken(out, lex, pink::Token::Comma, loc, str);
+  	result &= TestToken(out, lex, pink::Token::Comma, loc, str);
 	
-	str = ";";
+	  str = ";";
 	
-	result &= TestToken(out, lex, pink::Token::Semicolon, loc, str);
+	  result &= TestToken(out, lex, pink::Token::Semicolon, loc, str);
 
     str = ":";
 
@@ -86,7 +86,7 @@ bool TestLexer(std::ostream& out)
 
     result &= TestToken(out, lex, pink::Token::RParen, loc, str);
 
-	str = ":=";
+  	str = ":=";
     loc = {0, 0, 0, 2};
     
     result &= TestToken(out, lex, pink::Token::ColonEq, loc, str);
@@ -131,6 +131,19 @@ bool TestLexer(std::ostream& out)
     loc = {0, 0, 0, 2};
     
     result &= TestToken(out, lex, pink::Token::Fn, loc, str);
+
+    str = "nil ";
+    
+    lex.SetBuf(str);
+
+    lex.yylex();
+
+    std::string newbuf("42");
+
+    lex.AppendBuf(newbuf);
+
+    result &= Test(out, "Lexer::AppendBuf", lex.yylex() == pink::Token::Int);
+
 
 
     result &= Test(out, "pink::Lexer", result);

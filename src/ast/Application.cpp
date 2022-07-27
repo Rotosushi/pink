@@ -80,26 +80,14 @@ namespace pink {
 
     if (calleeFnTy == nullptr)
     {
-      Error error(Error::Kind::Type,
-                  std::string("[") 
-                    + calleeTy.GetOne()->ToString() 
-                    + std::string("] is not equivalent to type [") 
-                    + callee->ToString()
-                    + std::string("]"),
-                  loc);
+      Error error(Error::Code::TypeCannotBeCalled, loc);
       return Outcome<Type*, Error>(error);
     }
 
     // check that the number of arguments matches
     if (arguments.size() != calleeFnTy->arguments.size())
     {
-      Error error(Error::Kind::Type,
-                  std::string("Expected ")
-                   + std::to_string(calleeFnTy->arguments.size())
-                   + " arguments but application provides "
-                   + std::to_string(arguments.size())
-                   + " arguments",
-                  loc);
+      Error error(Error::Code::ArgNumMismatch, loc);
       return Outcome<Type*, Error>(error);
     }
     
@@ -120,15 +108,7 @@ namespace pink {
     {
       if (argTys[i] != calleeFnTy->arguments[i])
       {
-        Error error(Error::Kind::Type,
-                    std::string("Arg ")
-                     + std::to_string(i)
-                     + ": ["
-                     + argTys[i]->ToString()
-                     + "] is not equivalent to expected type ["
-                     + calleeFnTy->arguments[i]->ToString()
-                     + "]",
-                    loc);
+        Error error(Error::Code::ArgTypeMismatch, loc);
         return Outcome<Type*, Error>(error);
       }
     }

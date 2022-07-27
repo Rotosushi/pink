@@ -64,9 +64,7 @@ namespace pink {
     	
     	if (!binop)
     	{
-    		Error error(Error::Kind::Type,
-    			std::string("[") + op + std::string("] not bound in env"),
-    			loc);
+    		Error error(Error::Code::UnknownBinop, loc);
     		Outcome<Type*, Error> result(error);
     		return result;
     	}
@@ -76,10 +74,7 @@ namespace pink {
     	
     	if (!literal)
     	{
-    		Error error(Error::Kind::Type,
-    			std::string("[") + op + std::string("] has no overload for the given types [")
-    				+ lhs_result.GetOne()->ToString() + ", " + rhs_result.GetOne()->ToString() + "]",
-    				loc);
+        Error error(Error::Code::ArgTypeMismatch, loc);
     		Outcome<Type*, Error> result(error);
     		return result;
     	}
@@ -135,9 +130,7 @@ namespace pink {
     	
     	if (!binop)
     	{
-    		Error error(Error::Kind::Semantic,
-    			std::string("[") + op + std::string("] not bound in env"),
-    			loc);
+    		Error error(Error::Code::UnknownBinop, loc);
     		Outcome<llvm::Value*, Error> result(error);
     		return result;
     	}
@@ -147,10 +140,7 @@ namespace pink {
     	
     	if (!literal)
     	{
-    		Error error(Error::Kind::Semantic,
-    			std::string("[") + op + std::string("] has no overload for the given types [")
-    				+ lhs_type_result.GetOne()->ToString() + ", " + rhs_type_result.GetOne()->ToString() + "]",
-    				loc);
+    		Error error(Error::Code::ArgTypeMismatch, loc);
     		Outcome<llvm::Value*, Error> result(error);
     		return result;
     	}

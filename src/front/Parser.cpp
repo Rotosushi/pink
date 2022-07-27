@@ -28,8 +28,8 @@
 
 
 namespace pink {
-    Parser::Parser()
-        : lexer(), tok(Token::Error), loc(), txt(), input_stream(nullptr)
+    Parser::Parser(std::istream* i)
+        : lexer(), tok(Token::End), loc(), txt(), input_stream(i)
     {
 
     }
@@ -39,62 +39,186 @@ namespace pink {
 
     }
 
-    std::string& Parser::GetBuf()
+    const std::string& Parser::GetBuf()
     {
       return lexer.GetBuf();
     }
 
+    std::istream* Parser::GetIStream()
+    {
+      return input_stream;
+    }
+
+    bool Parser::EndOfInput()
+    {
+      bool end = true;
+
+      if (input_stream != nullptr)
+      {
+        end = input_stream->eof();
+      }
+
+      return lexer.EndOfInput() && end; 
+          
+    }
+
+    void Parser::SetIStream(std::istream* i)
+    {
+      input_stream = i;
+      lexer.Reset();
+    }
+
     void Parser::yyfill()
     {
-      if (lexer.EndOfInput())
-      {
-        std::string t;
-      
-        if (input_stream != nullptr)
-        {
-          std::getline(*input_stream, t, '\n');
-          lexer.AppendBuf(t);
-        }
-      } 
+      std::string t;
+      std::getline(*input_stream, t, '\n');
+      lexer.AppendBuf(t);
     }
 
     void Parser::nexttok()
     {
-        tok = lexer.yylex();
-        loc = lexer.yyloc();
-        txt = lexer.yytxt();
+      tok = lexer.yylex(); // this statement advances the lexer's internal state.
+      loc = lexer.yyloc();
+      txt = lexer.yytxt();
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, std::shared_ptr<Environment> env, std::istream* input_stream)
+
+    /*  
+     *  So, Parse returns a single term when it is called.
+     *  how then does our language handle source files which are longer than 
+     *  a single line of text? 
+     *  well, Parse is designed to work in a 'push' style rather than a 'pull' 
+     *  style. that is, instead of expecting all of the source to be parsed 
+     *  to be available all at once. the Parser instead has a reference to an
+     *  input stream and will ask for more source when it finishes parsing the
+     *  single line. in this way, the caller of Parse is expected to repeatedly 
+     *  call Parse, to eventually parse all of the source. 
+     *  
+     *  the full parsing stack looks like
+     *
+     *  term := affix ';'
+     *
+     *  affix := basic (operator basic)* // well, this isn't actually a simple
+     *                                   // kleen star, but actually an entrance 
+     *                                   // to an operator precedence parser.
+     *                                   // however this is optional, just like
+     *                                   // the kleen star is.
+     *
+     *  basic := nil
+     *         | true
+     *         | false
+     *         | integer
+     *         | operator basic
+     *         | '(' affix ')'
+     *         | function
+     *         | id
+     *         | id '=' affix
+     *         | id ':=' affix
+     *
+     *  function := 'fn' id '(' (arg (',' arg)*)? ')' '{' affix* '}'
+     *
+     *
+     *
+     *
+     *
+     */
+    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::shared_ptr<Environment> env)
     {
-      this->input_stream = input_stream;
-      return Parse(str, env);
+      while (tok == Token::End 
+      &&  lexer.EndOfInput() 
+      && (input_stream != nullptr)
+      && (!input_stream->eof()))
+      {
+        yyfill();
+        nexttok();  
+      }
+
+      // We are currently experiencing an issue with the design of the parser,
+      // we want to accept as much input as the source can provide, to ensure 
+      // we are actually parsing all of the source, or course. And we would 
+      // like to allow arbitrary whitespace before and after terms, without 
+      // affecting the resulting parse.
+      //
+      // however, to know if there is any parsable term after some amount of 
+      // whitespace at the end of any given file, we currently attempt to parse
+      // all of that whitespace as if it did contain some term, so when it
+      // turns out that the whitespace after some term does not contain any
+      // more terms, we do so within the parser itself. which since it is
+      // expecting to parse something, complains and raises this situation to 
+      // an error. however, it is perfectly reasonable to have whitespace after 
+      // any given term including the final term within the source. 
+      // we would like to catch this particular error above the parser, and 
+      // then we can simply ignore it, if we have parsed some terms before
+      // this, and warn the user if we parsed nothing, and reached the end of
+      // the source.
+      //
+      // since this is the second situation where we are wanting to catch
+      // specific errors outside the parser, i am thinking that it makes sense 
+      // to assign each error the compiler knows how to catch a number, and
+      // then we can catch any particualar error. it also allows us to modify 
+      // the error terms themselves to be significantly smaller, because this 
+      // allows us to associate error strings with the number, and not carry
+      // the error string within the error term which represents the occurance
+      // of the error itself. as a byproduct this will speed up the parser in 
+      // situations where we are reporting errors. in both space and time.
+      //
+      // as an aside, with the current setup, it would require almost no work
+      // to parse the source past the point where we encounter the first error 
+      // term. because we have already separated the point at which we pull in
+      // input text, and the parser itself, meaning even after reporting an
+      // error, the parser is still set up to parse the input source just past
+      // the error term. however, since the parser stops with the parse as 
+      // soon as an error occurs, the next thing it parses may very well be the 
+      // second half of the term which produced said error, which given it's 
+      // incompleteness is bound to produce another error.
+      // it poses the possibility to push the parsing of terms out of sync with
+      // the occurance of terms within the source text itself! though, no such 
+      // possiblity exists if the error occurs during typechecking of a term.
+
+      // if tok == Token::End even after we parsed everything within the given
+      // file up until the EOF, then we return the end of file error, to signal 
+      // to the caller that the end of input has been reached.
+      if (tok == Token::End)
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::EndOfFile, loc)); 
+      }
+
+    	return ParseTerm(env);	
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::string str, std::shared_ptr<Environment> env)
+    /*
+     *  A term is simply any affix expression followed by a semicolon.
+     *  
+     *  term := affix ';'
+     *
+     */
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(std::shared_ptr<Environment> env)
     {
-    	tok = Token::Error;
-    	loc = Location();
-    	txt = "";
-    	
-    	if (str != txt)
-    	{
-		    lexer.SetBuf(str);
-		    nexttok(); // prime the lexers
-		    return ParseAffix(env);
-        }
-        else
-        {
-        	// nothing is in the input text, so we signal that by constructing a nil literal.
-        	// we could also construct a special Ast node 'Empty' which has the type 'Nil'
-        	// but that would not be materially different than a nil literal.
-        	// a nil literal appearing at the end of a file then on it's own would generate no code.
-        	// which means the empty text at the end of an input file would also generate no code. 		
-    		return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Nil>(loc));
-        }
-    }
 
+      Outcome<std::unique_ptr<Ast>, Error> term(ParseAffix(env));
+
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      if (tok != Token::Semicolon)
+      {
+        Error error(Error::Code::MissingSemicolon, loc);
+        return Outcome<std::unique_ptr<Ast>, Error>(error);
+      }
+      // else
+      nexttok(); // eat ';'
+
+      if (term)
+        return Outcome<std::unique_ptr<Ast>, Error>(std::move(term.GetOne()));
+      else 
+        return Outcome<std::unique_ptr<Ast>, Error>(term.GetTwo());
+    }
     
+
+
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(std::shared_ptr<Environment> env)
     {
       Location left_loc = loc; // save the location of the lhs of this affix expr
@@ -102,14 +226,25 @@ namespace pink {
 		
 		  if (!left) // if the previous parse failed, return the error immediately
 			  return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
-		
-        if (tok == Token::Op) // we assume this is a binary operator appearing after a basic term
-        {
-        	// Handle the entire binop expression with the Infix Parser
-            return ParseInfix(std::move(left.GetOne()), 0, env); // pass or fail, return the result of parsing a binop expression.
-        }
-        else // the single term we parsed at the beginning is the result of this parse.
-        	return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
+
+      // we just parsed and are about to look at more input to see what to do
+      // next. this means we have to account for the case where that more input 
+      // appears on the next textual line.
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      if (tok == Token::Op) // we assume this is a binary operator appearing after a basic term
+      {
+        // Handle the entire binop expression with the Infix Parser
+        return ParseInfix(std::move(left.GetOne()), 0, env); // pass or fail, return the result of parsing a binop expression.
+      }
+      else // the single term we parsed at the beginning is the result of this parse.
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
+      }
     }
     
     
@@ -135,7 +270,20 @@ namespace pink {
     		BinopLiteral*  op_lit = peek_lit;
     		Location       op_loc = loc;
     		
-    		nexttok(); // eat the operator, Token::Op 
+    		nexttok(); // eat the operator, Token::Op
+
+        // if we are trying to parse a binop expression,
+        // and we ran into the end of the lexers buffer 
+        // before we run into the rhs of the term, we 
+        // are probably in the situation where the rhs 
+        // appears on the next line of input, thus 
+        // we use yyfill to retreive the next line, and
+        // then nexttok() to lex the next line.
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        } 
     		
     		Outcome<std::unique_ptr<Ast>, Error> rhs = ParseBasic(env);
     		
@@ -166,9 +314,7 @@ namespace pink {
     		// the place in the code to check for it occuring
     		if (!peek_opt.hasValue())
     		{
-				Error error(Error::Kind::Syntax,
-					std::string("[") + peek_str + std::string("] binop is unknown, and thus has no precedence to parse against"),
-					loc);
+				Error error(Error::Code::UnknownBinop, loc);
 				return Outcome<std::unique_ptr<Ast>, Error>(error);
     		}
     		
@@ -182,9 +328,7 @@ namespace pink {
 		// the place in the code to check for it occuring
     	if (!peek_opt.hasValue())
     	{
-    		Error error(Error::Kind::Syntax,
-    			std::string("[") + peek_str + std::string("] binop is unknown, and thus has no precedence to parse against"),
-    			loc);
+    		Error error(Error::Code::UnknownBinop, loc);
     		return Outcome<std::unique_ptr<Ast>, Error>(error);
     	}
     	
@@ -202,8 +346,42 @@ namespace pink {
     		InternedString id = env->symbols->Intern(txt); // Intern the identifier
     		
     		nexttok(); // eat the identifier
-    		
-    		// an identifer can be followed by a bind or an assignment, or can be a basic variable reference
+    	  
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
+    		// an identifer can be followed by a bind expression, an assignment expression,
+        // or can be a basic variable reference. 
+        // i am debating application syntax, on the one hand it is equally easy
+        // to modify the parser to accept either common syntax, in BNF snippets
+        // 
+        // lambda calculus style,
+        // 
+        // app := affix (affix)+
+        // 
+        //
+        // or c style,
+        //
+        // app := id '(' (affix (',' affix)*)? ')'
+        //
+        // it's really a difference of looping when we parse a full affix
+        // until we reach the semicolon ending the application; or looping when we 
+        // Parse a comma after a full affix until we reach the right parenthesis ending the
+        // application. And a difference of an identifier being the only
+        // possible token which predicts a possible application term, and any
+        // possible affix expression being what possibly predicts an
+        // application. 
+        // this second point has implications when we consider the fact that
+        // within C, functions can never be temporary values, and so
+        // identifiers will always be uniquely present when a function is
+        // present, and the fact that within the lambda calculus a function is 
+        // allowed to be an anonymous value.
+        //
+        //
+        //
     		if (tok == Token::ColonEq) // a bind expression
     		{
     			nexttok(); // eat the ':='
@@ -248,7 +426,13 @@ namespace pink {
     		InternedString op = env->operators->Intern(txt);
     		
     		nexttok(); // eat the op
-    		
+    	
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
     		// unops all bind to their immediate right hand side
     		Outcome<std::unique_ptr<Ast>, Error> rhs(ParseBasic(env));    	
     		
@@ -265,16 +449,37 @@ namespace pink {
     	{
     		nexttok(); // eat the '('
     		
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
+        // we recur up to affix, because while we want to allow complex
+        // expressions to occur within parenthesis. especially to allow 
+        // for composing mathematical expressions within the 
+        // syntax of the language. parenthesis are the natural way of 
+        // reconfiguring the precedence of evaluation of the written 
+        // expression. 
+        //
+        // it would be valid to recur up to ParseTerm, except that it would 
+        // introduce the extra syntax of a postfix ';' to the parenthized expression.
+        // which is simply strange syntax.
     		Outcome<std::unique_ptr<Ast>, Error> result(ParseAffix(env));
     		
     		if (!result)
     			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
-    			
+    	
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }  
+
     		if (tok != Token::RParen)
     		{
-    			Error error(Error::Kind::Syntax, "Missing Closing Parenthesis", loc);
-    			Outcome<std::unique_ptr<Ast>, Error> result(error);
-    			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+    			Error error(Error::Code::MissingRParen, loc);
+    			return Outcome<std::unique_ptr<Ast>, Error>(error);
     		}
     		else 
     		{
@@ -330,14 +535,14 @@ namespace pink {
         
     	default:
     	{
-    		Error error(Error::Kind::Syntax, "Unknown Basic Token:" + TokenToString(tok), loc);
+    		Error error(Error::Code::UnknownBasicToken, loc);
     		return Outcome<std::unique_ptr<Ast>, Error>(error);
     	}
     	} // !switch(tok)
     }
     
     
-    /*  block = '{' affix (';' affix (';')?)* '}'
+    /*  block = '{' affix (affix)* '}'
      *
      *  
      *
@@ -349,46 +554,56 @@ namespace pink {
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBlock(std::shared_ptr<Environment> env)
     {
     	std::vector<std::unique_ptr<Ast>> stmnts;
-    	Outcome<std::unique_ptr<Ast>, Error> result(Error(Error::Kind::Default, "Default Error", loc));
+    	Outcome<std::unique_ptr<Ast>, Error> result(Error(Error::Code::None, loc));
     	Location left_loc = loc;
 
       if (tok != Token::LBrace)
 		  {
-			  Error error(Error::Kind::Syntax, "Expected '{' to begin a block", loc);
+			  Error error(Error::Code::MissingLBrace, loc);
 			  return Outcome<std::unique_ptr<Ast>, Error>(error);
 		  }
 		
 		  nexttok(); // eat '{'
+
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
     	
-    	do {
-        // eat the semicolon that caused this to loop.
-    		if (tok == Token::Semicolon)
-    		{
-    			nexttok(); // eat ';'
-    		}
-    		// this isn't an else if to catch the case where we have a 
-    		// statment which is followed by a semicolon which ends the 
-    		// block. "x := 1; x + 1;" and "x := 1; x + 1" should both 
-    		// end the block. whereas "x := 1 x + 1" would be an error,
-    		// however when we add application terms, this would parse 
-    		// as applying '1' and passing in the argument 'x' which 
-    		// would be an application error, as integers cannot be applied.
-    		// inside the body of a function, we parse a full term, which 
-    		// means that terms can end with an EOF or a '}'
-    		if (tok == Token::End || tok == Token::RBrace)
-    		{
-    			break;
-    		}
-    		
-    		// parse a statement
-    		result = ParseAffix(env);
+    	do {		
+    		// parse a term.
+        // we recurr up to ParseTerm which requires the expression we parse to 
+        // end in a semicolon, that way, a block is composed of a sequence of 
+        // semicolon separated affix expressions.
+    		result = ParseTerm(env);
     		
     		if (!result)
     			return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
     		
     		// add it to the current block
     		stmnts.emplace_back(std::move(result.GetOne()));
-    	} while (tok == Token::Semicolon);
+       
+        // we just parsed some portion of this block, and reached the
+        // end of the lexers buffer before we are done, if the input_stream
+        // is not yet empty, all this means is that the rest of this block 
+        // continues on the next line of source, which we have yet to pick 
+        // up.
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+    	
+      } while (tok != Token::RBrace);
+
+      if (tok != Token::RBrace)
+      {
+        Error error(Error::Code::MissingRBrace, loc);
+        return Outcome<std::unique_ptr<Ast>, Error>(error);
+      }
+
+      nexttok(); // eat '}'
     	
     	Location block_loc(left_loc.firstLine, left_loc.firstColumn, loc.firstLine, loc.firstColumn);
     	return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Block>(block_loc, stmnts));
@@ -420,88 +635,107 @@ namespace pink {
     	
     	if (tok != Token::Fn)
     	{
-    		Error error(Error::Kind::Syntax, "Functions must begin with 'fn'", loc);
+    		Error error(Error::Code::MissingFn, loc);
     		return Outcome<std::unique_ptr<Ast>, Error>(error);
     	}
     	
     	nexttok(); // eat 'fn'
-    	
+    
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }  
     	
     	if (tok != Token::Id)
     	{
-    		Error error(Error::Kind::Syntax, "Functions must have a name", loc);
+    		Error error(Error::Code::MissingFnName, loc);
     		return Outcome<std::unique_ptr<Ast>, Error>(error);
     	}
     	
     	name = env->symbols->Intern(txt); // intern the functions name
 		
-		nexttok(); // eat 'Id'
-		
-		if (tok != Token::LParen)
-		{
-			Error error(Error::Kind::Syntax, "Expected '(' for the argument list", loc);
-			return Outcome<std::unique_ptr<Ast>, Error>(error);
-		}
-		
-		nexttok(); // eat '('
-		
-		if (tok == Token::Id) // beginning of the argument list
-		{
-			do {
-				if (tok == Token::Comma)
-				{
-					nexttok(); // eat ','
-				}
-			
-				Outcome<std::pair<InternedString, Type*>, Error> arg_res = ParseArgument(env);
-				
-				if (!arg_res)
-				{
-					return Outcome<std::unique_ptr<Ast>, Error>(arg_res.GetTwo());
-				}
-				
-				args.emplace_back(arg_res.GetOne());
-			} while (tok == Token::Comma);
-		}
-		
-		// handle the case where we just parsed an argument list, and 
-		// the case where we parsed a no argument argument list, either 
-		// way the next token must be ')'
-		if (tok != Token::RParen)
-		{
-			Error error(Error::Kind::Syntax, "Expected ')' to end the argument list", loc);
-			return Outcome<std::unique_ptr<Ast>, Error>(error);
-		}
-		
-		nexttok(); // eat ')'
-		
+		  nexttok(); // eat 'Id'
 	
-		
-		// parse the body of the function.
-		Outcome<std::unique_ptr<Ast>, Error> body_res = ParseBlock(env);
-		
-		if (!body_res)
-		{
-			return Outcome<std::unique_ptr<Ast>, Error>(body_res.GetTwo());
-		}
-		
-		if (tok != Token::RBrace)
-		{
-			Error error(Error::Kind::Syntax, "Expected '}' to end the function body", loc);
-			return Outcome<std::unique_ptr<Ast>, Error>(error);
-		}
-		
-		nexttok(); // eat '}'
-		
-		Location fn_loc = {lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn};
-		
-		// we have all the parts, build the function.
-		return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Function>(fn_loc,
-                                                                           name, 
-                                                                           args, 
-                                                                           std::move(body_res.GetOne()), 
-                                                                           env->bindings.get())
-                                               );		
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }  
+
+		  if (tok != Token::LParen)
+		  {
+        Error error(Error::Code::MissingLParen, loc);
+        return Outcome<std::unique_ptr<Ast>, Error>(error);
+      }
+      
+      nexttok(); // eat '('
+      
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      if (tok == Token::Id) // beginning of the argument list
+      {
+        do {
+          if (tok == Token::Comma)
+          {
+            nexttok(); // eat ','
+          }
+
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+        
+          Outcome<std::pair<InternedString, Type*>, Error> arg_res = ParseArgument(env);
+          
+          if (!arg_res)
+          {
+            return Outcome<std::unique_ptr<Ast>, Error>(arg_res.GetTwo());
+          }
+          
+          args.emplace_back(arg_res.GetOne());
+        } while (tok == Token::Comma);
+      }
+      
+      // handle the case where we just parsed an argument list, and 
+      // the case where we parsed a no argument argument list, either 
+      // way the next token must be ')'
+      if (tok != Token::RParen)
+      {
+        Error error(Error::Code::MissingRParen, loc);
+        return Outcome<std::unique_ptr<Ast>, Error>(error);
+      }
+      
+      nexttok(); // eat ')'
+      
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      } 
+      
+      // parse the body of the function.
+      Outcome<std::unique_ptr<Ast>, Error> body_res = ParseBlock(env);
+      
+      if (!body_res)
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(body_res.GetTwo());
+      }
+      
+      Location fn_loc = {lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn};
+      
+      // we have all the parts, build the function.
+      return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Function>(fn_loc,
+                                                                             name, 
+                                                                             args, 
+                                                                             std::move(body_res.GetOne()), 
+                                                                             env->bindings.get())
+                                                 );		
     }
     
     
@@ -512,22 +746,41 @@ namespace pink {
 
     	if (tok != Token::Id)
     	{
-    		Error error(Error::Kind::Syntax, "Expected a Identifier for the argument", loc);
+    		Error error(Error::Code::MissingArgName, loc);
     		return Outcome<std::pair<InternedString, Type*>, Error>(error);
     	}
     	
     	name = env->symbols->Intern(txt);
     	
     	nexttok(); // eat 'Id'
-    	
+    
+      while (tok == Token::End && !EndOfInput())
+      { 
+        yyfill();
+        nexttok();
+      }
+
     	if (tok != Token::Colon)
     	{
-    		Error error(Error::Kind::Syntax, "Expected a ':' for the arguments type annotation", loc);
+    		Error error(Error::Code::MissingArgColon, loc);
     		return Outcome<std::pair<InternedString, Type*>, Error>(error);
     	}
     	
     	nexttok(); // eat ':'
     	
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      if (tok == Token::Comma
+       || tok == Token::RParen)
+      {
+        Error error(Error::Code::MissingArgType, loc);
+        return Outcome<std::pair<InternedString, Type*>, Error>(error);
+      }
+
     	Outcome<Type*, Error> type_res = ParseBasicType(env);
     	
     	if (!type_res)
@@ -570,7 +823,7 @@ namespace pink {
         
     	default:
     	{
-    		Error error(Error::Kind::Syntax, "Unknown Type Token:" + TokenToString(tok), loc);
+    		Error error(Error::Code::UnknownTypeToken, loc);
     		return Outcome<Type*, Error>(error);
     	}
     	}

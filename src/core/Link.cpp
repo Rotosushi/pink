@@ -53,7 +53,6 @@ namespace pink {
     //std::string command = "ld.lld-14 " + options.input_file + ".o -o " + options.output_file + ".exe";
     //int result = std::system(command.data());
 
-
   }
 
 }

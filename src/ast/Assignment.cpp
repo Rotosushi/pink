@@ -55,10 +55,7 @@ namespace pink {
     	// make sure the left and right hand sides are the same type
     	if (lhs_type.GetOne() != rhs_type.GetOne())
     	{
-    		Error error(
-    			Error::Kind::Type,
-    			std::string("[") + lhs_type.GetOne()->ToString() + std::string("] is not equivalent to type [") + rhs_type.GetOne()->ToString() + std::string("]"),
-    			loc);
+    		Error error(Error::Code::AssigneeTypeMismatch, loc);
     		return Outcome<Type*, Error>(error);
     	}
     	else 
@@ -106,10 +103,7 @@ namespace pink {
     	// make sure the left and right hand sides are the same type
     	if (lhs_type.GetOne() != rhs_type.GetOne())
     	{
-    		Error error(
-    			Error::Kind::Semantic,
-    			std::string("[") + lhs_type_result.GetOne()->ToString() + std::string("] is not equivalent to type [") + rhs_type_result.GetOne()->ToString() + std::string("]"),
-    			loc);
+    		Error error(Error::Code::AssigneeTypeMismatch, loc);
     		return Outcome<llvm::Value*, Error>(error);
     	}
     	else 
@@ -141,10 +135,7 @@ namespace pink {
     		}
     		else 
     		{
-				  Error error(
-						Error::Kind::Semantic,
-						std::string("[") + lhs_type_result.GetOne()->ToString() + std::string("] is not an assignable type"), 
-						loc);
+				  Error error(Error::Code::ValueCannotBeAssigned, loc);
     			return Outcome<llvm::Value*, Error>(error);
     		}
     	}

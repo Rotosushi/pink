@@ -1,34 +1,21 @@
 #include "aux/Error.h"
 
 namespace pink {
-	Error::Error()
-		: kind(Error::Kind::Default), dsc(), loc()
-	{
-	
-	}
+    Error::Error()
+      : code(), loc()
+    {
+    
+    }
 
     Error::Error(const Error& other)
-        : kind(other.kind), dsc(other.dsc), loc(other.loc)
+      : code(other.code), loc(other.loc)
     {
 
-    }
-
-    Error::Error(Kind k, const char* d, Location l)
-        : kind(k), dsc(d), loc(l)
-    {
-
-    }
-
-	Error::Error(Kind k, std::string d, Location l)
-		: kind(k), dsc(d), loc(l)
-	{
-		
-	}
+    } 
 
     Error& Error::operator=(const Error& other)
     {
-        kind = other.kind;
-        dsc  = other.dsc;
+        code = other.code;
         loc  = other.loc;
         return *this;
     }
@@ -39,48 +26,14 @@ namespace pink {
         return ToString(t);
     }
 
-    std::string Error::ToString(std::string& txt)
+    std::string Error::ToString(std::string& errtxt)
     {
         std::string result;
 
-        switch(kind)
-        {
-        	case Kind::Default:
-        	{
-        		result += "Default Error: ";
-        		break;
-        	}
-        	
-            case Kind::Syntax:
-            {
-                result += "Syntax Error: ";
-                break;
-            }
+        result += CodeToErrText(code) + std::string("\n");
+        result += errtxt + "\n";
 
-            case Kind::Type:
-            {
-                result += "Type Error: ";
-                break;
-            }
-
-            case Kind::Semantic:
-            {
-                result += "Semantic Error: ";
-                break;
-            }
-
-            default:
-            {
-                std::string errdsc;
-                errdsc = "Bad Error::Kind: " + dsc + ", " + txt;
-                FatalError(errdsc.data(), __FILE__, __LINE__);
-            }
-        }
-
-        result += dsc + "\n";
-        result += txt + "\n";
-
-        for (size_t i = 0; i < txt.size(); i++)
+        for (size_t i = 0; i < errtxt.size(); i++)
         {
             if ((i < loc.firstColumn) || (i > loc.lastColumn))
                 result += "-";
@@ -103,6 +56,44 @@ namespace pink {
     {
         out << ToString(txt);
         return out;
+    }
+
+    const char* CodeToErrText(Error::Code code)
+    {
+      switch(code)
+      {
+        case Error::Code::None: return "Default Error, this should not be printed";
+        // syntax error descriptions
+        case Error::Code::EndOfFile:         return "Syntax Error: End Of Input";
+        case Error::Code::MissingSemicolon:  return "Syntax Error: Expected ';'";
+        case Error::Code::MissingLParen:     return "Syntax Error: Expected '('";
+        case Error::Code::MissingRParen:     return "Syntax Error: Expected ')'";
+        case Error::Code::MissingLBrace:     return "Syntax Error: Expected '{'";
+        case Error::Code::MissingRBrace:     return "Syntax Error: Expected '}'";
+        case Error::Code::MissingFn:         return "Syntax Error: Missing 'fn'";
+        case Error::Code::MissingFnName:     return "Syntax Error: Missing function name";
+        case Error::Code::MissingArgName:    return "Syntax Error: Missing argument name";
+        case Error::Code::MissingArgColon:   return "Syntax Error: Expected ':'";
+        case Error::Code::MissingArgType:    return "Syntax Error: Missing type annotation for argument";
+        case Error::Code::UnknownBinop:      return "Syntax Error: Unknown binary operator";
+        case Error::Code::UnknownUnop:       return "Syntax Error: Unknown unary operator";
+        case Error::Code::UnknownBasicToken: return "Syntax Error: Unknown basic token. expected to parse a term"; 
+        case Error::Code::UnknownTypeToken:  return "Syntax Error: Unknown type token. expected to parse a type";        
+        
+        // type errors
+        case Error::Code::TypeCannotBeCalled:      return "Type Error: Provided type cannot be called"; 
+        case Error::Code::ArgNumMismatch:          return "Type Error: Incorrect amount of arguments provided for the given function";
+        case Error::Code::ArgTypeMismatch:         return "Type Error: provided argument type does not match functions argument type";
+        case Error::Code::AssigneeTypeMismatch:    return "Type Error: Assigned type does not match Assignee type";
+        case Error::Code::NameNotBoundInScope:     return "Type Error: Name not bound within this scope";
+        case Error::Code::NameAlreadyBoundInScope: return "Type Error: name is already bound within this scope";
+
+        // semantic errors 
+        case Error::Code::ValueCannotBeAssigned: return "Semantic Error: right hand side cannot be assigned";
+        case Error::Code::NonConstGlobalInit:    return "Semantic Error: global variables must have a constant initializer";
+        
+        default: return "Unknown Error Code";
+      }
     }
 
     void FatalError(const char* dsc, const char* file, size_t line)

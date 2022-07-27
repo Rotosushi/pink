@@ -85,84 +85,81 @@ namespace pink {
  */	
 	void Compile(std::shared_ptr<Environment> env)
 	{
-		std::string  inbuf(ReadEntireFile(env->options->input_file));
-		
+		//std::string  inbuf(ReadEntireFile(env->options->input_file));
+	  std::fstream infile;
     std::string outfilename = env->options->output_file;
 		std::string objoutfilename      = outfilename + ".o";
 		std::string llvmoutfilename     = outfilename + ".ll";
 		std::string assemblyoutfilename = outfilename + ".s";
 		std::string exeoutfilename      = outfilename + ".exe";
-		
-		// #TODO: make the extraction method handle the case where we are parsing a file that 
-		//			is too big to fit in memory, and still carry over the state of the parser 
-		//			after we refill the input buffer.
-		
-    // Okay, this comment is for a refactor and will be removed/replaced afterwards.
-    // We need to work with a slightly different design of the parser
-    // subroutine. we need to somehow parse affix term, and then save the Ast,
-    // in the situation where we cannot type it because of
-    // a use-before-declaration error. 
-    // at the largest scale, it seems reasonable to simply hold each successive
-    // affix term that we parse in a std::vector, so we can then Codegen each
-    // of them once we can type everything.
-    // the real problem is, how can we separate the input text into segments to
-    // be parsed, when the parser is the best place to know when to break
-    // a statement? the only solution that comes to mind is to refactor the
-    // parser to a push parser, instead of a pull parser. so that we can break
-    // on a newline, and if the declaration is accross the newline we can
-    // simply parse the next line and then give it to the parser to continue 
-    // it's job.
-    // the only problem is, I do not know how to do that.
-    // my first inclination is to buffer everything we parse, 
-    // and when we fail because we want more text to parse 
-    // we simply break, hand control back up here, which can parse the next 
-    // line and then give it back to the parser, which then can continue to
-    // parse from where it was, but treating the new line of text as the 'rest'
-    // of the input.
-    // this process can then be repeated to handle multiple newlines for
-    // a given declaration. 
-    // the problem that i don't know how to solve is saving the state of the 
-    // parser to return here and get more input from the source file.
-    // We might be able to use a callback procedure. 
-    // like say we define a getline procedure which could be called within the
-    // parser itself that would fill in the new data. then, when we were
-    // parsing an reached end of input, we could delay failing by asking for
-    // more by calling this procedure. if after the call we had no more input,
-    // then we would fail. otherwise the procedure could append the new input
-    // into the buffer the parser was already parsing.
-    // we would need the filehandle within the procedure. which luckily enough 
-    // the file buffer itself will save the last read position for us.
-    // we also need the buffer to store the result into.
-    // but then we could hide the function call itself in gettok
-		pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env->parser->Parse(inbuf, env);
-		
-		if (!term)
-		{
-			// #TODO: Handle more than the first error detected in the input code.
-			// #TODO: Extract the line that produced the error from the buffer and 
-			// 			pass it as an argument here.
-			FatalError(term.GetTwo().ToString(""), __FILE__, __LINE__);
-		}
-		else 
-		{
-			pink::Outcome<pink::Type*, pink::Error> type = term.GetOne()->Getype(env);
-			
-			if (!type) 
-			{
-				FatalError(type.GetTwo().ToString(""), __FILE__, __LINE__);
-			}
-			else 
-			{
-				// as a side effect Codegen builds all of the llvm assembly within the module using the llvm::IRBuilder<>
-				pink::Outcome<llvm::Value*, pink::Error> value = term.GetOne()->Codegen(env);
-				
-				if (!value)
-				{
-					FatalError(value.GetTwo().ToString(""), __FILE__, __LINE__);
-				}
-			}
-		}
-		
+
+    infile.open(env->options->input_file);
+    
+    if (!infile.is_open())
+    {
+      FatalError("Could not open input file " + env->options->input_file, __FILE__, __LINE__);
+    }
+
+    env->parser->SetIStream(&infile);
+
+    std::vector<std::unique_ptr<pink::Ast>> valid_terms;
+   
+    while (!env->parser->EndOfInput())
+    { 
+      pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env->parser->Parse(env);
+      
+      if (!term)
+      {
+        // #TODO: Handle more than the first error detected in the input code.
+        // #TODO: Extract the line that produced the error from the buffer and 
+        // 			pass it as an argument here.
+        FatalError(term.GetTwo().ToString(""), __FILE__, __LINE__);
+      }
+      else 
+      {
+        pink::Outcome<pink::Type*, pink::Error> type = term.GetOne()->Getype(env);
+       
+        // if not type and error == use-before-definition
+        // {
+        //   push term into a llvm::DenseMap<pink::InternedString, std::pair<std::unique_ptr<pink::Ast>, std::vector<std::unique_ptr<pink::Ast>>::iterator>>
+        //   // where the InternedString holds the variable name which was used
+        //   // before it was defined, and std::unique_ptr<pink::Ast> holds the
+        //   // term which failed to type. and the std::vector<...>::iterator
+        //   // holds the place where we would have inserted this term into the 
+        //   // original vector. that place where we would have inserted is
+        //   // instead filled with a dummy term later, which is intended to be
+        //   // replaced by the real term once there are no use-before-definition 
+        //   // errors.
+        //   // 
+        // } 
+        if (!type) 
+        {
+          FatalError(type.GetTwo().ToString(""), __FILE__, __LINE__);
+        }
+        else 
+        {
+          valid_terms.push_back(std::move(term.GetOne()));
+        }
+      }
+    }
+	
+    // if there are no invalid terms when we get here.
+    // that is, if every bit of source we parsed typechecks
+    // then we simply have to emit all of their definitions into
+    // the module. (perhaps this too will require a 
+    // use-before-definition buffer?)
+    
+    for (std::unique_ptr<pink::Ast>& term : valid_terms)
+    {
+      // as a side effect Codegen builds all of the llvm assembly within the module using the llvm::IRBuilder<>
+  		pink::Outcome<llvm::Value*, pink::Error> value = term->Codegen(env);
+
+		  if (!value)
+		  {
+			  FatalError(value.GetTwo().ToString(""), __FILE__, __LINE__);
+		  }
+    }
+
 		// if the optimization level is greater than zero,
     // optimize the code. 
     // #TODO: look more into what would be good optimizations to run.

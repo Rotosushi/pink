@@ -45,7 +45,7 @@ namespace pink {
 		}
 		else 
 		{
-			Error error(Error::Kind::Type, std::string("[") + symbol + std::string("] not bound in environment"), loc);
+			Error error(Error::Code::NameNotBoundInScope, loc);
 			Outcome<Type*, Error> result(error);
 			return result;
 		}
@@ -62,7 +62,7 @@ namespace pink {
 		}
 		else 
 		{
-			Error error(Error::Kind::Semantic, std::string("[") + symbol + std::string("] not bound in environment"), loc);
+			Error error(Error::Code::NameNotBoundInScope, loc);
 			Outcome<llvm::Value*, Error> result(error);
 			return result;
 		}
