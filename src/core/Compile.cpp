@@ -110,10 +110,28 @@ namespace pink {
       
       if (!term)
       {
-        // #TODO: Handle more than the first error detected in the input code.
-        // #TODO: Extract the line that produced the error from the buffer and 
-        // 			pass it as an argument here.
-        FatalError(term.GetTwo().ToString(""), __FILE__, __LINE__);
+        pink::Error error(term.GetTwo());
+        
+        if (error.code == Error::Code::EndOfFile)
+        {
+          // if we didn't parse any terms, then there is nothing to optimize,
+          // emit, or link together thus we are safe to simply exit.
+          if (valid_terms.size() == 0)
+          {
+            FatalError("Warning: parsed an empty source file " + env->options->input_file, __FILE__, __LINE__);
+          }
+          // else we did parse some terms and simply reached the end of the
+          // source file, so we can safely continue with compilation of the 
+          // valid terms.
+          break; 
+        }
+        else
+        {
+          // #TODO: Handle more than the first error detected in the input code.
+          // #TODO: Extract the line that produced the error from the buffer and 
+          // 			pass it as an argument here.
+          FatalError(error.ToString(""), __FILE__, __LINE__);
+        }
       }
       else 
       {

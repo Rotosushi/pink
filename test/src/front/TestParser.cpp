@@ -28,19 +28,8 @@ bool TestParser(std::ostream& out)
    *  so, the parser itself handles extracting each line and 
    *  then parsing each one. allowing the calling code to simply 
    *  set up the input_stream, and then repeatedly call the Parse 
-   *  method to parse each declaration. but what still hasn't been solved 
-   *  is multiple lines for a single declaration.
-   *  as of right now, the parser will fail to parse a declaration split over
-   *  multiple lines. what we need to do to solve this is to allow each point
-   *  within the parser that could potentially need more input than a single 
-   *  token to have the ability to ask for more input to finish the parse.
-   *  then should we be in the situation where we have partially parsed 
-   *  some declaration and we run into the end of the input, that part of 
-   *  the parser can ask the input stream for more input and then continue 
-   *  trying to parse. from that point, if there is no more input, then we 
-   *  have an unfinished declaration, or if the new source is incorrect we
-   *  still have an error.
-   *
+   *  method to parse each declaration. Thus, we set up the input 
+   *  stream at the beginning of this test 
    */ 
   std::stringstream ss;
   ss.str(std::string("nil;\n10;\ntrue;\nx;\nx := 1;\nx = 2;\n!true;\n")

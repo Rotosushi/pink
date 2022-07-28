@@ -8,8 +8,7 @@
 
 pink::Outcome<llvm::Value*, pink::Error> test_codegen_fn(llvm::Value* term, std::shared_ptr<pink::Environment> env)
 {
-    std::string s("");
-    pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
+    pink::Error err(pink::Error::Code::None, pink::Location());
     return pink::Outcome<llvm::Value*, pink::Error>(err);
 }
 

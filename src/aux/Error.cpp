@@ -7,6 +7,12 @@ namespace pink {
     
     }
 
+    Error::Error(Error::Code code, Location loc)
+      : code(code), loc(loc)
+    {
+
+    }
+
     Error::Error(const Error& other)
       : code(other.code), loc(other.loc)
     {
@@ -58,7 +64,7 @@ namespace pink {
         return out;
     }
 
-    const char* CodeToErrText(Error::Code code)
+    const char* Error::CodeToErrText(Error::Code code)
     {
       switch(code)
       {

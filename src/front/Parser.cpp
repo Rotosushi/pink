@@ -260,8 +260,53 @@ namespace pink {
     	InternedString peek_str = nullptr;
     	llvm::Optional<std::pair<InternedString, BinopLiteral*>> peek_opt;
     	BinopLiteral* peek_lit = nullptr;
-    	
-    	while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op)  
+     
+      // if the operator we are trying to parse is not yet known to the
+      // compiler, we don't want to bail on the parse, because that can leave 
+      // the parser having only halfway consumed the term of the langauge. 
+      // meaning the next few calls to parse may or may not correspond to
+      // single terms within the language. this is a problem not because
+      // the error occurs necessarily, but because of the model of the compiler 
+      // itself. For an implementation of use-before-definition we are going to 
+      // need some way to keep track of the text of each given full term of the
+      // language which we parse from the source code. Then we will have access
+      // to say, a given usage of an unknown name, or in this case an unknown
+      // binop. Then later when the definition is parsed and known, we can
+      // reparse the binary expression against the correct precedence and
+      // associativity. 
+      //
+      // Or later when we encounter the definition of a given function being 
+      // applied within an earlier defined function we can then go back and 
+      // properly type the earlier function. (though, since this happens at the
+      // level of types, we don't need to reparse the definition of the
+      // procedure to type it once we have a definition for a given name.
+      //
+      // (if we think about it, the reason this situation is distinct from the
+      // binops situation is that the parser can already construct valid
+      // Variable terms from unknown names, because the parser does not need to 
+      // know the definition of the name to parse it as a name. whereas with
+      // the binop situation, part of the definition of the binop itself is
+      // being used by the parser so that it can properly parse the given
+      // source text.)
+      // in code this translates roughly to,
+      //  -) before we attempt to use any given operators precedence and
+      //  associativity, we check that it exists, and if it doesn't we 
+      //  construct a default precedence and associativity for it.
+      // to accomplish this we modified the definition of
+      // env->binops->Lookup(), to return a default implementation instead 
+      // of no definition, this effectively means that 
+      // (peek_opt = env->binops->Lookup(peek_str)) is always "true"
+      // in that it always exists. so now, we won't catch the fact that we
+      // parsed an undefined binop until we attempt to type the binop, 
+      // and realize that there is no implementation of the binop for the types 
+      // the binop expression is passing. Thus, the parser will not fail to
+      // parse the term in this situation, and the error is still handled before 
+      // compilation is finished. although, it is a materally different error
+      // than before. and to retreive the previous error, we would need to
+      // check if the binop definition is default or not at the point when we
+      // fail to find an implementation for the given types.
+
+    	while (TokenToBool(tok) && (tok == Token::Op)  
     		&& (peek_str = env->operators->Intern(txt))
     		&& (peek_opt = env->binops->Lookup(peek_str)) && (peek_opt.hasValue()) 
     		&& (peek_lit = peek_opt->second) && (peek_lit->precedence >= precedence))
@@ -290,7 +335,7 @@ namespace pink {
     		if (!rhs)
     			return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo()); 
     			
-    		while (TokenToBool(peek_tok = tok) && (peek_tok == Token::Op) 
+    		while (TokenToBool(tok) && (tok == Token::Op) 
     			&& (peek_str = env->operators->Intern(txt))
     			&& (peek_opt = env->binops->Lookup(peek_str)) && (peek_opt.hasValue())
     			&& (peek_lit = peek_opt->second) 

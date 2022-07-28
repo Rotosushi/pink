@@ -43,13 +43,11 @@ namespace pink {
         NonConstGlobalInit
       };
 
-  private:
-      Code   code;
-      Location    loc;
+      Code     code;
+      Location loc;
 
       const char* CodeToErrText(Code code);
  
-  public:
       Error();
       Error(const Error& other);
       Error(Code code, Location l);

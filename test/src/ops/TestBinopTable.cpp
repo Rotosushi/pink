@@ -9,8 +9,7 @@
 
 pink::Outcome<llvm::Value*, pink::Error> test_binop_table_fn(llvm::Value* left, llvm::Value* right, std::shared_ptr<pink::Environment> env)
 {
-  std::string s("");
-  pink::Error err(pink::Error::Kind::Syntax, s, pink::Location());
+  pink::Error err(pink::Error::Code::None, pink::Location());
   return pink::Outcome<llvm::Value*, pink::Error>(err);
 }
 
@@ -35,7 +34,7 @@ bool TestBinopTable(std::ostream& out)
 
   auto opt = binop_table.Lookup(plus);
 
-  result &= Test(out, "BinopTable::Lookup", opt.hasValue() && pair.first == plus);
+  result &= Test(out, "BinopTable::Lookup", opt.hasValue() && opt->first == plus);
 
   binop_table.Unregister(plus);
 

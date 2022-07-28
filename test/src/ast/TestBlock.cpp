@@ -65,7 +65,7 @@ bool TestBlock(std::ostream& out)
 
   result &= Test(out, "Block::iterator", iter != block->end());
   
-  pink::Outcome<pink::Type*, pink::Error> getype_outcome(pink::Error(pink::Error::Kind::Default, "", pink::Location()));
+  pink::Outcome<pink::Type*, pink::Error> getype_outcome(pink::Error(pink::Error::Code::None, pink::Location()));
   
   result &= Test(out, "Block::Getype()",
            (getype_outcome = block->Getype(env))
