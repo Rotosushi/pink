@@ -144,7 +144,6 @@ namespace pink {
       return Outcome<llvm::Value*, Error>(error);
     }
 
-    llvm::FunctionType* function_type = function->getFunctionType();
 
     // 2: codegen each argument to retrieve each llvm::Value* being passed as
     //    argument

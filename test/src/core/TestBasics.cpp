@@ -158,20 +158,6 @@ bool TestBasics(std::ostream& out)
 
   srand(time(0));
 
-  /*  #TODO: when we give TestFile a string containing the exact same text 
-   *  as what is given below, that is
-   *  fn main () { some-number } 
-   *  except that we do not include the newline at the end, the linker fails to
-   *  find the function in the emitted file. now, this is strange behavior,
-   *  because we use std::getline to extract input, and running into the EOF
-   *  should also return whatever was picked up for parsing.
-   *  so i am confused as to why the compiler would treat these two situations
-   *  any differently from eachother. what is even stranger is that I cannot 
-   *  seem to make this situation happen when I create the test file using 
-   *  a standard text editor. (i tried vim and nano) it seems that the editors
-   *  save the file with an added newline even if I do not explicitly add one.
-   *
-   */
   for (int i = 0; i < 10; i++)
   {
     int num = rand() % 100; // random number between 0 and 100
@@ -188,7 +174,7 @@ bool TestBasics(std::ostream& out)
 
   for (int i = 0; i < 10; i++)
   {
-    int num1 = rand() % 50, num2 = rand() % 50;
+    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
     std::string num1str = std::to_string(num1);
     std::string num2str = std::to_string(num2);
     std::string resstr  = std::to_string(num1 + num2);
@@ -205,7 +191,7 @@ bool TestBasics(std::ostream& out)
   
   for (int i = 0; i < 10; i++)
   {
-    int num1 = rand() % 11, num2 = rand() % 11;
+    int num1 = rand() % 11, num2 = rand() % 11; // x, y | x * y <= 100
     std::string num1str = std::to_string(num1);
     std::string num2str = std::to_string(num2);
     std::string resstr  = std::to_string(num1 * num2);
@@ -218,6 +204,21 @@ bool TestBasics(std::ostream& out)
         num1 * num2
         ) 
     );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
+    std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 + num2);
+
+    result &= Test(
+      out,
+      "Application of a Function, (\\x,y => x + y). x (" + num1str + ") + y (" + num2str + ") = " + resstr,
+      TestFile(
+        std::string("fn add(x:Int,y:Int){x+y;};\nfn main(){add(") + num1str + "," + num2str + ");};\n",
+        num1 + num2)
+      ); 
   }
   
 
