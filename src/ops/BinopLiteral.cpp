@@ -2,14 +2,14 @@
 #include "ops/BinopLiteral.h"
 
 namespace pink {
-    BinopLiteral::BinopLiteral(Precedence p, Associativity a)
-        : precedence(p), associativity(a)
+    BinopLiteral::BinopLiteral(Precedence p, Associativity a, bool isDefault)
+        : precedence(p), associativity(a), isDefault(isDefault)
     {
 
     }
 
-    BinopLiteral::BinopLiteral(Precedence p, Associativity a, Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn)
-    : precedence(p), associativity(a)
+    BinopLiteral::BinopLiteral(Precedence p, Associativity a, Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn, bool isDefault)
+    : precedence(p), associativity(a), isDefault(isDefault)
     {
         overloads.insert(std::make_pair(std::make_pair(left_t, right_t), std::make_unique<BinopCodegen>(ret_t, fn)));
     }

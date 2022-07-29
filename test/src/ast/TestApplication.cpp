@@ -54,21 +54,14 @@ bool TestApplication(std::ostream& out)
   // given an application of a defined function, 
   // is the type correct?
   
-  // so far, Applicatio::  iGetype will fail because we do not bind function
-  // definitions to llvm::Value*'s which we could never do until we codegen
+  // so far, Application::Getype will fail because we do not bind function
+  // definitions to llvm::Value*'s which we can never do until we codegen
   // the function definition. now, this is a very interesting question,
   // because when are we supposed to codegen function definitions when trying 
-  // to type a newly parsed block of statements? say for instance when
-  // the body of some given procedure applies another function which we 
-  // do not have the definition of yet within said block of statements?
-  // THis is a case of use before definition, and makes the solution to this 
-  // problem, equivalent to the solution of the following problem
-  // x : Int = y + offset;
-  // ...
-  // y := 56; // or some other value
+  // to type a newly parsed block of statements?
+  // 
   //
   //
-  // a solution might begin with adding a Type* to the SymbolTable
   // then, when we encounter a bind, we add the type as well.
   // then, when we encounter a function, we bind it to a type,
   // and a nullptr for the value. then we can fill in the value* 
@@ -180,7 +173,17 @@ bool TestApplication(std::ostream& out)
   //    
   //
   //
+  
+  // we must add a function definition to be applied, so Application::Getype 
+  // can actually work against the function definition.
+
   pink::Type* int_type = env->types->GetIntType();
+  
+  std::vector<pink::Type*> arg_types = {int_type, int_type};
+  pink::Type* fn_type  = env->types->GetFunctionType(int_type, arg_types);
+
+  env->bindings->Bind(env->symbols->Intern("add"), fn_type, /* llvm::Value* term = */ nullptr);
+
   pink::Outcome<pink::Type*, pink::Error> app_type = app->Getype(env);
   result &= Test(out, "Application::Getype()", app_type && app_type.GetOne() == int_type);
 

@@ -122,7 +122,18 @@ namespace pink {
 			}
 
 			FunctionType* func_ty = env->types->GetFunctionType(body_result.GetOne(), arg_types);
-			return Outcome<Type*, Error>(func_ty);
+      // okay, so before we return we need to take care of one more thing,
+      // making sure the rest of the program knows of the existance of this 
+      // function. and how do we do that? using an early binding of the 
+      // function itself to just it's type. which is luckily all we know as of
+      // right now. then later when we codegen the function body itself we can 
+      // rebind to a fully qualified definition, including both the type and 
+      // the implementation.
+      //
+      // the nullptr is the spot where the implementation will go.
+      env->bindings->Bind(name, func_ty, nullptr);
+
+      return Outcome<Type*, Error>(func_ty);
 		}
 		
 		Outcome<llvm::Value*, Error> Function::Codegen(std::shared_ptr<Environment> env)
@@ -373,6 +384,12 @@ namespace pink {
 			// call verifyFunction to validate the generated code for consistency 
 			llvm::verifyFunction(*function);
 			
+      // we now need to fill in the binding of this function with it's
+      // definition. so first we erase the incomplete definition, and 
+      // then create the full definition.
+      env->bindings->Unbind(name);
+      env->bindings->Bind(name, getype_result.GetOne(), function);
+
 			// return the function as the result of code generation
 			return Outcome<llvm::Value*, Error>(function);
 		}
