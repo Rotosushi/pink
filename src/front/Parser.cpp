@@ -11,6 +11,7 @@
 #include "ast/Unop.h"
 #include "ast/Block.h"
 #include "ast/Function.h"
+#include "ast/Application.h"
 
 // Values
 #include "ast/Bool.h"
@@ -114,6 +115,7 @@ namespace pink {
      *         | id
      *         | id '=' affix
      *         | id ':=' affix
+     *         | id '(' (affix (',' affix)*)? ')'
      *
      *  function := 'fn' id '(' (arg (',' arg)*)? ')' '{' affix* '}'
      *
@@ -256,7 +258,7 @@ namespace pink {
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence, std::shared_ptr<Environment> env)
     {
     	Outcome<std::unique_ptr<Ast>, Error> result(std::move(lhs));
-    	Token peek_tok;
+    	
     	InternedString peek_str = nullptr;
     	llvm::Optional<std::pair<InternedString, BinopLiteral*>> peek_opt;
     	BinopLiteral* peek_lit = nullptr;
@@ -455,6 +457,58 @@ namespace pink {
 		      Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<VarRef>(lhs_loc, id), std::move(rhs.GetOne())));
 		        
     		  return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+        }
+        else if (tok == Token::LParen) // an application expression
+        {
+          nexttok(); // eat '('
+
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+
+          std::vector<std::unique_ptr<Ast>> args;
+
+          if (tok != Token::RParen)
+          {
+            // parse the argument list
+            do {
+              if (tok == Token::Comma)
+              {
+                nexttok(); // eat ','
+              }
+
+              while (tok == Token::End && !EndOfInput())
+              {
+                yyfill();
+                nexttok();
+              }
+
+              Outcome<std::unique_ptr<Ast>, Error> arg(ParseAffix(env));
+
+              if (!arg)
+                return Outcome<std::unique_ptr<Ast>, Error>(arg.GetTwo());
+
+              args.emplace_back(std::move(arg.GetOne()));
+              
+            } while (tok == Token::Comma);
+            // finish parsing the argument list
+            if (tok != Token::RParen)
+            {
+              Error error(Error::Code::MissingRParen, loc);
+              return Outcome<std::unique_ptr<Ast>, Error>(error);
+            }
+            nexttok(); // eat ')'
+          }
+          else // tok == Token::RParen
+          {
+            nexttok(); // eat ')'
+            // the argument list is empty, but this is still an application term.
+          }
+          
+          Location app_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+          return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Application>(app_loc, std::make_unique<VarRef>(lhs_loc, id), std::move(args)));
         }
         else // this identifer was simply a variable reference 
         {

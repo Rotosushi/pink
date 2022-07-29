@@ -15,7 +15,7 @@
 #include "ast/Unop.h"
 #include "ast/Block.h"
 #include "ast/Function.h"
-
+#include "ast/Application.h"
 
 bool TestFirstPhase(std::ostream& out)
 {
@@ -28,9 +28,10 @@ bool TestFirstPhase(std::ostream& out)
        + std::string("x = false;\na = false;\n!x;\n!42;\n@12;\nx || !x;\nx + x;\n")
        + std::string("x $ x;\n(x || !x) && (x && !x);\n(x || !x) && (x && 10);\n")
        + std::string("(x || !x) $$ (x && !x);\n100 * 3 == 25 * 12;\n100 * 3 == true * 12;\n")
-       + std::string("100 * 3 == 25 $$ 12;\nfn simplest(){nil;};\nfn basic(x: Int, y: Int){x + y;};\n")
-       + std::string("fn compEq(x: Int, y: Int){x == y;};\nfn complex(a: Int, b: Int, c: Int){ x := a + b; x == c; };\n")
-       + std::string("fn global(a: Int, b: Int){(a == b) == x;};\n"));
+       + std::string("100 * 3 == 25 $$ 12;\nfn one(){1;};\nfn inc(x: Int) { x + 1; };\nfn add(x: Int, y: Int){x + y;};\n")
+       + std::string("fn compEq(x: Int, y: Int){x == y;};\nfn addCmp(a: Int, b: Int, c: Int){ x := a + b; x == c; };\n")
+       + std::string("fn global(a: Int, b: Int){(a == b) == x;};\n")
+       + std::string("one();\none(1);\ninc(1);\ninc(true);\nadd(1,2);\nadd(1,true);\n"));
   auto options = std::make_shared<pink::CLIOptions>();
   auto env     = pink::NewGlobalEnv(options, &ss);
 
@@ -313,26 +314,39 @@ bool TestFirstPhase(std::ostream& out)
             && !(getype_result = term->Getype(env)));
 		
 	
-	pink::Type* nil_t  = env->types->GetNilType();
+	//pink::Type* nil_t  = env->types->GetNilType();
 	pink::Type* int_t  = env->types->GetIntType();
 	pink::Type* bool_t = env->types->GetBoolType();
 	
 	std::vector<pink::Type*> args_t;
-	pink::Type* simplest_fn_t = env->types->GetFunctionType(nil_t, args_t);
+	pink::Type* simplest_fn_t = env->types->GetFunctionType(int_t, args_t);
 	parser_result = env->parser->Parse(env);
 	
-	result &= Test(out, "Parser::Parse(Function, no-arg), Getpe(Nil -> Nil)",
+	result &= Test(out, "Parser::Parse a Function, no-arg, Getype() = Nil -> Int",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
 					&& (getype_result = term->Getype(env)) // pink::Outcome<>::operator bool 
 					&& (getype_result.GetOne() == simplest_fn_t));
+
+
+
+  args_t = {int_t};
+  pink::Type* inc_fn_t = env->types->GetFunctionType(int_t, args_t);
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse a Function, one arg, Getype() = Int -> Int",
+              (parser_result)
+           && ((term = parser_result.GetOne().get()) != nullptr)
+           && (llvm::isa<pink::Function>(term))
+           && (getype_result = term->Getype(env))
+           && (getype_result.GetOne() == inc_fn_t));
 					
 	args_t = {int_t, int_t};
 	pink::Type* basic_fn_t = env->types->GetFunctionType(int_t, args_t);
 	parser_result = env->parser->Parse(env);
 	
-	result &= Test(out, "Parser::Parse(Function, two arg, same result type), Getpe(Int -> Int -> Int)",
+	result &= Test(out, "Parser::Parse a Function, two arg, same result type, Getype() = Int -> Int -> Int",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
@@ -343,7 +357,7 @@ bool TestFirstPhase(std::ostream& out)
 	pink::Type* comparison_fn_t = env->types->GetFunctionType(bool_t, args_t);
 	parser_result = env->parser->Parse(env);
 	
-	result &= Test(out, "Parser::Parse(Function, two arg, different result type), Getpe(Int -> Int -> Bool)",
+	result &= Test(out, "Parser::Parse a Function, two arg, different result type, Getpe() = Int -> Int -> Bool",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
@@ -354,7 +368,7 @@ bool TestFirstPhase(std::ostream& out)
 	pink::Type* complex_fn_t = env->types->GetFunctionType(bool_t, args_t);
 	parser_result = env->parser->Parse(env);
 
-	result &= Test(out, "Parser::Parse(Function, three arg, different result type, mutiple lines, local binding), Getpe(Int -> Int -> Int -> Bool)",
+	result &= Test(out, "Parser::Parse a Function, three arg, different result type, mutiple lines, local binding, Getype() = Int -> Int -> Int -> Bool",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
@@ -365,12 +379,66 @@ bool TestFirstPhase(std::ostream& out)
 	pink::Type* global_fn_t = env->types->GetFunctionType(bool_t, args_t);
 	parser_result = env->parser->Parse(env);
 	
-	result &= Test(out, "Parser::Parse(Function, two arg, different result type, uses global variable), Getpe(Int -> Int -> Bool)",
+	result &= Test(out, "Parser::Parse a Function, two arg, different result type, uses global variable, Getype() = Int -> Int -> Bool",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
 					&& (getype_result = term->Getype(env)) // pink::Outcome<>::operator bool 
-					&& (getype_result.GetOne() == global_fn_t));				
+					&& (getype_result.GetOne() == global_fn_t));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an Application, no arg, Getype() = Int",
+              (parser_result)
+           && ((term = parser_result.GetOne().get()) != nullptr)
+           && (llvm::isa<pink::Application>(term))
+           && (getype_result = term->Getype(env))
+           && (getype_result.GetOne() == int_t));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an Application, too many args, Getype() = Error",
+               (parser_result)
+            && ((term = parser_result.GetOne().get()) != nullptr)
+            && (llvm::isa<pink::Application>(term))
+            && !(getype_result = term->Getype(env)));
+
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an Application, one arg, good arg type, Getype() = Int",
+             (parser_result)
+          && ((term = parser_result.GetOne().get()) != nullptr)
+          && (llvm::isa<pink::Application>(term))
+          && (getype_result = term->Getype(env))
+          && (getype_result.GetOne() == int_t));
+
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an Application, one arg, bad arg type, Getype() = Error",
+             (parser_result)
+          && ((term = parser_result.GetOne().get()) != nullptr)
+          && (llvm::isa<pink::Application>(term))
+          && !(getype_result = term->Getype(env)));
+
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an Application, two arg, good arg types, Getype() = Int",
+             (parser_result)
+          && ((term = parser_result.GetOne().get()) != nullptr)
+          && (llvm::isa<pink::Application>(term))
+          && (getype_result = term->Getype(env))
+          && (getype_result.GetOne() == int_t));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an Application, two arg, bad arg type, Getype() = Error",
+             (parser_result)
+          && ((term = parser_result.GetOne().get()) != nullptr)
+          && (llvm::isa<pink::Application>(term))
+          && !(getype_result = term->Getype(env))); 
 
 	result &= Test(out, "pink First Phase", result);
 

@@ -124,9 +124,54 @@ namespace pink {
   Outcome<llvm::Value*, Error> Application::Codegen(std::shared_ptr<Environment> env)
   {
     // 1: codegen callee to retrieve the function pointer
+    Outcome<llvm::Value*, Error> callee_result = callee->Codegen(env);
+
+    if (!callee_result)
+    {
+      return Outcome<llvm::Value*, Error>(callee_result.GetTwo());
+    }
+
+    if (callee_result.GetOne() == nullptr)
+    {
+      FatalError("Function implementation was empty!", __FILE__, __LINE__);
+    }
+
+    llvm::Function* function = llvm::dyn_cast<llvm::Function>(callee_result.GetOne());
+
+    if (function == nullptr)
+    {
+      Error error(Error::Code::TypeCannotBeCalled, loc);
+      return Outcome<llvm::Value*, Error>(error);
+    }
+
+    llvm::FunctionType* function_type = function->getFunctionType();
+
     // 2: codegen each argument to retrieve each llvm::Value* being passed as
     //    argument
+    std::vector<llvm::Value*> arg_values;
+
+    for (std::unique_ptr<Ast>& arg : arguments)
+    {
+      Outcome<llvm::Value*, Error> arg_result = arg->Codegen(env);
+
+      if (!arg_result)
+        return Outcome<llvm::Value*, Error>(arg_result.GetTwo());
+
+      if (arg_result.GetOne() == nullptr)
+        FatalError("The argument is nullptr!", __FILE__, __LINE__);
+
+      arg_values.push_back(arg_result.GetOne());
+    }
+    
+    llvm::CallInst* call = nullptr;
     // 3: codegen a CallInstruction to the callee passing in each argument.
+    if (arg_values.size() == 0)
+      call = env->builder->CreateCall(llvm::FunctionCallee(function));
+    else
+      call = env->builder->CreateCall(llvm::FunctionCallee(function), arg_values); 
+    // 4: return the result of the call instruction as the llvm::Value* of this
+    //    procedure
+    return Outcome<llvm::Value*, Error>(call);
   }
 
 }
