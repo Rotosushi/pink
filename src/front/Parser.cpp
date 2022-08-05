@@ -95,37 +95,227 @@ namespace pink {
      *  single line. in this way, the caller of Parse is expected to repeatedly 
      *  call Parse, to eventually parse all of the source. 
      *  
-     *  the full parsing stack looks like
+     *  the grammar that this parser accepts, 
+     *  in (mostly) BNF form is:
+     *  
+     *  #TODO: make this parser match this grammar. (the grammar just changed)
      *
      *  term := affix ';'
      *
-     *  affix := basic (operator basic)* // well, this isn't actually a simple
+     *  affix := function
+     *         | definition
+     *         | application
+     *         | application '=' affix
+     *         | application (operator application)* // this isn't actually a simple
      *                                   // kleen star, but actually an entrance 
      *                                   // to an operator precedence parser.
      *                                   // however this is optional, just like
-     *                                   // the kleen star is.
+     *                                   // the kleen star is, and I don't know 
+     *                                   // how to specify an operator
+     *                                   // precedence parser in BNF syntax.
+     *                                   // especially given it's a subset of
+     *                                   // LR parsable languages. and
+     *                                   // otherwise this language is LL(1)
+     *  
+     *  application := basic
+     *               | basic '(' (affix (',' affix)*)? ')'
+     *
      *
      *  basic := nil
      *         | true
      *         | false
      *         | integer
      *         | operator basic
-     *         | '(' affix ')'
-     *         | function
+     *         | '(' affix ')' 
      *         | id
-     *         | id '=' affix
-     *         | id ':=' affix
-     *         | id '(' (affix (',' affix)*)? ')'
      *
-     *  function := 'fn' id '(' (arg (',' arg)*)? ')' '{' affix* '}'
+     *  function := 'fn' id '(' (arg (',' arg)*)? ')' '{' term+ '}'
+     *
+     *  definition := id ':=' affix
+    
+      the gap between the reality of an idea                       and your idea of that idea.
+
+      the gap between the reality of an others idea                and your idea of their idea.
+      
+      the gap between the reality of an idea                       and your ability to communicate that idea.
+      
+      the gap between the reality of an idea                       and your ability to understand that idea.
+      
+      the gap between the reality of what is good about an idea    and your idea of what is good about that idea.
+      
+      the gap between the reality of what is bad about an idea     and your idea of what is bad about that idea.
+      
+      the gap between the reality of what is neutral about an idea and your idea of what is neutral about that idea.
+      
+      the gap between the reality of what is possible              and your idea of what is possible.
+      
+      the gap between the reality of what is probable              and your idea of what is probable.
+      
+      the gap between the reality of any object                    and your ability to encapsulate that object within numbers.
+
+      the gap between the reality                                  and your idea of the reality.
+
+     *  
+     *  okay, i need to think about this, and I don't really know 
+     *  where to put this comment, but where exactly do we place 
+     *  calls to CreateLoad instructions? 
+     *
+     *  we used to simply load the value of a variable when it was 
+     *  referenced within the text. which was fine, because we didn't 
+     *  have pointers before. 
+     *  the reason adding pointers is problematic is because each 
+     *  AllocaInst/GlobalVariable is already a pointer. 
+     *  and since each value we needed to deal with was the value 
+     *  the llvm::pointer pointed too, this was fine.
+     *
+     *  but the question becomes what about when the value we want  
+     *  to retrieve is the llvm::pointer's value itself? 
+     *  as in the case of a value representing a pointer to some 
+     *  memory. 
+     *
+     *  i suppose what we want is two implementations of 
+     *  Variable::Codegen. one where we load before returning 
+     *  the result of the load, which should happen if the type 
+     *  of this variable is a pointer, or we should simply 
+     *  return the llvm::Value* itself, in the case where
+     *  the variable is a pointer itself.
+     *
+     *  then, addition on pointers could be acheived 
+     *  by the same instruction, except we pass in 
+     *  the pointers themselves as values instead of a 
+     *  loadInst. I guess that means this comment belongs in 
+     *  pink::Variable.
+     *  
+     *  okay, this solution works great for the times when we are 
+     *  referencing the variable as it's value.
+     *  however, when we want to assign a new value into the 
+     *  variable's location, we don't want to have already loaded it,
+     *  instead we simply want the ptr referencing the memory again,
+     *  like in the previous case.
+     *
+     *  however, how can we communicate that to Variable::Codegen?
+     *
+     *  well, the first thing i notice is that this is suspiciously 
+     *  like c's lvalues and rvalues in their semantics.
+     *  
+     *  the value on the left is being assigned, so we want the address,
+     *  the value on the right is being used and so we want to load 
+     *  it's value into a register.
+     *
+     *  we might be able to store a bit in the environment? which is 
+     *  kinda weird, however, we can set the bit only when we codegen 
+     *  an assignment's lhs. 
+     *  and due to the way the parser works, nested assignment terms 
+     *  will construct tree's like:
+     *  
+     *  a = b = c = ...;
+     *
+     *         =
+     *       /   \
+     *      a      =
+     *           /   \
+     *          b      =
+     *               /   \
+     *              c     ...;
+     *
+     * which means if we unset the bit after codegening the lhs we 
+     * will not treat the rhs as a value being assigned, and within 
+     * the rhs, we can have another assignment term with it's own lhs
+     *
+     * so, one thing that comes to mind is that we don't necessarily have
+     * only variable terms on the lhs of an assignment,
+     *
+     * we can imagine terms which look like 
+     *
+     * x + y = ...;
+     *
+     * where x is a pointer into an array,
+     * and y is an offset.
+     *
+     * although, that would mean that x would have pointer type, 
+     * and thus we could make pointers exempt from this rule.
+     * which would mean we didn't load x, however in this situation 
+     * we want to load y. and since it appears on the left, this 
+     * naive approach would cause us to not load it.
+     *
+     * since we don't allow assignment to literals,
+     * the only case where we would validly assign to a temporary 
+     * value is if that value has pointer type.
+     *
+     * however, we wouldn't want to assign in the case of a term like: 
+     * 
+     * &var = ...;
+     *
+     * so, lets recap:
+     *
+     *  // "//+" means this syntax only makes sense if the temp value produced
+     *  //       makes sense to assign to, and otherwise is a semantic error
+     *
+     *  1) x = ...; // we don't have any concept of const yet
+     *  2) x op y = ...; //+
+     *  3) op x = ...;   //+
+     *  4) x(...) = ...; //+
      *
      *
      *
+     *  okay, so what about following C a little bit again, with keeping track 
+     *  of the assignable state of each value within the language?
+     *
+     *  pointers to memory are assignable, that is
+     *  llvm::AllocaInst/llvm::GlobalVariable
+     *
+     *  and regular values, that is any llvm::Value* that does not represent an
+     *  allocation of memory which can be assigned into is not assignable.
+     *
+     *  then, we can modify operators to also do work on this assignable state,
+     *  so, when an operation is performed, we can return either an assignable 
+     *  or an unassignable.
+     *
+     *  well, all that is fine, but it still doesn't change the fact that we
+     *  have to load a value from a variable reference on the right side of 
+     *  assignment, and not load a value from a variable reference on the left 
+     *  side of assignment. if we had the variable marked as assignable, we 
+     *  would still need different behavior on that assignable variable
+     *  depending on if it appeared on the left or the right hand side.
+     *
+     *  so i suppose we need a condition in Variable::Codegen which 
+     *  has the behavior we want depending on if we were on the left 
+     *  or the right hand side. but this solution needs to play nice 
+     *  with each of the possibilities above. for instance, if we 
+     *  were computing an offset into an array, by adding a pointer 
+     *  variable together with a integer variable, we would need to not 
+     *  load the pointer variable. (which we can handle by way of the fact 
+     *  that we treat pointer variables differently to all other variables)
+     *  yet we would need to load the regular variable. even though it is on 
+     *  the left. We could even imagine a complex arithmetic expression
+     *  including multiple values which computes the offset, and any variable 
+     *  appearing within that expression would need to be handled as we would 
+     *  with any arithmetic expression appearing on the right hand side.
+     *
+     *  similarly any arithmetic expression appearing within the argument
+     *  position of a function call would need to be treated normally.
+     *
+     *  if we had a pointer to a pointer to some value, we could have an expression like 
+     *  
+     *  *ptr = ...;
+     *
+     *  this would require the rhs to be of pointer type, obviously. but it
+     *  would also require that we perform a load from the first pointer to 
+     *  get the second and then we would be modifying the second ptr. 
+     *  inside llvm (ptr) would be a pointer to the memory where the 
+     *  first pointer is stored, which would hold a value which is a pointer 
+     *  to the second location which is itself another pointer to a third
+     *  location. the * operator should retreive the pointer type value
+     *  
+     *  so i think this works naturally, iff the pointers themselves are 
+     *  unassignable, and then the * operator changes their type such that 
+     *  they become assignable.  
      *
      *
-     */
+     *       *
+ */
     Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::shared_ptr<Environment> env)
-    {
+    {    
       while (tok == Token::End 
       &&  lexer.EndOfInput() 
       && (input_stream != nullptr)
@@ -135,51 +325,9 @@ namespace pink {
         nexttok();  
       }
 
-      // We are currently experiencing an issue with the design of the parser,
-      // we want to accept as much input as the source can provide, to ensure 
-      // we are actually parsing all of the source, or course. And we would 
-      // like to allow arbitrary whitespace before and after terms, without 
-      // affecting the resulting parse.
-      //
-      // however, to know if there is any parsable term after some amount of 
-      // whitespace at the end of any given file, we currently attempt to parse
-      // all of that whitespace as if it did contain some term, so when it
-      // turns out that the whitespace after some term does not contain any
-      // more terms, we do so within the parser itself. which since it is
-      // expecting to parse something, complains and raises this situation to 
-      // an error. however, it is perfectly reasonable to have whitespace after 
-      // any given term including the final term within the source. 
-      // we would like to catch this particular error above the parser, and 
-      // then we can simply ignore it, if we have parsed some terms before
-      // this, and warn the user if we parsed nothing, and reached the end of
-      // the source.
-      //
-      // since this is the second situation where we are wanting to catch
-      // specific errors outside the parser, i am thinking that it makes sense 
-      // to assign each error the compiler knows how to catch a number, and
-      // then we can catch any particualar error. it also allows us to modify 
-      // the error terms themselves to be significantly smaller, because this 
-      // allows us to associate error strings with the number, and not carry
-      // the error string within the error term which represents the occurance
-      // of the error itself. as a byproduct this will speed up the parser in 
-      // situations where we are reporting errors. in both space and time.
-      //
-      // as an aside, with the current setup, it would require almost no work
-      // to parse the source past the point where we encounter the first error 
-      // term. because we have already separated the point at which we pull in
-      // input text, and the parser itself, meaning even after reporting an
-      // error, the parser is still set up to parse the input source just past
-      // the error term. however, since the parser stops with the parse as 
-      // soon as an error occurs, the next thing it parses may very well be the 
-      // second half of the term which produced said error, which given it's 
-      // incompleteness is bound to produce another error.
-      // it poses the possibility to push the parsing of terms out of sync with
-      // the occurance of terms within the source text itself! though, no such 
-      // possiblity exists if the error occurs during typechecking of a term.
-
-      // if tok == Token::End even after we parsed everything within the given
-      // file up until the EOF, then we return the end of file error, to signal 
-      // to the caller that the end of input has been reached.
+      // if tok == Token::End even after we tried to get more input from the given
+      // file it means we read to the EOF, so we return the end of file error, to signal 
+      // to the caller that the end of the associated input has been reached.
       if (tok == Token::End)
       {
         return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::EndOfFile, loc)); 
@@ -223,13 +371,48 @@ namespace pink {
 
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(std::shared_ptr<Environment> env)
     {
-      Location left_loc = loc; // save the location of the lhs of this affix expr
-		  Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env)); // parse the initial term
-		
-		  if (!left) // if the previous parse failed, return the error immediately
+      if (tok == Token::Fn)
+      {
+        return ParseFunction(env);
+      }
+      else
+      {
+        Location lhs_loc = loc; // save the location of the lhs of this affix expr
+        Outcome<std::unique_ptr<Ast>, Error> left(ParseComposite(env)); // parse the initial term
+        if (!left) // if the previous parse failed, return the error immediately
+          return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
+
+        // we just parsed and are about to look at more input to see what to do
+        // next. this means we have to account for the case where that more input 
+        // appears on the next textual line.
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+        
+        if (tok == Token::Op) // we assume this is a binary operator appearing after a basic term
+        {
+          // Handle the entire binop expression with the Infix Parser
+          return ParseInfix(std::move(left.GetOne()), 0, env); // pass or fail, return the result of parsing a binop expression.
+        }
+        else // the single term we parsed at the beginning is the result of this parse.
+        {
+          return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
+        }
+      }
+    }
+
+
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseComposite(std::shared_ptr<Environment> env)
+    {
+      Location lhs_loc = loc;
+      Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env));
+      
+      if (!left) // if the previous parse failed, return the error immediately
 			  return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
 
-      // we just parsed and are about to look at more input to see what to do
+      // we just parsed some input and are about to look at more to see what to do
       // next. this means we have to account for the case where that more input 
       // appears on the next textual line.
       while (tok == Token::End && !EndOfInput())
@@ -237,13 +420,83 @@ namespace pink {
         yyfill();
         nexttok();
       }
-
-      if (tok == Token::Op) // we assume this is a binary operator appearing after a basic term
+      
+      // basic = affix
+    	if (tok == Token::Equals) // an assignment expression
       {
-        // Handle the entire binop expression with the Infix Parser
-        return ParseInfix(std::move(left.GetOne()), 0, env); // pass or fail, return the result of parsing a binop expression.
+		    nexttok(); // eat '='
+        
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+		    
+        Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env));
+		        
+		    if (!rhs)
+		      return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
+		       
+		    // loc holds the location of the rhs of the term after the above call to ParseTerm
+		    Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+		    Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::move(left.GetOne()), std::move(rhs.GetOne())));
+		        
+    	  return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
       }
-      else // the single term we parsed at the beginning is the result of this parse.
+      // basic '(' (affix (',' affix)*)? ')'
+      else if (tok == Token::LParen) // an application expression
+      {
+        nexttok(); // eat '('
+
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
+        std::vector<std::unique_ptr<Ast>> args;
+
+        if (tok != Token::RParen)
+        {
+          // parse the argument list
+          do {
+            if (tok == Token::Comma)
+            {
+              nexttok(); // eat ','
+            }
+
+            while (tok == Token::End && !EndOfInput())
+            {
+              yyfill();
+              nexttok();
+            }
+
+            Outcome<std::unique_ptr<Ast>, Error> arg(ParseAffix(env));
+
+            if (!arg)
+              return Outcome<std::unique_ptr<Ast>, Error>(arg.GetTwo());
+
+            args.emplace_back(std::move(arg.GetOne()));
+            
+          } while (tok == Token::Comma);
+          // finish parsing the argument list
+          if (tok != Token::RParen)
+          {
+            Error error(Error::Code::MissingRParen, loc);
+            return Outcome<std::unique_ptr<Ast>, Error>(error);
+          }
+          nexttok(); // eat ')'
+        }
+        else // tok == Token::RParen
+        {
+          nexttok(); // eat ')'
+          // the argument list is empty, but this is still an application term.
+        }
+        
+        Location app_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+        return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Application>(app_loc, std::move(left.GetOne()), std::move(args)));
+      }
+      else // the single term we parsed is the result.
       {
         return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
       }
@@ -332,7 +585,7 @@ namespace pink {
           nexttok();
         } 
     		
-    		Outcome<std::unique_ptr<Ast>, Error> rhs = ParseBasic(env);
+    		Outcome<std::unique_ptr<Ast>, Error> rhs = ParseComposite(env);
     		
     		if (!rhs)
     			return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo()); 
@@ -393,128 +646,26 @@ namespace pink {
     		InternedString id = env->symbols->Intern(txt); // Intern the identifier
     		
     		nexttok(); // eat the identifier
-    	  
-        while (tok == Token::End && !EndOfInput())
-        {
-          yyfill();
-          nexttok();
-        }
-
-    		// an identifer can be followed by a bind expression, an assignment expression,
-        // or can be a basic variable reference. 
-        // i am debating application syntax, on the one hand it is equally easy
-        // to modify the parser to accept either common syntax, in BNF snippets
-        // 
-        // lambda calculus style,
-        // 
-        // app := affix (affix)+
-        // 
-        //
-        // or c style,
-        //
-        // app := id '(' (affix (',' affix)*)? ')'
-        //
-        // it's really a difference of looping when we parse a full affix
-        // until we reach the semicolon ending the application; or looping when we 
-        // Parse a comma after a full affix until we reach the right parenthesis ending the
-        // application. And a difference of an identifier being the only
-        // possible token which predicts a possible application term, and any
-        // possible affix expression being what possibly predicts an
-        // application. 
-        // this second point has implications when we consider the fact that
-        // within C, functions can never be temporary values, and so
-        // identifiers will always be uniquely present when a function is
-        // present, and the fact that within the lambda calculus a function is 
-        // allowed to be an anonymous value.
-        //
-        //
-        //
-    		if (tok == Token::ColonEq) // a bind expression
-    		{
-    			nexttok(); // eat the ':='
+        // id := affix 
+        if (tok == Token::ColonEq) // a bind expression
+    	  {
+    		  nexttok(); // eat the ':='
     			
-    			Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env)); // parse the right hand side of the binding
-    			
-    			if (!rhs)
-    				return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
+    		  Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env)); // parse the right hand side of the binding
+    		
+    		  if (!rhs)
+    			  return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
     				
-    			Location bind_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-    			Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bind>(bind_loc, id, std::move(rhs.GetOne())));
+    		  Location bind_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+    		  Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bind>(bind_loc, id, std::move(rhs.GetOne())));
     			
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-    		}
-    		else if (tok == Token::Equals) // an assignment expression
-        {
-		      nexttok(); // eat '='
-
-		      Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env));
-		        
-		      if (!rhs)
-		        return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
-		        
-		        // loc holds the location of the rhs of the term after the above call to ParseTerm
-		      Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-		      Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::make_unique<VarRef>(lhs_loc, id), std::move(rhs.GetOne())));
-		        
     		  return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-        }
-        else if (tok == Token::LParen) // an application expression
+    	  }
+        else
         {
-          nexttok(); // eat '('
-
-          while (tok == Token::End && !EndOfInput())
-          {
-            yyfill();
-            nexttok();
-          }
-
-          std::vector<std::unique_ptr<Ast>> args;
-
-          if (tok != Token::RParen)
-          {
-            // parse the argument list
-            do {
-              if (tok == Token::Comma)
-              {
-                nexttok(); // eat ','
-              }
-
-              while (tok == Token::End && !EndOfInput())
-              {
-                yyfill();
-                nexttok();
-              }
-
-              Outcome<std::unique_ptr<Ast>, Error> arg(ParseAffix(env));
-
-              if (!arg)
-                return Outcome<std::unique_ptr<Ast>, Error>(arg.GetTwo());
-
-              args.emplace_back(std::move(arg.GetOne()));
-              
-            } while (tok == Token::Comma);
-            // finish parsing the argument list
-            if (tok != Token::RParen)
-            {
-              Error error(Error::Code::MissingRParen, loc);
-              return Outcome<std::unique_ptr<Ast>, Error>(error);
-            }
-            nexttok(); // eat ')'
-          }
-          else // tok == Token::RParen
-          {
-            nexttok(); // eat ')'
-            // the argument list is empty, but this is still an application term.
-          }
-          
-          Location app_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-          return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Application>(app_loc, std::make_unique<VarRef>(lhs_loc, id), std::move(args)));
-        }
-        else // this identifer was simply a variable reference 
-        {
-          Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Variable>(lhs_loc, id));
+    		  Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Variable>(lhs_loc, id));
     			
-    			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+    	  	return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
         }
         break;
     	}
@@ -625,11 +776,6 @@ namespace pink {
         Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, false));
 
         return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-      }
-      
-      case Token::Fn:
-      {
-        return ParseFunction(env);
       }
         
     	default:

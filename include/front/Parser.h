@@ -32,6 +32,7 @@ namespace pink {
 
         Outcome<std::unique_ptr<Ast>, Error> ParseTerm(std::shared_ptr<Environment> env);
         Outcome<std::unique_ptr<Ast>, Error> ParseAffix(std::shared_ptr<Environment> env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseComposite(std::shared_ptr<Environment> env);
         Outcome<std::unique_ptr<Ast>, Error> ParseInfix(std::unique_ptr<Ast> left, Precedence precedence, std::shared_ptr<Environment>);
         Outcome<std::unique_ptr<Ast>, Error> ParseBasic(std::shared_ptr<Environment> env);
         Outcome<std::unique_ptr<Ast>, Error> ParseBlock(std::shared_ptr<Environment> env);

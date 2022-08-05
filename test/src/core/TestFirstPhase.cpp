@@ -25,9 +25,9 @@ bool TestFirstPhase(std::ostream& out)
   
   std::stringstream ss;
   ss.str(std::string("nil;\n108;\nfalse;\nx;\ny;\ny := true;\nx := 12;\nz := x;\n")
-       + std::string("x = false;\na = false;\n!x;\n!42;\n@12;\nx || !x;\nx + x;\n")
-       + std::string("x $ x;\n(x || !x) && (x && !x);\n(x || !x) && (x && 10);\n")
-       + std::string("(x || !x) $$ (x && !x);\n100 * 3 == 25 * 12;\n100 * 3 == true * 12;\n")
+       + std::string("x = false;\na = false;\n!x;\n!42;\n@12;\nx | !x;\nx + x;\n")
+       + std::string("x $ x;\n(x | !x) & (x & !x);\n(x | !x) & (x & 10);\n")
+       + std::string("(x | !x) $$ (x & !x);\n100 * 3 == 25 * 12;\n100 * 3 == true * 12;\n")
        + std::string("100 * 3 == 25 $$ 12;\nfn one(){1;};\nfn inc(x: Int) { x + 1; };\nfn add(x: Int, y: Int){x + y;};\n")
        + std::string("fn compEq(x: Int, y: Int){x == y;};\nfn addCmp(a: Int, b: Int, c: Int){ x := a + b; x == c; };\n")
        + std::string("fn global(a: Int, b: Int){(a == b) == x;};\n")

@@ -2,7 +2,7 @@
 
 namespace pink {
     Error::Error()
-      : code(), loc()
+      : code(Error::Code::None), loc()
     {
     
     }
@@ -89,15 +89,18 @@ namespace pink {
         // type errors
         case Error::Code::TypeCannotBeCalled:      return "Type Error: Provided type cannot be called"; 
         case Error::Code::ArgNumMismatch:          return "Type Error: Incorrect amount of arguments provided for the given function";
-        case Error::Code::ArgTypeMismatch:         return "Type Error: provided argument type does not match functions argument type";
-        case Error::Code::AssigneeTypeMismatch:    return "Type Error: Assigned type does not match Assignee type";
+        case Error::Code::ArgTypeMismatch:         return "Type Error: Provided argument type does not match functions argument type";
+        case Error::Code::AssigneeTypeMismatch:    return "Type Error: Assigned type does not match assignee type";
         case Error::Code::NameNotBoundInScope:     return "Type Error: Name not bound within this scope";
-        case Error::Code::NameAlreadyBoundInScope: return "Type Error: name is already bound within this scope";
+        case Error::Code::NameAlreadyBoundInScope: return "Type Error: Name is already bound within this scope";
 
         // semantic errors 
-        case Error::Code::ValueCannotBeAssigned: return "Semantic Error: right hand side cannot be assigned";
-        case Error::Code::NonConstGlobalInit:    return "Semantic Error: global variables must have a constant initializer";
-        
+        case Error::Code::ValueCannotBeAssigned: return "Semantic Error: Left side cannot be assigned";
+        case Error::Code::NonConstGlobalInit:    return "Semantic Error: Global variables must have a constant initializer";
+        case Error::Code::CannotTakeAddressOfLiteral: return "Semantic Error: Cannot take the address of a literal value";
+        case Error::Code::CannotDereferenceLiteral: return "Semantic Error: Cannot dereference a non-pointer value";       
+        case Error::Code::CannotCastToType:  return "Semantic Error: Cannot cast value to the target type";
+        case Error::Code::CannotCastFromType: return "Semantic Error: Cannot cast from value type";
         default: return "Unknown Error Code";
       }
     }

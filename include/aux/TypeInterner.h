@@ -8,7 +8,7 @@
 #include "type/BoolType.h"
 #include "type/IntType.h"
 #include "type/FunctionType.h"
-
+#include "type/PointerType.h"
 
 namespace pink {
     class TypeInterner {
@@ -17,6 +17,7 @@ namespace pink {
         std::unique_ptr<BoolType> bool_type;
         std::unique_ptr<IntType>  int_type;
         std::vector<std::unique_ptr<FunctionType>> function_types;
+        std::vector<std::unique_ptr<PointerType>> pointer_types;
 
     public:
         TypeInterner();
@@ -27,6 +28,7 @@ namespace pink {
         BoolType* GetBoolType();
         IntType*  GetIntType();
         FunctionType* GetFunctionType(Type* r, std::vector<Type*> a);
+        PointerType*  GetPointerType(Type* pointee_ty);
     };
 
 }

@@ -30,7 +30,8 @@ int main(int argc, char** argv)
                         
   pink::Compile(env);
 
-  pink::Link(env);
+  if (env->options->emit_object)
+    pink::Link(env);
 
   return 0;
 }

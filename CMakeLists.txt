@@ -103,7 +103,8 @@ add_library(libpink STATIC
 		    src/aux/StringInterner.cpp
 		    src/aux/SymbolTable.cpp
 		    src/aux/TypeInterner.cpp
-		    src/ops/BinopCodegen.cpp
+        src/aux/Flags.cpp
+        src/ops/BinopCodegen.cpp
 		    src/ops/BinopLiteral.cpp
 		    src/ops/BinopTable.cpp
 		    src/ops/UnopCodegen.cpp
@@ -111,12 +112,14 @@ add_library(libpink STATIC
 		    src/ops/UnopTable.cpp
 		    src/kernel/BinopPrimitives.cpp
 		    src/kernel/UnopPrimitives.cpp
-		    src/type/Type.cpp
+        src/kernel/Cast.cpp
+        src/type/Type.cpp
 		    src/type/BoolType.cpp
 		    src/type/IntType.cpp
 		    src/type/NilType.cpp
 		    src/type/FunctionType.cpp
-		    src/front/Lexer.cpp 
+        src/type/PointerType.cpp
+        src/front/Lexer.cpp 
 		    src/front/Token.cpp
 		    src/front/Parser.cpp
 		    src/core/Compile.cpp

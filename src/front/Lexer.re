@@ -187,7 +187,7 @@ namespace pink {
         re2c:define:YYLESSTHAN = "(end > (end - cursor));";
 
         id=[a-zA-Z_][a-zA-Z0-9_]*;
-        op=[+\-*\\%<=>&|\^!~@$]+;
+        op=[+\-*/%<=>&|\^!~@$]+;
         int=[0-9]+;
     */
 

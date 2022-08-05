@@ -72,15 +72,15 @@ namespace pink {
                 ==    : 1
                 && || : 2
                 + -   : 3
-                * \ % : 4
+                * / % : 4
         */
         InternedString minus = env->operators->Intern("-");
         InternedString plus  = env->operators->Intern("+");
         InternedString mul   = env->operators->Intern("*");
-        InternedString div   = env->operators->Intern("\\");
+        InternedString div   = env->operators->Intern("/");
         InternedString mod   = env->operators->Intern("%");
-        InternedString land  = env->operators->Intern("&&");
-        InternedString lor   = env->operators->Intern("||");
+        InternedString land  = env->operators->Intern("&");
+        InternedString lor   = env->operators->Intern("|");
         InternedString cmpeq = env->operators->Intern("==");
 
         Type* int_ty  = env->types->GetIntType();

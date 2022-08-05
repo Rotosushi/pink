@@ -16,6 +16,7 @@
 
 namespace pink {
     Environment::Environment(
+      std::shared_ptr<Flags>                       flags,
       std::shared_ptr<CLIOptions>                  options,
       std::shared_ptr<Parser>                      parser,
       std::shared_ptr<StringInterner>              symbols,
@@ -31,6 +32,7 @@ namespace pink {
       const llvm::DataLayout                       data_layout
       )
         : false_bindings(std::vector<InternedString>()),
+          flags(flags),
           options(options),
           parser(parser),
           symbols(symbols),
@@ -53,7 +55,8 @@ namespace pink {
       std::shared_ptr<Environment> env,
       std::shared_ptr<SymbolTable> bindings
     )
-    	: options(env->options),
+    	: flags(env->flags),
+        options(env->options),
         parser(env->parser),
         symbols(env->symbols),
         operators(env->operators),
@@ -77,7 +80,8 @@ namespace pink {
       std::shared_ptr<llvm::IRBuilder<>> builder,
       llvm::Function*                    current_function
     )
-    	: options(env->options),
+    	: flags(env->flags),
+        options(env->options),
         parser(env->parser), 
         symbols(env->symbols),
         operators(env->operators),
@@ -102,6 +106,7 @@ namespace pink {
 
     std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream* instream)
     {
+      auto flags     = std::make_shared<Flags>();
       auto parser    = std::make_shared<Parser>(instream);
       auto symbols   = std::make_shared<StringInterner>();
       auto operators = std::make_shared<StringInterner>();
@@ -152,6 +157,7 @@ namespace pink {
       std::shared_ptr<llvm::Module> module = std::make_shared<llvm::Module>(options->input_file, *context);
 
       auto env = std::make_shared<Environment>(
+          flags,
           options,
           parser,
           symbols,

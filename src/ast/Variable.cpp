@@ -56,17 +56,45 @@ namespace pink {
 		
 		if (bound.hasValue())
 		{
-			Outcome<llvm::Type*, Error> llvm_type_result = bound->first->Codegen(env);
-			
-			if (!llvm_type_result)
-			{
-				return Outcome<llvm::Value*, Error>(llvm_type_result.GetTwo());
-			}
-			
-			llvm::LoadInst* loaded_value = env->builder->CreateLoad(llvm_type_result.GetOne(), bound->second);
-			
-			Outcome<llvm::Value*, Error> result(loaded_value);
-			return result;
+	    if (bound->second == nullptr)
+      {
+        FatalError("Tried to reference a variable bound to a nullptr!", __FILE__, __LINE__);
+        return Outcome<llvm::Value*, Error> (Error());
+      }
+      else
+      {
+        Outcome<llvm::Type*, Error> type_result(bound->first->Codegen(env));
+
+        if (!type_result)
+          return Outcome<llvm::Value*, Error>(type_result.GetTwo());
+
+        llvm::Type* bound_type = type_result.GetOne();
+
+        // if the variable is bound to a pointer typed variable, we don't want
+        // to load it, because we want the pointer that llvm returns to be the 
+        // llvm::Value* we return. 
+        //
+        // However we also don't want to load if we are on the lhs of an
+        // assignment expression, because the CreateStore instruction also 
+        // requires the pointer that llvm returns as the location being stored
+        // into, even though our type system would say that a Memory Location 
+        // 'is' an Int, the llvm::Value* an Int type variable is bound to is a 
+        // pointer itself. this is fine for both CreateLoad and CreateStore,
+        // it is only when we want to use the value within the variable in
+        // another expression, such as binop/unop/application expressions
+        // that we need to emit a CreateLoad before we return the Variable.
+        //
+        if (llvm::isa<pink::PointerType>(bound->first) 
+         || llvm::isa<llvm::FunctionType>(bound_type)
+         || env->flags->OnTheLHSOfAssignment())
+        {
+          return Outcome<llvm::Value*, Error> (bound->second);
+        }
+        else 
+        {
+          return Outcome<llvm::Value*, Error>(env->builder->CreateLoad(bound_type, bound->second, "load"));
+        }
+      }  
 		}
 		else 
 		{

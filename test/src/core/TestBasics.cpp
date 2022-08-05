@@ -150,7 +150,9 @@ bool TestBasics(std::ostream& out)
 // i think option two is better because we are testing the compiler,
 // and not it's components. This has the effect that we are testing 
 // the exact same thing that the user interacts with.
-// 
+// additionally, if we ever make a change in main, we don't have to 
+// make the corresponding change here to reflect the difference,
+// making development and upkeep easier. 
 
   bool result = true;
   out << "\n----------------------------------\n";
@@ -174,6 +176,66 @@ bool TestBasics(std::ostream& out)
 
   for (int i = 0; i < 10; i++)
   {
+    int num1 = rand() % 100;
+    std::string num1str = std::to_string(num1);
+
+    result &= Test(
+          out,
+          "Bind: x := " + num1str,
+          TestFile(
+              std::string("fn main() { x := ") + num1str + ";x;};\n",
+              num1
+            )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100;
+    std::string num1str = std::to_string(num1);
+
+    result &= Test(
+          out,
+          "Compound Bind: x := y := " + num1str,
+          TestFile(
+              std::string("fn main() { x := y := ") + num1str + ";x;};\n",
+              num1
+            )
+        );
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100;
+    std::string num1str = std::to_string(num1);
+
+    result &= Test(
+          out,
+          "Assignment: x = " + num1str,
+          TestFile(
+              std::string("fn main() { x := 0; x =") + num1str + ";x;};\n",
+              num1
+            )
+        );
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100;
+    std::string num1str = std::to_string(num1);
+
+    result &= Test(
+          out,
+          "Compound Assignment: x = y = " + num1str,
+          TestFile(
+              std::string("fn main() { x := y := 0; x = y = " + num1str + "; x == y;};\n"),
+              true
+            )
+        );
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
     std::string num1str = std::to_string(num1);
     std::string num2str = std::to_string(num2);
@@ -184,6 +246,23 @@ bool TestBasics(std::ostream& out)
       "Addition: x (" + num1str + ") + y (" + num2str + ") = " + resstr,
       TestFile(
         std::string("fn main () { ") + num1str + " + " + num2str + "; };\n",
+        num1 + num2
+        ) 
+    );
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 + num2);
+
+    result &= Test(
+      out,
+      "Addition: x = (" + num1str + "); y = (" + num2str + "); x + y = " + resstr,
+      TestFile(
+        std::string("fn main () { x := 0; y := 0; c := 0; x = ") + num1str + "; y = " + num2str + "; c = x + y; c;};\n",
         num1 + num2
         ) 
     );
@@ -205,6 +284,92 @@ bool TestBasics(std::ostream& out)
         ) 
     );
   }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 11, num2 = rand() % 11; // x, y | x * y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 * num2);
+
+    result &= Test(
+      out,
+      "Multiplication: x = (" + num1str + "); y = (" + num2str + "); x * y = " + resstr,
+      TestFile(
+        std::string("fn main () { x := y := c := 0; x = ") + num1str + "; y = " + num2str + "; c = x * y; c; };\n",
+        num1 * num2
+        ) 
+    );
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = (rand() % 99) + 1; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 / num2);
+
+    result &= Test(
+        out,
+        "Division: x (" + num1str + ") / y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){") + num1str + " / " + num2str + ";};\n",
+          num1 / num2
+          )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 % num2);
+
+    result &= Test(
+        out,
+        "Modulus: x (" + num1str + ") % y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){") + num1str + " % " + num2str + ";};\n",
+          num1 % num2
+          )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 == num2);
+
+    result &= Test(
+        out,
+        "Integer Equality: x (" + num1str + ") == y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){") + num1str + " == " + num2str + ";};\n",
+          num1 == num2
+          )
+        );
+  }  
+  
+  for (int i = 0; i < 10; i++)
+  {
+    bool b1 = rand() % 2, b2 = rand() % 2;
+
+    std::string b1str = b1 == 0 ? "false" : "true";
+    std::string b2str = b2 == 0 ? "false" : "true";
+    std::string resstr  = b1 == b2 ? "true" : "false";
+    
+    result &= Test(
+        out,
+        "Booleans Compare Equal: x (" + b1str + ") == y (" + b2str + ") = " + resstr,
+        TestFile(
+         std::string("fn main(){") + b1str + " == " + b2str + ";};\n",
+         b1 == b2
+         )
+        ); 
+  }
 
   for (int i = 0; i < 10; i++)
   {
@@ -214,14 +379,73 @@ bool TestBasics(std::ostream& out)
 
     result &= Test(
       out,
-      "Application of a Function, (\\x,y => x + y). x (" + num1str + ") + y (" + num2str + ") = " + resstr,
+      "Application of a simple Function, (\\=> x). x (" + num1str + ") + y (" + num2str + ") = " + resstr,
+      TestFile(
+        std::string("fn num(){") + num1str + ";};\nfn main(){ num() + " + num2str + ";};\n",
+        num1 + num2)
+      ); 
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
+    std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 + num2);
+
+    result &= Test(
+      out,
+      "Application of an addition Function, (\\x,y => x + y). x (" + num1str + ") + y (" + num2str + ") = " + resstr,
       TestFile(
         std::string("fn add(x:Int,y:Int){x+y;};\nfn main(){add(") + num1str + "," + num2str + ");};\n",
         num1 + num2)
       ); 
   }
   
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 11, num2 = rand() % 11; // x, y | x * y <= 100
+    std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 * num2);
 
+    result &= Test(
+      out,
+      "Application of a multiplication Function, (\\x,y => x * y). x (" + num1str + ") * y (" + num2str + ") = " + resstr,
+      TestFile(
+        std::string("fn mult(x:Int,y:Int){x*y;};\nfn main(){mult(") + num1str + "," + num2str + ");};\n",
+        num1 * num2)
+      ); 
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = (rand() % 99) + 1; // x, y | x * y <= 100
+    std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 / num2);
+
+    result &= Test(
+      out,
+      "Application of a Division Function, (\\x,y => x / y). x (" + num1str + ") / y (" + num2str + ") = " + resstr,
+      TestFile(
+        std::string("fn Div(x:Int,y:Int){x/y;};\nfn main(){Div(") + num1str + "," + num2str + ");};\n",
+        num1 / num2)
+      ); 
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x * y <= 100
+    std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 % num2);
+
+    result &= Test(
+      out,
+      "Application of a Modulus Function, (\\x,y => x % y). x (" + num1str + ") % y (" + num2str + ") = " + resstr,
+      TestFile(
+        std::string("fn Mod(x:Int,y:Int){x%y;};\nfn main(){Mod(") + num1str + "," + num2str + ");};\n",
+        num1 % num2)
+      ); 
+  }
+  
   result &= Test(out, "basic core functionality", result);
   out << "\n---------------------------------\n";
   return result;

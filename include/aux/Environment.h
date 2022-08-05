@@ -14,6 +14,7 @@
 #include "aux/SymbolTable.h"
 #include "aux/TypeInterner.h"
 #include "aux/CLIOptions.h"
+#include "aux/Flags.h"
 
 #include "ops/BinopTable.h"
 #include "ops/UnopTable.h"
@@ -32,6 +33,7 @@ namespace pink {
     class Environment {
     public:
       std::vector<InternedString>        false_bindings;
+      std::shared_ptr<Flags>             flags;
       std::shared_ptr<CLIOptions>        options;
       std::shared_ptr<Parser>            parser;
       std::shared_ptr<StringInterner>    symbols;
@@ -48,6 +50,7 @@ namespace pink {
       llvm::Function*                    current_function;
 
       Environment(
+        std::shared_ptr<Flags>                       flags,
         std::shared_ptr<CLIOptions>                  options,
         std::shared_ptr<Parser>                      parser,
         std::shared_ptr<StringInterner>              symbols,

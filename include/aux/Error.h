@@ -40,7 +40,11 @@ namespace pink {
         
         // semantic errors
         ValueCannotBeAssigned,
-        NonConstGlobalInit
+        NonConstGlobalInit,
+        CannotTakeAddressOfLiteral,
+        CannotDereferenceLiteral,
+        CannotCastToType,
+        CannotCastFromType,
       };
 
       Code     code;

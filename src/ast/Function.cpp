@@ -1,6 +1,9 @@
 
 #include "ast/Function.h"
+
 #include "aux/Environment.h"
+
+#include "kernel/Cast.h"
 
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/InlineAsm.h"
@@ -217,7 +220,6 @@ namespace pink {
 			{
 				return body_result;
 			}
-		
        
       if (std::string(name) == "main")
       {
@@ -278,7 +280,60 @@ namespace pink {
        
         llvm::Value* bodyVal = body_result.GetOne();
         llvm::InlineAsm* iasm1 = nullptr;
-
+        // So, llvm generates smaller instruction sizes when it handles 
+        // it's different types, this is perfectly fine, except that 
+        // the inline assembly that we generate is not in all cases 
+        // compatible with the registers that llvm uses, so either
+        // we need to be smarter about the assembly instructions we 
+        // emit, and actually know what size register llvm is going 
+        // to use, and be able to adapt our instructions to that,
+        // or I think we could cast any return expression to an 
+        // Integer size before we use it as the argument to this 
+        // specific instruction. Since main always has to return an 
+        // integer, which means types that can validly be cast to 
+        // integers can also be returned.
+        //
+        // since, however, we are now considering casting, we should factor 
+        // the casting itself into it's own function as well, so that we 
+        // can use it later to add casting to the language.
+        //
+        // from the llvm perspective we have many different kinds of casting 
+        // which can be done.
+        //
+        // for instance to cast between our boolean type and our integer type 
+        // we have to emit a zext instruction,
+        //
+        // or if we want to convert between our integer type and our boolean
+        // type we have to emit a trunc instruction.
+        //
+        // or if we want to convert between the different sizes of possible 
+        // integers we can use zext to cast smaller to bigger and 
+        // trunc to cast bigger to smaller
+        //
+        // or if we want to cast between our pointer types, we emit the 
+        // bitcast instruction,
+        //
+        // of if we want to cast between addressspaces for a given pointer type 
+        // we emit the addrspacecast instruction,
+        //
+        // or if we want to cast between an integer and a float we emit the 
+        // sitofp instruction,
+        //
+        // or if we want to cast between a float and an integer we emit the 
+        // fptosi instruction,
+        //
+        // or if we want to cast between a float and an unsigned integer we
+        // emit the fptoui instruction,
+        //
+        // or if we want to cast between an unsigned integer and a float we 
+        // emit the uitofp instruction
+        //
+        //
+        // we should also factor this part of Function::Codegen into it's own
+        // subroutine, so Function::Codegen can just call something passing
+        // in the value to be returned. Maybe EmitMainReturn(llvm::Value*,
+        // std::shared_ptr<Environment>)
+        // 
         // if the body of main is returning a constantInt that needs a slightly 
         // different inline assembly expression from returning the result of an
         // expression.
@@ -290,12 +345,12 @@ namespace pink {
           }
          
           iasm1 = llvm::InlineAsm::get(iasm1Ty, 
-                                       "mov $1, %rdi",
+                                       "mov rdi, $1",
                                        "={rdi},i", // this says the instruction writes an argument, 
                                                    // which is an immediate integer, to rdi
                                        true,  // hasSideEffects
                                        false, // isAlignStack
-                                       llvm::InlineAsm::AsmDialect::AD_ATT,
+                                       llvm::InlineAsm::AsmDialect::AD_Intel,
                                        false); // canThrow
 
         }
@@ -308,13 +363,14 @@ namespace pink {
             FatalError("constraint code for iasm1Ty not valid", __FILE__, __LINE__);
           }
 
+          
           iasm1 = llvm::InlineAsm::get(iasm1Ty, 
-                                       "mov $1, %rdi",
+                                       "mov rdi, $1",
                                        "={rdi},r", // this says the instruction writes an argument, 
-                                                   // which is an immediate integer, to rdi
+                                                   // which is a register, to rdi
                                        true,  // hasSideEffects
                                        false, // isAlignStack
-                                       llvm::InlineAsm::AsmDialect::AD_ATT,
+                                       llvm::InlineAsm::AsmDialect::AD_Intel,
                                        false); // canThrow
 
 
@@ -333,11 +389,11 @@ namespace pink {
         
 
         llvm::InlineAsm* iasm0 = llvm::InlineAsm::get(iasm0Ty, 
-                                                      "mov $$60, %rax",
+                                                      "mov rax, 60",
                                                       "={rax}", // this says the instruction writes an immediate int to rax
                                                       true,  // hasSideEffects
                                                       false, // isAlignStack
-                                                      llvm::InlineAsm::AsmDialect::AD_ATT,
+                                                      llvm::InlineAsm::AsmDialect::AD_Intel,
                                                       false); // canThrow
          
 
@@ -347,7 +403,7 @@ namespace pink {
                                                           // other times it's return value is within rax.
                                                       true,  // hasSideEffect
                                                       false, // isAlignStack
-                                                      llvm::InlineAsm::AsmDialect::AD_ATT,
+                                                      llvm::InlineAsm::AsmDialect::AD_Intel,
                                                       false); // canThrow 
         // initally the numbering followed the order we emitted, however
         // rax is a commonly selected register for use by the compiler,
@@ -355,8 +411,13 @@ namespace pink {
         // of common expressions, this causes us to overwrite the correct 
         // return code when we load the rax register with the exit code 
         // if we emit a call to iasm1 after emitting the call to 
-        // iasm0. hence the reversal.        
-        std::vector<llvm::Value*> iasm1Args = { body_result.GetOne() };
+        // iasm0. hence the reversal.
+        Outcome<llvm::Value*, Error> cast_result = Cast(bodyVal, env->builder->getInt64Ty(), local_env);
+
+        if (!cast_result)
+          return cast_result;
+
+        std::vector<llvm::Value*> iasm1Args = { cast_result.GetOne() };
 
         local_builder->CreateCall(iasm1Ty, iasm1, iasm1Args);
 
@@ -373,7 +434,7 @@ namespace pink {
         // so, figure out why this happens and what we can do to 
         // remove this line. this is in fact always dead code,
         // so i am initailly unsure why this is even necessary.
-        local_builder->CreateRet(local_builder->getInt64(0));
+        local_builder->CreateRet(bodyVal);
       }
       else
       {

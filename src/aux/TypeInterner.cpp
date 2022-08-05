@@ -54,4 +54,20 @@ namespace pink {
     	
     	return result;
     }
+
+    PointerType* TypeInterner::GetPointerType(Type* pointee_type)
+    {
+      std::unique_ptr<PointerType> possible = std::make_unique<PointerType>(pointee_type);
+
+      for (auto& pt : pointer_types)
+      {
+        if (possible->EqualTo(pt.get()))
+          return pt.get();
+      }
+
+      PointerType* result = possible.get();
+      pointer_types.emplace_back(std::move(possible));
+
+      return result;
+    }
 }
