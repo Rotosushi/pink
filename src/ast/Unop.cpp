@@ -80,14 +80,98 @@ namespace pink {
     	Outcome<Type*, Error> rhs_type(right->Getype(env));
     	
     	if (!rhs_type)
+      {
     		return Outcome<llvm::Value*, Error>(rhs_type.GetTwo());
-    		
+      }
+
     	// get the value to generate the llvm ir
-    	Outcome<llvm::Value*, Error> rhs_value(right->Codegen(env));
-    	
-    	if (!rhs_value)
-    		return rhs_value;
-    		
+
+      Outcome<llvm::Value*, Error> rhs_value(Error(Error::Code::None, Location()));
+      
+      if (strcmp(op, "&") == 0)
+      {
+        // we cannot assign to an address value, we can only assign to 
+        // a memory location.
+        if (env->flags->OnTheLHSOfAssignment())
+        {
+          return Outcome<llvm::Value*, Error>(Error(Error::Code::ValueCannotBeAssigned, loc));
+        }
+
+        // take the address of the rhs,
+        //
+        // all setting this flag does is stop Variable::Codegen
+        // from emitting a load instruction on the pointer to 
+        // memory the Variable is bound to. 
+        // I am fairly sure this is the only thing we can take 
+        // address of, but this is a place where we might see unexpected
+        // behavior as a result of this descision.
+        env->flags->WithinAddressOf(true);
+
+        rhs_value = right->Codegen(env);
+
+        env->flags->WithinAddressOf(false);
+      }
+      else if (strcmp(op, "*") == 0)
+      {
+        // dereference the rhs
+        // if we are on the lhs of an assignment expression 
+        // only emit one load, else we want to load the 
+        // value from the pointer that we retrieved from
+        // loading the pointer the variable was bound to.
+        if (env->flags->OnTheLHSOfAssignment())
+        {
+          // emit one load. which Variable::Codegen already does for us,
+          // so we just have to pretend we aren't on the lhs of assignment
+          env->flags->OnTheLHSOfAssignment(false);
+          env->flags->WithinDereferencePtr(true);
+
+          rhs_value = right->Codegen(env);
+
+          env->flags->OnTheLHSOfAssignment(true);
+          env->flags->WithinDereferencePtr(false);
+        }
+        else 
+        {
+          // emit two loads, so we just have to emit a load on the llvm::Value*
+          // Codegening the rhs returned, so tell Variable::Codegen that we 
+          // want to dereference the pointer it has
+          env->flags->WithinDereferencePtr(true);
+
+          rhs_value = right->Codegen(env);
+
+          env->flags->WithinDereferencePtr(false);
+
+          if (!rhs_value)
+          {
+            return rhs_value;
+          }
+
+          // strip off the ptr type so we can construct a load of the value
+          // within the ptr.
+          // we know that the Type of the rhs is a PointerType, otherwise the 
+          // typechecker would have never typed this expression.
+          PointerType* ptr_type = llvm::cast<pink::PointerType>(rhs_type.GetOne());
+
+          Outcome<llvm::Type*, Error> llvm_pointee_type = ptr_type->pointee_type->Codegen(env);
+
+          if (!llvm_pointee_type)
+          {
+            return Outcome<llvm::Value*, Error>(llvm_pointee_type.GetTwo());
+          }
+
+          rhs_value = env->builder->CreateLoad(llvm_pointee_type.GetOne(), rhs_value.GetOne(), "deref");    
+        }
+      }
+      else // just emit the rhs as we normally do for unops
+      {
+        rhs_value = right->Codegen(env);
+
+        if (!rhs_value)
+        {
+          return rhs_value;
+        }
+      }
+
     	// find the literal
     	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env->unops->Lookup(op);
     	

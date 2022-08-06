@@ -21,4 +21,24 @@ namespace pink {
   {
     return flags[LHSOfAssignment] = state;
   }
+
+  bool Flags::WithinAddressOf()
+  {
+    return flags[inAddressOf];
+  }
+
+  bool Flags::WithinAddressOf(bool state)
+  {
+    return flags[inAddressOf] = state;
+  }
+
+  bool Flags::WithinDereferencePtr()
+  {
+    return flags[inDereferencePtr];
+  }
+
+  bool Flags::WithinDereferencePtr(bool state)
+  {
+    return flags[inDereferencePtr] = state;
+  }
 }

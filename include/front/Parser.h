@@ -38,6 +38,7 @@ namespace pink {
         Outcome<std::unique_ptr<Ast>, Error> ParseBlock(std::shared_ptr<Environment> env);
         Outcome<std::unique_ptr<Ast>, Error> ParseFunction(std::shared_ptr<Environment> env);
         Outcome<std::pair<InternedString, Type*>, Error> ParseArgument(std::shared_ptr<Environment> env);
+        //Outcome<Type*, Error> ParseType(std::shared_ptr<Environment> env);
         Outcome<Type*, Error> ParseBasicType(std::shared_ptr<Environment> env);
     public:
         Parser(std::istream* input_stream);

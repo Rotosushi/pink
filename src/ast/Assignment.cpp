@@ -175,7 +175,8 @@ namespace pink {
     		// space or the local stack frame, so we check that the bound value 
     		// is able to be assigned to.
     		if (llvm::isa<llvm::AllocaInst>(lhs_value.GetOne()) 
-    		|| (llvm::isa<llvm::GlobalVariable>(lhs_value.GetOne())))
+    		|| (llvm::isa<llvm::GlobalVariable>(lhs_value.GetOne()))
+        || (lhs_value.GetOne()->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID))
     		{
           llvm::Value* right_value = nullptr;
           

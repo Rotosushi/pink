@@ -9,8 +9,8 @@ namespace pink {
         Id,  // [a-zA-Z_][a-zA-Z0-9_]*
         Op,  // [+\-*\\%<=>&|\^!~@$]+
 
-		Comma,     // ','
-		Semicolon, // ';'
+        Comma,     // ','
+		    Semicolon, // ';'
         Colon,     // ':'
         ColonEq,   // ':='
         Equals,    // '='

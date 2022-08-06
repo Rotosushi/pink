@@ -20,54 +20,11 @@ namespace pink {
 
     Outcome<llvm::Value*, Error> UnopAddressOfValue(llvm::Value* term, std::shared_ptr<Environment> env)
     {
-      // we want a unop expression which returns a llvm::Value* which represents the
-      // llvm::Value* which was received as a pointer to that very thing.
-      // luckily, whenever we allocate memory (global or stack) within llvm,
-      // the llvm::Value* which is returned is -already- representing the 
-      // address of the new allocation. This means that any llvm::Value* we 
-      // receive which is a llvm::AllocaInst or a llvm::GlobalVariable we can 
-      // simply return. however, due to the type of the unop '&' associated 
-      // with this procedure, the type of this llvm::Value has been changed to 
-      // be a PointerType, meaning we can handle it differently at a later
-      // point. 
-      // additionally, and for the same reasons, this works for the reverse
-      // operation as well. because all the places which we emit loads/stores 
-      // for care about is the type we are loading/storing, and the value being 
-      // stored. when we attempt to store a value at some location if we say 
-      // to store a value of some concrete type to the given pointer, we can 
-      // simply have that concrete value be a pointer itself, and the type 
-      // being store be a pointer to that concrete type.
-      //
-      // we know that any pointer we create must be either from 
-      // llvm::IRBuilder<>::CreateAlloca, or llvm::Module::getOrInsertGlobal
-      // thus we only need to check that the value we are 'taking the address of'
-      // is one of this llvm classes. 
-      // #TODO: currently we don't have a way of reporting the error's location 
-      // from within this function! normally we are either parsing, and thus know
-      // the location, or we are typing/codegening an Ast, and thus have a copy of the
-      // location to reference. But here we are only dealing directly with the
-      // llvm::Value* itself, which does not record the location. 
-      // (nor should it lol)
-      // Yet it sure would be nice to have the error reporting procedure
-      // correctly point out the location of the bad unop within the term 
-      // that produced the error.
-      if (!(llvm::isa<llvm::AllocaInst>(term) || !(llvm::isa<llvm::GlobalVariable>(term))))
-      {
-        Error error(Error::Code::CannotTakeAddressOfLiteral, Location());
-        return Outcome<llvm::Value*, Error>(error);  
-      }
-
       return Outcome<llvm::Value*, Error>(term);
     }
 
     Outcome<llvm::Value*, Error> UnopValueOfAddress(llvm::Value* term, std::shared_ptr<Environment> env)
     {
-      if (!(llvm::isa<llvm::AllocaInst>(term)) || !(llvm::isa<llvm::GlobalVariable>(term)))
-      {
-        Error error(Error::Code::CannotDereferenceLiteral, Location());
-        return Outcome<llvm::Value*, Error>(error);
-      }
-
       return Outcome<llvm::Value*, Error>(term);
     }
 

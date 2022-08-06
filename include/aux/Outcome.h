@@ -35,6 +35,8 @@ namespace pink {
         Outcome(const Outcome& other);
         Outcome(Outcome&& other);
 
+        Outcome& operator=(const T& t);
+        Outcome& operator=(const U& u);
         Outcome& operator=(const Outcome& other);
         Outcome& operator=(Outcome&& other);
         operator bool();
@@ -100,6 +102,26 @@ namespace pink {
     		two = other.two;
     }
 
+    template <class T, class U>
+    Outcome<T, U>& Outcome<T, U>::operator=(const T& t)
+    {
+      which = true;
+
+      one = t;
+
+      return *this;
+    }
+
+    template <class T, class U>
+    Outcome<T, U>& Outcome<T, U>::operator=(const U& u)
+    {
+      which = false;
+
+      two = u;
+
+      return *this;
+    }
+    
     template <class T, class U>
     Outcome<T, U>& Outcome<T, U>::operator=(const Outcome& other)
     {
