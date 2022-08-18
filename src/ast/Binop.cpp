@@ -94,18 +94,30 @@ namespace pink {
     		return Outcome<llvm::Value*, Error>(lhs_type_result.GetTwo());
 
 
-    	Outcome<llvm::Type*, Error> lhs_type = lhs_type_result.GetOne()->Codegen(env);
+    	Outcome<llvm::Type*, Error> lhs_type_codegen = lhs_type_result.GetOne()->Codegen(env);
     	
-    	if (!lhs_type)
-    		return Outcome<llvm::Value*, Error>(lhs_type.GetTwo());
-    		
+    	if (!lhs_type_codegen)
+    		return Outcome<llvm::Value*, Error>(lhs_type_codegen.GetTwo());
+
+      llvm::Type* lhs_type = lhs_type_codegen.GetOne();
+  
+      PointerType* pt = nullptr;
+      // if this is a pointer addition operation, we must pass the pointee_type
+      // into the binop code generation function for the GEP instruction within.
+      if (((pt = llvm::dyn_cast<PointerType>(lhs_type_result.GetOne())) != nullptr) && (strcmp(op, "+") == 0))
+      {
+        Outcome<llvm::Type*, Error> pointee_type_result = pt->pointee_type->Codegen(env);
+       
+        if (!pointee_type_result)
+          return Outcome<llvm::Value*, Error>(pointee_type_result.GetTwo());
+
+        lhs_type = pointee_type_result.GetOne();
+      }
 
     	Outcome<llvm::Value*, Error> lhs_value(left->Codegen(env));
     	
     	if (!lhs_value)
     		return lhs_value;
-    	
-
 
     	Outcome<Type*, Error> rhs_type_result(right->Getype(env));
     	
@@ -113,11 +125,12 @@ namespace pink {
     		return Outcome<llvm::Value*, Error>(rhs_type_result.GetTwo());
     
 
-    	Outcome<llvm::Type*, Error> rhs_type = rhs_type_result.GetOne()->Codegen(env);
+    	Outcome<llvm::Type*, Error> rhs_type_codegen = rhs_type_result.GetOne()->Codegen(env);
     		
-    	if (!rhs_type)
-    		return Outcome<llvm::Value*, Error>(rhs_type.GetTwo());
+    	if (!rhs_type_codegen)
+    		return Outcome<llvm::Value*, Error>(rhs_type_codegen.GetTwo());
   
+      llvm::Type* rhs_type = rhs_type_codegen.GetOne();
 
     	Outcome<llvm::Value*, Error> rhs_value(right->Codegen(env));
     	
@@ -146,7 +159,7 @@ namespace pink {
     	}
     	
     	// use the lhs and rhs values to generate the binop expression.
-    	Outcome<llvm::Value*, Error> binop_value(literal->second->generate(lhs_value.GetOne(), rhs_value.GetOne(), env));
+    	Outcome<llvm::Value*, Error> binop_value(literal->second->generate(lhs_type, lhs_value.GetOne(), rhs_type, rhs_value.GetOne(), env));
     	return binop_value;
     }
 }

@@ -197,13 +197,9 @@ namespace pink {
         //
         //
         //
-        // Okay, so to keep this a bit cleaner, all Variable is going to check
-        // is that it doesn't load if we are on the LHS of assignment, 
-        // or if we are taking the address of this variable, or 
-        // if the type of the variable implies that we never load it,
-        // like with pointer typed variables.
-        if ((llvm::isa<pink::PointerType>(bound->first) && !env->flags->WithinDereferencePtr())
-         || llvm::isa<llvm::FunctionType>(bound_type)
+        // We dont emit a load instruction in any of these cases.
+        if  (llvm::isa<llvm::FunctionType>(bound_type)
+         || (llvm::isa<llvm::ArrayType>(bound_type))
          || env->flags->OnTheLHSOfAssignment()
          || env->flags->WithinAddressOf())
         {
@@ -211,7 +207,7 @@ namespace pink {
         }
         else 
         {
-          return Outcome<llvm::Value*, Error>(env->builder->CreateLoad(bound_type, bound->second, "load"));
+          return Outcome<llvm::Value*, Error>(env->builder->CreateLoad(bound_type, bound->second, symbol));
         }
       }  
 		}

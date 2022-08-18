@@ -76,11 +76,17 @@ namespace pink {
         case Error::Code::MissingRParen:     return "Syntax Error: Expected ')'";
         case Error::Code::MissingLBrace:     return "Syntax Error: Expected '{'";
         case Error::Code::MissingRBrace:     return "Syntax Error: Expected '}'";
+        case Error::Code::MissingRBracket:   return "Syntax Error: Expected ']'";
         case Error::Code::MissingFn:         return "Syntax Error: Missing 'fn'";
         case Error::Code::MissingFnName:     return "Syntax Error: Missing function name";
         case Error::Code::MissingArgName:    return "Syntax Error: Missing argument name";
         case Error::Code::MissingArgColon:   return "Syntax Error: Expected ':'";
         case Error::Code::MissingArgType:    return "Syntax Error: Missing type annotation for argument";
+        case Error::Code::MissingArrayX:     return "Syntax Error: Missing 'x' in array type";
+        case Error::Code::MissingArrayNum:   return "Syntax Error: Missing quantity in array type";
+        case Error::Code::MissingIf:         return "Syntax Error: Missing 'if' in conditional expression";
+        case Error::Code::MissingThen:       return "Syntax Error: Missing 'then' in conditional expression";
+        case Error::Code::MissingElse:       return "Syntax Error: Missing 'else' in conditional expression";
         case Error::Code::UnknownBinop:      return "Syntax Error: Unknown binary operator";
         case Error::Code::UnknownUnop:       return "Syntax Error: Unknown unary operator";
         case Error::Code::UnknownBasicToken: return "Syntax Error: Unknown basic token. expected to parse a term"; 
@@ -93,10 +99,14 @@ namespace pink {
         case Error::Code::AssigneeTypeMismatch:    return "Type Error: Assigned type does not match assignee type";
         case Error::Code::NameNotBoundInScope:     return "Type Error: Name not bound within this scope";
         case Error::Code::NameAlreadyBoundInScope: return "Type Error: Name is already bound within this scope";
+        case Error::Code::ArrayMemberTypeMismatch: return "Type Error: Array member does not have the same type as other array members";
+        case Error::Code::CondTestExprTypeMismatch: return "Type Error: Conditional expression's test expression must have type bool";
+        case Error::Code::CondBodyExprTypeMismatch: return "Type Error: Conditional expression's body expressions must have identical type";
 
         // semantic errors 
         case Error::Code::ValueCannotBeAssigned: return "Semantic Error: Left side cannot be assigned";
         case Error::Code::NonConstGlobalInit:    return "Semantic Error: Global variables must have a constant initializer";
+        case Error::Code::NonConstArrayInit:     return "Semantic Error: Arrays must have constant initializer";
         case Error::Code::CannotTakeAddressOfLiteral: return "Semantic Error: Cannot take the address of a literal value";
         case Error::Code::CannotDereferenceLiteral: return "Semantic Error: Cannot dereference a non-pointer value";       
         case Error::Code::CannotCastToType:  return "Semantic Error: Cannot cast value to the target type";

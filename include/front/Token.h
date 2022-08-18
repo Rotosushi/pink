@@ -18,6 +18,8 @@ namespace pink {
         RParen,    // ')'
         LBrace,	   // '{'
         RBrace,    // '}'
+        LBracket,  // '['
+        RBracket,  // ']'
 
         Nil,     // "nil"
         NilType, // "Nil"
@@ -26,8 +28,11 @@ namespace pink {
         True,    // "true"
         False,   // "false"
         BoolType,// "Bool"
-        
+                
         Fn,      // 'fn'
+        If,      // 'if'
+        Then,    // 'then'
+        Else,    // 'else'
     };
 
     std::string TokenToString(Token t);

@@ -110,6 +110,16 @@ namespace pink {
 			{
 				bindings->Unbind(pair.first); 
 			}
+
+      // also remove any false bindings that any bind 
+      // instructions within this functions scope 
+      // constructed to declare local variables.
+      for (InternedString fbnd : inner_env->false_bindings)
+      {
+        inner_env->bindings->Unbind(fbnd);
+      }
+
+      env->false_bindings.clear();
 			
 			if (!body_result)
 			{

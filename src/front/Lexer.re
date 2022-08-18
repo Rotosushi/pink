@@ -209,18 +209,23 @@ namespace pink {
                 "false" { UpdateLoc(); return Token::False; }
                 "Bool"  { UpdateLoc(); return Token::BoolType; }
                 
-                "fn"	{ UpdateLoc(); return Token::Fn; }
+                "fn"	  { UpdateLoc(); return Token::Fn; }
+                "if"    { UpdateLoc(); return Token::If; }
+                "then"  { UpdateLoc(); return Token::Then; }
+                "else"  { UpdateLoc(); return Token::Else; }                
 
-				","		{ UpdateLoc(); return Token::Comma; }
-				";"		{ UpdateLoc(); return Token::Semicolon; }
+        				","		  { UpdateLoc(); return Token::Comma; }
+				        ";"		  { UpdateLoc(); return Token::Semicolon; }
                 ":"     { UpdateLoc(); return Token::Colon; }
                 "="     { UpdateLoc(); return Token::Equals; }
                 ":="    { UpdateLoc(); return Token::ColonEq; }
                 "("     { UpdateLoc(); return Token::LParen; }
                 ")"     { UpdateLoc(); return Token::RParen; }
-                "{"		{ UpdateLoc(); return Token::LBrace; }
-                "}"		{ UpdateLoc(); return Token::RBrace; }
-                
+                "{"  		{ UpdateLoc(); return Token::LBrace; }
+                "}"	  	{ UpdateLoc(); return Token::RBrace; }
+                "["     { UpdateLoc(); return Token::LBracket; }
+                "]"     { UpdateLoc(); return Token::RBracket; }                
+
                 id      { UpdateLoc(); return Token::Id; }
                 op      { UpdateLoc(); return Token::Op; }
                 int     { UpdateLoc(); return Token::Int; }

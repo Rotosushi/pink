@@ -2,6 +2,8 @@
 #include "aux/CLIOptions.h"
 #include "aux/Environment.h"
 
+#include "kernel/Support.h"
+
 #include "core/Compile.h"
 // #TODO: add a separate 'emit' step by factoring out the 
 // file writing code from Compile()

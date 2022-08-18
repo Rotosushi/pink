@@ -17,6 +17,8 @@
 #include "ast/Block.h"
 #include "ast/Function.h"
 #include "ast/Application.h"
+#include "ast/Array.h"
+#include "ast/Conditional.h"
 
 bool TestParser(std::ostream& out)
 {
@@ -34,8 +36,9 @@ bool TestParser(std::ostream& out)
   std::stringstream ss;
   ss.str(std::string("nil;\n10;\ntrue;\nx;\nx := 1;\nx = 2;\n!true;\n")
        + std::string("1 + 1;\n6 + 3 * 4 == 3 * 2 + 12;\n")
-       + std::string("(1 + 1) - (1 + 1);\none();\ninc(1);\nadd(3,4);\n")
-       + std::string("fn one() { 1; };\n")
+       + std::string("(1 + 1) * (1 + 1);\n[0, 1, 2, 3, 4];\n")
+       + std::string("if true then { 12; } else { 24; };\n")
+       + std::string("one();\ninc(1);\nadd(3,4);\nfn one() { 1; };\n")
        + std::string("fn inc(x: Int) { x + 1; };\n")
        + std::string("fn add(x: Int, y: Int, z: Int) { x + y + z; };\n")
        + std::string("fn fun(x: Int, y: Int, z: Int) { a := x + y; a == z; };\n")); 
@@ -102,31 +105,45 @@ bool TestParser(std::ostream& out)
     
     parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(unary expression)", 
+    result &= Test(out, "Parser::Parse(!true)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
     	&& (llvm::isa<pink::Unop>(term)));
     
     parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(binary expression)", 
+    result &= Test(out, "Parser::Parse(1 + 1)", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
     	&& (llvm::isa<pink::Binop>(term)));
     	
     parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(complex binary expression)",
+    result &= Test(out, "Parser::Parse(6 + 3 * 4 == 3 * 2 + 12)",
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
     	&& (llvm::isa<pink::Binop>(term)));
     
     parser_result = parser->Parse(env);
     
-    result &= Test(out, "Parser::Parse(parenthesized expression)", 
+    result &= Test(out, "Parser::Parse((1 + 1) * (1 + 1))", 
     	   (parser_result) 
     	&& ((term  = parser_result.GetOne().get()) != nullptr) 
-    	&& (llvm::isa<pink::Binop>(term)));   
+    	&& (llvm::isa<pink::Binop>(term)));  
+
+    parser_result = parser->Parse(env);
+
+    result &= Test(out, "Parser::Parse([0, 1, 2, 3, 4])",
+          (parser_result)
+       && ((term = parser_result.GetOne().get()) != nullptr)
+       && (llvm::isa<pink::Array>(term)));
+
+    parser_result = parser->Parse(env);
+
+    result &= Test(out, "Parser::Parse(if true then { 12; } else { 24; })",
+             (parser_result)
+          && ((term = parser_result.GetOne().get()) != nullptr)
+          && (llvm::isa<pink::Conditional>(term))); 
 
     parser_result = parser->Parse(env);
 

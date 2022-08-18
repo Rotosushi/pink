@@ -16,6 +16,8 @@
 #include "ast/Block.h"
 #include "ast/Function.h"
 #include "ast/Application.h"
+#include "ast/Array.h"
+#include "ast/Conditional.h"
 
 bool TestFirstPhase(std::ostream& out)
 {
@@ -28,7 +30,10 @@ bool TestFirstPhase(std::ostream& out)
        + std::string("x = false;\na = false;\n!x;\n!42;\n@12;\nx | !x;\nx + x;\n")
        + std::string("x $ x;\n(x | !x) & (x & !x);\n(x | !x) & (x & 10);\n")
        + std::string("(x | !x) $$ (x & !x);\n100 * 3 == 25 * 12;\n100 * 3 == true * 12;\n")
-       + std::string("100 * 3 == 25 $$ 12;\nfn one(){1;};\nfn inc(x: Int) { x + 1; };\nfn add(x: Int, y: Int){x + y;};\n")
+       + std::string("100 * 3 == 25 $$ 12;\n[0,1,2,3,4];\n[true,false,true,false];\n[0,true];\n")
+       + std::string("if x == true then { 34; } else { 42; };\nif 34 then { true; } else { false; };\n")
+       + std::string("if x == true then { true; } else { 10; };\n")
+       + std::string("fn one(){1;};\nfn inc(x: Int) { x + 1; };\nfn add(x: Int, y: Int){x + y;};\n")
        + std::string("fn compEq(x: Int, y: Int){x == y;};\nfn addCmp(a: Int, b: Int, c: Int){ x := a + b; x == c; };\n")
        + std::string("fn global(a: Int, b: Int){(a == b) == x;};\n")
        + std::string("one();\none(1);\ninc(1);\ninc(true);\nadd(1,2);\nadd(1,true);\n"));
@@ -316,8 +321,67 @@ bool TestFirstPhase(std::ostream& out)
 	
 	//pink::Type* nil_t  = env->types->GetNilType();
 	pink::Type* int_t  = env->types->GetIntType();
+
+  pink::Type* int_5_array_t = env->types->GetArrayType(5, int_t);
+
+  // test parsing and typing an array literal.
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an array of integers, Getype() = [ Int x 5 ]",
+                (parser_result)
+             && ((term = parser_result.GetOne().get()) != nullptr)
+             && llvm::isa<pink::Array>(term)
+             && (getype_result = term->Getype(env))
+             && (int_5_array_t == getype_result.GetOne()));
+
 	pink::Type* bool_t = env->types->GetBoolType();
-	
+
+  pink::Type* bool_4_array_t = env->types->GetArrayType(4, bool_t);
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an array of booleans, Getype() = [ Bool x 4 ]",
+              (parser_result)
+           && ((term = parser_result.GetOne().get()) != nullptr)
+           && llvm::isa<pink::Array>(term)
+           && (getype_result = term->Getype(env))
+           && (bool_4_array_t == getype_result.GetOne()));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse an array of Int and Bool, Getype() = Error",
+                (parser_result)
+             && ((term = parser_result.GetOne().get()) != nullptr)
+             && llvm::isa<pink::Array>(term)
+             && !(getype_result = term->Getype(env)));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse a Conditional, Getype() = Int",
+                 (parser_result)
+              && ((term = parser_result.GetOne().get()) != nullptr)
+              && llvm::isa<pink::Conditional>(term)
+              && (getype_result = term->Getype(env))
+              && (getype_result.GetOne() == int_t));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse a Conditional, Bad test type, Getype() = Error",
+                 (parser_result)
+              && ((term = parser_result.GetOne().get()) != nullptr)
+              && llvm::isa<pink::Conditional>(term)
+              && !(getype_result = term->Getype(env)));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse a Conditional, Mismatched body types, Getype() = Error",
+                 (parser_result)
+              && ((term = parser_result.GetOne().get()) != nullptr)
+              && llvm::isa<pink::Conditional>(term)
+              && !(getype_result = term->Getype(env)));
+
+
+
 	std::vector<pink::Type*> args_t;
 	pink::Type* simplest_fn_t = env->types->GetFunctionType(int_t, args_t);
 	parser_result = env->parser->Parse(env);

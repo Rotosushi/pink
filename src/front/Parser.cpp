@@ -12,6 +12,8 @@
 #include "ast/Block.h"
 #include "ast/Function.h"
 #include "ast/Application.h"
+#include "ast/Array.h"
+#include "ast/Conditional.h"
 
 // Values
 #include "ast/Bool.h"
@@ -26,7 +28,8 @@
 #include "type/NilType.h"
 #include "type/IntType.h"
 #include "type/BoolType.h"
-
+#include "type/PointerType.h"
+#include "type/ArrayType.h"
 
 namespace pink {
     Parser::Parser(std::istream* i)
@@ -128,11 +131,26 @@ namespace pink {
      *         | operator basic
      *         | '(' affix ')' 
      *         | id
+     *         | '[' (affix (',' affix)*)? ']'
+     *         | '[' (affix 'x' affix)? ']'
      *
      *  function := 'fn' id '(' (arg (',' arg)*)? ')' '{' term+ '}'
      *
      *  definition := id ':=' affix
-    
+     *
+     *  arg := id ':' type
+     *
+     *  type := basic_type ('*')?
+     *
+     *  basic_type := 'Nil'
+     *              | 'Int'
+     *              | 'Bool'
+     *              | '[' type 'x' affix ']'
+     *
+     *
+
+
+
       the gap between the reality of an idea                       and your idea of that idea.
 
       the gap between the reality of an others idea                and your idea of their idea.
@@ -737,6 +755,64 @@ namespace pink {
     			return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
     		}
     	}
+
+      case Token::LBracket:
+      { 
+        Location lhs_loc = loc;
+        nexttok(); // eat '['
+        
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
+        std::vector<std::unique_ptr<Ast>> members;
+
+        do
+        {
+          if (tok == Token::Comma)
+          {
+            nexttok(); // eat ','
+
+            while (tok == Token::End && !EndOfInput())
+            {
+              yyfill();
+              nexttok();
+            }
+          }
+
+          Outcome<std::unique_ptr<Ast>, Error> member = ParseAffix(env);
+
+          if (!member)
+            return Outcome<std::unique_ptr<Ast>, Error>(member.GetTwo());
+
+          members.emplace_back(std::move(member.GetOne()));
+
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+
+        } while (tok == Token::Comma);
+
+        while (tok == Token::End && EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
+        if (tok != Token::RBracket)
+        {
+          return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingRBracket, loc));
+        }
+
+        Location array_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+        nexttok(); // eat ']'
+        
+        return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Array>(array_loc, std::move(members)));
+      }
     	
     	case Token::Nil:
     	{	
@@ -776,6 +852,11 @@ namespace pink {
         Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Bool>(lhs_loc, false));
 
         return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
+      }
+
+      case Token::If:
+      {
+        return ParseConditional(env);
       }
         
     	default:
@@ -852,6 +933,51 @@ namespace pink {
     	
     	Location block_loc(left_loc.firstLine, left_loc.firstColumn, loc.firstLine, loc.firstColumn);
     	return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Block>(block_loc, stmnts));
+    }
+
+
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseConditional(std::shared_ptr<Environment> env)
+    {
+      Location lhs_loc = loc;
+      
+      if (tok != Token::If)
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingIf, loc));
+      }
+
+      nexttok(); // eat 'if'
+
+      Outcome<std::unique_ptr<Ast>, Error> test_term = ParseAffix(env);
+
+      if (!test_term)
+        return Outcome<std::unique_ptr<Ast>, Error>(test_term.GetTwo());
+
+      if (tok != Token::Then)
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingThen, loc));
+      }
+
+      nexttok(); // eat 'then'
+
+      Outcome<std::unique_ptr<Ast>, Error> then_term = ParseBlock(env);
+
+      if (!then_term)
+        return Outcome<std::unique_ptr<Ast>, Error>(then_term.GetTwo());
+
+      if (tok != Token::Else)
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingElse, loc));
+      }
+
+      nexttok(); // eat 'else'
+
+      Outcome<std::unique_ptr<Ast>, Error> else_term = ParseBlock(env);
+
+      if (!else_term)
+        return Outcome<std::unique_ptr<Ast>, Error>(else_term.GetTwo());
+
+      Location condloc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+      return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Conditional>(condloc, std::move(test_term.GetOne()), std::move(then_term.GetOne()), std::move(else_term.GetOne())));
     }
 
     
@@ -1026,7 +1152,7 @@ namespace pink {
         return Outcome<std::pair<InternedString, Type*>, Error>(error);
       }
 
-    	Outcome<Type*, Error> type_res = ParseBasicType(env);
+    	Outcome<Type*, Error> type_res = ParseType(env);
     	
     	if (!type_res)
     	{
@@ -1035,8 +1161,27 @@ namespace pink {
     	
     	return Outcome<std::pair<InternedString, Type*>, Error>(std::make_pair(name, type_res.GetOne()));
     }
-    
-    
+
+    Outcome<Type*, Error> Parser::ParseType(std::shared_ptr<Environment> env)
+    {
+      Outcome<Type*, Error> result(Error(Error::Code::None, Location()));
+      Outcome<Type*, Error> basic_type(ParseBasicType(env));
+
+      if (!basic_type)
+        return basic_type;
+
+      if (tok == Token::Op && txt == "*")
+      {
+        nexttok(); // eat '*'  
+        result = env->types->GetPointerType(basic_type.GetOne());
+      }
+      else
+      {
+        result = basic_type;
+      }
+
+      return result;
+    }    
     
     Outcome<Type*, Error> Parser::ParseBasicType(std::shared_ptr<Environment> env)
     {
@@ -1065,7 +1210,67 @@ namespace pink {
         	Outcome<Type*, Error> result(env->types->GetBoolType());
         	return result;
         }
-        
+      
+      case Token::LBracket:
+        {
+          Location lhs_loc = loc;
+          nexttok(); // eat '['
+
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+
+          Outcome<Type*, Error> array_type = ParseType(env);
+
+          if (!array_type)
+            return array_type;
+          
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+          
+          if (tok != Token::Id || txt != "x")
+          {
+            return Outcome<Type*, Error>(Error(Error::Code::MissingArrayX, loc));            
+          }
+  
+          nexttok(); // eat 'x'
+          
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+          
+          if (tok != Token::Int)
+          {
+            return Outcome<Type*, Error>(Error(Error::Code::MissingArrayNum, loc));
+          }
+
+          size_t num = std::stoi(txt);
+
+          nexttok(); // eat '[0-9]+'
+
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+
+          if (tok != Token::RBracket)
+          {
+            return Outcome<Type*, Error>(Error(Error::Code::MissingRBracket, loc));
+          }
+
+          nexttok(); // eat ']'
+
+          return Outcome<Type*, Error>(env->types->GetArrayType(num, array_type.GetOne()));
+        }
+
     	default:
     	{
     		Error error(Error::Code::UnknownTypeToken, loc);

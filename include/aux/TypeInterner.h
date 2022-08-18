@@ -9,6 +9,7 @@
 #include "type/IntType.h"
 #include "type/FunctionType.h"
 #include "type/PointerType.h"
+#include "type/ArrayType.h"
 
 namespace pink {
     class TypeInterner {
@@ -18,6 +19,7 @@ namespace pink {
         std::unique_ptr<IntType>  int_type;
         std::vector<std::unique_ptr<FunctionType>> function_types;
         std::vector<std::unique_ptr<PointerType>> pointer_types;
+        std::vector<std::unique_ptr<ArrayType>> array_types;
 
     public:
         TypeInterner();
@@ -29,6 +31,7 @@ namespace pink {
         IntType*  GetIntType();
         FunctionType* GetFunctionType(Type* r, std::vector<Type*> a);
         PointerType*  GetPointerType(Type* pointee_ty);
+        ArrayType* GetArrayType(size_t size, Type* member_ty);
     };
 
 }

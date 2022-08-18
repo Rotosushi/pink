@@ -166,6 +166,18 @@ namespace pink {
     // then we simply have to emit all of their definitions into
     // the module. (perhaps this too will require a 
     // use-before-definition buffer?)
+    // however, we have one thing to take care of, after typing all 
+    // expressions, the Bind form will have constructed false bindings 
+    // to allow the type of bound names to be used in later expressions.
+    // so, we have to unbind each name that was falsely bound,
+    // so that Codegen can bind those names to their actual types.
+    for (InternedString fbnd : env->false_bindings)
+    {
+      env->bindings->Unbind(fbnd);
+    }
+    // then since we unbound them, clear the names from the list
+    env->false_bindings.clear();
+
     
     for (std::unique_ptr<pink::Ast>& term : valid_terms)
     {

@@ -70,4 +70,20 @@ namespace pink {
 
       return result;
     }
+
+    ArrayType* TypeInterner::GetArrayType(size_t size, Type* member_type)
+    {
+      std::unique_ptr<ArrayType> possible = std::make_unique<ArrayType>(size, member_type);
+
+      for (auto& pt : array_types)
+      {
+        if (possible->EqualTo(pt.get()))
+          return pt.get();
+      }
+
+      ArrayType* result = possible.get();
+      array_types.emplace_back(std::move(possible));
+
+      return result;
+    }
 }

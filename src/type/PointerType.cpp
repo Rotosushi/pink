@@ -1,6 +1,8 @@
 #include "type/PointerType.h"
+#include "aux/Environment.h"
 
 #include "llvm/IR/DerivedTypes.h"
+
 
 namespace pink {
   PointerType::PointerType(Type* pointee_type)
@@ -50,12 +52,7 @@ namespace pink {
 
   Outcome<llvm::Type*, Error> PointerType::Codegen(std::shared_ptr<Environment> env)
   {
-    Outcome<llvm::Type*, Error> pointee_result = pointee_type->Codegen(env);
-    
-    if (!pointee_result)
-      return Outcome<llvm::Type*, Error>(pointee_result.GetTwo());
-
-    return Outcome<llvm::Type*, Error>(llvm::PointerType::getUnqual(pointee_result.GetOne()));
+    return Outcome<llvm::Type*, Error>(llvm::PointerType::getUnqual(*env->context));
   }
 
 }

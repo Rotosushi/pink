@@ -243,47 +243,13 @@ bool TestBasics(std::ostream& out)
 
     result &= Test(
       out,
-      "Addition: x (" + num1str + ") + y (" + num2str + ") = " + resstr,
-      TestFile(
-        std::string("fn main () { ") + num1str + " + " + num2str + "; };\n",
-        num1 + num2
-        ) 
-    );
-  }
-  
-  for (int i = 0; i < 10; i++)
-  {
-    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 + num2);
-
-    result &= Test(
-      out,
       "Addition: x = (" + num1str + "); y = (" + num2str + "); x + y = " + resstr,
       TestFile(
         std::string("fn main () { x := 0; y := 0; c := 0; x = ") + num1str + "; y = " + num2str + "; c = x + y; c;};\n",
         num1 + num2
         ) 
     );
-  }
-  
-  for (int i = 0; i < 10; i++)
-  {
-    int num1 = rand() % 11, num2 = rand() % 11; // x, y | x * y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 * num2);
-
-    result &= Test(
-      out,
-      "Multiplication: x (" + num1str + ") * y (" + num2str + ") = " + resstr,
-      TestFile(
-        std::string("fn main () { ") + num1str + " * " + num2str + "; };\n",
-        num1 * num2
-        ) 
-    );
-  }
+  } 
   
   for (int i = 0; i < 10; i++)
   {
@@ -313,7 +279,7 @@ bool TestBasics(std::ostream& out)
         out,
         "Division: x (" + num1str + ") / y (" + num2str + ") = " + resstr,
         TestFile(
-          std::string("fn main(){") + num1str + " / " + num2str + ";};\n",
+          std::string("fn main(){ x := y := c := 0; x = ") + num1str + "; y = " + num2str + "; c = x / y; c; };\n",
           num1 / num2
           )
         );
@@ -330,7 +296,7 @@ bool TestBasics(std::ostream& out)
         out,
         "Modulus: x (" + num1str + ") % y (" + num2str + ") = " + resstr,
         TestFile(
-          std::string("fn main(){") + num1str + " % " + num2str + ";};\n",
+          std::string("fn main() { x := y := c := 0; x = ") + num1str + "; y = " + num2str + "; c = x % y; c; };\n",
           num1 % num2
           )
         );
@@ -347,11 +313,130 @@ bool TestBasics(std::ostream& out)
         out,
         "Integer Equality: x (" + num1str + ") == y (" + num2str + ") = " + resstr,
         TestFile(
-          std::string("fn main(){") + num1str + " == " + num2str + ";};\n",
+          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x == y; c; };\n",
           num1 == num2
           )
         );
-  }  
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 != num2);
+
+    result &= Test(
+        out,
+        "Integer Inequality: x (" + num1str + ") != y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x != y; c; };\n",
+          num1 != num2
+          )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 < num2);
+
+    result &= Test(
+        out,
+        "Integer less than: x (" + num1str + ") < y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x < y; c; };\n",
+          num1 < num2
+          )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 <= num2);
+
+    result &= Test(
+        out,
+        "Integer less than or equal: x (" + num1str + ") <= y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x <= y; c; };\n",
+          num1 <= num2
+          )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 > num2);
+
+    result &= Test(
+        out,
+        "Integer greater than: x (" + num1str + ") > y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x > y; c; };\n",
+          num1 > num2
+          )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 >= num2);
+
+    result &= Test(
+        out,
+        "Integer greater than or equal: x (" + num1str + ") >= y (" + num2str + ") = " + resstr,
+        TestFile(
+          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x >= y; c; };\n",
+          num1 >= num2
+          )
+        );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    bool b1 = rand() % 2, b2 = rand() % 2;
+    std::string b1str = b1 == 0 ? "false" : "true";
+    std::string b2str = b2 == 0 ? "false" : "true";
+    std::string resstr  = b1 || b2 ? "true" : "false";
+    
+    result &= Test(
+        out,
+        "Boolean Or: x (" + b1str + ") | y (" + b2str + ") = " + resstr,
+        TestFile(
+         std::string("fn main(){") + b1str + " | " + b2str + ";};\n",
+         b1 | b2
+         )
+        ); 
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    bool b1 = rand() % 2, b2 = rand() % 2;
+    std::string b1str = b1 == 0 ? "false" : "true";
+    std::string b2str = b2 == 0 ? "false" : "true";
+    std::string resstr  = b1 && b2 ? "true" : "false";
+    
+    result &= Test(
+        out,
+        "Boolean And: x (" + b1str + ") & y (" + b2str + ") = " + resstr,
+        TestFile(
+         std::string("fn main(){") + b1str + " & " + b2str + ";};\n",
+         b1 && b2
+         )
+        ); 
+  }
   
   for (int i = 0; i < 10; i++)
   {
@@ -363,7 +448,7 @@ bool TestBasics(std::ostream& out)
     
     result &= Test(
         out,
-        "Booleans Compare Equal: x (" + b1str + ") == y (" + b2str + ") = " + resstr,
+        "Booleans Equality: x (" + b1str + ") == y (" + b2str + ") = " + resstr,
         TestFile(
          std::string("fn main(){") + b1str + " == " + b2str + ";};\n",
          b1 == b2
@@ -371,6 +456,122 @@ bool TestBasics(std::ostream& out)
         ); 
   }
 
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+
+    result &= Test(
+      out,
+      "Create a Pointer, Assign through a Pointer: x = (" + num1str + "); y = &x; y = " + num2str ,
+      TestFile(
+        std::string("fn main () { x := 0; y := &x; x = ") + num1str + "; *y = " + num2str + "; x;};\n",
+        num2
+        ) 
+    );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
+    std::string num1str = std::to_string(num1);
+    std::string num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 + num2);
+
+    result &= Test(
+      out,
+      "Arithmetic through a Pointer: x = (" + num1str + "); y = (" + num2str + "); x + y = " + resstr ,
+      TestFile(
+        std::string("fn main () { a := b := c := 0; x := &a; y := &b; z := &c; *x = ") 
+          + num1str 
+          + "; *y = " 
+          + num2str 
+          + "; *z = *x + *y; c;};\n",
+        num1 + num2
+        ) 
+    );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 2, num2 = rand() % 2; // x, y | x + y <= 100
+    std::string num1str = num1 == 0 ? "false" : "true"; 
+    std::string num2str = num2 == 0 ? "false" : "true";
+    std::string resstr  = num1 == num2 ? "true" : "false";
+
+    result &= Test(
+      out,
+      "Boolean arithmetic through a pointer: x = (" + num1str + "); y = (" + num2str + "); x == y = " + resstr ,
+      TestFile(
+        std::string("fn main () { a := b := c := false; x := &a; y := &b; z := &c; *x = ") 
+          + num1str 
+          + "; *y = " 
+          + num2str 
+          + "; *z = *x == *y; c;};\n",
+        num1 == num2
+        ) 
+    );
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int array[5] = {rand() % 50, rand() % 50, rand() % 50, rand() % 50, rand() % 50};
+    int idx1 = rand() % 5, idx2 = rand() % 5;
+    std::string idx1str = std::to_string(idx1), 
+                idx2str = std::to_string(idx2);
+    std::string num1str = std::to_string(array[idx1]), 
+                num2str = std::to_string(array[idx2]),
+                resstr  = std::to_string(array[idx1] + array[idx2]);
+    std::string arr0str = std::to_string(array[0]),
+                arr1str = std::to_string(array[1]),
+                arr2str = std::to_string(array[2]),
+                arr3str = std::to_string(array[3]),
+                arr4str = std::to_string(array[4]);
+    
+    std::string teststr = "fn main() { a := [" + arr0str + "," + arr1str + "," + arr2str + "," + arr3str + "," + arr4str + "];"
+                                    + "b := *(a + " + idx1str + ");"
+                                    + "c := *(a + " + idx2str + ");"
+                                    + "b + c;};";
+    result &= Test(out,
+            "Allocating an Integer array, and performing arithmetic on two of it's elements: " + num1str + " + " + num2str + " = " + resstr,
+            TestFile(teststr, array[idx1] + array[idx2])
+            );
+
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50;
+    int idx1 = rand() % 5, idx2 = rand() % 5;
+    
+    // if we reassign the contents to the same location, that causes 
+    // us to overwrite the contents, and so the addition will not 
+    // match what we expect, since this is not a problem with the 
+    // code, and simply a problem with the test text, we avoid that case 
+    // here.
+    while (idx1 == idx2)
+    {
+      idx2 = rand() % 5;
+    }
+
+    std::string idx1str = std::to_string(idx1), 
+                idx2str = std::to_string(idx2);
+    std::string num1str = std::to_string(num1), 
+                num2str = std::to_string(num2),
+                resstr  = std::to_string(num1 + num2);
+    
+    std::string teststr = std::string("fn main() { a := [0,0,0,0,0];")    
+                                    + "b := a + " + idx1str + "; *b = " + num1str + ";"
+                                    + "c := a + " + idx2str + "; *c = " + num2str + ";"
+                                    + "*b + *c;};";
+    result &= Test(out,
+            "Allocating an Integer array, Assigning new numbers to two of it's elements, " + idx1str + ", " + idx2str + ", and performing arithmetic those two elements: " + num1str + " + " + num2str + " = " + resstr,
+            TestFile(teststr, num1 + num2)
+            );
+
+  }
+  
   for (int i = 0; i < 10; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
@@ -399,6 +600,25 @@ bool TestBasics(std::ostream& out)
         std::string("fn add(x:Int,y:Int){x+y;};\nfn main(){add(") + num1str + "," + num2str + ");};\n",
         num1 + num2)
       ); 
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50;
+    std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
+    std::string resstr  = std::to_string(num1 + num2);
+
+    result &= Test(
+      out,
+      "Application of an addition function taking pointers to integers, (\\x:Int*,y:Int* => *x + *y). x (" + num1str + ") + y (" + num2str + ") = " + resstr,
+      TestFile(
+        std::string("fn add(x: Int*, y: Int*){ *x + *y;};\nfn main(){ a := 0; b := 0; x := &a; y := &b; a = ") 
+          + num1str 
+          + "; b = " 
+          + num2str 
+          + "; c := add(x, y);};\n",
+        num1 + num2)
+      );
   }
   
   for (int i = 0; i < 10; i++)

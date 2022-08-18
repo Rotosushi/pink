@@ -95,6 +95,9 @@ add_library(libpink STATIC
 		    src/ast/Variable.cpp
 		    src/ast/VarRef.cpp
         src/ast/Application.cpp
+        src/ast/Array.cpp
+        src/ast/Conditional.cpp
+
         src/aux/CLIOptions.cpp
 		    src/aux/Environment.cpp
 		    src/aux/Error.cpp
@@ -104,25 +107,33 @@ add_library(libpink STATIC
 		    src/aux/SymbolTable.cpp
 		    src/aux/TypeInterner.cpp
         src/aux/Flags.cpp
+        
         src/ops/BinopCodegen.cpp
 		    src/ops/BinopLiteral.cpp
 		    src/ops/BinopTable.cpp
 		    src/ops/UnopCodegen.cpp
 		    src/ops/UnopLiteral.cpp
 		    src/ops/UnopTable.cpp
-		    src/kernel/BinopPrimitives.cpp
+		    
+        src/kernel/BinopPrimitives.cpp
 		    src/kernel/UnopPrimitives.cpp
         src/kernel/Cast.cpp
+        #src/kernel/DefaultInitialization.cpp
+        #src/kernel/Support.cpp
+        
         src/type/Type.cpp
 		    src/type/BoolType.cpp
 		    src/type/IntType.cpp
 		    src/type/NilType.cpp
 		    src/type/FunctionType.cpp
         src/type/PointerType.cpp
+        src/type/ArrayType.cpp
+        
         src/front/Lexer.cpp 
 		    src/front/Token.cpp
 		    src/front/Parser.cpp
-		    src/core/Compile.cpp
+		    
+        src/core/Compile.cpp
         src/core/Link.cpp
 		   )
 			   

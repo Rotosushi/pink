@@ -49,7 +49,7 @@ namespace pink {
 	
 	std::string Block::ToString()
 	{
-		std::string result("");
+		std::string result("{ ");
 		
 		// #TODO: Make this prepend the correct number of 
 		// 			tabs to properly indent the block at 
@@ -58,6 +58,8 @@ namespace pink {
 		{
 			result += stmt->ToString() + ";\n";
 		}
+
+    result += " }";
 		
 		return result;
 	}
@@ -81,18 +83,7 @@ namespace pink {
 			if (!result)
 				return result;
 		}
-		
-		// calling Getype on any bind expressions within this block 
-		// will have created false bindings, such that later expressions
-		// using the previous ones will be able to be properly bound.
-		// so we clean those up here before returning the final type.
-		for (InternedString fbnd : env->false_bindings)
-		{
-			env->bindings->Unbind(fbnd);
-		}
-		// since we removed them, clear them from the list.
-		env->false_bindings.clear();
-		
+
 		return result;
 	}
 

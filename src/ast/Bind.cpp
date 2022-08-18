@@ -74,33 +74,47 @@ namespace pink {
     
     	if (!bound.hasValue())
     	{
-			Outcome<Type*, Error> term_type = term->Getype(env);
-			
-			if (term_type)
-			{
-				// construct a false binding so we can properly 
-				// type statements that occur later within the same block.
-				env->false_bindings.push_back(symbol);
-				
-				env->bindings->Bind(symbol, term_type.GetOne(), nullptr); // construct a false binding to type later statements within this same block.
-				
-				Outcome<Type*, Error> result(term_type.GetOne());
-				return result;
-			}
-			else 
-			{
-				return term_type;
-			}
-		}
-		else 
-		{
-			// #TODO: if the binding term has the same type as what the symbol 
-			//  is already bound to, we could treat the binding as equivalent 
-			//  to an assignment instead of an error. different types would still be an error.
-			Error error(Error::Code::NameAlreadyBoundInScope, loc);
-			Outcome<Type*, Error> result(error);
-			return result;
-		}
+        Outcome<Type*, Error> term_type = term->Getype(env);
+        
+        if (term_type)
+        {
+          if (ArrayType* at = llvm::dyn_cast<ArrayType>(term_type.GetOne()))
+          {
+            // array's decompose into pointers to their first element.
+            env->false_bindings.push_back(symbol);
+         
+            Type* ptrTy = env->types->GetPointerType(at->member_type);
+
+            env->bindings->Bind(symbol, ptrTy, nullptr);
+            Outcome<Type*, Error> result(ptrTy);
+            return result;
+          }
+          else
+          {
+            // construct a false binding so we can properly 
+            // type statements that occur later within the same block.
+            env->false_bindings.push_back(symbol);
+            
+            env->bindings->Bind(symbol, term_type.GetOne(), nullptr); // construct a false binding to type later statements within this same block.
+            
+            Outcome<Type*, Error> result(term_type.GetOne());
+            return result;
+          }
+        }
+        else 
+        {
+          return term_type;
+        }
+      }
+      else 
+      {
+        // #TODO: if the binding term has the same type as what the symbol 
+        //  is already bound to, we could treat the binding as equivalent 
+        //  to an assignment instead of an error. different types would still be an error.
+        Error error(Error::Code::NameAlreadyBoundInScope, loc);
+        Outcome<Type*, Error> result(error);
+        return result;
+      }
     }
     
     
@@ -110,6 +124,25 @@ namespace pink {
     	variable. once functions are added to the language then if the symboltable 
     	is associated with a function, i.e. is a local scope, then we allocate the 
     	new variable on the stack by constructing an alloca.
+
+      okay, since this procedure is responsible for allocating space for new variables 
+      this is the location which needs to handle allocating aggregate types vs single 
+      value types. 
+
+      We cannot emit a store instruction for an aggregate type, only for single value types.
+      thus, to initialize an array to some given set of values, we have to assign each of 
+      them individually. 
+
+      It makes sense to me that on the destination side, for each slot in the array we 
+      emit a GEP to construct a pointer to the slot, and then we emit a store of the 
+      given value for that slot. 
+
+      what is confusing to me is the role that llvm::ConstantArray plays here. 
+      do we simply emit a GEP to the slot in the ConstantArray and then emit a 
+      load of that slot, for each slot? essentially the inverse of what we do for 
+      the dest? that makes the most sense, except for the part of where does the 
+      constant array live in memory that we can validly construct a GEP? 
+      i dunno, only one way to see if it works, i just hope it doesn't segfault.
     */
     Outcome<llvm::Value*, Error> Bind::Codegen(std::shared_ptr<Environment> env)
     {
@@ -169,18 +202,108 @@ namespace pink {
 				// we might be able to save/restore the point, but what if the previous 
 				// builder was in the global scope, and thus had no basic block to insert into?
 				llvm::IRBuilder local_builder(insertion_block, insertion_point);
-				
-				// in the case of a local symbol the name is bound to the address of 
-				// the local variables location, constructed w.r.t. the current function.
-				ptr = local_builder.CreateAlloca(term_type.GetOne(), 
-												   env->data_layout.getAllocaAddrSpace(), 
-												   nullptr, 
-												   symbol);
-				
-				// we can store the value into the stack (alloca) at some 
-				// point after we construct it. in this case, relative to 
-				// where the bind declaration is located syntactically.
-				env->builder->CreateStore(term_value.GetOne(), ptr, symbol);
+        
+        // check if the value being stored fits within a register, a.k.a. first class types,
+        // because then we only have to emit a single store instruction to bind the value 
+        // to the location we allocated.
+        // otherwise we have to break apart the given type into peices which
+        // are first class, and then we can emit a store instruction for each
+        // of those peices, iterating over all first class values within the 
+        // given type will store the entire thing.
+
+        // we can call llvm::Type::isFirstClassType to check, and then emit
+        // more than one store. however, to properly encompass the recursive 
+        // nature of types, i think we will need to define a recursive
+        // proceudre to emit the correct sequence of Load instructions.
+        // and we cannot simply use a loop here.
+        llvm::Type* rhs_type = term_type.GetOne();
+
+        if (rhs_type->isSingleValueType())
+        {
+          // in the case of a local symbol the name is bound to the address of 
+          // the local variables location, constructed w.r.t. the current function.
+          ptr = local_builder.CreateAlloca(term_type.GetOne(), 
+                             env->data_layout.getAllocaAddrSpace(), 
+                             nullptr, 
+                             symbol);
+          
+          // we can store the value into the stack (alloca) at some 
+          // point after we construct it. in this case, relative to 
+          // where the bind declaration is located syntactically.
+          env->builder->CreateStore(term_value.GetOne(), ptr, symbol);
+        } 
+        else if (llvm::ArrayType* at = llvm::dyn_cast<llvm::ArrayType>(rhs_type))
+        {
+          // it looks like this procedure works given a single dimensional
+          // array and constant integer values. which is great, that means that 
+          // at the heart of any local initialization we can store
+          // singleValueTypes just like this. the next step however, is to make
+          // sure that this routine can handle N-dimensional arrays where the
+          // elem type is not a singlevaluetype. this procedure I think must 
+          // be recursive for each dimension. 
+          // Consider an array of arrays of Integers. each element of the
+          // initial array is itself an array, so if we can pass the address of 
+          // the subarray in as the target destination to a recursive procedure 
+          // which can then iterate through that sub array to generate the
+          // proper number of stores, then the outer scope just has to call
+          // that procedure for each array member. 
+          llvm::ConstantArray* ca = llvm::cast<llvm::ConstantArray>(term_value.GetOne());
+
+          ptr = local_builder.CreateAlloca(at,
+                            env->data_layout.getAllocaAddrSpace(),
+                            local_builder.getInt64(at->getNumElements()),
+                            symbol
+                            );
+          
+          /*
+          std::string globalname = std::string("array_initalizer_") + symbol;
+          env->module->getOrInsertGlobal(globalname, at);
+          llvm::GlobalVariable* global = env->module->getGlobalVariable(globalname);
+          global->setInitializer(ca);    
+          
+          env->builder->CreateMemCpy(ptr, 
+                                     env->data_layout.getABITypeAlign(at),
+                                     global,
+                                     env->data_layout.getABITypeAlign(at),
+                                     env->data_layout.getTypeStoreSize(at->getElementType()) * at->getNumElements());
+          */
+          
+          size_t length = at->getNumElements();
+          for (size_t i = 0; i < length; i++)
+          {
+            // from reading the Docs here: llvm.org/docs/GetElementPtr.html
+            // the GEP instruction takes the type of the element being indexed 
+            // over, which in our case is int64, or int1, depending upon the 
+            // element type of the array being considered. the next argument 
+            // is the pointer to the array to compute the offset relative of,
+            // the third argument is an index over the type given. so 0 will be 
+            // the array pointed to by ptr, 1 would be the pointer to the same 
+            // type of array, but appearing after the end of the given array,
+            // as if we had stored an array of arrays, this would be the second 
+            // array member, 3 would be the third array, and so on and so
+            // forth. the fourth argument is the index into the type given,
+            // so this would be an element of the array given, the first elem 
+            // is at offset 0, then offset 1 is the second element and so on. 
+            llvm::Value* elemPtr = env->builder->CreateConstGEP2_64(at, ptr, 0, i);
+
+            // now that we have a pointer to the memory to store the value, 
+            // we can store the corresponding value.
+            env->builder->CreateStore(ca->getAggregateElement(i), elemPtr, symbol);
+          }
+          
+          // array types decompose to pointer types when referenced 
+          // by name within the program, so we bind the array name 
+          // to a pointer to the first element.
+          //ptr = env->builder->CreateBitCast(ptr, env->builder->getPtrTy(env->data_layout.getAllocaAddrSpace()), "bcast");
+          ptr = env->builder->CreateConstGEP2_64(at, ptr, 0, 0);
+        }
+        else
+        {
+          // FatalError is marked [[noreturn]] and the compiler still complains 
+          // about not all code paths returning a value, i don't get it.
+          FatalError("Unsupported Type* passed to Bind's allocator", __FILE__, __LINE__);
+          return Outcome<llvm::Value*, Error>(Error(Error::Code::None, loc));
+        }
 			}
 			// we use term_type_result, as that holds a pink::Type*, which is what Bind expects.
 			env->bindings->Bind(symbol, term_type_result.GetOne(), ptr); // bind the symbol to the newly created value

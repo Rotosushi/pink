@@ -7,7 +7,7 @@
 
 #include "type/IntType.h"
 
-pink::Outcome<llvm::Value*, pink::Error> test_binop_codegen_fn(llvm::Value* left, llvm::Value* right, std::shared_ptr<pink::Environment> env)
+pink::Outcome<llvm::Value*, pink::Error> test_binop_codegen_fn(llvm::Type* lty, llvm::Value* left, llvm::Type* rty, llvm::Value* right, std::shared_ptr<pink::Environment> env)
 {
     pink::Error err(pink::Error::Code::None, pink::Location());
     return pink::Outcome<llvm::Value*, pink::Error>(err);
@@ -29,7 +29,7 @@ bool TestBinopCodegen(std::ostream& out)
 
   result &= Test(out, "BinopCodegen::result_type", binop_codegen.result_type == ty);
   
-  pink::Outcome<llvm::Value*, pink::Error> gen = binop_codegen.generate(nullptr, nullptr, env);
+  pink::Outcome<llvm::Value*, pink::Error> gen = binop_codegen.generate(nullptr, nullptr, nullptr, nullptr, env);
 
   result &= Test(out, "BinopCodegen::generate", binop_codegen.generate == test_binop_codegen_fn && !gen);
 

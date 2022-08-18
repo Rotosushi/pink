@@ -7,7 +7,7 @@
 
 #include "aux/Environment.h"
 
-pink::Outcome<llvm::Value*, pink::Error> test_binop_table_fn(llvm::Value* left, llvm::Value* right, std::shared_ptr<pink::Environment> env)
+pink::Outcome<llvm::Value*, pink::Error> test_binop_table_fn(llvm::Type* lty, llvm::Value* left, llvm::Type* rty, llvm::Value* right, std::shared_ptr<pink::Environment> env)
 {
   pink::Error err(pink::Error::Code::None, pink::Location());
   return pink::Outcome<llvm::Value*, pink::Error>(err);

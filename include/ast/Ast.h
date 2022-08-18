@@ -27,6 +27,9 @@ namespace pink {
         Assignment,
         Function,
         Application,
+        Conditional,
+
+        Array,
 
         Binop,
         Unop,
