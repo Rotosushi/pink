@@ -249,7 +249,23 @@ bool TestBasics(std::ostream& out)
         num1 + num2
         ) 
     );
-  } 
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50;
+    int res  = num1 + num1;
+    std::string num1str = std::to_string(num1), resstr = std::to_string(res);
+
+    result &= Test(
+        out,
+        "Assignment to modified self: x = " + num1str + ", x + x = " + resstr,
+        TestFile(
+          std::string("fn main () { x := ") + num1str + "; x = x + x; x;};\n",
+          res
+          )
+        );
+  }
   
   for (int i = 0; i < 10; i++)
   {
@@ -569,6 +585,98 @@ bool TestBasics(std::ostream& out)
             "Allocating an Integer array, Assigning new numbers to two of it's elements, " + idx1str + ", " + idx2str + ", and performing arithmetic those two elements: " + num1str + " + " + num2str + " = " + resstr,
             TestFile(teststr, num1 + num2)
             );
+
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50, num2 = rand() % 50;
+    int cmp1 = rand() % 2,  cmp2 = rand() % 2;
+    int res = cmp1 == cmp2 ? num1 : num2;
+
+    std::string teststr = std::string("fn main() { x := ")
+                        + std::to_string(cmp1)
+                        + "; y := "
+                        + std::to_string(cmp2)
+                        + "; z := if x == y then {"
+                        + std::to_string(num1)
+                        + ";} else {"
+                        + std::to_string(num2)
+                        + ";}; z;};";
+    
+    result &= Test(out, 
+                  "Conditional expression, (if " + std::to_string(cmp1) + " == " + std::to_string(cmp2) + " then " + std::to_string(num1) + " else " + std::to_string(num2) + ") = " + std::to_string(res),
+                  TestFile(teststr, res));
+
+  }
+
+  for (int z = 0; z < 10; z++)
+  {
+    int e = rand() % 50, f = rand() % 50, i = rand() % 50, j = rand() % 50;
+    int a = rand() % 2,  b = rand() % 2,  c = rand() % 2,  d = rand() % 2,  g = rand() % 2,  h = rand() % 2;
+    int res = 0;
+    
+    if (a == b)
+    {
+      if (c == d)
+      {
+        res = e; 
+      }
+      else 
+      {
+        res = f;
+      }
+    }
+    else
+    {
+      if (g == h)
+      {
+        res = i;
+      }
+      else
+      {
+        res = j;
+      }
+    }
+    
+    std::string teststr = std::string("fn main() { a := ") + std::to_string(a)
+                                              + "; b := "  + std::to_string(b)
+                                              + "; c := "  + std::to_string(c)
+                                              + "; d := "  + std::to_string(d)
+                                              + "; e := "  + std::to_string(e)
+                                              + "; f := "  + std::to_string(f)
+                                              + "; g := "  + std::to_string(g)
+                                              + "; h := "  + std::to_string(h)
+                                              + "; i := "  + std::to_string(i)
+                                              + "; j := "  + std::to_string(j)
+                                              + "; l := if a == b then { if c == d then { e; } else { f; }; } else { if g == h then { i; } else { j; }; }; l;};";
+    
+    result &= Test(out,
+                  "Nested conditional expression: (if " 
+                    + std::to_string(a) 
+                    + " == " 
+                    + std::to_string(b)
+                    + " then { if " 
+                    + std::to_string(c) 
+                    + " == " 
+                    + std::to_string(d)
+                    + " then { " 
+                    + std::to_string(e) 
+                    + " } else { " 
+                    + std::to_string(f) 
+                    + " } } else { if " 
+                    + std::to_string(g) 
+                    + " == " 
+                    + std::to_string(h) 
+                    + " then { " 
+                    + std::to_string(i) 
+                    + " } else { " 
+                    + std::to_string(j)
+                    + " } }) = "
+                    + std::to_string(res),
+                  TestFile(teststr, res)
+                 );
+                 
 
   }
   
