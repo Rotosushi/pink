@@ -18,7 +18,11 @@
 #include "ast/Function.h"
 #include "ast/Application.h"
 #include "ast/Array.h"
+#include "ast/Tuple.h"
 #include "ast/Conditional.h"
+#include "ast/While.h"
+#include "ast/Dot.h"
+
 
 bool TestParser(std::ostream& out)
 {
@@ -37,7 +41,9 @@ bool TestParser(std::ostream& out)
   ss.str(std::string("nil;\n10;\ntrue;\nx;\nx := 1;\nx = 2;\n!true;\n")
        + std::string("1 + 1;\n6 + 3 * 4 == 3 * 2 + 12;\n")
        + std::string("(1 + 1) * (1 + 1);\n[0, 1, 2, 3, 4];\n")
+       + std::string("(0,1,2,3,4);\nx.2;\n")
        + std::string("if true then { 12; } else { 24; };\n")
+       + std::string("while x == true do { x = false; };\n")
        + std::string("one();\ninc(1);\nadd(3,4);\nfn one() { 1; };\n")
        + std::string("fn inc(x: Int) { x + 1; };\n")
        + std::string("fn add(x: Int, y: Int, z: Int) { x + y + z; };\n")
@@ -140,10 +146,32 @@ bool TestParser(std::ostream& out)
 
     parser_result = parser->Parse(env);
 
+    result &= Test(out, "Parser::Parse((0,1,2,3,4))",
+              (parser_result)
+           && ((term = parser_result.GetOne().get()) != nullptr)
+           && (llvm::isa<pink::Tuple>(term)));
+    
+    parser_result = parser->Parse(env);
+
+    result &= Test(out, "Parser::Parse(x.2)",
+              (parser_result)
+           && ((term = parser_result.GetOne().get()) != nullptr)
+           && (llvm::isa<pink::Dot>(term)));
+
+
+    parser_result = parser->Parse(env);
+
     result &= Test(out, "Parser::Parse(if true then { 12; } else { 24; })",
              (parser_result)
           && ((term = parser_result.GetOne().get()) != nullptr)
           && (llvm::isa<pink::Conditional>(term))); 
+
+    parser_result = parser->Parse(env);
+
+    result &= Test(out, "Parser::Parse(while x == true do { x = false; })",
+              (parser_result)
+           && ((term = parser_result.GetOne().get()) != nullptr)
+           && (llvm::isa<pink::While>(term)));
 
     parser_result = parser->Parse(env);
 

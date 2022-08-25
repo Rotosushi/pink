@@ -13,7 +13,10 @@
 #include "ast/Function.h"
 #include "ast/Application.h"
 #include "ast/Array.h"
+#include "ast/Tuple.h"
 #include "ast/Conditional.h"
+#include "ast/While.h"
+#include "ast/Dot.h"
 
 // Values
 #include "ast/Bool.h"
@@ -109,6 +112,7 @@ namespace pink {
      *         | definition
      *         | application
      *         | application '=' affix
+     *         | application '.' affix
      *         | application (operator application)* // this isn't actually a simple
      *                                   // kleen star, but actually an entrance 
      *                                   // to an operator precedence parser.
@@ -461,6 +465,25 @@ namespace pink {
 		        
     	  return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
       }
+      // basic '.' affix
+      else if (tok == Token::Dot)
+      {
+        nexttok(); // eat '.'
+
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
+        Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env));
+
+        if (!rhs)
+          return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
+
+        Location dotloc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+        return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Dot>(dotloc, std::move(left.GetOne()), std::move(rhs.GetOne())));
+      }
       // basic '(' (affix (',' affix)*)? ')'
       else if (tok == Token::LParen) // an application expression
       {
@@ -715,6 +738,7 @@ namespace pink {
     	
     	case Token::LParen:
     	{
+        Location lhs_loc = loc;
     		nexttok(); // eat the '('
     		
         while (tok == Token::End && !EndOfInput())
@@ -742,9 +766,43 @@ namespace pink {
         {
           yyfill();
           nexttok();
-        }  
+        } 
 
-    		if (tok != Token::RParen)
+        if (tok == Token::Comma)
+        {
+          std::vector<std::unique_ptr<Ast>> elements;
+          elements.emplace_back(std::move(result.GetOne()));
+
+          do {
+            if (tok == Token::Comma)
+              nexttok(); // eat ','
+
+            while (tok == Token::End && !EndOfInput())
+            {
+              yyfill();
+              nexttok();
+            }
+
+            result = ParseAffix(env);
+
+            if (!result)
+              return Outcome<std::unique_ptr<Ast>, Error>(result.GetTwo());
+            
+            elements.emplace_back(std::move(result.GetOne()));
+
+          } while (tok == Token::Comma);
+
+          if (tok != Token::RParen)
+          {
+            Error error(Error::Code::MissingRParen, loc);
+            return Outcome<std::unique_ptr<Ast>, Error>(error);
+          }
+
+          nexttok(); // eat ')'
+          Location tupleloc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+          return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Tuple>(tupleloc, std::move(elements)));
+        } 
+        else if (tok != Token::RParen)
     		{
     			Error error(Error::Code::MissingRParen, loc);
     			return Outcome<std::unique_ptr<Ast>, Error>(error);
@@ -858,6 +916,13 @@ namespace pink {
       {
         return ParseConditional(env);
       }
+
+      case Token::While:
+      {
+        return ParseWhile(env);
+      }
+
+
         
     	default:
     	{
@@ -947,11 +1012,23 @@ namespace pink {
 
       nexttok(); // eat 'if'
 
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+      
       Outcome<std::unique_ptr<Ast>, Error> test_term = ParseAffix(env);
 
       if (!test_term)
         return Outcome<std::unique_ptr<Ast>, Error>(test_term.GetTwo());
 
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+      
       if (tok != Token::Then)
       {
         return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingThen, loc));
@@ -959,17 +1036,34 @@ namespace pink {
 
       nexttok(); // eat 'then'
 
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+      
       Outcome<std::unique_ptr<Ast>, Error> then_term = ParseBlock(env);
 
       if (!then_term)
         return Outcome<std::unique_ptr<Ast>, Error>(then_term.GetTwo());
 
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
       if (tok != Token::Else)
       {
         return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingElse, loc));
       }
 
       nexttok(); // eat 'else'
+      
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
 
       Outcome<std::unique_ptr<Ast>, Error> else_term = ParseBlock(env);
 
@@ -980,6 +1074,54 @@ namespace pink {
       return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Conditional>(condloc, std::move(test_term.GetOne()), std::move(then_term.GetOne()), std::move(else_term.GetOne())));
     }
 
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseWhile(std::shared_ptr<Environment> env)
+    {
+      Location lhs_loc = loc;
+      if (tok != Token::While)
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingWhile, loc));
+      }
+      
+      nexttok(); // eat 'while'
+
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      Outcome<std::unique_ptr<Ast>, Error> test_term = ParseAffix(env);
+
+      if (!test_term)
+        return Outcome<std::unique_ptr<Ast>, Error>(test_term.GetTwo());
+
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      if (tok != Token::Do)
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingDo, loc));
+      }
+
+      nexttok(); // eat 'do'
+
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      Outcome<std::unique_ptr<Ast>, Error> body_term = ParseBlock(env);
+
+      if (!body_term)
+        return Outcome<std::unique_ptr<Ast>, Error>(body_term.GetTwo());
+
+      Location whileloc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+      return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<While>(whileloc, std::move(test_term.GetOne()), std::move(body_term.GetOne())));
+    }
     
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseFunction(std::shared_ptr<Environment> env)
     {

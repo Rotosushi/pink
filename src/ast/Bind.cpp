@@ -222,7 +222,7 @@ namespace pink {
         {
           // in the case of a local symbol the name is bound to the address of 
           // the local variables location, constructed w.r.t. the current function.
-          ptr = local_builder.CreateAlloca(term_type.GetOne(), 
+          ptr = local_builder.CreateAlloca(rhs_type, 
                              env->data_layout.getAllocaAddrSpace(), 
                              nullptr, 
                              symbol);
@@ -255,9 +255,9 @@ namespace pink {
                             symbol
                             );
           
-          /*
+          /*          
           std::string globalname = std::string("array_initalizer_") + symbol;
-          env->module->getOrInsertGlobal(globalname, at);
+          llvm::Value* globalval = env->module->getOrInsertGlobal(globalname, at);
           llvm::GlobalVariable* global = env->module->getGlobalVariable(globalname);
           global->setInitializer(ca);    
           
@@ -284,7 +284,7 @@ namespace pink {
             // forth. the fourth argument is the index into the type given,
             // so this would be an element of the array given, the first elem 
             // is at offset 0, then offset 1 is the second element and so on. 
-            llvm::Value* elemPtr = env->builder->CreateConstGEP2_64(at, ptr, 0, i);
+            llvm::Value* elemPtr = env->builder->CreateConstGEP2_32(at, ptr, 0, i);
 
             // now that we have a pointer to the memory to store the value, 
             // we can store the corresponding value.
@@ -296,6 +296,27 @@ namespace pink {
           // to a pointer to the first element.
           //ptr = env->builder->CreateBitCast(ptr, env->builder->getPtrTy(env->data_layout.getAllocaAddrSpace()), "bcast");
           ptr = env->builder->CreateConstGEP2_64(at, ptr, 0, 0);
+        }
+        else if (llvm::StructType* st = llvm::dyn_cast<llvm::StructType>(rhs_type))
+        {
+          ptr = local_builder.CreateAlloca(st,
+                                          env->data_layout.getAllocaAddrSpace(),
+                                          nullptr,
+                                          symbol
+                                          );
+
+          llvm::ConstantStruct* cs = llvm::cast<llvm::ConstantStruct>(term_value.GetOne());
+
+          size_t i = 0;
+          while(llvm::Constant* member = cs->getAggregateElement(i))
+          {
+            llvm::Value* elemPtr = env->builder->CreateConstGEP2_32(st, ptr, 0, i);
+            env->builder->CreateStore(member, elemPtr, symbol);
+            i++;
+          }
+          // I think Ptr being set equal to the allocation is correct, 
+          // and since we are done storing the constant elements we can
+          // continue on to finish this binding.
         }
         else
         {

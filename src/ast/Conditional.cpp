@@ -170,6 +170,14 @@ namespace pink {
     // it unreachable code.
     env->builder->SetInsertPoint(then_BB);
 
+    // #NOTE: if the compiler truly does fail here, doesn't it leave 
+    // the compiler in an 'inoperable' state? that is, with a bunch 
+    // of half connected basic blocks that are invalid from llvm's 
+    // perspective?
+    //
+    // this i think is something that needs to be addressed when we consider 
+    // attempting to parse more of an input file past the first error given.
+
     Outcome<llvm::Value*, Error> first_codegen_result = first->Codegen(env);
 
     if (!first_codegen_result)

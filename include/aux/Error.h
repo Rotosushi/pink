@@ -31,6 +31,8 @@ namespace pink {
         MissingIf,
         MissingThen,
         MissingElse,
+        MissingWhile,
+        MissingDo,
         UnknownBinop,
         UnknownUnop,
         UnknownBasicToken,
@@ -46,12 +48,16 @@ namespace pink {
         ArrayMemberTypeMismatch,
         CondTestExprTypeMismatch,
         CondBodyExprTypeMismatch,
-
+        WhileTestTypeMismatch,
+        DotLeftIsNotAStruct,
+        DotRightIsNotAnInt,
+        DotIndexOutOfRange,
 
         // semantic errors
         ValueCannotBeAssigned,
         NonConstGlobalInit,
         NonConstArrayInit,
+        NonConstTupleInit,
         CannotTakeAddressOfLiteral,
         CannotDereferenceLiteral,
         CannotCastToType,

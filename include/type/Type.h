@@ -18,6 +18,7 @@ namespace pink {
             Function,
             Pointer,
             Array,
+            Tuple,
         };
 
     protected:

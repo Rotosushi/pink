@@ -96,7 +96,10 @@ add_library(libpink STATIC
 		    src/ast/VarRef.cpp
         src/ast/Application.cpp
         src/ast/Array.cpp
+        src/ast/Tuple.cpp
         src/ast/Conditional.cpp
+        src/ast/While.cpp
+        src/ast/Dot.cpp
 
         src/aux/CLIOptions.cpp
 		    src/aux/Environment.cpp
@@ -128,7 +131,8 @@ add_library(libpink STATIC
 		    src/type/FunctionType.cpp
         src/type/PointerType.cpp
         src/type/ArrayType.cpp
-        
+        src/type/TupleType.cpp
+
         src/front/Lexer.cpp 
 		    src/front/Token.cpp
 		    src/front/Parser.cpp

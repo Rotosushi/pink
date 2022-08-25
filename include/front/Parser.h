@@ -37,6 +37,7 @@ namespace pink {
         Outcome<std::unique_ptr<Ast>, Error> ParseBasic(std::shared_ptr<Environment> env);
         Outcome<std::unique_ptr<Ast>, Error> ParseBlock(std::shared_ptr<Environment> env);
         Outcome<std::unique_ptr<Ast>, Error> ParseConditional(std::shared_ptr<Environment> env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseWhile(std::shared_ptr<Environment> env);
         Outcome<std::unique_ptr<Ast>, Error> ParseFunction(std::shared_ptr<Environment> env);
         Outcome<std::pair<InternedString, Type*>, Error> ParseArgument(std::shared_ptr<Environment> env);
         Outcome<Type*, Error> ParseType(std::shared_ptr<Environment> env);

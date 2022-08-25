@@ -10,6 +10,7 @@
 #include "type/FunctionType.h"
 #include "type/PointerType.h"
 #include "type/ArrayType.h"
+#include "type/TupleType.h"
 
 namespace pink {
     class TypeInterner {
@@ -20,6 +21,7 @@ namespace pink {
         std::vector<std::unique_ptr<FunctionType>> function_types;
         std::vector<std::unique_ptr<PointerType>> pointer_types;
         std::vector<std::unique_ptr<ArrayType>> array_types;
+        std::vector<std::unique_ptr<TupleType>> tuple_types;
 
     public:
         TypeInterner();
@@ -29,9 +31,10 @@ namespace pink {
         NilType*  GetNilType();
         BoolType* GetBoolType();
         IntType*  GetIntType();
-        FunctionType* GetFunctionType(Type* r, std::vector<Type*> a);
-        PointerType*  GetPointerType(Type* pointee_ty);
-        ArrayType* GetArrayType(size_t size, Type* member_ty);
+        FunctionType* GetFunctionType(Type* ret_type, std::vector<Type*> arg_types);
+        PointerType*  GetPointerType(Type* pointee_type);
+        ArrayType* GetArrayType(size_t size, Type* member_type);
+        TupleType* GetTupleType(std::vector<Type*> member_types);
     };
 
 }

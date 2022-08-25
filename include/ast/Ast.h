@@ -25,10 +25,13 @@ namespace pink {
         VarRef,
         Bind,
         Assignment,
+        Dot,
         Function,
         Application,
         Conditional,
+        While,
 
+        Tuple,
         Array,
 
         Binop,

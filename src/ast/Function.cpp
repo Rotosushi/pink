@@ -119,7 +119,7 @@ namespace pink {
         inner_env->bindings->Unbind(fbnd);
       }
 
-      env->false_bindings.clear();
+      inner_env->false_bindings.clear();
 			
 			if (!body_result)
 			{

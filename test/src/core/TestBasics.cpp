@@ -590,6 +590,31 @@ bool TestBasics(std::ostream& out)
 
   for (int i = 0; i < 10; i++)
   {
+    int array[] = {rand() % 100, rand() % 100, rand() % 100, rand() % 100, rand() % 100};
+    int idx = rand() % 5, res = array[idx];
+    std::string a0str = std::to_string(array[0]), 
+                a1str = std::to_string(array[1]),
+                a2str = std::to_string(array[2]),
+                a3str = std::to_string(array[3]),
+                a4str = std::to_string(array[4]),
+                idxstr = std::to_string(idx),
+                resstr = std::to_string(res);
+
+    std::string teststr = std::string("fn main() { a := (")
+                        + a0str + ","
+                        + a1str + ","
+                        + a2str + ","
+                        + a3str + ","
+                        + a4str + "); b := a."
+                        + idxstr + "; b;};";
+
+    result &= Test(out,
+                  "Allocating a Tuple (" + a0str + "," + a1str + "," + a2str + "," + a3str + "," + a4str + ") Accessing element " + idxstr + " = " + resstr,
+                   TestFile(teststr, res));
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
     int num1 = rand() % 50, num2 = rand() % 50;
     int cmp1 = rand() % 2,  cmp2 = rand() % 2;
     int res = cmp1 == cmp2 ? num1 : num2;
@@ -649,7 +674,7 @@ bool TestBasics(std::ostream& out)
                                               + "; h := "  + std::to_string(h)
                                               + "; i := "  + std::to_string(i)
                                               + "; j := "  + std::to_string(j)
-                                              + "; l := if a == b then { if c == d then { e; } else { f; }; } else { if g == h then { i; } else { j; }; }; l;};";
+                                              + "; l := 0; if a == b then { if c == d then { l = e; } else { l = f; }; } else { if g == h then { l = i; } else { l = j; }; }; l;};";
     
     result &= Test(out,
                   "Nested conditional expression: (if " 
@@ -679,6 +704,20 @@ bool TestBasics(std::ostream& out)
                  
 
   }
+
+  for (int i = 0; i < 10; i++)
+  {
+    int num1 = rand() % 50;
+    int res = 50 - num1;
+    std::string num1str = std::to_string(num1), resstr = std::to_string(res);
+
+    std::string teststr = std::string("fn main() { a := ")
+                        + num1str + "; b := 0; while a < 50 do { a = a + 1; b = b + 1; }; b;};";
+    result &= Test(out, 
+                  "While loop: a := " + num1str + " while a < 50 do { a = a + 1; b = b + 1; };, b = " + resstr,
+                  TestFile(teststr, res)); 
+  }
+
   
   for (int i = 0; i < 10; i++)
   {

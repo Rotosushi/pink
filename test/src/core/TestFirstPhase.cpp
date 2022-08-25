@@ -18,6 +18,10 @@
 #include "ast/Application.h"
 #include "ast/Array.h"
 #include "ast/Conditional.h"
+#include "ast/While.h"
+#include "ast/Tuple.h"
+#include "ast/Dot.h"
+
 
 bool TestFirstPhase(std::ostream& out)
 {
@@ -31,8 +35,9 @@ bool TestFirstPhase(std::ostream& out)
        + std::string("x $ x;\n(x | !x) & (x & !x);\n(x | !x) & (x & 10);\n")
        + std::string("(x | !x) $$ (x & !x);\n100 * 3 == 25 * 12;\n100 * 3 == true * 12;\n")
        + std::string("100 * 3 == 25 $$ 12;\n[0,1,2,3,4];\n[true,false,true,false];\n[0,true];\n")
+       + std::string("(0,1,2,3,4);\n(1,true,2,false,3);\nt.0;\nt.1;\nt.5;\n")
        + std::string("if x == true then { 34; } else { 42; };\nif 34 then { true; } else { false; };\n")
-       + std::string("if x == true then { true; } else { 10; };\n")
+       + std::string("if x == true then { true; } else { 10; };\nwhile x == true do { x = false; };\n")
        + std::string("fn one(){1;};\nfn inc(x: Int) { x + 1; };\nfn add(x: Int, y: Int){x + y;};\n")
        + std::string("fn compEq(x: Int, y: Int){x == y;};\nfn addCmp(a: Int, b: Int, c: Int){ x := a + b; x == c; };\n")
        + std::string("fn global(a: Int, b: Int){(a == b) == x;};\n")
@@ -319,7 +324,7 @@ bool TestFirstPhase(std::ostream& out)
             && !(getype_result = term->Getype(env)));
 		
 	
-	//pink::Type* nil_t  = env->types->GetNilType();
+	pink::Type* nil_t  = env->types->GetNilType();
 	pink::Type* int_t  = env->types->GetIntType();
 
   pink::Type* int_5_array_t = env->types->GetArrayType(5, int_t);
@@ -355,6 +360,62 @@ bool TestFirstPhase(std::ostream& out)
              && llvm::isa<pink::Array>(term)
              && !(getype_result = term->Getype(env)));
 
+  std::vector<pink::Type*> tuple_5_int_members = {int_t, int_t, int_t, int_t, int_t};
+  pink::Type* tuple_5_int_t = env->types->GetTupleType(tuple_5_int_members);
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse a Tuple of all Int, Getype() = (Int,Int,Int,Int,Int)",
+                (parser_result)
+             && ((term = parser_result.GetOne().get()) != nullptr)
+             && llvm::isa<pink::Tuple>(term)
+             && (getype_result = term->Getype(env))
+             && (tuple_5_int_t == getype_result.GetOne())); 
+
+  std::vector<pink::Type*> tuple_5_int_bool_members = {int_t,bool_t,int_t,bool_t,int_t};
+  pink::Type* tuple_5_int_bool_t = env->types->GetTupleType(tuple_5_int_bool_members);
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse a tuple of Int and Bool, Getype() = (Int,Bool,Int,Bool,Int)",
+                (parser_result)
+             && ((term = parser_result.GetOne().get()) != nullptr)
+             && llvm::isa<pink::Tuple>(term)
+             && (getype_result = term->Getype(env))
+             && (tuple_5_int_bool_t == getype_result.GetOne()));
+
+  // 'bind' a variable to a tuple, for typing the dot operator
+  pink::InternedString t_var = env->symbols->Intern("t");
+  std::vector<pink::Type*> member_types = {int_t, bool_t, int_t, bool_t};
+  pink::Type* t_type = env->types->GetTupleType(member_types);
+  
+  env->bindings->Bind(t_var, t_type, nullptr);
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse dot operator (t.0) on tuple (Int,Bool,Int,Bool), Getype() = Int",
+                (parser_result)
+             && ((term = parser_result.GetOne().get()) != nullptr)
+             && llvm::isa<pink::Dot>(term)
+             && (getype_result = term->Getype(env))
+             && (int_t == getype_result.GetOne()));
+  
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse dot operator (t.1) on tuple (Int,Bool,Int,Bool), Getype() = Bool",
+                (parser_result)
+             && ((term = parser_result.GetOne().get()) != nullptr)
+             && llvm::isa<pink::Dot>(term)
+             && (getype_result = term->Getype(env))
+             && (bool_t == getype_result.GetOne()));
+
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse dot operator (t.5) on tuple (Int, Bool, Int, Bool), Getype() = Error",
+                (parser_result)
+             && ((term = parser_result.GetOne().get()) != nullptr)
+             && llvm::isa<pink::Dot>(term)
+             && !(getype_result = term->Getype(env)));
+
   parser_result = env->parser->Parse(env);
 
   result &= Test(out, "Parser::Parse a Conditional, Getype() = Int",
@@ -380,6 +441,14 @@ bool TestFirstPhase(std::ostream& out)
               && llvm::isa<pink::Conditional>(term)
               && !(getype_result = term->Getype(env)));
 
+  parser_result = env->parser->Parse(env);
+
+  result &= Test(out, "Parser::Parse a While loop, Getype = Nil",
+              (parser_result)
+           && ((term = parser_result.GetOne().get()) != nullptr)
+           && llvm::isa<pink::While>(term)
+           && (getype_result = term->Getype(env))
+           && (nil_t == getype_result.GetOne()));
 
 
 	std::vector<pink::Type*> args_t;

@@ -213,7 +213,10 @@ namespace pink {
                 "if"    { UpdateLoc(); return Token::If; }
                 "then"  { UpdateLoc(); return Token::Then; }
                 "else"  { UpdateLoc(); return Token::Else; }                
+                "while" { UpdateLoc(); return Token::While; }
+                "do"    { UpdateLoc(); return Token::Do; }
 
+                "."     { UpdateLoc(); return Token::Dot; }
         				","		  { UpdateLoc(); return Token::Comma; }
 				        ";"		  { UpdateLoc(); return Token::Semicolon; }
                 ":"     { UpdateLoc(); return Token::Colon; }

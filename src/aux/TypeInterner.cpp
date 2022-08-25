@@ -86,4 +86,19 @@ namespace pink {
 
       return result;
     }
+
+    TupleType* TypeInterner::GetTupleType(std::vector<Type*> member_types)
+    {
+      std::unique_ptr<TupleType> possible = std::make_unique<TupleType>(member_types);
+
+      for (auto& tt : tuple_types)
+      {
+        if (possible->EqualTo(tt.get()))
+          return tt.get();
+      }
+
+      TupleType* result = possible.get();
+      tuple_types.emplace_back(std::move(possible));
+      return result;
+    }
 }

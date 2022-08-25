@@ -200,6 +200,7 @@ namespace pink {
         // We dont emit a load instruction in any of these cases.
         if  (llvm::isa<llvm::FunctionType>(bound_type)
          || (llvm::isa<llvm::ArrayType>(bound_type))
+         || (llvm::isa<llvm::StructType>(bound_type))
          || env->flags->OnTheLHSOfAssignment()
          || env->flags->WithinAddressOf())
         {

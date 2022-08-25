@@ -9,6 +9,7 @@ namespace pink {
         Id,  // [a-zA-Z_][a-zA-Z0-9_]*
         Op,  // [+\-*\\%<=>&|\^!~@$]+
 
+        Dot,       // '.'
         Comma,     // ','
 		    Semicolon, // ';'
         Colon,     // ':'
@@ -33,6 +34,8 @@ namespace pink {
         If,      // 'if'
         Then,    // 'then'
         Else,    // 'else'
+        While,   // 'while'
+        Do,      // 'do'
     };
 
     std::string TokenToString(Token t);
