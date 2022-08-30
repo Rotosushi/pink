@@ -112,7 +112,7 @@ namespace pink {
      *         | definition
      *         | application
      *         | application '=' affix
-     *         | application '.' affix
+     *         | 
      *         | application (operator application)* // this isn't actually a simple
      *                                   // kleen star, but actually an entrance 
      *                                   // to an operator precedence parser.
@@ -429,7 +429,7 @@ namespace pink {
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseComposite(std::shared_ptr<Environment> env)
     {
       Location lhs_loc = loc;
-      Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env));
+      Outcome<std::unique_ptr<Ast>, Error> left(ParseDot(env));
       
       if (!left) // if the previous parse failed, return the error immediately
 			  return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
@@ -443,7 +443,8 @@ namespace pink {
         nexttok();
       }
       
-      // basic = affix
+
+      // dot = affix
     	if (tok == Token::Equals) // an assignment expression
       {
 		    nexttok(); // eat '='
@@ -464,27 +465,8 @@ namespace pink {
 		    Outcome<std::unique_ptr<Ast>, Error> result(std::make_unique<Assignment>(assign_loc, std::move(left.GetOne()), std::move(rhs.GetOne())));
 		        
     	  return Outcome<std::unique_ptr<Ast>, Error>(std::move(result.GetOne()));
-      }
-      // basic '.' affix
-      else if (tok == Token::Dot)
-      {
-        nexttok(); // eat '.'
-
-        while (tok == Token::End && !EndOfInput())
-        {
-          yyfill();
-          nexttok();
-        }
-
-        Outcome<std::unique_ptr<Ast>, Error> rhs(ParseAffix(env));
-
-        if (!rhs)
-          return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo());
-
-        Location dotloc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
-        return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Dot>(dotloc, std::move(left.GetOne()), std::move(rhs.GetOne())));
-      }
-      // basic '(' (affix (',' affix)*)? ')'
+      }      
+      // dot '(' (affix (',' affix)*)? ')'
       else if (tok == Token::LParen) // an application expression
       {
         nexttok(); // eat '('
@@ -538,6 +520,49 @@ namespace pink {
         return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Application>(app_loc, std::move(left.GetOne()), std::move(args)));
       }
       else // the single term we parsed is the result.
+      {
+        return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
+      }
+    }
+
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseDot(std::shared_ptr<Environment> env)
+    {
+      Location lhs_loc = loc;
+      Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env));
+
+      if (!left)
+        return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
+
+      while (tok == Token::End && !EndOfInput())
+      {
+        yyfill();
+        nexttok();
+      }
+
+      // basic '.' affix
+      if (tok == Token::Dot)
+      {
+        do {
+          nexttok(); // eat '.'
+
+          while (tok == Token::End && !EndOfInput())
+          {
+            yyfill();
+            nexttok();
+          }
+
+          Outcome<std::unique_ptr<Ast>, Error> right(ParseBasic(env));
+
+          if (!right)
+            return Outcome<std::unique_ptr<Ast>, Error>(right.GetTwo());
+
+          Location dotloc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
+          left = Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Dot>(dotloc, std::move(left.GetOne()), std::move(right.GetOne())));
+        } while (tok == Token::Dot);
+        
+        return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
+      }
+      else
       {
         return Outcome<std::unique_ptr<Ast>, Error>(std::move(left.GetOne()));
       }

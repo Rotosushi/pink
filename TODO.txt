@@ -1,41 +1,10 @@
 
 
-# v0.0.1 
+# write a tool around profiling the compiler itself, that stores the useful metrics from
+profiling into a database such that we can generate graphs and other
+visualizations of the profiling data. maybe even track it through time a bit.
 
-  -> add a function call Ast and get that to emit valid code 
-      NOTE: this will be a c-style function call interface 
-            at first, we will then refactor this to use the 
-            calling convention we are going to define.
-            however i do not think this will require us to 
-            define a custom llvm calling convention, as 
-            I think it can be accomplished on top of a c-style
-            calling convention as long as functions are defined 
-            to have the correct type from the perspective of 
-            llvm.
-
-
-    -> to finish this we need the ability to bind the function name 
-        to a type within the symboltable, such that we can type function 
-        declarations which apply another function. whereas now we only bind 
-        names to llvm::Values during codegen.
-
-    -> in order to solve the problem of a function calling another before 
-        the other is defined we are adding use-before-definition at the global
-        scope
-
-      -> in order to add use-before-definition we have to modify the parser
-          such that we can hold an ill typed term in the case that the typeing 
-          error is specifically an undefined variable name.
-
-      -> to fully do this the parser can no longer simply assume that it has
-          all input within it's text buffer, and has to be modified so that it
-          asks for more input when it still needs more tokens to parse a term, and the
-          input buffer is empty.
-
-      -> then, when it finishes parsing a given string from a source file, it
-          will return control, we grab another line and then parse that as well.
-          in this way we can construct an array of terms which the parser has
-          constructed from a given source file, regardless of if we can type
-          all of them, this gives us the moment we need to allow
-          use-before-definition. 
---
+i am really curious how big a difference it would be to change Parse, Getype, and
+Codegen to take Environment references vs the std::shared_ptr<Environment> they
+currently use.
+-

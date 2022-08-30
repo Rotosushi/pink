@@ -91,7 +91,6 @@ namespace pink {
 		std::string objoutfilename      = outfilename + ".o";
 		std::string llvmoutfilename     = outfilename + ".ll";
 		std::string assemblyoutfilename = outfilename + ".s";
-		std::string exeoutfilename      = outfilename + ".exe";
 
     infile.open(env->options->input_file);
     

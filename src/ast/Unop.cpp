@@ -52,8 +52,50 @@ namespace pink {
     	}
     	
     	// find the overload of the operator for the given type
-    	llvm::Optional<std::pair<Type*, UnopCodegen*>> literal = unop->second->Lookup(rhs_result.GetOne());
-    	
+    	llvm::Optional<std::pair<Type*, UnopCodegen*>> literal;
+      PointerType* pt = nullptr;
+      if (((pt = llvm::dyn_cast<PointerType>(rhs_result.GetOne())) != nullptr) && (strcmp(op, "*") == 0))
+      {
+        literal = unop->second->Lookup(rhs_result.GetOne());
+        
+        if (!literal)
+        {
+          Type* int_ptr_type = env->types->GetPointerType(env->types->GetIntType());
+          llvm::Optional<std::pair<Type*, UnopCodegen*>> ptr_indirection_unop = unop->second->Lookup(int_ptr_type);
+
+          if (!ptr_indirection_unop)
+          {
+            FatalError("Couldn't find int ptr indirection unop!", __FILE__, __LINE__);
+          }
+
+          UnopCodegenFn ptr_indirection_fn = ptr_indirection_unop->second->generate;
+          literal = unop->second->Register(pt, pt->pointee_type, ptr_indirection_fn);
+        } 
+      }
+      else if (strcmp(op, "&") == 0)
+      {
+        literal = unop->second->Lookup(rhs_result.GetOne());
+        
+        if (!literal)
+        {
+          PointerType* pt = env->types->GetPointerType(rhs_result.GetOne());
+          Type* int_type = env->types->GetIntType();
+          llvm::Optional<std::pair<Type*, UnopCodegen*>> address_of_unop = unop->second->Lookup(int_type);
+
+          if (!address_of_unop)
+          {
+            FatalError("Couldn't find int address_of unop!", __FILE__, __LINE__);
+          }
+
+          UnopCodegenFn address_of_fn = address_of_unop->second->generate;
+          literal = unop->second->Register(rhs_result.GetOne(), pt, address_of_fn);
+        }
+      }
+      else
+      {
+        literal = unop->second->Lookup(rhs_result.GetOne());
+      }
+
     	if (!literal)
     	{
     		Error error(Error::Code::ArgTypeMismatch, loc);
@@ -159,7 +201,11 @@ namespace pink {
             return Outcome<llvm::Value*, Error>(llvm_pointee_type.GetTwo());
           }
 
-          rhs_value = env->builder->CreateLoad(llvm_pointee_type.GetOne(), rhs_value.GetOne(), "deref");    
+          if (llvm_pointee_type.GetOne()->isSingleValueType())
+          {
+            rhs_value = env->builder->CreateLoad(llvm_pointee_type.GetOne(), rhs_value.GetOne(), "deref");    
+          }
+          // else emit no load for types that cannot be loaded
         }
       }
       else // just emit the rhs as we normally do for unops

@@ -550,7 +550,7 @@ bool TestBasics(std::ostream& out)
                                     + "c := *(a + " + idx2str + ");"
                                     + "b + c;};";
     result &= Test(out,
-            "Allocating an Integer array, and performing arithmetic on two of it's elements: " + num1str + " + " + num2str + " = " + resstr,
+            "Allocating an array, [" + arr0str + "," + arr1str + "," + arr2str + "," + arr3str + "," + arr4str + "] and performing arithmetic on two of it's elements: " + num1str + " + " + num2str + " = " + resstr,
             TestFile(teststr, array[idx1] + array[idx2])
             );
 
@@ -582,7 +582,7 @@ bool TestBasics(std::ostream& out)
                                     + "c := a + " + idx2str + "; *c = " + num2str + ";"
                                     + "*b + *c;};";
     result &= Test(out,
-            "Allocating an Integer array, Assigning new numbers to two of it's elements, " + idx1str + ", " + idx2str + ", and performing arithmetic those two elements: " + num1str + " + " + num2str + " = " + resstr,
+            "Allocating an array [0,0,0,0,0], Assigning values to two elements, " + idx1str + " and " + idx2str + ". Then performing arithmetic on those two elements: " + num1str + " + " + num2str + " = " + resstr,
             TestFile(teststr, num1 + num2)
             );
 
@@ -613,6 +613,91 @@ bool TestBasics(std::ostream& out)
                    TestFile(teststr, res));
   }
 
+  for (int i = 0; i < 10; i++)
+  {
+    int array[] = {rand() % 100, rand() % 100, rand() % 100, rand() % 100, rand() % 100};
+    int idx = rand() % 5, res = rand() % 100;
+    std::string a0str = std::to_string(array[0]), 
+                a1str = std::to_string(array[1]),
+                a2str = std::to_string(array[2]),
+                a3str = std::to_string(array[3]),
+                a4str = std::to_string(array[4]),
+                idxstr = std::to_string(idx),
+                resstr = std::to_string(res);
+
+    std::string teststr = std::string("fn main() { a := (")
+                        + a0str + ","
+                        + a1str + ","
+                        + a2str + ","
+                        + a3str + ","
+                        + a4str + "); a."
+                        + idxstr + " = "
+                        + resstr + "; a." + idxstr + ";};";
+
+    result &= Test(out,
+                  "Allocating a Tuple (" + a0str + "," + a1str + "," + a2str + "," + a3str + "," + a4str + ") Assigning element " + idxstr + " = " + resstr,
+                   TestFile(teststr, res));
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int array[3][2] = {{rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}};
+    int idx1 = rand() % 3, idx2 = rand() % 2, res = array[idx1][idx2];
+    std::string a0str = std::to_string(array[0][0]), 
+                a1str = std::to_string(array[0][1]),
+                a2str = std::to_string(array[1][0]),
+                a3str = std::to_string(array[1][1]),
+                a4str = std::to_string(array[2][0]),
+                a5str = std::to_string(array[2][1]),
+                idx1str = std::to_string(idx1),
+                idx2str = std::to_string(idx2),
+                resstr = std::to_string(res);
+
+    std::string teststr = std::string("fn main() { a := ((")
+                        + a0str + ","
+                        + a1str + "),("
+                        + a2str + ","
+                        + a3str + "),("
+                        + a4str + ","
+                        + a5str + "));"
+                        + "a." + idx1str + "." + idx2str + ";};";
+
+    result &= Test(out,
+                  "Allocating a recursive Tuple ((" + a0str + "," + a1str + "),(" + a2str + "," + a3str + "),(" + a4str + "," + a5str + ")) Accessing element t." + idx1str + "." + idx2str + " = " + resstr,
+                   TestFile(teststr, res));
+  }
+  
+  for (int i = 0; i < 10; i++)
+  {
+    int array[3][2] = {{rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}};
+    int idx1 = rand() % 3, idx2 = rand() % 2, idx3 = rand() % 3, idx4 = rand() % 2;
+    int elem1 = array[idx1][idx2], elem2 = array[idx3][idx4], res = elem1 + elem2;
+    std::string a0str = std::to_string(array[0][0]), 
+                a1str = std::to_string(array[0][1]),
+                a2str = std::to_string(array[1][0]),
+                a3str = std::to_string(array[1][1]),
+                a4str = std::to_string(array[2][0]),
+                a5str = std::to_string(array[2][1]),
+                idx1str = std::to_string(idx1),
+                idx2str = std::to_string(idx2),
+                idx3str = std::to_string(idx3),
+                idx4str = std::to_string(idx4),
+                resstr = std::to_string(res);
+
+    std::string teststr = std::string("fn main() { a := ((")
+                        + a0str + ","
+                        + a1str + "),("
+                        + a2str + ","
+                        + a3str + "),("
+                        + a4str + ","
+                        + a5str + "));"
+                        + "a." + idx1str + "." + idx2str + " + a." + idx3str + "." + idx4str + ";};";
+
+    result &= Test(out,
+                  "Allocating a recursive Tuple ((" + a0str + "," + a1str + "),(" + a2str + "," + a3str + "),(" + a4str + "," + a5str + ")) Adding two elements, t." + idx1str + "." + idx2str + " + t." + idx3str + "." + idx4str + " = " + resstr,
+                   TestFile(teststr, res));
+  }
+  
   for (int i = 0; i < 10; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50;

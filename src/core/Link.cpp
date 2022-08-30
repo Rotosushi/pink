@@ -13,7 +13,7 @@ namespace pink {
     // #TODO: Test that this works when the user passes in a custom output
     // filename.
     std::string objoutfilename = env->options->output_file + ".o";
-    std::string exeoutfilename = env->options->output_file + ".exe";
+    std::string exeoutfilename = env->options->output_file + "";
 
     llvm::raw_os_ostream std_err(std::cerr);
     llvm::raw_os_ostream std_out(std::cout);

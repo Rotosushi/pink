@@ -99,6 +99,59 @@ namespace pink {
     *  specifically, just like the assignment operator, and it must be a node 
     *  within the AST just like the assignment operator.    
     *
+    *  This works great, now we just need to test this against a few more things: 
+    *  1) tuple with array members
+    *  2) array with tuple members
+    *  3) passing tuples into functions
+    *  4) returning tuples from functions
+    *  5) arrays with non-const member initializers
+    *  6) tuples with non-const member initializers
+    *
+    *  1) I think as long as we ask llvm to construct a ConstantStruct 
+    *     with a ConstantArray initializer we can declare such a struct 
+    *     in compile space as we already do. The tricky parts of this are 
+    *     A) initializing the local variable with the struct contents,
+    *        when the members of the struct are not all single value sized.
+    *     B) initializing the member of the local variable if the member 
+    *        is itself an aggregate of non single value sized types.
+    *
+    *     the good news is that B looks a lot like A, so maybe we can use 
+    *     the recursive structure of aggregate membership to write a 
+    *     recursive solution.
+    *     more good news is that such a recursive solution may also be 
+    *     able to handle case 2, and the subcases of 2 as well. (noticing that
+    *     2A is equivalent to 1A with 'tuple' replaced by 'array')
+    *  
+    *  2) see 1
+    *
+    *  3) a structures into functions as arguments by value can be accomplished 
+    *     by adding the parameter attribute "byval(<ty>)" on the argument which 
+    *     is meant to pass the structure object. then, when we define
+    *     a function type with an argument of structure type we modify that
+    *     argument to a pointer to the same structure type for llvm.
+    *     A) if the function is meant to pass the address of a structure
+    *        already, we do not want to add the byval attribute, as pointers 
+    *        are single value sized.
+    *
+    *  4) if a function is meant to return a structure as it's return value, 
+  *       we can support that in llvm by modifying the return type of the 
+    *     llvm function type to return void, and adding an extra argument 
+    *     whose type is a structure pointer with a parameter attribute of 
+    *     sret(<ty>), where ty is the structure type itself. then when 
+    *     we attempt to make a function call of such a function we must 
+    *     allocate memory in the caller for the structure, before passing  
+    *     a pointer to that memory and all the other arguments as usual to 
+    *     a function call instruction.
+    *
+    *  5) unfortunately for both 5 and 6 we have to modify the return type of 
+    *     Codegen itself. For if we want to support aggregate initialization we 
+    *     must return an aggregate of llvm::Value*'s via the result of
+    *     a Codegen call. we have somewhat of a choice however, as we could 
+    *     either modify the llvm::Value* to instead be an aggregate all the
+    *     time, and when size() == 1 we know it's "not" an aggregate value.
+    *     or we could define a new class which wraps this behavior in a few 
+    *     class methods. (which are in the end just accessors to an existing 
+    *     aggregate, probably std::vector)
    */
   Outcome<llvm::Value*, Error> Tuple::Codegen(std::shared_ptr<Environment> env)
   {

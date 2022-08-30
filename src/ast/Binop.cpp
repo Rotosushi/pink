@@ -68,10 +68,38 @@ namespace pink {
     		Outcome<Type*, Error> result(error);
     		return result;
     	}
-    	
-    	// find the instance of the operator given the type of both sides
-    	llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal = binop->second->Lookup(lhs_result.GetOne(), rhs_result.GetOne());
-    	
+      // #TODO: unop also needs this treatment for * and & operators.
+      llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal;
+      PointerType* pt = nullptr;
+      if (((pt = llvm::dyn_cast<PointerType>(lhs_result.GetOne())) != nullptr) && (strcmp(op, "+") == 0))
+      {
+        literal = binop->second->Lookup(lhs_result.GetOne(), rhs_result.GetOne());
+
+        IntType* it = llvm::dyn_cast<IntType>(rhs_result.GetOne());
+        if (it == nullptr)
+        {
+          Error error(Error::Code::ArgTypeMismatch, loc);
+          return Outcome<Type*, Error>(error);
+        }
+
+        if (!literal)
+        {
+          Type* int_ptr_type = env->types->GetPointerType(env->types->GetIntType());
+          llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, it);
+          
+          if (!ptr_add_binop)
+            FatalError("Couldn't find int ptr arithmetic binop!", __FILE__, __LINE__);
+          
+          BinopCodegenFn ptr_arith_fn =  ptr_add_binop->second->generate;
+          literal = binop->second->Register(lhs_result.GetOne(), it, lhs_result.GetOne(), ptr_arith_fn); 
+        }
+      }
+      else
+      {  
+    	  // find the instance of the operator given the type of both sides
+    	  literal = binop->second->Lookup(lhs_result.GetOne(), rhs_result.GetOne());
+      }
+
     	if (!literal)
     	{
         Error error(Error::Code::ArgTypeMismatch, loc);
@@ -101,18 +129,7 @@ namespace pink {
 
       llvm::Type* lhs_type = lhs_type_codegen.GetOne();
   
-      PointerType* pt = nullptr;
-      // if this is a pointer addition operation, we must pass the pointee_type
-      // into the binop code generation function for the GEP instruction within.
-      if (((pt = llvm::dyn_cast<PointerType>(lhs_type_result.GetOne())) != nullptr) && (strcmp(op, "+") == 0))
-      {
-        Outcome<llvm::Type*, Error> pointee_type_result = pt->pointee_type->Codegen(env);
-       
-        if (!pointee_type_result)
-          return Outcome<llvm::Value*, Error>(pointee_type_result.GetTwo());
-
-        lhs_type = pointee_type_result.GetOne();
-      }
+      
 
     	Outcome<llvm::Value*, Error> lhs_value(left->Codegen(env));
     	
@@ -148,9 +165,52 @@ namespace pink {
     		return result;
     	}
     	
-    	// find the instance of the operator given the type of both sides
-    	llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal = binop->second->Lookup(lhs_type_result.GetOne(), rhs_type_result.GetOne());
-    	
+      llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal;
+      PointerType* pt = nullptr;
+      // if this is a pointer addition operation, we must pass the pointee_type
+      // into the binop code generation function for the GEP instruction within.
+      // we can also safely add a new implementation of pointer addition no
+      // matter what the underlying type is, because the GEP instruction
+      // handles the offset computation based upon the pointee_type itself.
+      // it is only the structure of the BinopLiteral itself that is going to 
+      // fail to find an implementation for any arbitrary array type we can 
+      // define.
+      if (((pt = llvm::dyn_cast<PointerType>(lhs_type_result.GetOne())) != nullptr) && (strcmp(op, "+") == 0))
+      {
+        Outcome<llvm::Type*, Error> pointee_type_result = pt->pointee_type->Codegen(env);
+       
+        if (!pointee_type_result)
+          return Outcome<llvm::Value*, Error>(pointee_type_result.GetTwo());
+
+        lhs_type = pointee_type_result.GetOne();
+
+        IntType* it = llvm::dyn_cast<IntType>(rhs_type_result.GetOne());
+        if (it == nullptr)
+        {
+          Error error(Error::Code::ArgTypeMismatch, loc);
+          return Outcome<llvm::Value*, Error>(error);
+        }
+
+        literal = binop->second->Lookup(lhs_type_result.GetOne(), it);
+  
+        if (!literal)
+        {
+          Type* int_ptr_type = env->types->GetPointerType(env->types->GetIntType());
+          llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, it);
+          
+          if (!ptr_add_binop)
+            FatalError("Couldn't find int ptr arithmetic binop!", __FILE__, __LINE__);
+          
+          BinopCodegenFn ptr_arith_fn =  ptr_add_binop->second->generate;
+          literal = binop->second->Register(lhs_type_result.GetOne(), it, lhs_type_result.GetOne(), ptr_arith_fn); 
+        }
+      }
+      else
+      {
+        // find the instance of the operator given the type of both sides
+    	  literal = binop->second->Lookup(lhs_type_result.GetOne(), rhs_type_result.GetOne());
+      }
+
     	if (!literal)
     	{
     		Error error(Error::Code::ArgTypeMismatch, loc);

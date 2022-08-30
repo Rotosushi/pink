@@ -1,6 +1,8 @@
 #include "ast/Assignment.h"
 #include "aux/Environment.h"
 
+#include "kernel/StoreAggregate.h"
+
 namespace pink {
     Assignment::Assignment(Location loc, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
         : Ast(Ast::Kind::Assignment, loc), left(std::move(left)), right(std::move(right))
@@ -174,13 +176,19 @@ namespace pink {
     		// only to a pointer, pointing to a valid memory location in the modules global 
     		// space or the local stack frame, so we check that the bound value 
     		// is able to be assigned to.
-    		if (llvm::isa<llvm::AllocaInst>(lhs_value.GetOne()) 
+        if (llvm::isa<llvm::StructType>(lhs_type.GetOne()))
+        {
+          llvm::Value* right_value = rhs_value.GetOne();
+  
+          StoreAggregate(lhs_type.GetOne(), lhs_value.GetOne(), rhs_value.GetOne(), env);          
+
+          return Outcome<llvm::Value*, Error>(right_value);
+        }
+        else if (llvm::isa<llvm::AllocaInst>(lhs_value.GetOne()) 
     		|| (llvm::isa<llvm::GlobalVariable>(lhs_value.GetOne()))
         || (lhs_value.GetOne()->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID))
     		{
-          llvm::Value* right_value = nullptr;
-          
-          right_value = rhs_value.GetOne();
+          llvm::Value* right_value = rhs_value.GetOne();
           
           env->builder->CreateStore(right_value, lhs_value.GetOne());
           

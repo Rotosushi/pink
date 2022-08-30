@@ -153,7 +153,9 @@ namespace pink {
     llvm::Value* result = nullptr;
     llvm::Value* gep = env->builder->CreateConstGEP2_32(struct_t, left_value, 0, index->value);
     
-    if (!env->flags->WithinAddressOf() && !env->flags->OnTheLHSOfAssignment())
+    if (!env->flags->WithinAddressOf() 
+     && !env->flags->OnTheLHSOfAssignment()
+     && struct_t->getTypeAtIndex(index->value)->isSingleValueType())
       result = env->builder->CreateLoad(struct_t->getTypeAtIndex(index->value), gep);
     else 
       result = gep;
