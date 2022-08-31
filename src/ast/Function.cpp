@@ -4,6 +4,7 @@
 #include "aux/Environment.h"
 
 #include "kernel/Cast.h"
+#include "kernel/StoreAggregate.h"
 
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/InlineAsm.h"
@@ -74,8 +75,24 @@ namespace pink {
 		/*
 					  env |- a0 : T0, a1 : T1, ..., an : Tn, body : Tb
 		 -----------------------------------------------------------------------------
-			env |- 'fn' name '(' a0: T0, a1: T1, ..., an : Tn ')' '{' body '} : Tb
-		*/
+			env |- 'fn' name '(' a0: T0, a1: T1, ..., an : Tn ')' '{' body '} : T0 -> T1 -> ... -> Tn -> Tb
+
+      If a function takes an argument which is not a single value type, then we need to 
+      mark that parameter as byval(<ty>). where <ty> is the pointee type,
+      additionalily, any non single value type must 
+      then be passed via a pointer in that parameter, which means promoting the type to 
+      that of a pointer within the argument.
+
+      If a function returns an object which is not a sigle value type, then we need to 
+      modify the underlying function type to return void, and add an extra parameter 
+      which has type, pointer to the non single value type, and which has the parameter 
+      attribute 'sret(<ty>)' where <ty> is the pointee type.
+
+      So, I don't think that a pink::FunctionType needs to be modified in any way, just 
+      it's mapping to a llvm::FunctionType, however call sites must also be aware of 
+      the difference, because the sret(<ty>) parameter must be allocated by the caller
+      before we call the function.
+    */
 		Outcome<Type*, Error> Function::GetypeV(std::shared_ptr<Environment> env)
 		{
 			// first, construct a bunch of false bindings with the correct Types.
@@ -180,13 +197,116 @@ namespace pink {
 			{
 				return Outcome<llvm::Value*, Error>(ty_codegen_result.GetTwo());
 			}
-			
+
+      /*
+       *  if the function takes an argument whose size is greater than a single
+       *  value, we must add the byval(<ty>) parameter attribute to that parameter.
+       *  and the parameter must be promoted to a pointer. luckily
+       *  FunctionType::Codegen promotes such parameters to pointers already,
+       *  so all we must do here is add the byval(<ty>) attribute
+       *
+       *  if the functions return type is larger than a single value, then 
+       *  FunctionType::Codegen already promoted it to the first argument of
+       *  the llvm::FunctionType. this parameter needs to recieve the
+       *  sret(<ty>) parameter attribute.
+       *  and applications of said function must emit an allocation for the
+       *  return value.
+       * 
+       */
+      pink::FunctionType* p_fn_ty = llvm::cast<pink::FunctionType>(getype_result.GetOne());
+		  
+      Outcome<llvm::Type*, Error> p_fn_ret_ty_result = p_fn_ty->result->Codegen(env);
+
+      if (!p_fn_ret_ty_result)
+        return Outcome<llvm::Value*, Error>(p_fn_ret_ty_result.GetTwo());
+
+      llvm::Type* fn_ret_ty = p_fn_ret_ty_result.GetOne();
+
 			llvm::FunctionType* function_ty = llvm::cast<llvm::FunctionType>(ty_codegen_result.GetOne());
 			
 			llvm::Function* function = llvm::Function::Create(function_ty, 
 															  llvm::Function::ExternalLinkage, 
 															  name, 
 															  *env->module);
+      
+      /*
+       *  okay okay. the function itself holds it's own Attributes, that makes
+       *  sense. It also provides a limited API for adding and removing
+       *  attributes from three main attribute categories; function attributes, 
+       *  return value attributes, and parameter attributes.
+       *
+       *
+       *
+       */
+      llvm::AttrBuilder ret_attr_builder(*env->context);
+      /* find out if we need to
+       * add the sret parameter attribute to a parameter 
+       * of the function.
+       *
+       * this is within a conditional because if it true, then 
+       * the parameter list holds the return value, so the parameter 
+       * list is one element larger that the pink::FunctionType says.
+       * so we have to use different offsets to get to each argument.
+       */
+      if (!fn_ret_ty->isSingleValueType())
+      {
+        // since the return type is not a single value type, we know that 
+        // the function type associated with this function will have an 
+        // actual return type of void, and the first parameter will be the 
+        // return value of this function, knowing that, we then need to add 
+        // the sret(<ty>) attribute to this parameter attribute
+        ret_attr_builder.addStructRetAttr(fn_ret_ty);
+        function->addParamAttrs(0, ret_attr_builder);
+        /*
+         *  Now all we need to do is add any byval(<ty> attributes 
+         *  to any argument which needs it.
+         */
+        for (size_t i = 1; i < p_fn_ty->arguments.size(); i++)
+        {
+          llvm::AttrBuilder param_attr_builder(*env->context);
+          
+          Outcome<llvm::Type*, Error> param_ty_codegen_result = p_fn_ty->arguments[i]->Codegen(env);
+
+          if (!param_ty_codegen_result)
+            return Outcome<llvm::Value*, Error>(param_ty_codegen_result.GetTwo());
+
+          llvm::Type* param_ty = param_ty_codegen_result.GetOne();
+
+          // since this type is not a single value type, this parameter needs
+          // the byval(<ty>) parameter attribute
+          if (!param_ty->isSingleValueType())
+          {
+            param_attr_builder.addByValAttr(param_ty);
+            function->addParamAttrs(i, param_attr_builder);
+          }
+        }
+      }
+      else
+      {
+        /*
+         *  all we need to do here is add any byval(<ty>) attributes 
+         *  to any argument which needs it.
+         */
+        for (size_t i = 0; i < p_fn_ty->arguments.size(); i++)
+        {
+          llvm::AttrBuilder param_attr_builder(*env->context);
+          
+          Outcome<llvm::Type*, Error> param_ty_codegen_result = p_fn_ty->arguments[i]->Codegen(env);
+
+          if (!param_ty_codegen_result)
+            return Outcome<llvm::Value*, Error>(param_ty_codegen_result.GetTwo());
+
+          llvm::Type* param_ty = param_ty_codegen_result.GetOne();
+
+          // since this type is not a single value type, this parameter needs
+          // the byval(<ty>) parameter attribute
+          if (!param_ty->isSingleValueType())
+          {
+            param_attr_builder.addByValAttr(param_ty);
+            function->addParamAttrs(i, param_attr_builder);
+          }
+        }
+      }
 			
 			
 			
@@ -215,10 +335,25 @@ namespace pink {
 			
 			// make sure all instructions that are not Allocas are placed after 
 			// all the allocas
-			for (int i = 0; i < arg_ptrs.size(); i++)
+			for (int i = 0; i < arguments.size(); i++)
 			{
-				local_builder->CreateStore(arg_ptrs[i].first, arg_ptrs[i].second, false);
-				
+        llvm::Type* arg_ty = arg_ptrs[i].first->getType();
+
+        if (arg_ty->isSingleValueType())
+        {
+				  local_builder->CreateStore(arg_ptrs[i].first, arg_ptrs[i].second, false);
+        }
+        else
+        {
+          StoreAggregate(arg_ty, arg_ptrs[i].second, arg_ptrs[i].first, env);
+        }
+        // if we are within the body of a function which returns a type that is 
+        // larger than a single value type, we modify the function type of said 
+        // function to take an extra argument which is the return value alloca ptr.
+        // however in this case, arg_ptrs.size() will be greater than the size
+        // of the arguments from the perspective of our function type. so we
+        // need some way of associating the return value alloca argument within
+        // the body of the function. 
 				local_env->bindings->Bind(arguments[i].first, arguments[i].second, arg_ptrs[i].second);
 			}
 			
@@ -449,7 +584,15 @@ namespace pink {
       else
       {
 			  // use the value returned by the body to construct a return statement 
-			  local_builder->CreateRet(body_result.GetOne());
+			  // we need to be aware of return value sizes here.
+        if (fn_ret_ty->isSingleValueType())
+        {
+          local_builder->CreateRet(body_result.GetOne());
+        }
+        else 
+        {
+          StoreAggregate(fn_ret_ty, function->getArg(0), body_result.GetOne(), local_env);
+        }
       }
 
 			// call verifyFunction to validate the generated code for consistency 

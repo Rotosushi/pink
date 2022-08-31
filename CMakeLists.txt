@@ -122,8 +122,6 @@ add_library(libpink STATIC
 		    src/kernel/UnopPrimitives.cpp
         src/kernel/Cast.cpp
         src/kernel/StoreAggregate.cpp
-        #src/kernel/DefaultInitialization.cpp
-        #src/kernel/Support.cpp
         
         src/type/Type.cpp
 		    src/type/BoolType.cpp

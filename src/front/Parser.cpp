@@ -33,6 +33,7 @@
 #include "type/BoolType.h"
 #include "type/PointerType.h"
 #include "type/ArrayType.h"
+#include "type/TupleType.h"
 
 namespace pink {
     Parser::Parser(std::istream* i)
@@ -1355,88 +1356,126 @@ namespace pink {
     	switch(tok)
     	{
     	case Token::NilType:
-        {
-        	Location lhs_loc = loc;
-        	nexttok(); // eat 'Nil'
-        	Outcome<Type*, Error> result(env->types->GetNilType());
-        	return result;
-        }
+      {
+        Location lhs_loc = loc;
+        nexttok(); // eat 'Nil'
+        Outcome<Type*, Error> result(env->types->GetNilType());
+        return result;
+      }
         
     	case Token::IntType:
-        {
-        	Location lhs_loc = loc;
-        	nexttok(); // Eat "Int"
-        	Outcome<Type*, Error> result(env->types->GetIntType());
-        	return result;
-        }
+      {
+        Location lhs_loc = loc;
+        nexttok(); // Eat "Int"
+        Outcome<Type*, Error> result(env->types->GetIntType());
+        return result;
+      }
         
     	case Token::BoolType:
+      {
+        Location lhs_loc = loc;
+        nexttok(); // Eat "Bool"
+        Outcome<Type*, Error> result(env->types->GetBoolType());
+        return result;
+      }
+
+      case Token::LParen:
+      {
+        Location lhs_loc = loc;
+        nexttok(); // eat '('
+        Outcome<Type*, Error> left(ParseType(env));
+
+        if (!left)
+          return left;
+
+        if (tok == Token::Comma)
         {
-        	Location lhs_loc = loc;
-        	nexttok(); // Eat "Bool"
-        	Outcome<Type*, Error> result(env->types->GetBoolType());
-        	return result;
+          std::vector<Type*> elem_tys = {left.GetOne()};
+          do {
+            nexttok(); // eat ','
+
+            Outcome<Type*, Error> elem_ty(ParseType(env));
+
+            if (!elem_ty)
+              return elem_ty;
+            else
+              elem_tys.push_back(elem_ty.GetOne());
+
+          } while (tok == Token::Comma);
+
+          
+          left = env->types->GetTupleType(elem_tys); 
         }
+
+        if (tok != Token::RParen)
+        {
+          Error error(Error::Code::MissingRParen, loc);
+          return Outcome<Type*, Error>(error);
+        }
+        nexttok(); // eat ')'
+
+        return Outcome<Type*, Error>(left);
+      }
       
       case Token::LBracket:
+      {
+        Location lhs_loc = loc;
+        nexttok(); // eat '['
+
+        while (tok == Token::End && !EndOfInput())
         {
-          Location lhs_loc = loc;
-          nexttok(); // eat '['
-
-          while (tok == Token::End && !EndOfInput())
-          {
-            yyfill();
-            nexttok();
-          }
-
-          Outcome<Type*, Error> array_type = ParseType(env);
-
-          if (!array_type)
-            return array_type;
-          
-          while (tok == Token::End && !EndOfInput())
-          {
-            yyfill();
-            nexttok();
-          }
-          
-          if (tok != Token::Id || txt != "x")
-          {
-            return Outcome<Type*, Error>(Error(Error::Code::MissingArrayX, loc));            
-          }
-  
-          nexttok(); // eat 'x'
-          
-          while (tok == Token::End && !EndOfInput())
-          {
-            yyfill();
-            nexttok();
-          }
-          
-          if (tok != Token::Int)
-          {
-            return Outcome<Type*, Error>(Error(Error::Code::MissingArrayNum, loc));
-          }
-
-          size_t num = std::stoi(txt);
-
-          nexttok(); // eat '[0-9]+'
-
-          while (tok == Token::End && !EndOfInput())
-          {
-            yyfill();
-            nexttok();
-          }
-
-          if (tok != Token::RBracket)
-          {
-            return Outcome<Type*, Error>(Error(Error::Code::MissingRBracket, loc));
-          }
-
-          nexttok(); // eat ']'
-
-          return Outcome<Type*, Error>(env->types->GetArrayType(num, array_type.GetOne()));
+          yyfill();
+          nexttok();
         }
+
+        Outcome<Type*, Error> array_type = ParseType(env);
+
+        if (!array_type)
+          return array_type;
+        
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+        
+        if (tok != Token::Id || txt != "x")
+        {
+          return Outcome<Type*, Error>(Error(Error::Code::MissingArrayX, loc));            
+        }
+
+        nexttok(); // eat 'x'
+        
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+        
+        if (tok != Token::Int)
+        {
+          return Outcome<Type*, Error>(Error(Error::Code::MissingArrayNum, loc));
+        }
+
+        size_t num = std::stoi(txt);
+
+        nexttok(); // eat '[0-9]+'
+
+        while (tok == Token::End && !EndOfInput())
+        {
+          yyfill();
+          nexttok();
+        }
+
+        if (tok != Token::RBracket)
+        {
+          return Outcome<Type*, Error>(Error(Error::Code::MissingRBracket, loc));
+        }
+
+        nexttok(); // eat ']'
+
+        return Outcome<Type*, Error>(env->types->GetArrayType(num, array_type.GetOne()));
+      }
 
     	default:
     	{

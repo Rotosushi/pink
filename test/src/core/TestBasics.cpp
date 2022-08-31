@@ -77,7 +77,7 @@ bool TestFile(std::string test_contents, int expected_value)
 {
   bool result = true;
 
-  std::string filename = "test.p";
+  std::string filename = "test_file.p";
 
   std::fstream outfile;
 
@@ -103,7 +103,7 @@ bool TestFile(std::string test_contents, int expected_value)
   Run(pink, pink_args);
 
 
-  std::string exe_name = StripFilenameExtensions(filename) + ".exe";
+  std::string exe_name = StripFilenameExtensions(filename) + "";
 
   char* exe_args[] = {
     exe_name.data(),
