@@ -15,6 +15,9 @@
 build/
 test/CMakeFiles/
 test/Makefile
+test/pink-test
+CMakeCache.txt
+CmakeFiles/
 *.cmake
 *.swp
 *.swo

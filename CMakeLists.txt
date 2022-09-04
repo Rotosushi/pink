@@ -156,11 +156,11 @@ set_property(
 
 target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} )
 
-target_include_directories(libpink PUBLIC include)
+target_include_directories(libpink PUBLIC include ${LLVM_LIBRARY_DIRS})
 
 target_link_libraries(libpink
-${LLVM_LIBRARY_DIRS}/liblldELF.a
 ${LLVM_LIBRARY_DIRS}/liblldCommon.a
+${LLVM_LIBRARY_DIRS}/liblldELF.a
 ${llvm_libs}
 )
 			   

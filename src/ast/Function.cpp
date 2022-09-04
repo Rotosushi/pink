@@ -248,7 +248,8 @@ namespace pink {
        * list is one element larger that the pink::FunctionType says.
        * so we have to use different offsets to get to each argument.
        */
-      if (!fn_ret_ty->isSingleValueType())
+     
+      if (!fn_ret_ty->isSingleValueType() && function_ty->getReturnType()->isVoidTy())
       {
         // since the return type is not a single value type, we know that 
         // the function type associated with this function will have an 
@@ -258,8 +259,14 @@ namespace pink {
         ret_attr_builder.addStructRetAttr(fn_ret_ty);
         function->addParamAttrs(0, ret_attr_builder);
         /*
-         *  Now all we need to do is add any byval(<ty> attributes 
-         *  to any argument which needs it.
+         *  Now all we need to do is add any byval(<ty>) attributes 
+         *  to any argument which needs it. We must be careful to 
+         *  mention however, that in the translation from pink::FunctionType
+         *  to llvm::FunctionType we also promote any non singleValueType to 
+         *  an opaque pointer type. So we have to use the arguments within the 
+         *  Function to know the type. as otherwise we couldn't tell the
+         *  difference between a pointer that needed the byval(<ty>) attribute,
+         *  and a pointer that did not..
          */
         for (size_t i = 1; i < p_fn_ty->arguments.size(); i++)
         {
@@ -337,7 +344,15 @@ namespace pink {
 			// all the allocas
 			for (int i = 0; i < arguments.size(); i++)
 			{
-        llvm::Type* arg_ty = arg_ptrs[i].first->getType();
+        //Outcome<llvm::Type*, Error> param_ty_result = p_fn_ty->arguments[i]->Codegen(env);
+
+        //if (!param_ty_result)
+        //  return Outcome<llvm::Value*, Error>(param_ty_result.GetTwo());
+
+        //llvm::Type* arg_ty = param_ty_result.GetOne();
+        llvm::Argument* arg = function->getArg(i);
+        
+        llvm::Type* arg_ty = arg->getType();
 
         if (arg_ty->isSingleValueType())
         {
@@ -354,9 +369,20 @@ namespace pink {
         // of the arguments from the perspective of our function type. so we
         // need some way of associating the return value alloca argument within
         // the body of the function. 
-				local_env->bindings->Bind(arguments[i].first, arguments[i].second, arg_ptrs[i].second);
+				local_env->bindings->Bind(this->arguments[i].first, p_fn_ty->arguments[i], arg_ptrs[i].second);
 			}
-			
+		
+      // So, we have an error with GEP again, an assertion failure of
+      // isOpaqueOrPointeeTypeMatches. Now historically this error has occured 
+      // when the Type in memory we pass to the GEP instruction is of pointer
+      // type instead of the pointee type. so i suspect the same has occured
+      // here. The error probably occurs when we bind the argument to it's
+      // passed in value. because we modify the argument of struct type to be 
+      // a pointer instead. now, this is fine from a codegen perspective
+      // because we are binding the argument name to the pointer passed.
+      // however, the error could be that we bind that name to the pointer type 
+      // when we create the binding within the local scope for this argument.
+      // .  
 			
 			// now we can Codegen the body of the function relative to the local environment
 			Outcome<llvm::Value*, Error> body_result = body->Codegen(local_env);
