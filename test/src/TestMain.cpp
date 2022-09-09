@@ -8,7 +8,7 @@
     Tests only ensure that the code is correct in every way you checked.
 */
 
-int main(int argc, char** argv)
+int main()
 {
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();

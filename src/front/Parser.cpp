@@ -400,7 +400,6 @@ namespace pink {
       }
       else
       {
-        Location lhs_loc = loc; // save the location of the lhs of this affix expr
         Outcome<std::unique_ptr<Ast>, Error> left(ParseComposite(env)); // parse the initial term
         if (!left) // if the previous parse failed, return the error immediately
           return Outcome<std::unique_ptr<Ast>, Error>(left.GetTwo());
@@ -1357,7 +1356,6 @@ namespace pink {
     	{
     	case Token::NilType:
       {
-        Location lhs_loc = loc;
         nexttok(); // eat 'Nil'
         Outcome<Type*, Error> result(env->types->GetNilType());
         return result;
@@ -1365,7 +1363,6 @@ namespace pink {
         
     	case Token::IntType:
       {
-        Location lhs_loc = loc;
         nexttok(); // Eat "Int"
         Outcome<Type*, Error> result(env->types->GetIntType());
         return result;
@@ -1373,7 +1370,6 @@ namespace pink {
         
     	case Token::BoolType:
       {
-        Location lhs_loc = loc;
         nexttok(); // Eat "Bool"
         Outcome<Type*, Error> result(env->types->GetBoolType());
         return result;
@@ -1381,7 +1377,6 @@ namespace pink {
 
       case Token::LParen:
       {
-        Location lhs_loc = loc;
         nexttok(); // eat '('
         Outcome<Type*, Error> left(ParseType(env));
 
@@ -1419,7 +1414,6 @@ namespace pink {
       
       case Token::LBracket:
       {
-        Location lhs_loc = loc;
         nexttok(); // eat '['
 
         while (tok == Token::End && !EndOfInput())

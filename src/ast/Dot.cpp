@@ -67,11 +67,18 @@ namespace pink {
     if (!left_getype_result)
       return left_getype_result;
 
+    Outcome<Type*, Error> right_getype_result = right->Getype(env);
+
+    if (!right_getype_result)
+      return right_getype_result;
+
     TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetOne());
 
     if (left_type == nullptr)
     {
-      Error error(Error::Code::DotLeftIsNotAStruct, loc);
+      std::string errmsg = std::string("left has type: ")
+                         + left_getype_result.GetOne()->ToString();
+      Error error(Error::Code::DotLeftIsNotAStruct, loc, errmsg);
       return Outcome<Type*, Error>(error);
     }
 
@@ -79,13 +86,19 @@ namespace pink {
 
     if (index == nullptr)
     {
-      Error error(Error::Code::DotRightIsNotAnInt, loc);
+      std::string errmsg = std::string("right has type: ")
+                         + right_getype_result.GetOne()->ToString();
+      Error error(Error::Code::DotRightIsNotAnInt, loc, errmsg);
       return Outcome<Type*, Error>(error);
     }
 
-    if (index->value > left_type->member_types.size())
+    if (static_cast<size_t>(index->value) > left_type->member_types.size())
     {
-      Error error(Error::Code::DotIndexOutOfRange, loc);
+      std::string errmsg = std::string("tuple has ")
+                         + std::to_string(left_type->member_types.size())
+                         + " elements, index is: "
+                         + std::to_string(index->value);
+      Error error(Error::Code::DotIndexOutOfRange, loc, errmsg);
       return Outcome<Type*, Error> (error);
     }
 
@@ -113,11 +126,19 @@ namespace pink {
     if (!left_getype_result)
       return Outcome<llvm::Value*, Error>(left_getype_result.GetTwo());
 
+    Outcome<Type*, Error> right_getype_result = right->Getype(env);
+    
+    if (!right_getype_result)
+      return Outcome<llvm::Value*, Error>(right_getype_result.GetTwo());
+
+
     TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetOne());
 
     if (left_type == nullptr)
     {
-      Error error(Error::Code::DotLeftIsNotAStruct, loc);
+      std::string errmsg = std::string("left has type: ")
+                         + left_getype_result.GetOne()->ToString();
+      Error error(Error::Code::DotLeftIsNotAStruct, loc, errmsg);
       return Outcome<llvm::Value*, Error>(error);
     }
 
@@ -140,13 +161,19 @@ namespace pink {
 
     if (index == nullptr)
     {
-      Error error(Error::Code::DotRightIsNotAnInt, loc);
+      std::string errmsg = std::string("right has type: ")
+                         + right_getype_result.GetOne()->ToString();
+      Error error(Error::Code::DotRightIsNotAnInt, loc, errmsg);
       return Outcome<llvm::Value*, Error>(error);
     }
 
-    if (index->value > left_type->member_types.size())
+    if (static_cast<size_t>(index->value) > left_type->member_types.size())
     {
-      Error error(Error::Code::DotIndexOutOfRange, loc);
+      std::string errmsg = std::string("tuple has ")
+                         + std::to_string(left_type->member_types.size())
+                         + " elements, index is: "
+                         + std::to_string(index->value);
+      Error error(Error::Code::DotIndexOutOfRange, loc, errmsg);
       return Outcome<llvm::Value*, Error> (error);
     }
 

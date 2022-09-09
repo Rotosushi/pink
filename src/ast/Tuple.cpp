@@ -1,6 +1,8 @@
 #include "ast/Tuple.h"
 #include "aux/Environment.h"
 
+#include "support/LLVMValueToString.h"
+
 namespace pink {
   Tuple::Tuple(Location loc, std::vector<std::unique_ptr<Ast>> members)
     : Ast(Ast::Kind::Tuple, loc), members(std::move(members))
@@ -188,7 +190,9 @@ namespace pink {
       }
       else
       {
-        return Outcome<llvm::Value*, Error>(Error(Error::Code::NonConstTupleInit, loc));
+        std::string errmsg = std::string("value is: ")
+                           + LLVMValueToString(initializer);
+        return Outcome<llvm::Value*, Error>(Error(Error::Code::NonConstTupleInit, loc, errmsg));
       }
     }
 

@@ -2,19 +2,19 @@
 
 namespace pink {
     Error::Error()
-      : code(Error::Code::None), loc()
+      : code(Error::Code::None), loc(), text()
     {
     
     }
 
-    Error::Error(Error::Code code, Location loc)
-      : code(code), loc(loc)
+    Error::Error(Error::Code code, Location loc, std::string text)
+      : code(code), loc(loc), text(text)
     {
 
     }
 
     Error::Error(const Error& other)
-      : code(other.code), loc(other.loc)
+      : code(other.code), loc(other.loc), text(other.text)
     {
 
     } 
@@ -23,6 +23,7 @@ namespace pink {
     {
         code = other.code;
         loc  = other.loc;
+        text = other.text;
         return *this;
     }
 
@@ -36,7 +37,7 @@ namespace pink {
     {
         std::string result;
 
-        result += CodeToErrText(code) + std::string("\n");
+        result += CodeToErrText(code) + std::string(": ") + text + "\n";
         result += errtxt + "\n";
 
         for (size_t i = 0; i < errtxt.size(); i++)
@@ -47,7 +48,6 @@ namespace pink {
                 result += "^";
         }
         result += "\n";
-
 
         return result;
     }

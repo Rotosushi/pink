@@ -66,14 +66,22 @@ namespace pink {
 
       Code     code;
       Location loc;
-
+      // So, here we hold a std::string to allow for customization of 
+      // the error message at the point of creation, allowing for more 
+      // contextual information to be returned about the error.
+      // this seems like a necessary feature for informative error 
+      // messages. however, passing a std::string around through 
+      // return values is more expensive than not passing a std string 
+      // around. A pointer would be cheaper, but how could we store a 
+      // pointer to memory that would live beyond the point of creation?
+      // it would have to be stored somewhere else.
+      std::string text;
+      
       const char* CodeToErrText(Code code);
  
       Error();
       Error(const Error& other);
-      Error(Code code, Location l);
-      //Error(Kind k, const char* d, Location l);
-      //Error(Kind k, std::string d, Location l);
+      Error(Code code, Location l, std::string text = "");
 
       Error& operator=(const Error& other);
 

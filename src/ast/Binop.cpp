@@ -64,10 +64,13 @@ namespace pink {
     	
     	if (!binop)
     	{
-    		Error error(Error::Code::UnknownBinop, loc);
+        std::string errmsg = std::string("unknown op: ")
+                           + op;
+    		Error error(Error::Code::UnknownBinop, loc, errmsg);
     		Outcome<Type*, Error> result(error);
     		return result;
     	}
+
       // #TODO: unop also needs this treatment for * and & operators.
       llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal;
       PointerType* pt = nullptr;
@@ -78,7 +81,11 @@ namespace pink {
         IntType* it = llvm::dyn_cast<IntType>(rhs_result.GetOne());
         if (it == nullptr)
         {
-          Error error(Error::Code::ArgTypeMismatch, loc);
+          std::string errmsg = std::string("lhs has pointer type: ")
+                             + pt->ToString()
+                             + " however rhs is not an Int, rhs has type: "
+                             + rhs_result.GetOne()->ToString();
+          Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
           return Outcome<Type*, Error>(error);
         }
 
@@ -102,7 +109,13 @@ namespace pink {
 
     	if (!literal)
     	{
-        Error error(Error::Code::ArgTypeMismatch, loc);
+        std::string errmsg = std::string("could not find an implementation of ")
+                           + std::string(op)
+                           + " for given types, left: "
+                           + lhs_result.GetOne()->ToString()
+                           + ", right: "
+                           + rhs_result.GetOne()->ToString();
+        Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
     		Outcome<Type*, Error> result(error);
     		return result;
     	}
@@ -160,7 +173,9 @@ namespace pink {
     	
     	if (!binop)
     	{
-    		Error error(Error::Code::UnknownBinop, loc);
+        std::string errmsg = std::string("unknown op: ")
+                           + op;
+    		Error error(Error::Code::UnknownBinop, loc, errmsg);
     		Outcome<llvm::Value*, Error> result(error);
     		return result;
     	}
@@ -187,7 +202,12 @@ namespace pink {
         IntType* it = llvm::dyn_cast<IntType>(rhs_type_result.GetOne());
         if (it == nullptr)
         {
-          Error error(Error::Code::ArgTypeMismatch, loc);
+          std::string errmsg = std::string("lhs has pointer type: ")
+                             + pt->ToString()
+                             + " however rhs is not an Int, rhs has type: "
+                             + rhs_type_result.GetOne()->ToString();
+
+          Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
           return Outcome<llvm::Value*, Error>(error);
         }
 
@@ -213,7 +233,13 @@ namespace pink {
 
     	if (!literal)
     	{
-    		Error error(Error::Code::ArgTypeMismatch, loc);
+        std::string errmsg = std::string("could not find an implementation of ")
+                           + std::string(op)
+                           + " for the given types, left: "
+                           + lhs_type_result.GetOne()->ToString()
+                           + ", right: "
+                           + rhs_type_result.GetOne()->ToString();
+    		Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
     		Outcome<llvm::Value*, Error> result(error);
     		return result;
     	}

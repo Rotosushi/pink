@@ -3,6 +3,8 @@
 
 #include "aux/Environment.h"
 
+#include "support/LLVMValueToString.h"
+
 namespace pink {
   Application::Application(Location location, std::unique_ptr<Ast> callee, std::vector<std::unique_ptr<Ast>> arguments)
     : Ast(Ast::Kind::Application, location), callee(std::move(callee)), arguments(std::move(arguments))
@@ -80,14 +82,18 @@ namespace pink {
 
     if (calleeFnTy == nullptr)
     {
-      Error error(Error::Code::TypeCannotBeCalled, loc);
+      Error error(Error::Code::TypeCannotBeCalled, loc, calleeTy.GetOne()->ToString());
       return Outcome<Type*, Error>(error);
     }
 
     // check that the number of arguments matches
     if (arguments.size() != calleeFnTy->arguments.size())
     {
-      Error error(Error::Code::ArgNumMismatch, loc);
+      std::string errmsg = std::string("expected args: ") 
+                         + std::to_string(calleeFnTy->arguments.size())
+                         + ", actual args: "
+                         + std::to_string(arguments.size());
+      Error error(Error::Code::ArgNumMismatch, loc, errmsg);
       return Outcome<Type*, Error>(error);
     }
     
@@ -104,11 +110,15 @@ namespace pink {
     }
 
     // chech that each arguments type matches
-    for (int i = 0; i < arguments.size(); i++)
+    for (size_t i = 0; i < arguments.size(); i++)
     {
       if (argTys[i] != calleeFnTy->arguments[i])
       {
-        Error error(Error::Code::ArgTypeMismatch, loc);
+        std::string errmsg = std::string("expected arg type: ")
+                           + calleeFnTy->arguments[i]->ToString()
+                           + ", actual arg type: "
+                           + argTys[i]->ToString();
+        Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
         return Outcome<Type*, Error>(error);
       }
     }
@@ -140,7 +150,9 @@ namespace pink {
 
     if (function == nullptr)
     {
-      Error error(Error::Code::TypeCannotBeCalled, loc);
+      std::string errmsg = std::string(", type was: ")
+                         + LLVMValueToString(callee_result.GetOne());
+      Error error(Error::Code::TypeCannotBeCalled, loc, errmsg);
       return Outcome<llvm::Value*, Error>(error);
     }
 

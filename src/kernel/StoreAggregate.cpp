@@ -21,8 +21,8 @@ namespace pink {
    *  a constant initializer procedure. Now this is not useful for initializing 
    *  GlobalVariables, as they can already be given aggregate llvm::Constant*
    *  as initializers, but it does come in handy when considering initializing 
-   *  a local variable with a constant initializer, or when copying an existing
-   *  aggregate to another memory location.
+   *  a local variable with a constant initializer, or as in the other case 
+   *  when copying an existing aggregate to another memory location.
    *  
    *
    *  instead of spliting this function in two internally with a huge 
@@ -31,15 +31,17 @@ namespace pink {
    *  a memory location, and one for storing the contents of one memory 
    *  location into another. Hold up, can't we support that with a memcpy?
    *  I think so, yeah, we just need the sizes of the types involved.
+   *  however we cannot memcpy from a llvm::Constant
    *
    *  Input Constraints: 
    *   -) type of src and dest must be equivalent, and each must have type 
-   *      'ty'.
+   *      '<ty>*' that is src and dest are pointers to type <ty>.
    *
    *   -) ty must be the type of dest in memory, and dest must be
    *      a pointer to an allocation of memory large enough to hold 
    *      a type 'ty'. this is to support constructing GEP 
    *      instructions directly from dest, ty.
+
    *   -) ty must be the type of src in memory, and src must be 
    *      a pointer to an allocation of memory large enough to hold
    *      a type ty, and already holding the values wanted in dest.
@@ -49,7 +51,7 @@ namespace pink {
    *   -) env must be set up such that the ir builder is in the correct
    *      position to emit the loads and stores for the values.
    *      this procedure will not modify the insertion position of the 
-   *      builder.
+   *      builder beyond the insertion of loads and stores..
    *
    *   Output constraints:
    *    -) this function returns dest, that is it returns a pointer to the 
@@ -61,9 +63,30 @@ namespace pink {
    *       upon dest, have the side effect of modifying the memory at that 
    *       location. so a pointer to that memory location need not be updated 
    *       to reflect those changes. because it does naturally so by being a
-   *       referenc to the memory. 
+   *       reference to the memory which itself changes. 
+   *       (this is to support the possiblity of calling this procedure multiple 
+   *        times on the same variable, so this could just as well return void,
+   *        the caller presumably must have dest already reachable from their 
+   *        scope)
    *
-   *
+    you could support named scoping, with symboltable lookup by simply always 
+    prepending the current scope name to each lookup. then following the exact 
+    same procedure as currently implemented, if that lookup fails we simply 
+    ask the scope above.
+    as long as each variable is constructed by prepending the current scope name
+    before binding that string to the symboltable, variable lookup would continue 
+    as usual. except that you would need a new kind of identifier from the lexer,
+    which parsed fully qualified scope names, and then if the variable had a 
+    fully qualified scope name you would have to look for the symboltable with 
+    the corresponding scope name before lookup, and call a protected lookup procedure 
+    on the scope whos only difference is that you avoid the string concatenation of 
+    normal lookup. (and the problem of exctracting the last id from the scope)
+
+    although we can lex fully qualified identifiers with a regular expression:
+      id ('::' id)+
+
+    #TODO: #ERROR: we need to find a solution to the problem of casting the src pointer to a
+          llvm::ConstantArray*, after we have dyn_cast the pointer to a llvm::Constant*
    */
   llvm::Value* StoreAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, std::shared_ptr<Environment> env)
   {
@@ -81,11 +104,11 @@ namespace pink {
   {
     if (llvm::ArrayType* at = llvm::dyn_cast<llvm::ArrayType>(ty))
     {
-      llvm::ConstantArray* src_array = llvm::cast<llvm::ConstantArray>(src);
-      if (src_array == nullptr)
-      {
-        FatalError("Array Type given to StoreConstAggregate, but source is not a ConstantArray", __FILE__, __LINE__);
-      }
+      //llvm::ConstantArray* src_array = llvm::cast<llvm::ConstantArray>(src);
+      //if (src_array == nullptr)
+      //{
+      //  FatalError("Array Type given to StoreConstAggregate, but source is not a ConstantArray", __FILE__, __LINE__);
+      //}
       // so, if the element type of the array is a single value type,
       // then we can safely use a llvm::StoreInstruction to perform the 
       // store. In the case where the element is itself an aggregate 
@@ -110,7 +133,7 @@ namespace pink {
           // so this would be an element of the array given, the first elem 
           // is at offset 0, then offset 1 is the second element and so on. 
           llvm::Value* elemPtr = env->builder->CreateConstGEP2_32(at, dest, 0, i);
-          env->builder->CreateStore(src_array->getAggregateElement(i), elemPtr);
+          env->builder->CreateStore(src->getAggregateElement(i), elemPtr);
         }
       }
       else
@@ -127,18 +150,18 @@ namespace pink {
           // type of constant element held within the constant array. Thus, 
           // we can pass in the llvm::Constant* to that element itself as the
           // source for the new call to StoreConstAggregate.
-          StoreConstAggregate(at->getElementType(), elemPtr, src_array->getAggregateElement(i), env);
+          StoreConstAggregate(at->getElementType(), elemPtr, src->getAggregateElement(i), env);
         }
       }
     }
     else if (llvm::StructType* st = llvm::dyn_cast<llvm::StructType>(ty))
     {
-      llvm::ConstantStruct* cs = llvm::dyn_cast<llvm::ConstantStruct>(src);
-      if (cs == nullptr)
-        FatalError("Struct Type given to CreateStoreAggregate, but source is not a llvm::ConstantStruct", __FILE__, __LINE__);
+      //llvm::ConstantStruct* cs = llvm::dyn_cast<llvm::ConstantStruct>(src);
+      //if (cs == nullptr)
+      //  FatalError("Struct Type given to CreateStoreAggregate, but source is not a llvm::ConstantStruct", __FILE__, __LINE__);
 
       size_t i = 0;
-      while (llvm::Constant* src_element = cs->getAggregateElement(i))
+      while (llvm::Constant* src_element = src->getAggregateElement(i))
       {
         llvm::Value* dest_elem_ptr = env->builder->CreateConstGEP2_32(st, dest, 0, i);
         llvm::Type*  elem_type  = src_element->getType();

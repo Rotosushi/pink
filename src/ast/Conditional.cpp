@@ -53,7 +53,9 @@ namespace pink {
 
     if (bool_ty != test_type_result.GetOne())
     {
-      return Outcome<Type*, Error> (Error(Error::Code::CondTestExprTypeMismatch, test->GetLoc()));
+      std::string errmsg = std::string("condition has type: ")
+                         + test_type_result.GetOne()->ToString();
+      return Outcome<Type*, Error> (Error(Error::Code::CondTestExprTypeMismatch, test->GetLoc(), errmsg));
     }
 
     Outcome<Type*, Error> first_type_result = first->Getype(env);
@@ -68,7 +70,11 @@ namespace pink {
 
     if (first_type_result.GetOne() != second_type_result.GetOne())
     {
-      return Outcome<Type*, Error> (Error(Error::Code::CondBodyExprTypeMismatch, loc));
+      std::string errmsg = std::string("first alternative has type: ")
+                         + first_type_result.GetOne()->ToString()
+                         + ", second alternative has type: "
+                         + second_type_result.GetOne()->ToString();
+      return Outcome<Type*, Error> (Error(Error::Code::CondBodyExprTypeMismatch, loc, errmsg));
     }
 
     return Outcome<Type*, Error>(first_type_result.GetOne());

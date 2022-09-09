@@ -6,6 +6,7 @@
 namespace pink {
     Outcome<llvm::Value*, Error> UnopIntNegate(llvm::Value* term, std::shared_ptr<Environment> env)
     {
+
     	llvm::Value* value = env->builder->CreateNeg(term, "neg");
       Outcome<llvm::Value*, Error> result(value);
       return result;
@@ -13,6 +14,7 @@ namespace pink {
 
     Outcome<llvm::Value*, Error> UnopBoolNegate(llvm::Value* term, std::shared_ptr<Environment> env)
     {
+
     	llvm::Value* value = env->builder->CreateNot(term, "not");
       Outcome<llvm::Value*, Error> result(value);
       return result;
@@ -20,11 +22,17 @@ namespace pink {
 
     Outcome<llvm::Value*, Error> UnopAddressOfValue(llvm::Value* term, std::shared_ptr<Environment> env)
     {
+      if (!env)
+        FatalError("env was nullptr!", __FILE__, __LINE__);
+
       return Outcome<llvm::Value*, Error>(term);
     }
 
     Outcome<llvm::Value*, Error> UnopValueOfAddress(llvm::Value* term, std::shared_ptr<Environment> env)
     {
+      if (!env)
+        FatalError("env was nullptr!", __FILE__, __LINE__);
+      
       return Outcome<llvm::Value*, Error>(term);
     }
 

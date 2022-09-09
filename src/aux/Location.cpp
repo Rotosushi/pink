@@ -22,13 +22,22 @@ namespace pink {
 
     }
 
+    Location& Location::operator=(const Location& other)
+    {
+      firstLine   = other.firstLine;
+      firstColumn = other.firstColumn;
+      lastLine    = other.lastLine;
+      lastColumn  = other.lastColumn;
+      return *this;
+    }
+
     bool Location::operator==(const Location& other)
     {
         bool result = false;
-        result = (firstLine == other.firstLine)
+        result =   (firstLine   == other.firstLine)
                 && (firstColumn == other.firstColumn)
-                && (lastLine == other.lastLine)
-                && (lastColumn == other.lastColumn);
+                && (lastLine    == other.lastLine)
+                && (lastColumn  == other.lastColumn);
         return result;
     }
 }

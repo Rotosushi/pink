@@ -46,7 +46,9 @@ namespace pink {
     	
     	if (!unop)
     	{
-    		Error error(Error::Code::UnknownUnop,	loc);
+        std::string errmsg = std::string("unknown unop: ")
+                           + op;
+    		Error error(Error::Code::UnknownUnop,	loc, errmsg);
     		Outcome<Type*, Error> result(error);
     		return result;
     	}
@@ -98,7 +100,11 @@ namespace pink {
 
     	if (!literal)
     	{
-    		Error error(Error::Code::ArgTypeMismatch, loc);
+        std::string errmsg = std::string("could not find an implementation of ")
+                           + std::string(op)
+                           + " for the given type: "
+                           + rhs_result.GetOne()->ToString();
+    		Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
     		Outcome<Type*, Error> result(error);
     		return result;
     	}

@@ -112,7 +112,10 @@ namespace pink {
         // #TODO: if the binding term has the same type as what the symbol 
         //  is already bound to, we could treat the binding as equivalent 
         //  to an assignment instead of an error. different types would still be an error.
-        Error error(Error::Code::NameAlreadyBoundInScope, loc);
+        std::string errmsg = std::string(symbol)
+                           + " has type: "
+                           + bound->first->ToString();
+        Error error(Error::Code::NameAlreadyBoundInScope, loc, errmsg);
         Outcome<Type*, Error> result(error);
         return result;
       }
@@ -341,6 +344,9 @@ namespace pink {
 			// #TODO: if the binding term has the same type as what the symbol 
 			//  is already bound to, we could treat the binding as equivalent 
 			//  to an assignment here.
+      std::string errmsg = std::string(symbol)
+                         + " already bound to type: "
+                         + bound->first->ToString();
 			Error error(Error::Code::NameAlreadyBoundInScope, loc);
 			Outcome<llvm::Value*, Error> result(error);
 			return result;

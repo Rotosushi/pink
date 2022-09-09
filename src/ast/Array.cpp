@@ -3,6 +3,8 @@
 
 #include "aux/Environment.h"
 
+#include "support/LLVMValueToString.h"
+
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Constants.h"
 
@@ -65,6 +67,7 @@ namespace pink {
    */
   Outcome<Type*, Error> Array::GetypeV(std::shared_ptr<Environment> env)
   {
+    size_t i = 0;
     std::vector<Type*> membTys;
     for (std::unique_ptr<Ast>& memb : members)
     {
@@ -76,7 +79,16 @@ namespace pink {
       membTys.push_back(memb_result.GetOne());
 
       if (memb_result.GetOne() != membTys[0])
+      { 
+        std::string errmsg = std::string("at position: ")
+                           + std::to_string(i)
+                           + ", expected type: "
+                           + membTys[0]->ToString()
+                           + ", actual type: "
+                           + memb_result.GetOne()->ToString();
         return Outcome<Type*, Error>(Error(Error::Code::ArrayMemberTypeMismatch, loc));
+      }
+      i += 1;
     }    
     
     return Outcome<Type*, Error>(env->types->GetArrayType(members.size(), membTys[0]));
@@ -124,7 +136,9 @@ namespace pink {
 
       if (cmember == nullptr)
       {
-        return Outcome<llvm::Value*, Error>(Error(Error::Code::NonConstArrayInit, loc));
+        std::string errmsg = std::string("llvm::Value* is: ")
+                           + LLVMValueToString(member_result.GetOne());
+        return Outcome<llvm::Value*, Error>(Error(Error::Code::NonConstArrayInit, loc, errmsg));
       }
 
       cmembers.push_back(cmember);

@@ -11,7 +11,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_compile_options(-Wall -O0 -gdwarf-4 -fstandalone-debug)
+add_compile_options(-Wall -O0 -gdwarf-4 -Wall -Wextra)
 
 cmake_policy(SET CMP0076 NEW)
 
@@ -32,10 +32,12 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # link against all llvm libraries available.
 execute_process(
-	COMMAND llvm-config --libs 
+	COMMAND llvm-config --libfiles 
 	OUTPUT_VARIABLE llvm_libs
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
+separate_arguments(llvm_libs)
 
 execute_process(
 	COMMAND llvm-config --cxxflags
@@ -82,6 +84,9 @@ configure_file(include/PinkConfig.h.in ../include/PinkConfig.h)
 
 
 add_library(libpink STATIC
+        # the 'ast' directory is for all the classes which together 
+        # comprise the representation of abstract syntax trees within
+        # our compiler.
 		    src/ast/Assignment.cpp
 		    src/ast/Ast.cpp
 		    src/ast/Bind.cpp
@@ -93,14 +98,28 @@ add_library(libpink STATIC
 		    src/ast/Nil.cpp
 		    src/ast/Unop.cpp
 		    src/ast/Variable.cpp
-		    src/ast/VarRef.cpp
+		    #src/ast/VarRef.cpp
         src/ast/Application.cpp
         src/ast/Array.cpp
         src/ast/Tuple.cpp
         src/ast/Conditional.cpp
         src/ast/While.cpp
         src/ast/Dot.cpp
-
+        
+        # the 'type' directory is for all of the classes which together 
+        # comprise the representation of types within our compiler.
+        src/type/Type.cpp
+		    src/type/BoolType.cpp
+		    src/type/IntType.cpp
+		    src/type/NilType.cpp
+		    src/type/FunctionType.cpp
+        src/type/PointerType.cpp
+        src/type/ArrayType.cpp
+        src/type/TupleType.cpp
+        
+        # the 'aux' directory is for the classes which are necessary or convenient
+        # for the functioning of the compiler, which are additionally small enough 
+        # to fit within a single source file.
         src/aux/CLIOptions.cpp
 		    src/aux/Environment.cpp
 		    src/aux/Error.cpp
@@ -111,31 +130,40 @@ add_library(libpink STATIC
 		    src/aux/TypeInterner.cpp
         src/aux/Flags.cpp
         
+        # the 'ops' directory is for the classes which comprise the semantics
+        # of binary and unary operators within the language. (minus the specialized 
+        # operators like assignment '=', pointer indirection '*', and address of '&')
+        # (aside: all operator classes were once in 'aux' however that clutters up 
+        # 'aux' so any semantics which require multiple classes working in concert 
+        # to acheive a single purpose will be placed in their own directory)
         src/ops/BinopCodegen.cpp
 		    src/ops/BinopLiteral.cpp
 		    src/ops/BinopTable.cpp
 		    src/ops/UnopCodegen.cpp
 		    src/ops/UnopLiteral.cpp
 		    src/ops/UnopTable.cpp
+        
+        # the 'front' directory is for the classes which comprise the frontend
+        # of the compiler itself.
+        src/front/Lexer.cpp 
+		    src/front/Token.cpp
+		    src/front/Parser.cpp
 		    
+        # the 'kernel' directory is for files which implement functionality 
+        # within the compiler which is made directly available to the programmer.
         src/kernel/BinopPrimitives.cpp
 		    src/kernel/UnopPrimitives.cpp
         src/kernel/Cast.cpp
         src/kernel/StoreAggregate.cpp
         
-        src/type/Type.cpp
-		    src/type/BoolType.cpp
-		    src/type/IntType.cpp
-		    src/type/NilType.cpp
-		    src/type/FunctionType.cpp
-        src/type/PointerType.cpp
-        src/type/ArrayType.cpp
-        src/type/TupleType.cpp
-
-        src/front/Lexer.cpp 
-		    src/front/Token.cpp
-		    src/front/Parser.cpp
-		    
+        # the 'support' directory is for files which define necessary or convenient 
+        # subroutines, which are too small to justify their own class.
+        src/support/LLVMErrorToString.cpp
+        src/support/LLVMValueToString.cpp
+        src/support/LLVMTypeToString.cpp
+        
+        # the 'core' directory is for the core files within the compiler,
+        # that is, those functions which are central drivers of the program.
         src/core/Compile.cpp
         src/core/Link.cpp
 		   )
@@ -154,9 +182,11 @@ set_property(
 	PROPERTY ADDITIONAL_CLEAN_FILES src/front/Lexer.cpp
 )
 
-target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} )
+target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
 
 target_include_directories(libpink PUBLIC include ${LLVM_LIBRARY_DIRS})
+
+target_link_directories(libpink PUBLIC ${LLVM_LIBRARY_DIRS})
 
 target_link_libraries(libpink
 ${LLVM_LIBRARY_DIRS}/liblldCommon.a
@@ -166,9 +196,13 @@ ${llvm_libs}
 			   
 add_executable(pink src/Pink.cpp)
 
-#target_link_options(pink PUBLIC --verbose)
+target_link_options(pink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
+
+target_link_directories(pink PUBLIC ${LLVM_LIBRARY_DIRS})
 
 target_link_libraries(pink
+${LLVM_LIBRARY_DIRS}/liblldCommon.a
+${LLVM_LIBRARY_DIRS}/liblldELF.a
 libpink
 )
 

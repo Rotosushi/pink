@@ -13,6 +13,7 @@ namespace pink {
             case Token::Error:    { return std::string("Token::Error");    }
             case Token::End:      { return std::string("Token::End");      }
             case Token::Id:       { return std::string("Token::Id");       }
+            case Token::FullyQualifiedId: { return std::string("Token::FullyQualifiedId"); }
             case Token::Op:       { return std::string("Token::Op");       }
             case Token::Comma:	  { return std::string("Token::Comma");    }
             case Token::Semicolon:{ return std::string("Token::Semicolon");}

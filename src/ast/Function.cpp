@@ -6,6 +6,8 @@
 #include "kernel/Cast.h"
 #include "kernel/StoreAggregate.h"
 
+#include "support/LLVMErrorToString.h"
+
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/InlineAsm.h"
 
@@ -329,7 +331,7 @@ namespace pink {
 			
 			std::vector<std::pair<llvm::Value*, llvm::Value*>> arg_ptrs;
 			// construct stack space for all arguments to the function 
-			for (int i = 0; i < function->arg_size(); i++)
+			for (size_t i = 0; i < function->arg_size(); i++)
 			{
 				llvm::Argument* arg = function->getArg(i);
 				llvm::Value* arg_ptr = local_builder->CreateAlloca(arg->getType(),
@@ -342,7 +344,7 @@ namespace pink {
 			
 			// make sure all instructions that are not Allocas are placed after 
 			// all the allocas
-			for (int i = 0; i < arguments.size(); i++)
+			for (size_t i = 0; i < arguments.size(); i++)
 			{
         //Outcome<llvm::Type*, Error> param_ty_result = p_fn_ty->arguments[i]->Codegen(env);
 
@@ -472,10 +474,32 @@ namespace pink {
         // which can be done.
         //
         // for instance to cast between our boolean type and our integer type 
-        // we have to emit a zext instruction,
+        // we have to emit a zext instruction
+        // and this would be the case for any smaller unsigned integer type, to 
+        // any larger integer type (unsigned -> signed OR unsigned -> unsigned).
+        // if the smaller integer type is signed and the conversion is
+        // signed -> signed then we use the sext instruction.
+        // if the smaller integer type is signed and the conversion is 
+        // signed -> unsigned then we can also use the zext instruction 
+        // and then we have a choice, we could map mathematically to the 
+        // unsinged integer and perform an abs instruction to convert 
+        // signed to unsigned, then perform the zext OR we could leave the 
+        // bits themselves alone when performing the cast, which may be useful 
+        // from the perspective of some programmers. if we are doing low level 
+        // code, then doing the least implicit bit manipulations will force the 
+        // programmer to syntactically perform the bit manipulations
+        // themselves. which I think would lead to higher code legibility. 
         //
         // or if we want to convert between our integer type and our boolean
         // type we have to emit a trunc instruction.
+        // and this would be the case for any larger integer type to any
+        // smaller integer type. (signed -> signed OR unsigned -> unsigned)
+        // (the cross sign conversions can either be left alone, or we can
+        // consistently perform an abs instruction to map signed values to 
+        // unsigned values. in the reverse case we must be aware that we 
+        // can destroy data if the unsigned number being represented is a 
+        // positive integer above the range of the signed integer.
+        //
         //
         // or if we want to convert between the different sizes of possible 
         // integers we can use zext to cast smaller to bigger and 
@@ -510,9 +534,10 @@ namespace pink {
         // expression.
         if ( llvm::isa<llvm::ConstantInt>(bodyVal) )
         {
-          if (!llvm::InlineAsm::Verify(iasm1Ty, "={rdi},i"))
+          if (auto error = llvm::InlineAsm::verify(iasm1Ty, "={rdi},i"))
           {
-            FatalError("constraint code for iasm1Ty not valid", __FILE__, __LINE__);
+            std::string errstr = "constraint code for iasm1Ty not valid: " + LLVMErrorToString(error);
+            FatalError(errstr.data(), __FILE__, __LINE__);
           }
          
           iasm1 = llvm::InlineAsm::get(iasm1Ty, 
@@ -529,9 +554,10 @@ namespace pink {
              // type Int, it's simply held within a register because of the
              // actual shape of the body.  
         {
-          if (!llvm::InlineAsm::Verify(iasm1Ty, "={rdi},r"))
+          if (auto error = llvm::InlineAsm::verify(iasm1Ty, "={rdi},r"))
           {
-            FatalError("constraint code for iasm1Ty not valid", __FILE__, __LINE__);
+            std::string errstr = "constraint code for iasm1Ty not valid" + LLVMErrorToString(error);
+            FatalError(errstr.data(), __FILE__, __LINE__);
           }
 
           
@@ -548,14 +574,16 @@ namespace pink {
         }
 
 
-        if (!llvm::InlineAsm::Verify(iasm0Ty, "={rax}"))
+        if (auto error = llvm::InlineAsm::verify(iasm0Ty, "={rax}"))
         {
-          FatalError("constraint code for iasm0Ty not valid", __FILE__, __LINE__);
+          std::string errstr = "constraint code for iasm0Ty not valid" + LLVMErrorToString(error);
+          FatalError(errstr.data(), __FILE__, __LINE__);
         }
 
-        if (!llvm::InlineAsm::Verify(iasm2Ty, ""))
+        if (auto error = llvm::InlineAsm::verify(iasm2Ty, ""))
         {
-          FatalError("constraint code for iasm2Ty not valid", __FILE__, __LINE__);
+          std::string errstr = "constraint code for iasm2Ty not valid" + LLVMErrorToString(error);
+          FatalError(errstr.data(), __FILE__, __LINE__);
         }
         
 

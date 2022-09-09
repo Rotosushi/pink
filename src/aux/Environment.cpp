@@ -116,8 +116,16 @@ namespace pink {
       auto unops     = std::make_shared<UnopTable>();
      
       std::shared_ptr<llvm::LLVMContext> context = std::make_shared<llvm::LLVMContext>();
-      // #TODO: the target triple must be changed to emit code for other
-      // platforms
+      
+      // This to me would seem to work for native code generation.
+      // because the compiler is a process, and as such is running 
+      // on the host machine. so the processTriple would be a 
+      // target triple suitable to generating code for the host machine.
+      // that is, native code generation.
+      // then cross platform codegeneration would be specified via the 
+      // command line, and as such we can write a switch over known and 
+      // supported generation targets to select the correct target_triple.
+      // (and cpu, cpu features, and any other target specific information.)
       std::string target_triple = llvm::sys::getProcessTriple();
       
       std::string error;
@@ -128,8 +136,13 @@ namespace pink {
         FatalError(error.data(), __FILE__, __LINE__);
       }
 
-      std::string cpu = "x86-64";
-      std::string cpu_features = ""; // #TODO: find out the cpu features programmatically
+      std::string cpu = "x86-64"; // it looks like we can also find this out via 
+                                  // llvm::sys::getHostCPUName()
+      
+      std::string cpu_features = ""; // #TODO: find out the cpu features programmatically.
+                                     // UPDATE: it looks like this can be accomplished via
+                                     // llvm::sys::getHostCPUFeatures(llvm::StringMap<bool, MallocAllocator>& features)
+      
       llvm::TargetOptions target_options; // #TODO: this works fine as default, but seems like a
                                           // useful structure for
                                           // optimization/profiling
@@ -140,7 +153,10 @@ namespace pink {
       // however this must change if the code being compiled becomes larger 
       // than 2GB, or if the data within the code or being processed by the 
       // code becomes larger than 2GB. So we should add an option on the 
-      // command line to select between models.
+      // command line to select between models. 
+      // NOTE: this is something to look at for the future, does the 
+      // codegeneration fail if we don't meet the uder 2GB requirement?
+      // would our program be able to recover from such an error?
       llvm::CodeModel::Model code_model = llvm::CodeModel::Model::Small;
 
       llvm::TargetMachine* target_machine = nullptr;
@@ -153,8 +169,14 @@ namespace pink {
         code_model
         );
 
+      llvm::DataLayout data_layout = target_machine->createDataLayout();
+
       std::shared_ptr<llvm::IRBuilder<>> builder = std::make_shared<llvm::IRBuilder<>>(*context);
       std::shared_ptr<llvm::Module> module = std::make_shared<llvm::Module>(options->input_file, *context);
+
+      module->setSourceFileName(options->input_file);
+      module->setDataLayout(data_layout);
+      module->setTargetTriple(target_triple);
 
       auto env = std::make_shared<Environment>(
           flags,
@@ -170,7 +192,7 @@ namespace pink {
           module,
           builder,
           target_machine,
-          target_machine->createDataLayout()
+          data_layout
           );
 
       InitializeBinopPrimitives(env);

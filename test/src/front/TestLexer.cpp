@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "Test.h"
 #include "front/TestLexer.h"
 #include "front/Lexer.h"
@@ -40,6 +42,12 @@ bool TestLexer(std::ostream& out)
     pink::Location loc(0, 0, 0, 6);
 
     result &= TestToken(out, lex, pink::Token::Id, loc, str);
+  
+    std::string fullyQualifiedStr("global::local::symbol");
+    int fullyQualifiedLength = std::strlen(fullyQualifiedStr.c_str());
+    pink::Location fullyQualifiedLoc(0, 0, 0, fullyQualifiedLength);
+
+    result &= TestToken(out, lex, pink::Token::FullyQualifiedId, fullyQualifiedLoc, fullyQualifiedStr); 
 
     str = "+";
     loc = {0, 0, 0, 1};

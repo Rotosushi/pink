@@ -43,8 +43,10 @@ namespace pink {
 			return result;
 		}
 		else 
-		{
-			Error error(Error::Code::NameNotBoundInScope, loc);
+		{ 
+      std::string errmsg = std::string("unknown symbol: ")
+                  + symbol;
+			Error error(Error::Code::NameNotBoundInScope, loc, errmsg);
 			Outcome<Type*, Error> result(error);
 			return result;
 		}
@@ -214,7 +216,9 @@ namespace pink {
 		}
 		else 
 		{
-			Error error(Error::Code::NameNotBoundInScope, loc);
+      std::string errmsg = std::string("unknown symbol: ")
+                         + symbol;
+			Error error(Error::Code::NameNotBoundInScope, loc, errmsg);
 			Outcome<llvm::Value*, Error> result(error);
 			return result;
 		}

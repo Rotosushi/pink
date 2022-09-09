@@ -245,7 +245,7 @@ namespace pink {
       // optind now the index of the first 
       // argv element that is not an option.
       // and is not the name of the program being called
-      if (optind >= argc || (optind + 1 + numopt) >= argc)
+      if (optind >= argc || (optind + 1 + numopt) >= static_cast<size_t>(argc))
       {
         FatalError("input file is required", __FILE__, __LINE__);
       }

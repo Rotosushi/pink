@@ -187,12 +187,13 @@ namespace pink {
         re2c:define:YYLESSTHAN = "(end > (end - cursor));";
 
         id=[a-zA-Z_][a-zA-Z0-9_]*;
+        fullyQualifiedId=id("::" id)+; 
         op=[+\-*/%<=>&|\^!~@$]+;
         int=[0-9]+;
     */
 
 	// NOLINTBEGIN(cppcoreguidelines-avoid-goto)
-	// re2c uses gotos to implement the lexer, as all of the 
+	// #REASON: re2c uses gotos to implement the lexer, as all of the 
 	// gotos are from generated code, we are trusting re2c to 
 	// use gotos in a safe and sane way here.
     Token Lexer::yylex()
@@ -230,6 +231,7 @@ namespace pink {
                 "]"     { UpdateLoc(); return Token::RBracket; }                
 
                 id      { UpdateLoc(); return Token::Id; }
+                fullyQualifiedId { UpdateLoc(); return Token::FullyQualifiedId; }
                 op      { UpdateLoc(); return Token::Op; }
                 int     { UpdateLoc(); return Token::Int; }
                 

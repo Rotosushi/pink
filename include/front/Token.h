@@ -7,6 +7,7 @@ namespace pink {
         End, // EOF
 
         Id,  // [a-zA-Z_][a-zA-Z0-9_]*
+        FullyQualifiedId, // Id (:: Id)+
         Op,  // [+\-*\\%<=>&|\^!~@$]+
 
         Dot,       // '.'

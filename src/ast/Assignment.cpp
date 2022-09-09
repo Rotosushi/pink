@@ -3,6 +3,9 @@
 
 #include "kernel/StoreAggregate.h"
 
+#include "support/LLVMValueToString.h"
+#include "support/LLVMTypeToString.h"
+
 namespace pink {
     Assignment::Assignment(Location loc, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
         : Ast(Ast::Kind::Assignment, loc), left(std::move(left)), right(std::move(right))
@@ -57,7 +60,11 @@ namespace pink {
     	// make sure the left and right hand sides are the same type
     	if (lhs_type.GetOne() != rhs_type.GetOne())
     	{
-    		Error error(Error::Code::AssigneeTypeMismatch, loc);
+        std::string errmsg = std::string("storage type: ")
+                           + lhs_type.GetOne()->ToString()
+                           + ", value type: "
+                           + rhs_type.GetOne()->ToString();
+    		Error error(Error::Code::AssigneeTypeMismatch, loc, errmsg);
     		return Outcome<Type*, Error>(error);
     	}
     	else 
@@ -108,8 +115,12 @@ namespace pink {
     		
     	// make sure the left and right hand sides are the same type
     	if (lhs_type.GetOne() != rhs_type.GetOne())
-    	{
-    		Error error(Error::Code::AssigneeTypeMismatch, loc);
+    	{ 
+        std::string errmsg = std::string("storage type: ")
+                           + LLVMTypeToString(lhs_type.GetOne())
+                           + ", value type: "
+                           + LLVMTypeToString(rhs_type.GetOne());
+    		Error error(Error::Code::AssigneeTypeMismatch, loc, errmsg);
     		return Outcome<llvm::Value*, Error>(error);
     	}
     	else 
@@ -197,7 +208,9 @@ namespace pink {
     		}
     		else 
     		{
-				  Error error(Error::Code::ValueCannotBeAssigned, loc);
+          std::string errmsg = std::string("value is: ")
+                             + LLVMValueToString(lhs_value.GetOne());
+				  Error error(Error::Code::ValueCannotBeAssigned, loc, errmsg);
     			return Outcome<llvm::Value*, Error>(error);
     		}
     	}

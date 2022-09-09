@@ -46,7 +46,9 @@ namespace pink {
 
     if (bool_t != test_getype_result.GetOne())
     {
-      return Outcome<Type*, Error>(Error(Error::Code::WhileTestTypeMismatch, test->GetLoc()));
+      std::string errmsg = std::string("conditional has type: ")
+                         + test_getype_result.GetOne()->ToString();
+      return Outcome<Type*, Error>(Error(Error::Code::WhileTestTypeMismatch, test->GetLoc(), errmsg));
     }
 
     Outcome<Type*, Error> body_getype_result = body->Getype(env);
@@ -79,7 +81,8 @@ namespace pink {
     //
     // 5) then, since we are finished emitting the loop,
     //    modify the ir builder to point to the basic block representing the 
-    //    code after the loop
+    //    code after the loop, so that any code generated after 
+    //    emitting this code will appear after the while loop
     //
     //
     Outcome<Type*, Error> test_getype_result = test->Getype(env);
@@ -109,28 +112,37 @@ namespace pink {
     }
 
     // 1) construct all basic blocks
-    llvm::BasicBlock* test_BB = llvm::BasicBlock::Create(*env->context, "test", env->current_function);
-    llvm::BasicBlock* body_BB = llvm::BasicBlock::Create(*env->context, "loop");
+    // NOTE: we do not insert the 'body' or 'after' basic blocks to handle potentially 
+    // recursive loops and conditionals. if we could garuntee no recursive loops
+    // or conditionals then we could safely insert all three basic blocks right here.
+    // However since we can expect recursive conditionals and loops, we have to insert 
+    // the next basic block of this loop -after- the final basic block of the potential
+    // loop or conditional appearing in this while loops body or conditional.
+    // In the case where there is no recursion, this code safely inserts all three basic blocks
+    // one after another, just as would happen if we were to insert all three here.
+    llvm::BasicBlock* test_BB = llvm::BasicBlock::Create(*env->context, "loop_condition", env->current_function);
+    llvm::BasicBlock* body_BB = llvm::BasicBlock::Create(*env->context, "loop_body");
     llvm::BasicBlock* after_BB = llvm::BasicBlock::Create(*env->context, "loop_end");
     
     // 2) emit the fallthrough brach instruction
-    // it is very important to emit a 'fallthrough' branch instruction 
+    // NOTE: it is -required- to emit a 'fallthrough' branch instruction 
     // to connect these two basic blocks. otherwise llvm will not compile 
-    // the code!
+    // the code! because it does not assume adjacency within the list of 
+    // basic blocks to imply adjacency of the code within those basic blocks.
     env->builder->CreateBr(test_BB);
 
     // 3) set up the ir builder to emit instructions into the test basic block
     env->builder->SetInsertPoint(test_BB); 
-    env->current_function->getBasicBlockList().push_back(test_BB);
-    // 4) emit the test code
+
+    // 4) emit the test code into the test basic block
     Outcome<llvm::Value*, Error> test_codegen_result = test->Codegen(env);
 
     if (!test_codegen_result)
       return test_codegen_result;
-    // 5) emit the conditional branch instruction
+    // 5) emit the conditional branch instruction into the test basic block
     env->builder->CreateCondBr(test_codegen_result.GetOne(), body_BB, after_BB);
 
-    // 6) set up for emitting the body code
+    // 6) set up for emitting the body code into the body basic block
     env->builder->SetInsertPoint(body_BB);
     env->current_function->getBasicBlockList().push_back(body_BB);
     // 7) emit the body code
@@ -138,7 +150,9 @@ namespace pink {
 
     if (!body_codegen_result)
       return body_codegen_result;
+
     // 8) emit the uncondition branch back up to the test basic block
+    //    which makes this a loop.
     env->builder->CreateBr(test_BB);
 
     // 9) set up the ir builder to emit code after the while loop
@@ -149,8 +163,9 @@ namespace pink {
     // #NOTE: we could return the result of evaluating the body as the 
     //        result of a while expression, and that would be natural,
     //        except that the case where the loop never runs asks 
-    //        the question of default construction of any value.
-    //        and now, any value that the while loop returns must 
+    //        the question of what to return. to me the obvious answer 
+    //        is the default construction of the value. However that means
+    //        that any value that the while loop returns must 
     //        be default constructable from then on. which may
     //        or may not be weird for users.
     return Outcome<llvm::Value*, Error>(env->builder->getFalse()); 
