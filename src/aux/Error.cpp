@@ -33,6 +33,7 @@ namespace pink {
         return ToString(t);
     }
 
+    
     std::string Error::ToString(std::string& errtxt)
     {
         std::string result;

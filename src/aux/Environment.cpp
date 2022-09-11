@@ -136,12 +136,46 @@ namespace pink {
         FatalError(error.data(), __FILE__, __LINE__);
       }
 
-      std::string cpu = "x86-64"; // it looks like we can also find this out via 
-                                  // llvm::sys::getHostCPUName()
+      // get the native CPU name.
+      std::string cpu = llvm::sys::getHostCPUName().str(); 
       
-      std::string cpu_features = ""; // #TODO: find out the cpu features programmatically.
-                                     // UPDATE: it looks like this can be accomplished via
-                                     // llvm::sys::getHostCPUFeatures(llvm::StringMap<bool, MallocAllocator>& features)
+      // get the native CPU features.
+      std::string cpu_features;
+      llvm::StringMap<bool> features;
+
+      if (llvm::sys::getHostCPUFeatures(features))
+      {
+        llvm::StringMap<bool>::iterator i = features.begin();
+        llvm::StringMap<bool>::iterator e = features.end();
+        unsigned numElems = features.getNumItems();
+        unsigned j = 0;        
+
+        while (i != e)
+        {
+          // the StringMap<bool> maps strings (keys) to values (bools)
+          // where the bool is true if the feature is available on the target
+          // and the bool is false if the feature is unavailable on the target.
+          // each feature available (and specified within the feature string)
+          // must be prefixed with '+', and similarly unavailable features must
+          // be prefixed with '-'
+          if ((*i).getValue())
+          {
+            cpu_features += std::string("+") + (*i).getKeyData();   
+          }
+          else
+          {
+            cpu_features += std::string("-") + (*i).getKeyData();
+          }
+          
+          if (j < (numElems - 1))
+          {
+            cpu_features += ",";
+          }
+  
+          i++;
+          j++;
+        }
+      }
       
       llvm::TargetOptions target_options; // #TODO: this works fine as default, but seems like a
                                           // useful structure for
