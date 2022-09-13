@@ -153,14 +153,16 @@ bool TestBasics(std::ostream& out)
 // additionally, if we ever make a change in main, we don't have to 
 // make the corresponding change here to reflect the difference,
 // making development and upkeep easier. 
-
+  
   bool result = true;
   out << "\n----------------------------------\n";
   out << "Testing pink basic core functionality: \n";
 
+  int numIter = 1;
+
   srand(time(0));
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num = rand() % 100; // random number between 0 and 100
     std::string numstr = std::to_string(num);
@@ -174,7 +176,7 @@ bool TestBasics(std::ostream& out)
     );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100;
     std::string num1str = std::to_string(num1);
@@ -189,7 +191,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100;
     std::string num1str = std::to_string(num1);
@@ -204,7 +206,7 @@ bool TestBasics(std::ostream& out)
         );
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100;
     std::string num1str = std::to_string(num1);
@@ -219,7 +221,7 @@ bool TestBasics(std::ostream& out)
         );
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100;
     std::string num1str = std::to_string(num1);
@@ -234,7 +236,7 @@ bool TestBasics(std::ostream& out)
         );
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
     std::string num1str = std::to_string(num1);
@@ -251,7 +253,7 @@ bool TestBasics(std::ostream& out)
     );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50;
     int res  = num1 + num1;
@@ -267,7 +269,7 @@ bool TestBasics(std::ostream& out)
         );
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 11, num2 = rand() % 11; // x, y | x * y <= 100
     std::string num1str = std::to_string(num1);
@@ -284,7 +286,7 @@ bool TestBasics(std::ostream& out)
     );
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = (rand() % 99) + 1; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -301,7 +303,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -318,7 +320,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -335,7 +337,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -352,7 +354,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -369,7 +371,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -386,7 +388,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -403,7 +405,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
     std::string num1str = std::to_string(num1);
@@ -420,7 +422,7 @@ bool TestBasics(std::ostream& out)
         );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     bool b1 = rand() % 2, b2 = rand() % 2;
     std::string b1str = b1 == 0 ? "false" : "true";
@@ -437,7 +439,7 @@ bool TestBasics(std::ostream& out)
         ); 
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     bool b1 = rand() % 2, b2 = rand() % 2;
     std::string b1str = b1 == 0 ? "false" : "true";
@@ -454,7 +456,7 @@ bool TestBasics(std::ostream& out)
         ); 
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     bool b1 = rand() % 2, b2 = rand() % 2;
 
@@ -472,7 +474,7 @@ bool TestBasics(std::ostream& out)
         ); 
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
     std::string num1str = std::to_string(num1);
@@ -488,7 +490,7 @@ bool TestBasics(std::ostream& out)
     );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
     std::string num1str = std::to_string(num1);
@@ -509,7 +511,7 @@ bool TestBasics(std::ostream& out)
     );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 2, num2 = rand() % 2; // x, y | x + y <= 100
     std::string num1str = num1 == 0 ? "false" : "true"; 
@@ -530,7 +532,7 @@ bool TestBasics(std::ostream& out)
     );
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int array[5] = {rand() % 50, rand() % 50, rand() % 50, rand() % 50, rand() % 50};
     int idx1 = rand() % 5, idx2 = rand() % 5;
@@ -556,7 +558,7 @@ bool TestBasics(std::ostream& out)
 
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50;
     int idx1 = rand() % 5, idx2 = rand() % 5;
@@ -588,7 +590,7 @@ bool TestBasics(std::ostream& out)
 
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int array[] = {rand() % 100, rand() % 100, rand() % 100, rand() % 100, rand() % 100};
     int idx = rand() % 5, res = array[idx];
@@ -613,7 +615,7 @@ bool TestBasics(std::ostream& out)
                    TestFile(teststr, res));
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int array[] = {rand() % 100, rand() % 100, rand() % 100, rand() % 100, rand() % 100};
     int idx = rand() % 5, res = rand() % 100;
@@ -639,7 +641,7 @@ bool TestBasics(std::ostream& out)
                    TestFile(teststr, res));
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int array[3][2] = {{rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}};
     int idx1 = rand() % 3, idx2 = rand() % 2, res = array[idx1][idx2];
@@ -667,7 +669,7 @@ bool TestBasics(std::ostream& out)
                    TestFile(teststr, res));
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int array[3][2] = {{rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}, {rand() % 100, rand() % 100}};
     int idx1 = rand() % 3, idx2 = rand() % 2, idx3 = rand() % 3, idx4 = rand() % 2;
@@ -698,7 +700,7 @@ bool TestBasics(std::ostream& out)
                    TestFile(teststr, res));
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50;
     int cmp1 = rand() % 2,  cmp2 = rand() % 2;
@@ -720,7 +722,7 @@ bool TestBasics(std::ostream& out)
 
   }
 
-  for (int z = 0; z < 10; z++)
+  for (int z = 0; z < numIter; z++)
   {
     int e = rand() % 50, f = rand() % 50, i = rand() % 50, j = rand() % 50;
     int a = rand() % 2,  b = rand() % 2,  c = rand() % 2,  d = rand() % 2,  g = rand() % 2,  h = rand() % 2;
@@ -790,7 +792,7 @@ bool TestBasics(std::ostream& out)
 
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50;
     int res = 50 - num1;
@@ -804,7 +806,7 @@ bool TestBasics(std::ostream& out)
   }
 
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
     std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
@@ -819,7 +821,7 @@ bool TestBasics(std::ostream& out)
       ); 
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
     std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
@@ -834,7 +836,7 @@ bool TestBasics(std::ostream& out)
       ); 
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50;
     std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
@@ -853,7 +855,7 @@ bool TestBasics(std::ostream& out)
       );
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 11, num2 = rand() % 11; // x, y | x * y <= 100
     std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
@@ -868,7 +870,7 @@ bool TestBasics(std::ostream& out)
       ); 
   }
 
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = (rand() % 99) + 1; // x, y | x * y <= 100
     std::string num1str = std::to_string(num1), num2str = std::to_string(num2);
@@ -883,7 +885,7 @@ bool TestBasics(std::ostream& out)
       ); 
   }
   
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 100, num2 = rand() % 100; // x, y | x * y <= 100
     std::string num1str = std::to_string(num1), num2str = std::to_string(num2);

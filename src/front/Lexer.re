@@ -1,15 +1,16 @@
+#include <iterator> // std::distance
 
 #include "front/Lexer.h"
 
 namespace pink {
     Lexer::Lexer()
-        : loc(), buffer()
+        : loc(1, 0, 1, 0), buffer()
     {
         end = cursor = marker = token = buffer.end();
     }
 
     Lexer::Lexer(std::string& buf)
-        : loc(), buffer(buf)
+        : loc(1, 0, 1, 0), buffer(buf)
     {
         end = buffer.end();
         cursor = marker = token = buffer.begin();
@@ -25,6 +26,22 @@ namespace pink {
         buffer = buf;
         end = buffer.end();
         cursor = marker = token = buffer.begin();
+    }
+
+    void Lexer::AppendBuf(const char* txt)
+    {
+      // save the relative offsets of each iterator.
+      int cursor_dist = std::distance(buffer.begin(), cursor);
+      int marker_dist = std::distance(buffer.begin(), marker);
+      int token_dist  = std::distance(buffer.begin(), token);
+      
+      buffer += txt; // perform the append operation, which may invalidate the iterators
+      
+      // construct new valid iterators, at their old relative offsets within the new string.
+      end    = buffer.end();
+      cursor = buffer.begin() + cursor_dist;
+      marker = buffer.begin() + marker_dist;
+      token  = buffer.begin() + token_dist;
     }
 
     void Lexer::AppendBuf(std::string& buf)
@@ -52,21 +69,22 @@ namespace pink {
       // old text and the appended new text.
       
       // save the relative offsets of each iterator.
-      int cursor_dist = Distance(buffer, cursor);
-      int marker_dist = Distance(buffer, marker);
-      int token_dist  = Distance(buffer, token);
+      int cursor_dist = std::distance(buffer.begin(), cursor);
+      int marker_dist = std::distance(buffer.begin(), marker);
+      int token_dist  = std::distance(buffer.begin(), token);
       
       buffer += buf; // perform the append operation, which may invalidate the iterators
       
       // construct new valid iterators, at their old relative offsets within the new string.
       end    = buffer.end();
-      cursor = SeekIterator(buffer, cursor_dist);
-      marker = SeekIterator(buffer, marker_dist);
-      token  = SeekIterator(buffer, token_dist);
+      cursor = buffer.begin() + cursor_dist;
+      marker = buffer.begin() + marker_dist;
+      token  = buffer.begin() + token_dist;
     }
 
     void Lexer::Reset()
     {
+        loc = {1, 0, 1, 0};
         buffer.clear();
         end = cursor = marker = token = buffer.end();
     }
@@ -105,8 +123,8 @@ namespace pink {
         {
             if (token[i] == '\n')
             {
-                loc.lastLine   += 1;
-                loc.lastColumn += 1;
+                loc.lastLine += 1;
+                loc.lastColumn = loc.firstColumn = 0;
             }
             else
             {
@@ -114,27 +132,6 @@ namespace pink {
             }
         }
     }
-
-    int Lexer::Distance(std::string& buf, std::string::iterator it)
-    {
-      // the iterator points to somewhere in the array of characters,
-      // the beginning of the buffer is somewhere in memory. since the 
-      // data structure is a string, we know that the elements of memory 
-      // between the beginning and it are also members of this string.
-      // since the iterators are also just pointers, and pointers are 
-      // just integers, we can subtract the farther point, it, from the 
-      // closer point, buf.begin(), this results in the distance between the
-      // two iterators. that is the number of characters within the string 
-      // between the beginning and the iterator it.
-      return it - buf.begin();
-    }
-
-    std::string::iterator Lexer::SeekIterator(std::string& buf, int distance)
-    {
-      // return an iterator into the string some distance into the string.
-      return buf.begin() + distance;
-    }
-
 
     /*
         token points to the beginning of the
@@ -236,8 +233,8 @@ namespace pink {
                 int     { UpdateLoc(); return Token::Int; }
                 
                 [ \t\n]+ { UpdateLoc(); continue; } // Whitespace
-                *       { UpdateLoc(); return Token::Error; } // Unknown Token
-                $       { UpdateLoc(); return Token::End; } // End of Input
+                *        { UpdateLoc(); return Token::Error; } // Unknown Token
+                $        { UpdateLoc(); return Token::End; } // End of Input
             */
         }
     }

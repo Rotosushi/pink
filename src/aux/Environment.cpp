@@ -101,10 +101,10 @@ namespace pink {
 
     std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options)
     {
-      return NewGlobalEnv(options, nullptr);
+      return NewGlobalEnv(options, std::cin);
     }
 
-    std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream* instream)
+    std::shared_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream& instream)
     {
       auto flags     = std::make_shared<Flags>();
       auto parser    = std::make_shared<Parser>(instream);

@@ -98,7 +98,6 @@ add_library(libpink STATIC
 		    src/ast/Nil.cpp
 		    src/ast/Unop.cpp
 		    src/ast/Variable.cpp
-		    #src/ast/VarRef.cpp
         src/ast/Application.cpp
         src/ast/Array.cpp
         src/ast/Tuple.cpp
@@ -112,10 +111,12 @@ add_library(libpink STATIC
 		    src/type/BoolType.cpp
 		    src/type/IntType.cpp
 		    src/type/NilType.cpp
+        src/type/VoidType.cpp
 		    src/type/FunctionType.cpp
         src/type/PointerType.cpp
         src/type/ArrayType.cpp
         src/type/TupleType.cpp
+
         
         # the 'aux' directory is for the classes which are necessary or convenient
         # for the functioning of the compiler, which are additionally small enough 

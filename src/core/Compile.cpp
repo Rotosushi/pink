@@ -99,7 +99,13 @@ namespace pink {
       FatalError("Could not open input file " + env->options->input_file, __FILE__, __LINE__);
     }
 
-    env->parser->SetIStream(&infile);
+    // it's wasteful to assign the parser when
+    // we already constructed it, but due to the reference 
+    // that the parser holds to a std::istream we cannot 
+    // modify what the parser is reading from after construction.
+    // so we must reconstruct here to only have the output file open
+    // during compilation.
+    env->parser = std::make_unique<Parser>(infile);
 
     std::vector<std::unique_ptr<pink::Ast>> valid_terms;
    

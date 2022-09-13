@@ -62,7 +62,8 @@ namespace pink {
     	// find the operator present between both sides in the env 
     	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env->binops->Lookup(op);
     	
-    	if (!binop)
+    	if (!binop
+        || binop->second->NumOverloads() == 0)
     	{
         std::string errmsg = std::string("unknown op: ")
                            + op;

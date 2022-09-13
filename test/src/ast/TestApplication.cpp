@@ -20,7 +20,7 @@ bool TestApplication(std::ostream& out)
   std::stringstream ss;
   ss.str("fn add(x: Int, y: Int) { x + y }");
   
-  auto env     = pink::NewGlobalEnv(options, &ss);
+  auto env     = pink::NewGlobalEnv(options, ss);
 
   // we need to define a function and then construct an application term
   // which calls the function.

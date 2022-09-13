@@ -36,8 +36,14 @@
 #include "type/TupleType.h"
 
 namespace pink {
-    Parser::Parser(std::istream* i)
-        : lexer(), tok(Token::End), loc(), txt(), input_stream(i)
+    Parser::Parser()
+      : lexer(), tok(Token::End), loc(1, 0, 1, 0), txt(), input_stream(std::cin)
+    {
+
+    }
+
+    Parser::Parser(std::istream& i)
+      : lexer(), tok(Token::End), loc(1, 0, 1, 0), txt(), input_stream(i)
     {
 
     }
@@ -52,34 +58,37 @@ namespace pink {
       return lexer.GetBuf();
     }
 
-    std::istream* Parser::GetIStream()
+    std::istream& Parser::GetIStream()
     {
       return input_stream;
     }
 
     bool Parser::EndOfInput()
     {
-      bool end = true;
-
-      if (input_stream != nullptr)
-      {
-        end = input_stream->eof();
-      }
-
+      bool end = input_stream.eof();
       return lexer.EndOfInput() && end; 
           
     }
 
-    void Parser::SetIStream(std::istream* i)
+    void Parser::Getline(std::string& buf)
     {
-      input_stream = i;
-      lexer.Reset();
+      char c = '\0';
+      
+      do {
+        c = input_stream.get();
+        
+        if (input_stream.eof()) // don't append the EOF character
+          break;
+
+        buf += c; // appends the character even when it's '\n'
+
+      } while (c != '\n');
     }
 
     void Parser::yyfill()
     {
       std::string t;
-      std::getline(*input_stream, t, '\n');
+      Getline(t);
       lexer.AppendBuf(t);
     }
 
@@ -341,8 +350,7 @@ namespace pink {
     {    
       while (tok == Token::End 
       &&  lexer.EndOfInput() 
-      && (input_stream != nullptr)
-      && (!input_stream->eof()))
+      && (!input_stream.eof()))
       {
         yyfill();
         nexttok();  
@@ -891,9 +899,8 @@ namespace pink {
           return Outcome<std::unique_ptr<Ast>, Error>(Error(Error::Code::MissingRBracket, loc));
         }
 
-        Location array_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn);
         nexttok(); // eat ']'
-        
+        Location array_loc(lhs_loc.firstLine, lhs_loc.firstColumn, loc.firstLine, loc.firstColumn); 
         return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Array>(array_loc, std::move(members)));
       }
     	

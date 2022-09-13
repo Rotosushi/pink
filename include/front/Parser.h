@@ -23,7 +23,7 @@ namespace pink {
         Token         tok;
         Location      loc;
         std::string   txt;
-        std::istream* input_stream;
+        std::istream& input_stream;
 
         void yyfill();
         // primes tok, loc, and txt, with their new values
@@ -44,13 +44,20 @@ namespace pink {
         Outcome<Type*, Error> ParseType(std::shared_ptr<Environment> env);
         Outcome<Type*, Error> ParseBasicType(std::shared_ptr<Environment> env);
     public:
-        Parser(std::istream* input_stream);
+        Parser(); // by default the parser reads input from std::cin
+        Parser(std::istream& input_stream);
         ~Parser();
        
         bool EndOfInput(); 
         const std::string& GetBuf();
-        std::istream* GetIStream();
-        void SetIStream(std::istream* i);
+        std::istream& GetIStream();
+        // acts exactly as std::getline, filling the buffer passed
+        // from the input stream until it encounters the newline char '\n'
+        // except that unlike std::getline it appends the '\n' 
+        // to the buffer. This is to preserve the '\n' for the 
+        // lexer in order for the lexer to correctly count it's
+        // position within the source file.
+        void Getline(std::string& str);
         
         Outcome<std::unique_ptr<Ast>, Error> Parse(std::shared_ptr<Environment> env);
     };

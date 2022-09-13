@@ -216,21 +216,48 @@ namespace pink {
        * 
        */
       pink::FunctionType* p_fn_ty = llvm::cast<pink::FunctionType>(getype_result.GetOne());
-		  
-      Outcome<llvm::Type*, Error> p_fn_ret_ty_result = p_fn_ty->result->Codegen(env);
 
-      if (!p_fn_ret_ty_result)
-        return Outcome<llvm::Value*, Error>(p_fn_ret_ty_result.GetTwo());
+      Outcome<llvm::Type*, Error> p_fn_ret_ty_result(Error(Error::Code::None, Location()));
+      llvm::Type* fn_ret_ty = nullptr;
+      llvm::FunctionType* function_ty = nullptr;
+      llvm::Function* function = nullptr;
 
-      llvm::Type* fn_ret_ty = p_fn_ret_ty_result.GetOne();
+      // main return's void from llvm's perspective, 
+      // because main returns via a syscall.
+      if (strcmp(name, "main") == 0)
+      {
+        pink::FunctionType* main_fn_ty = env->types->GetFunctionType(env->types->GetVoidType(), p_fn_ty->arguments);
+        
+        Outcome<llvm::Type*, Error> main_fn_ty_result = main_fn_ty->Codegen(env);
 
-			llvm::FunctionType* function_ty = llvm::cast<llvm::FunctionType>(ty_codegen_result.GetOne());
+        if (!main_fn_ty_result)
+          return Outcome<llvm::Value*, Error>(main_fn_ty_result.GetTwo());
+
+        function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty_result.GetOne());
+        
+        fn_ret_ty = function_ty->getReturnType();        
+
+        function = llvm::Function::Create(function_ty,
+                                          llvm::Function::ExternalLinkage,
+                                          name,
+                                          *env->module); 
+      }
+      else
+      {		  
+        p_fn_ret_ty_result = p_fn_ty->result->Codegen(env);
+
+        if (!p_fn_ret_ty_result)
+          return Outcome<llvm::Value*, Error>(p_fn_ret_ty_result.GetTwo());
+
+        fn_ret_ty = p_fn_ret_ty_result.GetOne();
+
+			  function_ty = llvm::cast<llvm::FunctionType>(ty_codegen_result.GetOne());
 			
-			llvm::Function* function = llvm::Function::Create(function_ty, 
-															  llvm::Function::ExternalLinkage, 
-															  name, 
-															  *env->module);
-      
+			  function = llvm::Function::Create(function_ty, 
+				  		 									          llvm::Function::ExternalLinkage, 
+					  										          name, 
+						  									          *env->module);
+      }
       /*
        *  okay okay. the function itself holds it's own Attributes, that makes
        *  sense. It also provides a limited API for adding and removing
@@ -633,7 +660,7 @@ namespace pink {
         // so, figure out why this happens and what we can do to 
         // remove this line. this is in fact always dead code,
         // so i am initailly unsure why this is even necessary.
-        local_builder->CreateRet(bodyVal);
+        local_builder->CreateRetVoid();
       }
       else
       {

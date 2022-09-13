@@ -16,8 +16,13 @@ namespace pink {
 
     BinopLiteral::~BinopLiteral()
     {
-        // BinopLiteral Manages the memory for the BinopCodegens held in the table
+
     }
+
+    unsigned BinopLiteral::NumOverloads() const
+    {
+      return overloads.size();
+    }    
 
     std::pair<std::pair<Type*, Type*>, BinopCodegen*> BinopLiteral::Register(Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn)
     {

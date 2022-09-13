@@ -11,6 +11,7 @@ namespace pink {
     public:
         // https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
         enum class Kind {
+            Void,
             Nil,
             Bool,
             Int,

@@ -37,6 +37,8 @@ namespace pink {
         BinopLiteral(Precedence p, Associativity a, Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn, bool isDefault = false);
         ~BinopLiteral();
 
+        unsigned NumOverloads() const;
+
         std::pair<std::pair<Type*, Type*>, BinopCodegen*> Register(Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn);
 
         void Unregister(Type*  left_t, Type* right_t);

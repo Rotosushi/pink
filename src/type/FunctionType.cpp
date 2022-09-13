@@ -163,7 +163,8 @@ namespace pink {
 			}
 			else 
 			{
-        if (res_res.GetOne()->isSingleValueType())
+        llvm::Type* res_ty = res_res.GetOne();
+        if (res_ty->isSingleValueType() || res_ty->isVoidTy())
         {
 				  llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetOne(), /* isVararg */ false);
 				  return Outcome<llvm::Type*, Error>(fn_ty);

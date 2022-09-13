@@ -10,21 +10,17 @@
     the lexed one, and that the lexed string matches the
     input.
 */
-bool TestToken(std::ostream& out, pink::Lexer lex, pink::Token t, pink::Location l, std::string b)
+bool TestForToken(std::ostream& out, pink::Lexer& lex, pink::Token t, pink::Location& l)
 {
     bool result = true;
 
     std::string tokstr = TokenToString(t);
 
-    lex.SetBuf(b);
-
     pink::Token    tok = lex.yylex();
     pink::Location loc = lex.yyloc();
-    std::string    txt = lex.yytxt();
 
     result &= Test(out, std::string("Lexer::yylex(), " + tokstr), tok == t);
     result &= Test(out, std::string("Lexer::yyloc(), " + tokstr), loc == l);
-    result &= Test(out, std::string("Lexer::yytxt(), " + tokstr), txt == b);
 
     return result;
 }
@@ -36,126 +32,159 @@ bool TestLexer(std::ostream& out)
     out << "\n-----------------------\n";
     out << "Testing Pink::Lexer: \n";
 
-    pink::Lexer lex;
+    pink::Location loc;
+    std::string buf = "symbol\n"; // line 1
+    buf += "global::local::symbol\n"; // line 2
+    buf += "+\n"; // line 3
+    buf += "108\n"; // line 4
+    buf += "nil\n"; // line 5
+    buf += "Nil\n"; // line 6
+    buf += "Int\n"; // line 7
+    buf += "true\n"; // line 8
+    buf += "false\n"; // line 9
+    buf += "Bool\n"; // line 10
 
-    std::string str("symbol");
-    pink::Location loc(0, 0, 0, 6);
+    pink::Lexer lex(buf);        
+    
+   
+    // symbol
+    loc = {1, 0, 1, 6};
+    result &= TestForToken(out, lex, pink::Token::Id, loc);
 
-    result &= TestToken(out, lex, pink::Token::Id, loc, str);
+    // global::local::symbol
+    loc = {2, 0, 2, 21};
+    result &= TestForToken(out, lex, pink::Token::FullyQualifiedId, loc); 
+    
+    // +
+    loc = {3, 0, 3, 1};
+    result &= TestForToken(out, lex, pink::Token::Op, loc);
+
+    // 108
+    loc = {4, 0, 4, 3};
+    result &= TestForToken(out, lex, pink::Token::Int, loc);    
+
+     // nil
+    loc = {5, 0, 5, 3};
+    result &= TestForToken(out, lex, pink::Token::Nil, loc);
+
+    // Nil
+    loc = {6, 0, 6, 3};
+    result &= TestForToken(out, lex, pink::Token::NilType, loc);
+
+    // Int
+    loc = {7, 0, 7, 3};
+    result &= TestForToken(out, lex, pink::Token::IntType, loc);
+
+    // true
+    loc = {8, 0, 8, 4};
+    result &= TestForToken(out, lex, pink::Token::True, loc);
+
+    // false
+    loc = {9, 0, 9, 5};
+    result &= TestForToken(out, lex, pink::Token::False, loc);
+
+    // Bool
+    loc = {10, 0, 10, 4};
+    result &= TestForToken(out, lex, pink::Token::BoolType, loc);
+
+    // End
+    loc = {11, 0, 11, 0};
+    result &= TestForToken(out, lex, pink::Token::End, loc);
+
+    lex.AppendBuf("fn\n"); //line 11 
+    lex.AppendBuf("if\n"); //line 12   
+    lex.AppendBuf("then\n"); // line 13
+    lex.AppendBuf("else\n"); // line 14
+    lex.AppendBuf("while\n"); // line 15
+    lex.AppendBuf("do\n"); // line 16
+ 
+    // fn
+    loc = {11, 0, 11, 2};
+    result &= TestForToken(out, lex, pink::Token::Fn, loc);
+
+    // if
+    loc = {12, 0, 12, 2};
+    result &= TestForToken(out, lex, pink::Token::If, loc);
+    
+    // then
+    loc = {13, 0, 13, 4};
+    result &= TestForToken(out, lex, pink::Token::Then, loc);
+
+    // else
+    loc = {14, 0, 14, 4};
+    result &= TestForToken(out, lex, pink::Token::Else, loc);
+
+    // while
+    loc = {15, 0, 15, 5};
+    result &= TestForToken(out, lex, pink::Token::While, loc);
+
+    // do
+    loc = {16, 0, 16, 2};
+    result &= TestForToken(out, lex, pink::Token::Do, loc);
+
+    lex.AppendBuf(".\n");
+    lex.AppendBuf(",\n");
+    lex.AppendBuf(";\n");
+    lex.AppendBuf(":\n");
+    lex.AppendBuf("=\n");
+    lex.AppendBuf(":=\n");
+    lex.AppendBuf("(\n");
+    lex.AppendBuf(")\n");
+    lex.AppendBuf("{\n");
+    lex.AppendBuf("}\n");
+    lex.AppendBuf("[\n");
+    lex.AppendBuf("]\n");
+
+    // .
+    loc = {17, 0, 17, 1};
+    result &= TestForToken(out, lex, pink::Token::Dot, loc);
+
+    // ,
+    loc = {18, 0, 18, 1};
+    result &= TestForToken(out, lex, pink::Token::Comma, loc);
+
+    // ;
+    loc = {19, 0, 19, 1};
+    result &= TestForToken(out, lex, pink::Token::Semicolon, loc);
+
+    // :
+    loc = {20, 0, 20, 1};
+    result &= TestForToken(out, lex, pink::Token::Colon, loc);
+
+    // =
+    loc = {21, 0, 21, 1};
+    result &= TestForToken(out, lex, pink::Token::Equals, loc);
+    
+    // :=
+    loc = {22, 0, 22, 2};
+    result &= TestForToken(out, lex, pink::Token::ColonEq, loc);
+
+    // (
+    loc = {23, 0, 23, 1};
+    result &= TestForToken(out, lex, pink::Token::LParen, loc);
+    
+    // )
+    loc = {24, 0, 24, 1};
+    result &= TestForToken(out, lex, pink::Token::RParen, loc);
+
+    // {
+    loc = {25, 0, 25, 1};
+    result &= TestForToken(out, lex, pink::Token::LBrace, loc);
+
+    // }
+    loc = {26, 0, 26, 1};
+    result &= TestForToken(out, lex, pink::Token::RBrace, loc);
   
-    std::string fullyQualifiedStr("global::local::symbol");
-    int fullyQualifiedLength = std::strlen(fullyQualifiedStr.c_str());
-    pink::Location fullyQualifiedLoc(0, 0, 0, fullyQualifiedLength);
+    // [
+    loc = {27, 0, 27, 1};
+    result &= TestForToken(out, lex, pink::Token::LBracket, loc);
 
-    result &= TestToken(out, lex, pink::Token::FullyQualifiedId, fullyQualifiedLoc, fullyQualifiedStr); 
-
-    str = "+";
-    loc = {0, 0, 0, 1};
-
-    result &= TestToken(out, lex, pink::Token::Op, loc, str);
-
-  	str = ",";
-	
-  	result &= TestToken(out, lex, pink::Token::Comma, loc, str);
-	
-	  str = ";";
-	
-	  result &= TestToken(out, lex, pink::Token::Semicolon, loc, str);
-
-    str = ":";
-
-    result &= TestToken(out, lex, pink::Token::Colon, loc, str);
+    // ]
+    loc = {28, 0, 28, 1};
+    result &= TestForToken(out, lex, pink::Token::RBracket, loc); 
     
-    str = "(";
-    
-    result &= TestToken(out, lex, pink::Token::LParen, loc, str);
-    
-    str = ")";
-    
-    result &= TestToken(out, lex, pink::Token::RParen, loc, str);
-    
-    str = "{";
-    
-    result &= TestToken(out, lex, pink::Token::LBrace, loc, str);
-    
-    str = "}";
-    
-    result &= TestToken(out, lex, pink::Token::RBrace, loc, str);
-
-    str = "=";
-
-    result &= TestToken(out, lex, pink::Token::Equals, loc, str);
-
-    str = "(";
-
-    result &= TestToken(out, lex, pink::Token::LParen, loc, str);
-
-    str = ")";
-
-    result &= TestToken(out, lex, pink::Token::RParen, loc, str);
-
-  	str = ":=";
-    loc = {0, 0, 0, 2};
-    
-    result &= TestToken(out, lex, pink::Token::ColonEq, loc, str);
-	
-
-    // each time the size of the text being lexed changes, so
-    // will the resulting location emitted from the lexer,
-    // so we must modify the test lexer to match.
-    str = "nil";
-    loc = {0, 0, 0, 3};
-
-    result &= TestToken(out, lex, pink::Token::Nil, loc, str);
-
-    str = "Nil";
-
-    result &= TestToken(out, lex, pink::Token::NilType, loc, str);
-
-    str = "108"; // 3 digits means it will have the same location as nil.
-
-    result &= TestToken(out, lex, pink::Token::Int, loc, str);
-
-    str = "Int";
-
-    result &= TestToken(out, lex, pink::Token::IntType, loc, str);
-
-    str = "true";
-    loc = {0, 0, 0, 4};
-
-    result &= TestToken(out, lex, pink::Token::True, loc, str);
-
-    str = "false";
-    loc = {0, 0, 0, 5};
-
-    result &= TestToken(out, lex, pink::Token::False, loc, str);
-
-    str = "Bool";
-    loc = {0, 0, 0, 4};
-
-    result &= TestToken(out, lex, pink::Token::BoolType, loc, str);
-    
-    str = "fn";
-    loc = {0, 0, 0, 2};
-    
-    result &= TestToken(out, lex, pink::Token::Fn, loc, str);
-
-    str = "nil ";
-    
-    lex.SetBuf(str);
-
-    lex.yylex();
-
-    std::string newbuf("42");
-
-    lex.AppendBuf(newbuf);
-
-    result &= Test(out, "Lexer::AppendBuf", lex.yylex() == pink::Token::Int);
-
-
-
     result &= Test(out, "pink::Lexer", result);
 
     out << "\n-----------------------\n";
-    return result;
+    return result;    
 }

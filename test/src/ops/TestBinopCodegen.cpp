@@ -10,7 +10,10 @@
 pink::Outcome<llvm::Value*, pink::Error> test_binop_codegen_fn(llvm::Type* lty, llvm::Value* left, llvm::Type* rty, llvm::Value* right, std::shared_ptr<pink::Environment> env)
 {
     pink::Error err(pink::Error::Code::None, pink::Location());
-    return pink::Outcome<llvm::Value*, pink::Error>(err);
+    if (!lty || !left || !rty || !right || !env) // suppress warnings about unused variables.
+      return pink::Outcome<llvm::Value*, pink::Error>(err);
+    else
+      return pink::Outcome<llvm::Value*, pink::Error>(err);
 }
 
 

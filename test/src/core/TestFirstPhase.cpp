@@ -43,7 +43,7 @@ bool TestFirstPhase(std::ostream& out)
        + std::string("fn global(a: Int, b: Int){(a == b) == x;};\n")
        + std::string("one();\none(1);\ninc(1);\ninc(true);\nadd(1,2);\nadd(1,true);\n"));
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env     = pink::NewGlobalEnv(options, &ss);
+  auto env     = pink::NewGlobalEnv(options, ss);
 
 	/*
 		Parser emits correct Ast for each Ast node kind,
@@ -113,7 +113,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Variable>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::NameNotBoundInScope));
 	
 	
 	
@@ -139,7 +140,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Bind>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::NameAlreadyBoundInScope));
 
     
 	parser_result = env->parser->Parse(env);
@@ -168,7 +170,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Assignment>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::NameNotBoundInScope));
 				   
 				   
 	// test parsing a unop expression which is known, and is provided the correct type
@@ -188,7 +191,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Unop>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 
 	// test parsing a unop expression which is unknown
 	parser_result = env->parser->Parse(env);
@@ -197,7 +201,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Unop>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::UnknownUnop));
 				   
 				   
 	// test parsing a binop expression which is known, and is provided the correct types
@@ -218,7 +223,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 				   
 				   
 	// test parsing a binop expression which is unknown, and is provided the incorrect types
@@ -228,7 +234,8 @@ bool TestFirstPhase(std::ostream& out)
                (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && llvm::isa<pink::Binop>(term)
-            && !(getype_result = term->Getype(env)));
+            && !(getype_result = term->Getype(env))
+            && (getype_result.GetTwo().code == pink::Error::Code::UnknownBinop));
 
   // so, this is an interesting bug right here. because we choose to not even
   // fully parse an unknown binop expression. For what is ostensibly the good 
@@ -284,7 +291,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 				   
 	// test parsing a complex binop expression which is unknown, and is provided the incorrect types
 	parser_result = env->parser->Parse(env);
@@ -293,7 +301,8 @@ bool TestFirstPhase(std::ostream& out)
 	             (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && llvm::isa<pink::Binop>(term)
-            && !(getype_result = term->Getype(env)));
+            && !(getype_result = term->Getype(env))
+            && (getype_result.GetTwo().code == pink::Error::Code::UnknownBinop));
 	
 	// test parsing a mixed-type complex binop expression which is known, and is provided the correct types
 	parser_result = env->parser->Parse(env);
@@ -312,7 +321,8 @@ bool TestFirstPhase(std::ostream& out)
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && !(getype_result = term->Getype(env)));
+				   && !(getype_result = term->Getype(env))
+           && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 				   
 	// test parsing a complex binop expression which is unknown, and is provided the incorrect types
 	parser_result = env->parser->Parse(env);
@@ -321,7 +331,8 @@ bool TestFirstPhase(std::ostream& out)
                (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && llvm::isa<pink::Binop>(term)
-            && !(getype_result = term->Getype(env)));
+            && !(getype_result = term->Getype(env))
+            && (getype_result.GetTwo().code == pink::Error::Code::UnknownBinop));
 		
 	
 	pink::Type* nil_t  = env->types->GetNilType();
@@ -358,7 +369,8 @@ bool TestFirstPhase(std::ostream& out)
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Array>(term)
-             && !(getype_result = term->Getype(env)));
+             && !(getype_result = term->Getype(env))
+             && (getype_result.GetTwo().code == pink::Error::Code::ArrayMemberTypeMismatch));
 
   std::vector<pink::Type*> tuple_5_int_members = {int_t, int_t, int_t, int_t, int_t};
   pink::Type* tuple_5_int_t = env->types->GetTupleType(tuple_5_int_members);
@@ -414,7 +426,8 @@ bool TestFirstPhase(std::ostream& out)
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Dot>(term)
-             && !(getype_result = term->Getype(env)));
+             && !(getype_result = term->Getype(env))
+             && (getype_result.GetTwo().code == pink::Error::Code::DotIndexOutOfRange));
 
   parser_result = env->parser->Parse(env);
 
@@ -431,7 +444,8 @@ bool TestFirstPhase(std::ostream& out)
                  (parser_result)
               && ((term = parser_result.GetOne().get()) != nullptr)
               && llvm::isa<pink::Conditional>(term)
-              && !(getype_result = term->Getype(env)));
+              && !(getype_result = term->Getype(env))
+              && (getype_result.GetTwo().code == pink::Error::Code::CondTestExprTypeMismatch));
 
   parser_result = env->parser->Parse(env);
 
@@ -439,7 +453,8 @@ bool TestFirstPhase(std::ostream& out)
                  (parser_result)
               && ((term = parser_result.GetOne().get()) != nullptr)
               && llvm::isa<pink::Conditional>(term)
-              && !(getype_result = term->Getype(env)));
+              && !(getype_result = term->Getype(env))
+              && (getype_result.GetTwo().code == pink::Error::Code::CondBodyExprTypeMismatch));
 
   parser_result = env->parser->Parse(env);
 
@@ -534,7 +549,8 @@ bool TestFirstPhase(std::ostream& out)
                (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && (llvm::isa<pink::Application>(term))
-            && !(getype_result = term->Getype(env)));
+            && !(getype_result = term->Getype(env))
+            && (getype_result.GetTwo().code == pink::Error::Code::ArgNumMismatch));
 
 
   parser_result = env->parser->Parse(env);
@@ -553,7 +569,8 @@ bool TestFirstPhase(std::ostream& out)
              (parser_result)
           && ((term = parser_result.GetOne().get()) != nullptr)
           && (llvm::isa<pink::Application>(term))
-          && !(getype_result = term->Getype(env)));
+          && !(getype_result = term->Getype(env))
+          && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 
 
   parser_result = env->parser->Parse(env);
@@ -571,7 +588,8 @@ bool TestFirstPhase(std::ostream& out)
              (parser_result)
           && ((term = parser_result.GetOne().get()) != nullptr)
           && (llvm::isa<pink::Application>(term))
-          && !(getype_result = term->Getype(env))); 
+          && !(getype_result = term->Getype(env))
+          && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch)); 
 
 	result &= Test(out, "pink First Phase", result);
 

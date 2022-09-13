@@ -37,6 +37,14 @@ namespace pink {
         return int_type.get();
     }
     
+    VoidType* TypeInterner::GetVoidType()
+    {
+      if (void_type.get() == nullptr)
+        void_type = std::make_unique<VoidType>();
+      
+      return void_type.get();
+    }
+    
     FunctionType* TypeInterner::GetFunctionType(Type* r, std::vector<Type*> a)
     {
     	std::unique_ptr<FunctionType> possibility = std::make_unique<FunctionType>(r, a);
