@@ -77,7 +77,7 @@ bool TestFile(std::string test_contents, int expected_value)
 {
   bool result = true;
 
-  std::string filename = "test_file.p";
+  char filename[] = "test_file.p";
 
   std::fstream outfile;
 
@@ -85,7 +85,7 @@ bool TestFile(std::string test_contents, int expected_value)
 
   if (!outfile.is_open())
   {
-    pink::FatalError("Failed to open file: " + filename, __FILE__, __LINE__);
+    pink::FatalError(std::string("Failed to open file: ") + filename, __FILE__, __LINE__);
   }
 
   outfile << test_contents;
@@ -93,33 +93,29 @@ bool TestFile(std::string test_contents, int expected_value)
   outfile.close();
 
   char pink[] = "./pink";
-  char arg_filename[filename.length() + 1];
-
-  memcpy(arg_filename, filename.c_str(), filename.length());
 
   char * const pink_args[] = {
     pink,
-    arg_filename,
+    filename,
     (char*) nullptr
   };
   
   Run(pink, pink_args);
 
-  std::string exe_name = StripFilenameExtensions(filename) + "";
-  char arg_exe_name[exe_name.length() + 1];
+  char exe_name[] = "test_file";
 
   char* exe_args[] = {
-    arg_exe_name,
+    exe_name,
     (char*) nullptr
   };
 
-  int prog_result = Run(arg_exe_name, exe_args);
+  int prog_result = Run(exe_name, exe_args);
   
-  std::string obj_name = StripFilenameExtensions(filename) + ".o";
+  char obj_name[] = "test_file.o";
 
-  std::remove(obj_name.data());
-  std::remove(filename.data());
-  std::remove(exe_name.data());
+  std::remove(obj_name);
+  std::remove(filename);
+  std::remove(exe_name);
 
   if (prog_result != expected_value)
   {
