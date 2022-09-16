@@ -46,11 +46,15 @@ namespace pink {
    *     a variable directly, we can then lookup the offset of the 
    *     given name, by using a LUT held inside the named structure 
    *     type itself.
+   *  3) we could extend the dot operator to work on arrays as well.
+   *      rather simply, if we can cast the lhs to any pointer type,
+   *      and the rhs to any integer type, then since we can compute
+   *      the type, we can simply emit a pointer arithmetic instruction.
    *
    *  we only have anonymous structure types right now, that is Tuples.
    *  so we only need to support 1.
    *
-   *  to support one we basically need to get the type of the left hand side,
+   *  to support 1 we need to get the type of the left hand side,
    *  and attempt to cast it to a structure type, if we can't that's a type
    *  error. if we can, then we attempt to cast the right hand side to an
    *  integer literal, if we cant, then since we cannot know the offset at
@@ -179,11 +183,12 @@ namespace pink {
 
     llvm::Value* result = nullptr;
     llvm::Value* gep = env.instruction_builder->CreateConstGEP2_32(struct_t, left_value, 0, index->value);
-    
+    llvm::Type* member_type = struct_t->getTypeAtIndex(index->value);
+
     if (!env.flags->WithinAddressOf() 
      && !env.flags->OnTheLHSOfAssignment()
-     && struct_t->getTypeAtIndex(index->value)->isSingleValueType())
-      result = env.instruction_builder->CreateLoad(struct_t->getTypeAtIndex(index->value), gep);
+     && member_type->isSingleValueType())
+      result = env.instruction_builder->CreateLoad(member_type, gep);
     else 
       result = gep;
 

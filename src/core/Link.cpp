@@ -19,6 +19,11 @@ namespace pink {
     llvm::raw_os_ostream std_out(std::cout);
     
     //#TODO find these files in a more dynamic way
+    // #NOTE: even though we do not use these files
+    // in particular it may still be useful to define
+    // a routine which can search the system for the
+    // absolute path of a given file. for dependency 
+    // lookup.
     //std::string crt1 = "/usr/lib/x86_64-linux-gnu/crt1.o";
     //std::string crti = "/usr/lib/x86_64-linux-gnu/crti.o";
     //std::string crtbegin = "/usr/lib/gcc/x86_64-linux-gnu/11/crtbegin.o";
@@ -31,9 +36,9 @@ namespace pink {
         {"ld.lld-14",
          "-m", "elf_x86_64",
          "--entry", "main", // instead of linking to the crt to have the crt 
-                            // define the symbol, _start. I am fairly sure 
-                            // we can simply tell the linker
-                            // that main is the entry point.
+                            // define the symbol, _start. simply tell the 
+                            // linker that 'main' is the entry point.
+                            // 
          //"-dynamic-linker", "lib64/ld-linux-x86-64.so.2",
          //crt1.data(),
          //crti.data(),
@@ -50,7 +55,9 @@ namespace pink {
     
     lld::elf::link(lld_args, std_out, std_err, /* exitEarly */ false, /* disableOutput */ false);
     
-    //std::string command = "ld.lld-14 " + options.input_file + ".o -o " + options.output_file + ".exe";
+    // #NOTE: we may alternatively use std::system instead of 
+    // statically linking against lld. however the static linking
+    // creates a standalone executable, which is nice.
     //int result = std::system(command.data());
 
   }

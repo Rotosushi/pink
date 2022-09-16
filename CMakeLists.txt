@@ -168,6 +168,7 @@ add_library(libpink STATIC
 	src/support/LLVMErrorToString.cpp
 	src/support/LLVMValueToString.cpp
 	src/support/LLVMTypeToString.cpp 
+	src/support/EmitFile.cpp
 )
 			   
 

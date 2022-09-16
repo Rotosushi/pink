@@ -2,9 +2,10 @@
 
 #include "aux/CLIOptions.h"
 #include "aux/Environment.h"
-#include "llvm/Target/TargetMachine.h"
+
 
 /*
+	#NOTE: 9/16/2022
 	Handle the Translation of a file into the specified output format.
 	(we support llvm IR, native assembly (x86-64), and object files)
 
@@ -19,17 +20,22 @@
 		
 		- How do we translate to different output langauges?	
 		
-		- I am sure there are more, but that is what i can see right now.
+		- I am sure there are more
 		
 	What we are going to do is simplify the requirements to cover as much ground as we can,
 	then shore up the graps left later.
 	
 		We now read the file one line at a time, so we could support streaming inputs,
 		but we still buffer everything that we read, and there are no provisions in case
-		we exceed available memory for a given file. (yet)
+		we exceed available memory for a given file. (yet) however one solution would be
+		to buffer all possible input for a given file in the same array, and simply shift
+		the input along as it's read in. this keeps the memory allocated per file constant
+		for each file being processed.
 		
 		The second simplification is that the environment is going to be constructed for native
-		code generation only at first.
+		code generation only at first. so we are only concerned with the native assembly format,
+		the llvm intermidiate representation, and object files. all of which can be handled via
+
 */
 
 namespace pink {

@@ -47,7 +47,7 @@
 	and it would also seem prudent to provide things that control 
 	how llvm is used by the program.
 	
-	--emit-llvm, --optimization-level ..., --use-linker ..., etc..
+	--emit-llvm, --optimization-level ..., --use-linker ..., -Wall (or equivalent) etc..
 	
 	#TODO: add support for multiple input files
 */
@@ -62,23 +62,27 @@ namespace pink {
 			bool emit_assembly;
 			bool emit_object;
 			bool emit_llvm;
-			// bool emit_executable; // this is the default. only one of the emit_* can be set to true during an evaluation of pink.
 			llvm::OptimizationLevel optimization_level;
 			bool link;
-			// std::string lli-options;
 			// std::string linker-name;
 			// etc...
     CLIOptions();    
 
-		CLIOptions(
-        std::string infile, 
-        std::string outfile,
-        bool verbose, 
-        bool emit_assembly, 
-        bool emit_object, 
-        bool emit_llvm,
-        llvm::OptimizationLevel optimization_level,
-        bool link);
+	CLIOptions(
+		std::string infile, 
+		std::string outfile,
+		bool verbose, 
+		bool emit_assembly, 
+		bool emit_object, 
+		bool emit_llvm,
+		llvm::OptimizationLevel optimization_level,
+		bool link
+	);
+
+	std::string GetExeFilename();
+	std::string GetObjFilename();
+	std::string GetAsmFilename();
+	std::string GetLLVMFilename();
 	};
 
   std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv);

@@ -15,7 +15,10 @@ namespace pink {
         with two of the same class then the constructors become ambiguous,
         so the build doesn't compile, but it works for the use-case,
         and it's a comptime error not a runtime one, so that makes it
-        much more bearable.
+        much more bearable. also, if you are in a situation where you
+        want the outcome to be two distinct instances of the same type,
+        can't that already be supported with a single return value of 
+        that same type?
 
     */
     template <class T, class U>

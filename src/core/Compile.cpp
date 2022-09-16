@@ -3,56 +3,16 @@
 #include "core/Compile.h"
 
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <system_error>
+#include <fstream> // std::fstream
 
-#include <stdlib.h> // system
+#include "aux/Error.h" // pink::FatalError
 
-#include "aux/Error.h"
-
-#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Passes/PassBuilder.h" // llvm::PassBuilder
 #include "llvm/Analysis/AliasAnalysis.h" // llvm::AAManager
-#include "llvm/Support/raw_ostream.h" // llvm::raw_fd_stream
-#include "llvm/Support/FileSystem.h"
 
-
-#include "lld/Common/Driver.h" // lld::elf::link
 
 
 namespace pink {
-	
-	// #TODO: Handle the case where there is more input than can fit in memory all at once,
-	//			or we simply do not have all of the input available yet, like over a socket.
-	std::string ReadEntireFile(std::string& input_filename)
-	{
-		std::string temp;
-		std::string result;
-		
-		std::fstream infile(input_filename);
-		
-		if (!infile.is_open())
-		{
-			pink::FatalError("Could not open input file" + input_filename, __FILE__, __LINE__);
-			return std::string("");
-		}
-		
-		while (!infile.eof())
-		{
-			std::getline(infile, temp, '\n');
-			
-			result += temp;
-		}
-		
-		infile.close();
-		
-		return result;
-	}
-	
-
   /*
     
 
@@ -61,10 +21,6 @@ namespace pink {
 	{
 		//std::string  inbuf(ReadEntireFile(env->options->input_file));
 	  std::fstream infile;
-    std::string outfilename = env.options->output_file;
-		std::string objoutfilename      = outfilename + ".o";
-		std::string llvmoutfilename     = outfilename + ".ll";
-		std::string assemblyoutfilename = outfilename + ".s";
 
     infile.open(env.options->input_file);
     
@@ -169,8 +125,12 @@ namespace pink {
 		  }
     }
 
-		// if the optimization level is greater than zero,
-    // optimize the code. 
+    // #NOTE:
+    //    at this point in execution we are done compiling the source
+    //    down to llvm IR.
+    infile.close();
+
+		// if the optimization level is greater than zero, optimize the code. 
     // #TODO: look more into what would be good optimizations to run.
 		if (env.options->optimization_level != llvm::OptimizationLevel::O0)
 		{
@@ -201,110 +161,6 @@ namespace pink {
 			// Run the optimizer agains the IR 
 			MPM.run(*env.module, MAM);
 		}
-		
-		// emit the module to the output file, according to the format specified
-		if (env.options->emit_llvm)
-		{
-			std::error_code outfile_error;
-			llvm::raw_fd_ostream outfile(llvmoutfilename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
-			
-			if (outfile_error)
-			{
-				std::stringstream error_message;
-				
-				error_message << outfile_error;
-				pink::FatalError("Could not open output file [" + outfilename + "] because of an error: " + error_message.str(), __FILE__, __LINE__);
-			}
-			
-			// simply print to the output file the 
-			// code generated, as it is already in llvm IR
-			env.module->print(outfile, nullptr);
-			
-			outfile.close();
-		}
-		
-		if (env.options->emit_assembly)
-		{
-      llvm::SmallVector<char> buf;
-	    llvm::raw_svector_ostream outstream(buf);
-
-			std::error_code outfile_error;
-			llvm::raw_fd_ostream outfile(assemblyoutfilename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
-			
-			if (outfile_error)
-			{
-				std::stringstream error_message;
-				
-				error_message << outfile_error;
-				pink::FatalError("Could not open output file [" + outfilename + "] because of an error: " + error_message.str(), __FILE__, __LINE__);
-			}
-			
-			llvm::legacy::PassManager asmPrintPass;
-      // addPassesToEmitFile(legacy::PassManager pass_manager,
-      //                     llvm::raw_fd_ostream& outfile,
-      //                     llvm::raw_fd_ostream* dwarfOutfile,
-      //                     llvm::CodeGenFileType CodeGenFileType,)
-      //
-      // notice the nullptr will need to be replaced with a pointer to the 
-      // dwarf object output file, once we emit debugging information.
-			if (env.target_machine->addPassesToEmitFile(asmPrintPass, outstream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile))
-			{
-				FatalError("the target_machine " 
-                    + env.target_machine->getTargetTriple().str() 
-                    + " cannot emit an assembly file of this type",
-                   __FILE__,
-                   __LINE__);
-			}
-			
-			asmPrintPass.run(*env.module);
-		
-      
-		  outfile << outstream.str();
-
-      if (outfile.has_error())
-      {
-        std::stringstream errmsg;
-        errmsg << outfile.error();
-        pink::FatalError("The output stream encountered an error: "
-                          + errmsg.str(),
-                          __FILE__,
-                          __LINE__);
-      }  
-      else 
-      {
-       outfile.close(); 
-		  }
-    }
-		
-		if (env.options->emit_object)
-		{	
-			std::error_code outfile_error;
-			llvm::raw_fd_ostream outfile(objoutfilename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
-			
-			if (outfile_error)
-			{
-				std::stringstream error_message;
-				
-				error_message << outfile_error;
-				pink::FatalError("Could not open output file [" + outfilename+ "] because of an error: " + error_message.str(), __FILE__, __LINE__);
-			}
-			
-			llvm::legacy::PassManager objPrintPass;
-			if (env.target_machine->addPassesToEmitFile(objPrintPass, outfile, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile))
-			{
-				FatalError("the target machine " 
-                    + env.target_machine->getTargetTriple().str() 
-                    + " cannot emit an object file of this type",
-				           __FILE__, 
-                   __LINE__);
-			}
-			
-			objPrintPass.run(*env.module);
-			
-			outfile.close();
-		}
-		
 	}
-
 }
 

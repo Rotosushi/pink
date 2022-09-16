@@ -18,13 +18,24 @@
 
 // this function is nearly identical to system(),
 // except it runs the given process directly, 
-// and does not invoke the shell to do it.
+// and does not invoke the shell to do it. 
+// this removes a call to exec, and thus speeds
+// up this code.
 // #PORTABILITY: This function is not portable.
 //    The functions which allow you to spawn new 
 //    processes are not the same accross OS's, and
 //    it is for this reason that this section of 
 //    tests might be better written in a more cross 
-//    platform language like python.
+//    platform language like python. 
+//    alternatively, if a version of this function 
+//    with the same signature can be defined for 
+//    more than one operating system, then we could
+//    have both versions here in the source file 
+//    simply choose one or the other
+//    #if defined(__OS__)
+//    ...
+//    #endif
+//    with preprocessor guards.
 int Run(const char* file, char* const* argv)
 {
   int result = 0;
@@ -71,7 +82,7 @@ std::string StripFilenameExtensions(std::string filename)
  *  1: emit the test_contents into a file
  *  2: compile that file into an executable
  *  3: run that executable and check the exit code matches expected_value.
- *
+ *      return true when the code matches, false otherwise.
  */
 bool TestFile(std::string test_contents, int expected_value)
 {
@@ -128,14 +139,29 @@ bool TestFile(std::string test_contents, int expected_value)
 
 /*
  *  TestBasic tests that the compiler can emit a correct program,
- *    given the input file. The file is not the most complex
- *    and only really tests that the main subroutine can be converted 
- *    into something that the OS can run, and returns a known value.
- *
- *  
- *
- *
- *
+ *    given the input file. this revolves around generating 
+ *    random numbers for the contents of any given input file,
+ *    so we can be sure to generate test code which we are not
+ *    specifically conforming to.
+ * 
+ *   #TODO: 9/15/2022
+ *    there is a weakness here in that we are not explicitly
+ *    testing all known edge cases, I acknowledge this, and
+ *    am explicitly avoiding writing those tests
+ *    simply to keep the total number of tests smaller and more managable 
+ *    during development, in case the language undergoes any 
+ *    significant changes in the near future. However, once 
+ *    things are nailed down to a certain extent, (syntax
+ *    semantics) say, version 1. then I would feel more comfortable
+ *    writing a test for all known, desired, reproducable behavior of
+ *    the compiler. (or at least attempting for each behavior)
+ * 
+ *  #TODO: 9/15/2022 
+ *    This function is reaching 1000 lines. it may be too big.
+ *    We could refactor this routine into more than one testing 
+ *    routine, for granularity of errors, and for readability of
+ *    this file in particular. (all these tests are good so far.)
+ * 
  */
 bool TestBasics(std::ostream& out)
 {
@@ -163,7 +189,7 @@ bool TestBasics(std::ostream& out)
 
   for (int i = 0; i < numIter; i++)
   {
-    int num = rand() % 100; // random number between 0 and 100
+    int num = rand() % 100;
     std::string numstr = std::to_string(num);
     result &= Test(
         out, 
@@ -800,7 +826,7 @@ bool TestBasics(std::ostream& out)
     std::string teststr = std::string("fn main() { a := ")
                         + num1str + "; b := 0; while a < 50 do { a = a + 1; b = b + 1; }; b;};";
     result &= Test(out, 
-                  "While loop: a := " + num1str + " while a < 50 do { a = a + 1; b = b + 1; };, b = " + resstr,
+                  "While loop: a := " + num1str + " while a < 50 do { a = a + 1; b = b + 1; }, b == " + resstr,
                   TestFile(teststr, res)); 
   }
 

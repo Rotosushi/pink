@@ -79,7 +79,7 @@ namespace pink {
 
   std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv)
 	{
-    unsigned numopt = 0; // count of how many options we parsed
+    	unsigned numopt = 0; // count of how many options we parsed
 		const char* short_options = "hvi:o:O:lcs";
 		
 		std::string input_file;
@@ -102,9 +102,9 @@ namespace pink {
 			{"outfile",    required_argument, nullptr, 'o'},
 			{"output",     required_argument, nullptr, 'o'},
 			{"optimize",   required_argument, nullptr, 'O'},
-			{"emit-llvm",      no_argument, nullptr, 'l'},
-      {"emit-asm",       no_argument, nullptr, 's'},
-			{"emit-obj",   no_argument,     nullptr, 'c'},
+			{"emit-llvm",  no_argument,       nullptr, 'l'},
+      		{"emit-asm",   no_argument,       nullptr, 's'},
+			{"emit-obj",   no_argument,       nullptr, 'c'},
 			{0,         0,           0,       0}
 		};
 		
@@ -118,8 +118,8 @@ namespace pink {
 			if (option == -1)
 				break; // end of options.
 			
-      // we are about to handle an option, so up the count by one
-      numopt += 1;
+      		// we are about to handle an option, so up the count by one
+      		numopt += 1;
 
 			switch(option)
 			{
@@ -158,25 +158,29 @@ namespace pink {
 				case 'l':
 				{
 					emit_llvm = true;
-				  emit_obj  = false;
-          link      = false;
-          break;
+					emit_obj  = false;
+					emit_asm  = false;
+          			link      = false;
+          			break;
 				}
 				
 				case 'c':
 				{
-					emit_obj = true;
-          link = false;
+					emit_obj  = true;
+					emit_llvm = false;
+					emit_asm  = false;
+          			link 	  = false;
 					break;
 				}
 
-        case 's':
-        {
-          emit_asm = true;
-          emit_obj = false;
-          link = false;
-          break;
-        }				
+				case 's':
+				{
+					emit_asm  = true;
+					emit_obj  = false;
+					emit_llvm = false;
+					link 	  = false;
+					break;
+				}				
 				
 				case 'O':
 				{
@@ -239,53 +243,64 @@ namespace pink {
 				}
 			}
 		}
-	
+
+		// #NOTE: 9/16/2022
+		// if the input file is still empty after parsing
+		// all available options, then we assume there is at 
+		// least one more option, which is the input file.
+		// (except for handling multiple source files this 
+		//  is the default behavior of many compilers,
+		//  this check allows the program to be called like:
+		//  ->	pink input_file.p 
+		//  and the default behavior is to emit an executable
+		//  named:
+		//  -> input_file 
+		//  )
 		if (input_file == "")
 		{
-      // optind now the index of the first 
-      // argv element that is not an option.
-      // and is not the name of the program being called
-      if (optind >= argc || (optind + 1 + numopt) >= static_cast<size_t>(argc))
-      {
-        FatalError("input file is required", __FILE__, __LINE__);
-      }
+			// optind is now the index of the first 
+			// argv element that is not an option.
+			// and is not the name of the program being called
+			if (optind >= argc || (optind + 1 + numopt) >= static_cast<size_t>(argc))
+			{
+				FatalError("input file is required", __FILE__, __LINE__);
+			}
 
-      // getopt's manual states that the procedure permutes argv
-      // as it parses the arguments, that is true, it also says 
-      // that when it is done parsing it will return -1 and the 
-      // optind will be set to the first argument that is not an 
-      // option within argv. This is also true. However, the first 
-      // argument within argv that is not an option is the first 
-      // argument within argv, the name of the program being run 
-      // itself. Which means to get to the names of the files to be 
-      // compiled, which are being given on the command line, we have 
-      // to traverse to the other end of argv, to the other side of
-      // all of the options that getopt parsed. This is why we add 
-      // optind to numopt. however, we also need to account for one 
-      // more option, the first one
-      char * option = argv[optind + numopt + 1];
-      if (option != nullptr)
-      {
-        input_file = option; // assume that option is the name of an input file.
-                             // this is okay, because this is the intended
-                             // command line usage of this program.
-        // #TODO: input_file needs to be a std::vector<std::string> and we 
-        // need to collect multiple input files together into a single output 
-        // program. However, that is a few steps ahead of where we are right at 
-        // the moment. 
-      }
-      else
-      {
-			  FatalError("input file is required", __FILE__, __LINE__);
-		    exit(0);
-      }
+			// getopt's manual states that the procedure permutes argv
+			// as it parses the arguments, that is true, it also says 
+			// that when it is done parsing it will return -1 and the 
+			// optind will be set to the first argument that is not an 
+			// option within argv. This is also true. However, the first 
+			// argument within argv that is not an option is the first 
+			// argument within argv, the name of the program being run 
+			// itself. Which means to get to the names of the files to be 
+			// compiled, which are being given on the command line, we have 
+			// to traverse to the other end of argv, to the other side of
+			// all of the options that getopt parsed. This is why we add 
+			// optind to numopt. however, we also need to account for one 
+			// more option, the first one
+			char * option = argv[optind + numopt + 1];
+			if (option != nullptr)
+			{
+				input_file = option; // assume that option is the name of an input file.
+									// this is okay, because this is the intended
+									// command line usage of this program.
+				// #TODO: input_file needs to be a std::vector<std::string> and we 
+				// need to collect multiple input files together into a single output 
+				// program. However, that is a few steps ahead of where we are right at 
+				// the moment. 
+			}
+			else
+			{
+				FatalError("input file is required", __FILE__, __LINE__);
+			}
 		}
 		
 		// give a default name to the output file.
 		if (output_file == "")
 		{
-      // given a filename like "/my/favorite/directory/my_file.p"
-      // output_file should equal "/my/favorite/directory/my_file"
+			// given a filename like "/my/favorite/directory/my_file.p"
+			// output_file should equal "/my/favorite/directory/my_file"
 			output_file = RemoveTrailingExtensions(input_file);
 		}
 	
@@ -301,4 +316,23 @@ namespace pink {
         );
 	}
 
+	std::string CLIOptions::GetExeFilename()
+	{
+		return output_file;
+	}
+
+	std::string CLIOptions::GetObjFilename()
+	{
+		return output_file + ".o";
+	}
+
+	std::string CLIOptions::GetAsmFilename()
+	{
+		return output_file + ".s";
+	}
+
+	std::string CLIOptions::GetLLVMFilename()
+	{
+		return output_file + ".ll";
+	}
 }
