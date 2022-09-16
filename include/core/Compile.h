@@ -5,9 +5,9 @@
 #include "llvm/Target/TargetMachine.h"
 
 /*
-	Handle the Translation of a file into an output format.
-	(right now that just means llvm assembly)
-	
+	Handle the Translation of a file into the specified output format.
+	(we support llvm IR, native assembly (x86-64), and object files)
+
 	There are quite a few considerations here:
 		- What if the file is too big to fit into memory all at once?
 			- Such as a really big source file, or socket transmission of a file, of the like.
@@ -24,8 +24,9 @@
 	What we are going to do is simplify the requirements to cover as much ground as we can,
 	then shore up the graps left later.
 	
-		The first simplification is that we will simply buffer the entire input file in one go,
-		the start the process of translation. If the file is too big, that will be an error, for now.
+		We now read the file one line at a time, so we could support streaming inputs,
+		but we still buffer everything that we read, and there are no provisions in case
+		we exceed available memory for a given file. (yet)
 		
 		The second simplification is that the environment is going to be constructed for native
 		code generation only at first.

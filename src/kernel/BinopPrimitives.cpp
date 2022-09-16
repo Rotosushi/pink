@@ -193,7 +193,7 @@ namespace pink
       return Outcome<llvm::Value*, Error>(gep);
     }
 
-    void InitializeBinopPrimitives(const Environment env)
+    void InitializeBinopPrimitives(const Environment& env)
     {
         /*
             precedence table:

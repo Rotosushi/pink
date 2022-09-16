@@ -7,7 +7,7 @@
    * So there are a few points of confusion for pointers.
    *
    * 1) what is a pointer in LLVM?
-   *  -) that is actually easy to answer, a pointer in LLVM is just like a 
+   *  -) that is actually easy to answer, a pointer in LLVM is like a 
    *      pointer in C. and, in fact we are already using them within the 
    *      language within the Variable, and VarRef structures. That is 
    *      because CreateAlloca, and CreateGlobal return pointers to the 

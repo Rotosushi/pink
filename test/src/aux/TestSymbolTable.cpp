@@ -48,7 +48,7 @@ bool TestSymbolTable(std::ostream& out)
     result &= Test(out, "SymbolTable::OuterScope(), inner scope", t1.OuterScope() == env->bindings.get());
 
     pink::Location l(0, 5, 0, 7);
-    llvm::Value* nil = env->builder->getFalse();
+    llvm::Value* nil = env->instruction_builder->getFalse();
     pink::Type*  nil_t = env->types->GetNilType();
     pink::InternedString x = env->symbols->Intern("x");
 

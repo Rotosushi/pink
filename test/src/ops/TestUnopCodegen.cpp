@@ -6,14 +6,20 @@
 
 #include "type/IntType.h"
 
+#include "support/DisableWarning.h"
+
+// NOTE: 9/15/2022
+// This function is a stub which is only defined for the sake of the 
+// test within this file, and is not expected to have -any- functionality.
+// as such we do not use all of the parameters. since this is expected,
+// we are choosing to disable this specific warning just for the function.
+NOWARN(-Wunused-parameter, 
 pink::Outcome<llvm::Value*, pink::Error> test_codegen_fn(llvm::Value* term, const pink::Environment& env)
 {
     pink::Error err(pink::Error::Code::None, pink::Location());
-    if (!term)
-      return pink::Outcome<llvm::Value*, pink::Error>(err);
-    else 
-      return pink::Outcome<llvm::Value*, pink::Error>(err);
+    return pink::Outcome<llvm::Value*, pink::Error>(err);
 }
+)
 
 bool TestUnopCodegen(std::ostream& out)
 {

@@ -3,6 +3,8 @@
 
 #include "ops/UnopTable.h"
 
+#include "support/DisableWarning.h"
+
 namespace pink {
     Outcome<llvm::Value*, Error> UnopIntNegate(llvm::Value* term, const Environment& env)
     {
@@ -37,41 +39,18 @@ namespace pink {
       such that the code compiles with zero warnings. 
 
     */
-    #if defined(__clang__)
-    #pragma clang diagnostic push
-    #endif
-
-    #if defined(__GNUC__)
-    #pragma GCC diagnostic push
-    #endif
-
-    #if defined(__clang__)
-    #pragma clang diagnostic ignored "-Wunused-parameter"
-    #endif
-
-    #if defined(__GNUC__)
-    #pragma GCC diagnostic ignored "-Wunused-parameter"
-    #endif
-
-        
+    
+    NOWARN(-Wunused-parameter,
     Outcome<llvm::Value*, Error> UnopAddressOfValue(llvm::Value* term, const Environment& env)
     {
       return Outcome<llvm::Value*, Error>(term);
     }
-
+   
     Outcome<llvm::Value*, Error> UnopValueOfAddress(llvm::Value* term, const Environment& env)
     {
       return Outcome<llvm::Value*, Error>(term);
     }
-    
-    #if defined(__clang__)
-    #pragma clang diagnostic pop
-    #endif
-
-    #if defined(__GNUC__)
-    #pragma GCC diagnostic pop
-    #endif
-
+    )
 
 
     void InitializeUnopPrimitives(const Environment& env)

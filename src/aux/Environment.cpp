@@ -187,9 +187,12 @@ namespace pink {
         }
       }
       
-      llvm::TargetOptions target_options; // #TODO: this works fine as default, but seems like a
-                                          // useful structure for
-                                          // optimization/profiling
+      llvm::TargetOptions target_options; // #TODO: this works fine default constructed, but 
+                                          // reading the docs, and the class definition, this
+                                          // structure seems like it is used for
+                                          // optimization/profiling and specifying extra rules 
+                                          // for compilation, like what floating point rules to
+                                          // use, and such.
       // #TODO: position independant code is a fine default,
       // however we should allow the user to change this via the command line
       llvm::Reloc::Model code_relocation_model = llvm::Reloc::Model::PIC_;

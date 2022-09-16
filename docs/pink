@@ -1,6 +1,6 @@
 
 I now know enough about my own language design choices to fully realize that 
-zig is improving on C in every way that I could think of, and more.
+zig/rust/carbon is improving on C in every way that I could think of, and more.
 
 This still doesn't answer my question, which is why can't C have functions as values?
 Answering this question has been my main driving force behind writing this language.

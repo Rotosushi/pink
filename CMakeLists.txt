@@ -90,85 +90,85 @@ configure_file(include/PinkConfig.h.in ../include/PinkConfig.h)
 
 
 add_library(libpink STATIC
-        # the 'ast' directory is for all the classes which together 
-        # comprise the representation of abstract syntax trees within
-        # our compiler.
-		src/ast/Assignment.cpp
-		src/ast/Ast.cpp
-		src/ast/Bind.cpp
-		src/ast/Binop.cpp
-		src/ast/Block.cpp
-		src/ast/Function.cpp
-		src/ast/Bool.cpp
-		src/ast/Int.cpp
-		src/ast/Nil.cpp
-		src/ast/Unop.cpp
-		src/ast/Variable.cpp
-        src/ast/Application.cpp
-        src/ast/Array.cpp
-        src/ast/Tuple.cpp
-        src/ast/Conditional.cpp
-        src/ast/While.cpp
-        src/ast/Dot.cpp
-        
-        # the 'type' directory is for all of the classes which together 
-        # comprise the representation of types within our compiler.
-        src/type/Type.cpp
-		src/type/BoolType.cpp
-		src/type/IntType.cpp
-		src/type/NilType.cpp
-        src/type/VoidType.cpp
-		src/type/FunctionType.cpp
-        src/type/PointerType.cpp
-        src/type/ArrayType.cpp
-        src/type/TupleType.cpp
+	# the 'ast' directory is for all the classes which together 
+	# comprise the representation of abstract syntax trees within
+	# our compiler.
+	src/ast/Assignment.cpp
+	src/ast/Ast.cpp
+	src/ast/Bind.cpp
+	src/ast/Binop.cpp
+	src/ast/Block.cpp
+	src/ast/Function.cpp
+	src/ast/Bool.cpp
+	src/ast/Int.cpp
+	src/ast/Nil.cpp
+	src/ast/Unop.cpp
+	src/ast/Variable.cpp
+	src/ast/Application.cpp
+	src/ast/Array.cpp
+	src/ast/Tuple.cpp
+	src/ast/Conditional.cpp
+	src/ast/While.cpp
+	src/ast/Dot.cpp
 
-        
-        # the 'aux' directory is for the classes which are necessary or convenient
-        # for the functioning of the compiler, which are additionally small enough 
-        # to fit within a single source file.
-        src/aux/CLIOptions.cpp
-		    src/aux/Environment.cpp
-		    src/aux/Error.cpp
-		    src/aux/Location.cpp
-		    src/aux/Outcome.cpp
-		    src/aux/StringInterner.cpp
-		    src/aux/SymbolTable.cpp
-		    src/aux/TypeInterner.cpp
-        src/aux/Flags.cpp
-        
-        # the 'ops' directory is for the classes which comprise the semantics
-        # of binary and unary operators within the language. (minus the specialized 
-        # operators like assignment '=', pointer indirection '*', and address of '&')
-        # (aside: all operator classes were once in 'aux' however that clutters up 
-        # 'aux' so any semantics which require multiple classes working in concert 
-        # to acheive a single purpose will be placed in their own directory)
-        src/ops/BinopCodegen.cpp
-		    src/ops/BinopLiteral.cpp
-		    src/ops/BinopTable.cpp
-		    src/ops/UnopCodegen.cpp
-		    src/ops/UnopLiteral.cpp
-		    src/ops/UnopTable.cpp
-        
-        # the 'front' directory is for the classes which comprise the frontend
-        # of the compiler itself.
-        src/front/Lexer.cpp 
-		    src/front/Token.cpp
-		    src/front/Parser.cpp
-		    
-        # the 'kernel' directory is for files which implement functionality 
-        # within the compiler which is made directly available to the programmer.
-        src/kernel/BinopPrimitives.cpp
-		    src/kernel/UnopPrimitives.cpp
-        src/kernel/Cast.cpp
-        src/kernel/StoreAggregate.cpp
-        
-        # the 'support' directory is for files which define necessary or convenient 
-        # subroutines, which are too small to justify their own class.
-        src/support/LLVMErrorToString.cpp
-        src/support/LLVMValueToString.cpp
-        src/support/LLVMTypeToString.cpp 
-		   )
+	# the 'type' directory is for all of the classes which together 
+	# comprise the representation of types within our compiler.
+	src/type/Type.cpp
+	src/type/BoolType.cpp
+	src/type/IntType.cpp
+	src/type/NilType.cpp
+	src/type/VoidType.cpp
+	src/type/FunctionType.cpp
+	src/type/PointerType.cpp
+	src/type/ArrayType.cpp
+	src/type/TupleType.cpp
+
+
+	# the 'aux' directory is for the classes which are necessary or convenient
+	# for the functioning of the compiler, which are additionally small enough 
+	# to fit within a single source file.
+	src/aux/CLIOptions.cpp
+	src/aux/Environment.cpp
+	src/aux/Error.cpp
+	src/aux/Location.cpp
+	src/aux/Outcome.cpp
+	src/aux/StringInterner.cpp
+	src/aux/SymbolTable.cpp
+	src/aux/TypeInterner.cpp
+	src/aux/Flags.cpp
+
+	# the 'ops' directory is for the classes which comprise the semantics
+	# of binary and unary operators within the language. (minus the specialized 
+	# operators like assignment '=', pointer indirection '*', and address of '&')
+	# (aside: all operator classes were once in 'aux' however that clutters up 
+	# 'aux' so any semantics which require multiple classes working in concert 
+	# to acheive a single purpose will be placed in their own directory)
+	src/ops/BinopCodegen.cpp
+	src/ops/BinopLiteral.cpp
+	src/ops/BinopTable.cpp
+	src/ops/UnopCodegen.cpp
+	src/ops/UnopLiteral.cpp
+	src/ops/UnopTable.cpp
+
+	# the 'front' directory is for the classes which comprise the frontend
+	# of the compiler itself.
+	src/front/Lexer.cpp 
+	src/front/Token.cpp
+	src/front/Parser.cpp
+		
+	# the 'kernel' directory is for files which implement functionality 
+	# within the compiler which is made directly available to the programmer.
+	src/kernel/BinopPrimitives.cpp
+	src/kernel/UnopPrimitives.cpp
+	src/kernel/Cast.cpp
+	src/kernel/StoreAggregate.cpp
+
+	# the 'support' directory is for files which define necessary or convenient 
+	# subroutines, which are too small to justify their own class.
+	src/support/LLVMErrorToString.cpp
+	src/support/LLVMValueToString.cpp
+	src/support/LLVMTypeToString.cpp 
+)
 			   
 
 set_target_properties(libpink PROPERTIES SOVERSION ${PROJECT_VERSION})
