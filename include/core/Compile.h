@@ -32,9 +32,7 @@
 */
 
 namespace pink {
-
-  void Compile(std::shared_ptr<Environment> env);
-
+  void Compile(const Environment& env);
 }
 
 

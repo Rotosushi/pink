@@ -4,7 +4,6 @@
 
 // Syntactic Forms
 #include "ast/Variable.h"
-#include "ast/VarRef.h"
 #include "ast/Bind.h"
 #include "ast/Assignment.h"
 #include "ast/Binop.h"
@@ -37,15 +36,16 @@
 
 namespace pink {
     Parser::Parser()
-      : lexer(), tok(Token::End), loc(1, 0, 1, 0), txt(), input_stream(std::cin)
+      : lexer(), tok(Token::End), loc(1, 0, 1, 0), txt(), input_stream(&std::cin)
     {
 
     }
 
-    Parser::Parser(std::istream& i)
+    Parser::Parser(std::istream* i)
       : lexer(), tok(Token::End), loc(1, 0, 1, 0), txt(), input_stream(i)
     {
-
+      if (i == nullptr)
+        FatalError("istream cannot be nullptr when initializing the Parser. text cannot be extracted from nowhere.", __FILE__, __LINE__);
     }
 
     Parser::~Parser()
@@ -58,16 +58,23 @@ namespace pink {
       return lexer.GetBuf();
     }
 
-    std::istream& Parser::GetIStream()
+    std::istream* Parser::GetIStream()
     {
       return input_stream;
+    }
+    
+    void Parser::SetIStream(std::istream* stream)
+    {
+      if (stream == nullptr)
+        FatalError("istream cannot be nullptr when setting the input stream of the Parser.", __FILE__, __LINE__);
+     
+      input_stream = stream;
     }
 
     bool Parser::EndOfInput()
     {
-      bool end = input_stream.eof();
-      return lexer.EndOfInput() && end; 
-          
+      bool end = input_stream->eof();
+      return lexer.EndOfInput() && end;     
     }
 
     void Parser::Getline(std::string& buf)
@@ -75,9 +82,9 @@ namespace pink {
       char c = '\0';
       
       do {
-        c = input_stream.get();
+        c = input_stream->get();
         
-        if (input_stream.eof()) // don't append the EOF character
+        if (input_stream->eof()) // don't append the EOF character
           break;
 
         buf += c; // appends the character even when it's '\n'
@@ -346,11 +353,14 @@ namespace pink {
      *
      *       *
  */
-    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(std::shared_ptr<Environment> env)
-    {    
-      while (tok == Token::End 
-      &&  lexer.EndOfInput() 
-      && (!input_stream.eof()))
+    Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(const Environment& env)
+    { 
+      // while the lexer is at the end of it's buffer
+      // and the input stream is not at the end of it's buffer
+      // we can get more input and fill the lexer with it.
+      // then we can prime the current token by calling the lexer.
+      while (lexer.EndOfInput() 
+         && (!input_stream->eof()))
       {
         yyfill();
         nexttok();  
@@ -373,7 +383,7 @@ namespace pink {
      *  term := affix ';'
      *
      */
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseTerm(const Environment& env)
     {
 
       Outcome<std::unique_ptr<Ast>, Error> term(ParseAffix(env));
@@ -400,7 +410,7 @@ namespace pink {
     
 
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseAffix(const Environment& env)
     {
       if (tok == Token::Fn)
       {
@@ -434,7 +444,7 @@ namespace pink {
     }
 
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseComposite(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseComposite(const Environment& env)
     {
       Location lhs_loc = loc;
       Outcome<std::unique_ptr<Ast>, Error> left(ParseDot(env));
@@ -533,7 +543,7 @@ namespace pink {
       }
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseDot(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseDot(const Environment& env)
     {
       Location lhs_loc = loc;
       Outcome<std::unique_ptr<Ast>, Error> left(ParseBasic(env));
@@ -582,7 +592,7 @@ namespace pink {
     	going from this pseudo-code:
     	https://en.wikipedia.org/wiki/Operator-precedence_parser
     */
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence, std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence, const Environment& env)
     {
     	Outcome<std::unique_ptr<Ast>, Error> result(std::move(lhs));
     	
@@ -636,8 +646,8 @@ namespace pink {
       // fail to find an implementation for the given types.
 
     	while (TokenToBool(tok) && (tok == Token::Op)  
-    		&& (peek_str = env->operators->Intern(txt))
-    		&& (peek_opt = env->binops->Lookup(peek_str)) && (peek_opt.hasValue()) 
+    		&& (peek_str = env.operators->Intern(txt))
+    		&& (peek_opt = env.binops->Lookup(peek_str)) && (peek_opt.hasValue()) 
     		&& (peek_lit = peek_opt->second) && (peek_lit->precedence >= precedence))
     	{
     		InternedString op_str = peek_str;
@@ -665,8 +675,8 @@ namespace pink {
     			return Outcome<std::unique_ptr<Ast>, Error>(rhs.GetTwo()); 
     			
     		while (TokenToBool(tok) && (tok == Token::Op) 
-    			&& (peek_str = env->operators->Intern(txt))
-    			&& (peek_opt = env->binops->Lookup(peek_str)) && (peek_opt.hasValue())
+    			&& (peek_str = env.operators->Intern(txt))
+    			&& (peek_opt = env.binops->Lookup(peek_str)) && (peek_opt.hasValue())
     			&& (peek_lit = peek_opt->second) 
     			&& ((peek_lit->precedence > op_lit->precedence) 
     				|| ((peek_lit->associativity == Associativity::Right)
@@ -710,14 +720,14 @@ namespace pink {
     }
     
     
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBasic(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBasic(const Environment& env)
     {
     	switch(tok)
     	{
     	case Token::Id:
     	{
     		Location lhs_loc = loc; // save the beginning location
-    		InternedString id = env->symbols->Intern(txt); // Intern the identifier
+    		InternedString id = env.symbols->Intern(txt); // Intern the identifier
     		
     		nexttok(); // eat the identifier
         // id := affix 
@@ -747,7 +757,7 @@ namespace pink {
     	case Token::Op: // an operator appearing in the basic position is a unop.
     	{
     		Location lhs_loc = loc; // save the lhs location
-    		InternedString op = env->operators->Intern(txt);
+    		InternedString op = env.operators->Intern(txt);
     		
     		nexttok(); // eat the op
     	
@@ -974,7 +984,7 @@ namespace pink {
      *
      *
      */
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBlock(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBlock(const Environment& env)
     {
     	std::vector<std::unique_ptr<Ast>> stmnts;
     	Outcome<std::unique_ptr<Ast>, Error> result(Error(Error::Code::None, loc));
@@ -1033,7 +1043,7 @@ namespace pink {
     }
 
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseConditional(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseConditional(const Environment& env)
     {
       Location lhs_loc = loc;
       
@@ -1106,7 +1116,7 @@ namespace pink {
       return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Conditional>(condloc, std::move(test_term.GetOne()), std::move(then_term.GetOne()), std::move(else_term.GetOne())));
     }
 
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseWhile(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseWhile(const Environment& env)
     {
       Location lhs_loc = loc;
       if (tok != Token::While)
@@ -1155,7 +1165,7 @@ namespace pink {
       return Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<While>(whileloc, std::move(test_term.GetOne()), std::move(body_term.GetOne())));
     }
     
-    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseFunction(std::shared_ptr<Environment> env)
+    Outcome<std::unique_ptr<Ast>, Error> Parser::ParseFunction(const Environment& env)
     {
     	InternedString name = nullptr;
     	std::vector<std::pair<InternedString, Type*>> args;
@@ -1198,7 +1208,7 @@ namespace pink {
     		return Outcome<std::unique_ptr<Ast>, Error>(error);
     	}
     	
-    	name = env->symbols->Intern(txt); // intern the functions name
+    	name = env.symbols->Intern(txt); // intern the functions name
 		
 		  nexttok(); // eat 'Id'
 	
@@ -1279,13 +1289,13 @@ namespace pink {
                                                                              name, 
                                                                              args, 
                                                                              std::move(body_res.GetOne()), 
-                                                                             env->bindings.get())
+                                                                             env.bindings.get())
                                                  );		
     }
     
     
     
-    Outcome<std::pair<InternedString, Type*>, Error> Parser::ParseArgument(std::shared_ptr<Environment> env)
+    Outcome<std::pair<InternedString, Type*>, Error> Parser::ParseArgument(const Environment& env)
     {
     	InternedString name;
 
@@ -1295,7 +1305,7 @@ namespace pink {
     		return Outcome<std::pair<InternedString, Type*>, Error>(error);
     	}
     	
-    	name = env->symbols->Intern(txt);
+    	name = env.symbols->Intern(txt);
     	
     	nexttok(); // eat 'Id'
     
@@ -1336,7 +1346,7 @@ namespace pink {
     	return Outcome<std::pair<InternedString, Type*>, Error>(std::make_pair(name, type_res.GetOne()));
     }
 
-    Outcome<Type*, Error> Parser::ParseType(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Parser::ParseType(const Environment& env)
     {
       Outcome<Type*, Error> result(Error(Error::Code::None, Location()));
       Outcome<Type*, Error> basic_type(ParseBasicType(env));
@@ -1347,7 +1357,7 @@ namespace pink {
       if (tok == Token::Op && txt == "*")
       {
         nexttok(); // eat '*'  
-        result = env->types->GetPointerType(basic_type.GetOne());
+        result = env.types->GetPointerType(basic_type.GetOne());
       }
       else
       {
@@ -1357,28 +1367,28 @@ namespace pink {
       return result;
     }    
     
-    Outcome<Type*, Error> Parser::ParseBasicType(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Parser::ParseBasicType(const Environment& env)
     {
     	switch(tok)
     	{
     	case Token::NilType:
       {
         nexttok(); // eat 'Nil'
-        Outcome<Type*, Error> result(env->types->GetNilType());
+        Outcome<Type*, Error> result(env.types->GetNilType());
         return result;
       }
         
     	case Token::IntType:
       {
         nexttok(); // Eat "Int"
-        Outcome<Type*, Error> result(env->types->GetIntType());
+        Outcome<Type*, Error> result(env.types->GetIntType());
         return result;
       }
         
     	case Token::BoolType:
       {
         nexttok(); // Eat "Bool"
-        Outcome<Type*, Error> result(env->types->GetBoolType());
+        Outcome<Type*, Error> result(env.types->GetBoolType());
         return result;
       }
 
@@ -1406,7 +1416,7 @@ namespace pink {
           } while (tok == Token::Comma);
 
           
-          left = env->types->GetTupleType(elem_tys); 
+          left = env.types->GetTupleType(elem_tys); 
         }
 
         if (tok != Token::RParen)
@@ -1475,7 +1485,7 @@ namespace pink {
 
         nexttok(); // eat ']'
 
-        return Outcome<Type*, Error>(env->types->GetArrayType(num, array_type.GetOne()));
+        return Outcome<Type*, Error>(env.types->GetArrayType(num, array_type.GetOne()));
       }
 
     	default:

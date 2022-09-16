@@ -34,9 +34,9 @@ namespace pink {
        ----------------------
     	env |- [0-9]+ : Int
     */
-    Outcome<Type*, Error> Int::GetypeV(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Int::GetypeV(const Environment& env)
     {
-    	Type* int_type = env->types->GetIntType();
+    	Type* int_type = env.types->GetIntType();
     	Outcome<Type*, Error> result(int_type);
     	return result;
     }
@@ -45,9 +45,9 @@ namespace pink {
        ----------------------
     	env |- [0-9]+ : i64 (value)
     */
-    Outcome<llvm::Value*, Error> Int::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Value*, Error> Int::Codegen(const Environment& env)
     {
-    	llvm::Value* int_value = env->builder->getInt64(value);
+    	llvm::Value* int_value = env.instruction_builder->getInt64(value);
     	Outcome<llvm::Value*, Error> result(int_value);
     	return result;
     }

@@ -19,7 +19,7 @@ bool TestVariable(std::ostream& out)
   
   pink::InternedString v = env->symbols->Intern("v");
     
-  llvm::Value* nil = env->builder->getFalse();
+  llvm::Value* nil = env->instruction_builder->getFalse();
   pink::Type*  nil_t = env->types->GetNilType();
   
   env->bindings->Bind(v, nil_t, nil);
@@ -57,7 +57,7 @@ bool TestVariable(std::ostream& out)
 
   result &= Test(out, "Variable::ToString()", v0->ToString() == v);
   
-  pink::Outcome<pink::Type*, pink::Error> variable_type = v0->Getype(env);
+  pink::Outcome<pink::Type*, pink::Error> variable_type = v0->Getype(*env);
   
   result &= Test(out, "Variable::Getype()", variable_type && variable_type.GetOne() == nil_t);
 

@@ -55,7 +55,7 @@ namespace pink {
     return result;
   }
 
-  Outcome<llvm::Type*, Error> ArrayType::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Type*, Error> ArrayType::Codegen(const Environment& env)
   {
     Outcome<llvm::Type*, Error> member_result = member_type->Codegen(env);
 

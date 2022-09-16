@@ -44,7 +44,7 @@ namespace pink {
       		are going to be pointers to places that can be assigned,
       		either llvm::AllocaInsts*, or llvm::GlobalVariable*
     */
-    Outcome<Type*, Error> Assignment::GetypeV(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Assignment::GetypeV(const Environment& env)
     {
     	// make sure we can type both sides
     	Outcome<Type*, Error> lhs_type(left->Getype(env));
@@ -76,7 +76,7 @@ namespace pink {
     }
     
     
-    Outcome<llvm::Value*, Error> Assignment::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Value*, Error> Assignment::Codegen(const Environment& env)
     {
     	// get the type and value of both sides
     	Outcome<Type*, Error> lhs_type_result(left->Getype(env));
@@ -89,11 +89,11 @@ namespace pink {
     	if (!lhs_type)
     		return Outcome<llvm::Value*, Error>(lhs_type.GetTwo());
 
-      env->flags->OnTheLHSOfAssignment(true);
+      env.flags->OnTheLHSOfAssignment(true);
 
     	Outcome<llvm::Value*, Error> lhs_value(left->Codegen(env));
     	
-      env->flags->OnTheLHSOfAssignment(false);
+      env.flags->OnTheLHSOfAssignment(false);
 
     	if(!lhs_value)
     		return lhs_value;
@@ -201,7 +201,7 @@ namespace pink {
     		{
           llvm::Value* right_value = rhs_value.GetOne();
           
-          env->builder->CreateStore(right_value, lhs_value.GetOne());
+          env.instruction_builder->CreateStore(right_value, lhs_value.GetOne());
           
           // return the value of the right hand side as the result to support nesting assignment
           return Outcome<llvm::Value*, Error>(right_value);

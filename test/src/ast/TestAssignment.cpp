@@ -32,7 +32,7 @@ bool TestAssignment(std::ostream& out)
 	std::unique_ptr<pink::Ast> nil = std::make_unique<pink::Nil>(rl);
 	pink::Ast* nil_p = nil.get();
 	
-	llvm::Value* nil_v = env->builder->getFalse();
+	llvm::Value* nil_v = env->instruction_builder->getFalse();
   pink::Type*  nil_t = env->types->GetNilType();
     
   env->bindings->Bind(symb, nil_t, nil_v);
@@ -53,7 +53,7 @@ bool TestAssignment(std::ostream& out)
 	
 	result &= Test(out, "Assignment::ToString()", asgn->ToString() == asgn_str);
 	
-	pink::Outcome<pink::Type*, pink::Error> asgn_type = asgn->Getype(env);
+	pink::Outcome<pink::Type*, pink::Error> asgn_type = asgn->Getype(*env);
 	
 	result &= Test(out, "Assignment::Getype()", asgn_type && asgn_type.GetOne() == nil_t);
 	

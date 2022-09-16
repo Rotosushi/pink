@@ -13,12 +13,18 @@ namespace pink {
    *  must loop again to store each single value sized element of that element 
    *  of the original aggregate. This function can do that by calling itself 
    *  on the element of the aggregate, thus recursively handling the solution 
-   *  for any nested depth of aggregate storage. 
+   *  for any nested depth of aggregate storage. given that the depth of recursion
+   *  for a given aggregate type is rarely more than 5-10, and you have to loop 
+   *  through every single valued element in an iterative solution as well, the 
+   *  potential cost of this recursive solution is not too expensive in terms 
+   *  of space or time. 
+   *   
    *
    *  there are two distinct cases that cannot be mixed however, and that is 
-   *  dependant upon the kind of source we are given. we can also use this 
-   *  procedure upon Constant's, thus making this procedure equivalent to 
-   *  a constant initializer procedure. Now this is not useful for initializing 
+   *  dependant upon the kind of source we are given, that is are we attempting
+   *  to store a llvm::Value* or an llvm::Constant*. if we are storing the value
+   *  from a llvm::Constant* then this procedure can be used for our 
+   *  constant initialization procedure. Now this is not useful for initializing 
    *  GlobalVariables, as they can already be given aggregate llvm::Constant*
    *  as initializers, but it does come in handy when considering initializing 
    *  a local variable with a constant initializer, or as in the other case 
@@ -31,7 +37,8 @@ namespace pink {
    *  a memory location, and one for storing the contents of one memory 
    *  location into another. Hold up, can't we support that with a memcpy?
    *  I think so, yeah, we just need the sizes of the types involved.
-   *  however we cannot memcpy from a llvm::Constant
+   *  however we cannot memcpy from a llvm::Constant, and the speedup of 
+   *  switching to memcpy really only shows when the types get large.  
    *
    *  Input Constraints: 
    *   -) type of src and dest must be equivalent, and each must have type 
@@ -48,27 +55,15 @@ namespace pink {
    *      OR it could be an llvm::Constant* holding the initialization 
    *      values for dest.
    *   
-   *   -) env must be set up such that the ir builder is in the correct
+   *   -) env must be set up such that the instruction builder is in the correct
    *      position to emit the loads and stores for the values.
    *      this procedure will not modify the insertion position of the 
-   *      builder beyond the insertion of loads and stores..
+   *      builder beyond the insertion of loads and stores.
    *
    *   Output constraints:
-   *    -) this function returns dest, that is it returns a pointer to the 
-   *       destination -after- performing the store instructions. 
-   *       in this way it should be acceptable to compute GEP instructions 
-   *       from the return value of this procedure such that the elements 
-   *       of dest can again be referenced within the program. 
-   *       This is only viable because the store instructions peformed 
-   *       upon dest, have the side effect of modifying the memory at that 
-   *       location. so a pointer to that memory location need not be updated 
-   *       to reflect those changes. because it does naturally so by being a
-   *       reference to the memory which itself changes. 
-   *       (this is to support the possiblity of calling this procedure multiple 
-   *        times on the same variable, so this could just as well return void,
-   *        the caller presumably must have dest already reachable from their 
-   *        scope)
+   *    -) none, this function returns void
    *
+    #NOTE: #ASIDE:
     you could support named scoping, with symboltable lookup by simply always 
     prepending the current scope name to each lookup. then following the exact 
     same procedure as currently implemented, if that lookup fails we simply 
@@ -85,22 +80,21 @@ namespace pink {
     although we can lex fully qualified identifiers with a regular expression:
       id ('::' id)+
 
-    #TODO: #ERROR: we need to find a solution to the problem of casting the src pointer to a
-          llvm::ConstantArray*, after we have dyn_cast the pointer to a llvm::Constant*
-   */
-  llvm::Value* StoreAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, std::shared_ptr<Environment> env)
+
+  */
+  void StoreAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, const Environment& env)
   {
     if (llvm::Constant* const_src = llvm::dyn_cast<llvm::Constant>(src))
     {
-      return StoreConstAggregate(ty, dest, const_src, env);
+      StoreConstAggregate(ty, dest, const_src, env);
     }
     else
     {
-      return StoreValueAggregate(ty, dest, src, env);
+      StoreValueAggregate(ty, dest, src, env);
     }
   }
 
-  llvm::Value* StoreConstAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Constant* src, std::shared_ptr<Environment> env)
+  void StoreConstAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Constant* src, const Environment& env)
   {
     if (llvm::ArrayType* at = llvm::dyn_cast<llvm::ArrayType>(ty))
     {
@@ -132,8 +126,8 @@ namespace pink {
           // forth. the fourth argument is the index into the type given,
           // so this would be an element of the array given, the first elem 
           // is at offset 0, then offset 1 is the second element and so on. 
-          llvm::Value* elemPtr = env->builder->CreateConstGEP2_32(at, dest, 0, i);
-          env->builder->CreateStore(src->getAggregateElement(i), elemPtr);
+          llvm::Value* elemPtr = env.instruction_builder->CreateConstGEP2_32(at, dest, 0, i);
+          env.instruction_builder->CreateStore(src->getAggregateElement(i), elemPtr);
         }
       }
       else
@@ -141,7 +135,7 @@ namespace pink {
         size_t length = at->getNumElements();
         for (size_t i = 0; i < length; i++)
         {
-          llvm::Value* elemPtr = env->builder->CreateConstGEP2_32(at, dest, 0, i);
+          llvm::Value* elemPtr = env.instruction_builder->CreateConstGEP2_32(at, dest, 0, i);
           // We have a pointer to the element we are going to store into, but
           // because that element is itself an aggregate we call
           // StoreConstAggregate to perform the storing of that particular
@@ -163,12 +157,12 @@ namespace pink {
       size_t i = 0;
       while (llvm::Constant* src_element = src->getAggregateElement(i))
       {
-        llvm::Value* dest_elem_ptr = env->builder->CreateConstGEP2_32(st, dest, 0, i);
+        llvm::Value* dest_elem_ptr = env.instruction_builder->CreateConstGEP2_32(st, dest, 0, i);
         llvm::Type*  elem_type  = src_element->getType();
         
         if (elem_type->isSingleValueType())
         {
-          env->builder->CreateStore(src_element, dest_elem_ptr);
+          env.instruction_builder->CreateStore(src_element, dest_elem_ptr);
         }
         else
         {
@@ -183,11 +177,9 @@ namespace pink {
     {
       FatalError("Unsupported Aggregate Type passed to StoreConstAggregate", __FILE__, __LINE__);
     } 
-    // I am fairly sure this is valid semantics
-    return dest;
   }
 
-  llvm::Value* StoreValueAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, std::shared_ptr<Environment> env)
+  void StoreValueAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, const Environment& env)
   {
     if (llvm::ArrayType* at = llvm::dyn_cast<llvm::ArrayType>(ty))
     {
@@ -198,11 +190,11 @@ namespace pink {
         size_t length = at->getNumElements(), i = 0;
         while (i < length)
         {
-          llvm::Value* dst_elem_ptr = env->builder->CreateConstGEP2_32(at, dest, 0, i);
-          llvm::Value* src_elem_ptr = env->builder->CreateConstGEP2_32(at, src, 0, i);
+          llvm::Value* dst_elem_ptr = env.instruction_builder->CreateConstGEP2_32(at, dest, 0, i);
+          llvm::Value* src_elem_ptr = env.instruction_builder->CreateConstGEP2_32(at, src, 0, i);
           
-          llvm::Value* src_value = env->builder->CreateLoad(elem_ty, src_elem_ptr);
-          env->builder->CreateStore(src_value, dst_elem_ptr);
+          llvm::Value* src_value = env.instruction_builder->CreateLoad(elem_ty, src_elem_ptr);
+          env.instruction_builder->CreateStore(src_value, dst_elem_ptr);
 
           i += 1;
         }
@@ -212,8 +204,8 @@ namespace pink {
         size_t length = at->getNumElements(), i = 0;
         while (i < length)
         {
-          llvm::Value* dst_elem_ptr = env->builder->CreateConstGEP2_32(at, dest, 0, i);
-          llvm::Value* src_elem_ptr = env->builder->CreateConstGEP2_32(at, src, 0, i);
+          llvm::Value* dst_elem_ptr = env.instruction_builder->CreateConstGEP2_32(at, dest, 0, i);
+          llvm::Value* src_elem_ptr = env.instruction_builder->CreateConstGEP2_32(at, src, 0, i);
           
           StoreValueAggregate(elem_ty, dst_elem_ptr, src_elem_ptr, env); 
           i += 1;
@@ -226,13 +218,13 @@ namespace pink {
       while (i < length)
       {
         llvm::Type*  elem_ty = st->getElementType(i);
-        llvm::Value* dst_elem_ptr = env->builder->CreateConstGEP2_32(st, dest, 0, i);
-        llvm::Value* src_elem_ptr = env->builder->CreateConstGEP2_32(st, src, 0, i);
+        llvm::Value* dst_elem_ptr = env.instruction_builder->CreateConstGEP2_32(st, dest, 0, i);
+        llvm::Value* src_elem_ptr = env.instruction_builder->CreateConstGEP2_32(st, src, 0, i);
 
         if (elem_ty->isSingleValueType())
         {
-          llvm::Value* src_value = env->builder->CreateLoad(elem_ty, src_elem_ptr);
-          env->builder->CreateStore(src_value, dst_elem_ptr);  
+          llvm::Value* src_value = env.instruction_builder->CreateLoad(elem_ty, src_elem_ptr);
+          env.instruction_builder->CreateStore(src_value, dst_elem_ptr);  
         }
         else 
         {
@@ -246,8 +238,6 @@ namespace pink {
     {
       FatalError("Unsupported Aggregate Type passed to StoreValueAggregate", __FILE__, __LINE__);
     }
-
-    return dest;
   }
 }
 

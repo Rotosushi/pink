@@ -65,7 +65,7 @@ namespace pink {
    *
    *
    */
-  Outcome<Type*, Error> Array::GetypeV(std::shared_ptr<Environment> env)
+  Outcome<Type*, Error> Array::GetypeV(const Environment& env)
   {
     size_t i = 0;
     std::vector<Type*> membTys;
@@ -91,7 +91,7 @@ namespace pink {
       i += 1;
     }    
     
-    return Outcome<Type*, Error>(env->types->GetArrayType(members.size(), membTys[0]));
+    return Outcome<Type*, Error>(env.types->GetArrayType(members.size(), membTys[0]));
   }
 
   /*  The value of an array is a llvm::ConstantArray of the same length 
@@ -100,7 +100,7 @@ namespace pink {
    *
    *
    */
-  Outcome<llvm::Value*, Error> Array::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Value*, Error> Array::Codegen(const Environment& env)
   {
     Outcome<Type*, Error> type_result = this->Getype(env);
     

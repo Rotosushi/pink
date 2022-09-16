@@ -50,7 +50,7 @@ bool TestBool(std::ostream& out)
 
   result &= Test(out, "Bool::ToString()", b0->ToString() == "true");
   
-  pink::Outcome<pink::Type*, pink::Error> bool_type = b0->Getype(env);
+  pink::Outcome<pink::Type*, pink::Error> bool_type = b0->Getype(*env);
   
   result &= Test(out, "Bool::Getype()", bool_type && bool_type.GetOne() == bool_t);
 

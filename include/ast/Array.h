@@ -64,7 +64,7 @@ namespace pink {
     private:
     std::vector<std::unique_ptr<Ast>> members;
     
-    virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
+    virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
     
     public: 
     Array(Location location, std::vector<std::unique_ptr<Ast>> members);
@@ -75,6 +75,6 @@ namespace pink {
     virtual std::unique_ptr<Ast> Clone() override;
     virtual std::string ToString() override;
 
-    virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
+    virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
   };
 }

@@ -95,7 +95,7 @@ namespace pink {
       the difference, because the sret(<ty>) parameter must be allocated by the caller
       before we call the function.
     */
-		Outcome<Type*, Error> Function::GetypeV(std::shared_ptr<Environment> env)
+		Outcome<Type*, Error> Function::GetypeV(const Environment& env)
 		{
 			// first, construct a bunch of false bindings with the correct Types.
 			// such that we can properly Type the body, which presumably uses said bindings.
@@ -119,10 +119,10 @@ namespace pink {
 			}
 			
 			// build a new environment around the functions symboltable, such that we have syntactic scoping.
-      std::shared_ptr<Environment> inner_env = std::make_shared<Environment>(env, bindings); 
+      std::unique_ptr<Environment> inner_env = std::make_unique<Environment>(env, bindings); 
 			
 			// type the body with respect to the inner_env
-			Outcome<Type*, Error> body_result = body->Getype(inner_env);
+			Outcome<Type*, Error> body_result = body->Getype(*inner_env);
 			
 			// remove the false bindings before returning;
 			for (auto& pair : arguments)
@@ -133,12 +133,12 @@ namespace pink {
       // also remove any false bindings that any bind 
       // instructions within this functions scope 
       // constructed to declare local variables.
-      for (InternedString fbnd : inner_env->false_bindings)
+      for (InternedString fbnd : *inner_env->false_bindings)
       {
         inner_env->bindings->Unbind(fbnd);
       }
 
-      inner_env->false_bindings.clear();
+      inner_env->false_bindings->clear();
 			
 			if (!body_result)
 			{
@@ -153,7 +153,7 @@ namespace pink {
 			  arg_types.emplace_back(pair.second);
 			}
 
-			FunctionType* func_ty = env->types->GetFunctionType(body_result.GetOne(), arg_types);
+			FunctionType* func_ty = env.types->GetFunctionType(body_result.GetOne(), arg_types);
       // okay, so before we return we need to take care of one more thing,
       // making sure the rest of the program knows of the existance of this 
       // function. and how do we do that? using an early binding of the 
@@ -163,12 +163,12 @@ namespace pink {
       // the implementation.
       //
       // the nullptr is the spot where the implementation will go.
-      env->bindings->Bind(name, func_ty, nullptr);
+      env.bindings->Bind(name, func_ty, nullptr);
 
       return Outcome<Type*, Error>(func_ty);
 		}
 		
-		Outcome<llvm::Value*, Error> Function::Codegen(std::shared_ptr<Environment> env)
+		Outcome<llvm::Value*, Error> Function::Codegen(const Environment& env)
 		{
 			/*
 				first, get the functions prototype/declaration from the module
@@ -226,7 +226,7 @@ namespace pink {
       // because main returns via a syscall.
       if (strcmp(name, "main") == 0)
       {
-        pink::FunctionType* main_fn_ty = env->types->GetFunctionType(env->types->GetVoidType(), p_fn_ty->arguments);
+        pink::FunctionType* main_fn_ty = env.types->GetFunctionType(env.types->GetVoidType(), p_fn_ty->arguments);
         
         Outcome<llvm::Type*, Error> main_fn_ty_result = main_fn_ty->Codegen(env);
 
@@ -240,7 +240,7 @@ namespace pink {
         function = llvm::Function::Create(function_ty,
                                           llvm::Function::ExternalLinkage,
                                           name,
-                                          *env->module); 
+                                          *env.module); 
       }
       else
       {		  
@@ -256,7 +256,7 @@ namespace pink {
 			  function = llvm::Function::Create(function_ty, 
 				  		 									          llvm::Function::ExternalLinkage, 
 					  										          name, 
-						  									          *env->module);
+						  									          *env.module);
       }
       /*
        *  okay okay. the function itself holds it's own Attributes, that makes
@@ -267,7 +267,7 @@ namespace pink {
        *
        *
        */
-      llvm::AttrBuilder ret_attr_builder(*env->context);
+      llvm::AttrBuilder ret_attr_builder(*env.context);
       /* find out if we need to
        * add the sret parameter attribute to a parameter 
        * of the function.
@@ -299,7 +299,7 @@ namespace pink {
          */
         for (size_t i = 1; i < p_fn_ty->arguments.size(); i++)
         {
-          llvm::AttrBuilder param_attr_builder(*env->context);
+          llvm::AttrBuilder param_attr_builder(*env.context);
           
           Outcome<llvm::Type*, Error> param_ty_codegen_result = p_fn_ty->arguments[i]->Codegen(env);
 
@@ -325,7 +325,7 @@ namespace pink {
          */
         for (size_t i = 0; i < p_fn_ty->arguments.size(); i++)
         {
-          llvm::AttrBuilder param_attr_builder(*env->context);
+          llvm::AttrBuilder param_attr_builder(*env.context);
           
           Outcome<llvm::Type*, Error> param_ty_codegen_result = p_fn_ty->arguments[i]->Codegen(env);
 
@@ -347,14 +347,14 @@ namespace pink {
 			
 			
 			// create the entry block of this function.
-			llvm::BasicBlock* entryblock = llvm::BasicBlock::Create(*env->context, "entry", function);
+			llvm::BasicBlock* entryblock = llvm::BasicBlock::Create(*env.context, "entry", function);
 			llvm::BasicBlock::iterator entrypoint = entryblock->getFirstInsertionPt();
 			
 			// set up a local irbuilder to insert instructions into this function.
       std::shared_ptr<llvm::IRBuilder<>> local_builder = std::make_shared<llvm::IRBuilder<>>(entryblock, entrypoint);
 			
       // set up the local_environment for this function
-      std::shared_ptr<Environment> local_env = std::make_shared<Environment>(env, bindings, local_builder, function); 
+      std::unique_ptr<Environment> local_env = std::make_unique<Environment>(env, bindings, local_builder, function); 
 			
 			std::vector<std::pair<llvm::Value*, llvm::Value*>> arg_ptrs;
 			// construct stack space for all arguments to the function 
@@ -414,7 +414,7 @@ namespace pink {
       // .  
 			
 			// now we can Codegen the body of the function relative to the local environment
-			Outcome<llvm::Value*, Error> body_result = body->Codegen(local_env);
+			Outcome<llvm::Value*, Error> body_result = body->Codegen(*local_env);
 			
 			if (!body_result)
 			{
@@ -638,7 +638,7 @@ namespace pink {
         // return code when we load the rax register with the exit code 
         // if we emit a call to iasm1 after emitting the call to 
         // iasm0. hence the reversal.
-        Outcome<llvm::Value*, Error> cast_result = Cast(bodyVal, env->builder->getInt64Ty(), local_env);
+        Outcome<llvm::Value*, Error> cast_result = Cast(bodyVal, local_builder->getInt64Ty(), *local_env);
 
         if (!cast_result)
           return cast_result;
@@ -672,7 +672,7 @@ namespace pink {
         }
         else 
         {
-          StoreAggregate(fn_ret_ty, function->getArg(0), body_result.GetOne(), local_env);
+          StoreAggregate(fn_ret_ty, function->getArg(0), body_result.GetOne(), *local_env);
         }
       }
 
@@ -682,8 +682,8 @@ namespace pink {
       // we now need to fill in the binding of this function with it's
       // definition. so first we erase the incomplete definition, and 
       // then create the full definition.
-      env->bindings->Unbind(name);
-      env->bindings->Bind(name, getype_result.GetOne(), function);
+      env.bindings->Unbind(name);
+      env.bindings->Bind(name, getype_result.GetOne(), function);
 
 			// return the function as the result of code generation
 			return Outcome<llvm::Value*, Error>(function);

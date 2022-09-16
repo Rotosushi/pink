@@ -30,8 +30,8 @@ namespace pink
     return std::string("Void");
   }
 
-  Outcome<llvm::Type*, Error> VoidType::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Type*, Error> VoidType::Codegen(const Environment& env)
   {
-    return env->builder->getVoidTy();
+    return env.instruction_builder->getVoidTy();
   }
 }

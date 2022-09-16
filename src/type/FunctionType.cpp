@@ -23,7 +23,10 @@ namespace pink {
 		bool FunctionType::EqualTo(Type* other)
 		{
 			bool equal = true;
-			
+		
+      // the function types are equal if they have the same 
+      // return type, and the same number of argument types,
+      // and each argument at each position is identical in type.	
 			if (FunctionType* oft = llvm::dyn_cast<FunctionType>(other))
 			{
 				if (oft->result != result)
@@ -108,7 +111,7 @@ namespace pink {
      *  to answer that question.
      *
      */    
-		Outcome<llvm::Type*, Error> FunctionType::Codegen(std::shared_ptr<Environment> env)
+		Outcome<llvm::Type*, Error> FunctionType::Codegen(const Environment& env)
 		{
 			std::vector<llvm::Type*> llvm_args;
 			
@@ -135,7 +138,7 @@ namespace pink {
           // that allocation and subsequent copy must happen in local
           // memory, So i think the address space for this pointer 
           // is the Alloca address space.
-          llvm_args.emplace_back(env->builder->getPtrTy(env->data_layout.getAllocaAddrSpace()));
+          llvm_args.emplace_back(env.instruction_builder->getPtrTy(env.data_layout.getAllocaAddrSpace()));
         }
 			}
 			
@@ -148,7 +151,7 @@ namespace pink {
 			
 			if (llvm_args.size() > 0)
 			{ 
-        if (res_res.GetOne()->isSingleValueType())
+        if (res_res.GetOne()->isSingleValueType() || res_res.GetOne()->isVoidTy())
         {
 				  llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetOne(), llvm_args, /* isVarArg */ false);
 				  return Outcome<llvm::Type*, Error>(fn_ty);
@@ -156,8 +159,8 @@ namespace pink {
         else
         {
           // promote return value to an argument as a pointer
-          llvm_args.insert(llvm_args.begin(), env->builder->getPtrTy(env->data_layout.getAllocaAddrSpace()));
-          llvm::Type* fn_ty = llvm::FunctionType::get(env->builder->getVoidTy(), llvm_args, /* isVararg */ false);
+          llvm_args.insert(llvm_args.begin(), env.instruction_builder->getPtrTy(env.data_layout.getAllocaAddrSpace()));
+          llvm::Type* fn_ty = llvm::FunctionType::get(env.instruction_builder->getVoidTy(), llvm_args, /* isVararg */ false);
           return Outcome<llvm::Type*, Error>(fn_ty);
         }
 			}
@@ -172,8 +175,8 @@ namespace pink {
         else
         {
           // promote the return value to an argument as a pointer
-          llvm_args.insert(llvm_args.begin(), env->builder->getPtrTy(env->data_layout.getAllocaAddrSpace()));
-          llvm::Type* fn_ty = llvm::FunctionType::get(env->builder->getVoidTy(), llvm_args, /* isVarArg */ false);
+          llvm_args.insert(llvm_args.begin(), env.instruction_builder->getPtrTy(env.data_layout.getAllocaAddrSpace()));
+          llvm::Type* fn_ty = llvm::FunctionType::get(env.instruction_builder->getVoidTy(), llvm_args, /* isVarArg */ false);
           return Outcome<llvm::Type*, Error>(fn_ty);
         }
       }

@@ -61,7 +61,7 @@ bool TestParser(std::ostream& out)
        + std::string("fn fun(x: Int, y: Int, z: Int) { a := x + y; a == z; };\n") // line 21
         ); 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env     = pink::NewGlobalEnv(options, ss); 
+  auto env     = pink::NewGlobalEnv(options, &ss); 
   auto parser = env->parser;
     /*
     	Parser Tests
@@ -76,7 +76,7 @@ bool TestParser(std::ostream& out)
     		Parses Parenthesized expressions
     */       
     
-    pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result(parser->Parse(env));
+    pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result(parser->Parse(*env));
     pink::Ast* term = nullptr;
     pink::Location loc(1, 0, 1, 3);
     
@@ -87,7 +87,7 @@ bool TestParser(std::ostream& out)
        && (term->GetLoc() == loc));
 
     loc = {2, 0, 2, 2};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(10)", 
     	   (parser_result) 
@@ -96,7 +96,7 @@ bool TestParser(std::ostream& out)
       && (term->GetLoc() == loc));
     
     loc = {3, 0, 3, 4}; 
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(true)", 
     	   (parser_result) 
@@ -105,7 +105,7 @@ bool TestParser(std::ostream& out)
       && (term->GetLoc() == loc));
     
     loc = {4, 0, 4, 1};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(x)", 
     	   (parser_result) 
@@ -114,7 +114,7 @@ bool TestParser(std::ostream& out)
       && (term->GetLoc() == loc));
    
     loc = {5, 0, 5, 6}; 
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(x := 1)", 
     	   (parser_result) 
@@ -123,7 +123,7 @@ bool TestParser(std::ostream& out)
       && (term->GetLoc() == loc));
     
     loc = {6, 0, 6, 5};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(x = 2)", 
     	   (parser_result) 
@@ -132,7 +132,7 @@ bool TestParser(std::ostream& out)
       && (term->GetLoc() == loc));
     
     loc = {7, 0, 7, 5};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(!true)", 
     	   (parser_result) 
@@ -144,7 +144,7 @@ bool TestParser(std::ostream& out)
     // is filled with the firstColumn associated with the operator within
     // the expression.
     loc = {8, 2, 8, 5};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(1 + 1)", 
     	   (parser_result) 
@@ -161,7 +161,7 @@ bool TestParser(std::ostream& out)
     // must be the firstColumn of the lowest precedence operator
     // in the complex binop expression.
     loc = {9, 10, 9, 23};	
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(6 + 3 * 4 == 3 * 2 + 12)",
     	   (parser_result) 
@@ -170,7 +170,7 @@ bool TestParser(std::ostream& out)
       && (term->GetLoc() == loc));
     
     loc = {10, 8, 10, 17};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse((1 + 1) * (1 + 1))", 
     	   (parser_result) 
@@ -179,7 +179,7 @@ bool TestParser(std::ostream& out)
       && (term->GetLoc() == loc));  
 
     loc = {11, 0, 11, 15};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse([0, 1, 2, 3, 4])",
           (parser_result)
@@ -188,7 +188,7 @@ bool TestParser(std::ostream& out)
        && (term->GetLoc() == loc));
 
     loc = {12, 0, 12, 11};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse((0,1,2,3,4))",
               (parser_result)
@@ -196,7 +196,7 @@ bool TestParser(std::ostream& out)
            && (llvm::isa<pink::Tuple>(term)));
     
     loc = {13, 0, 13, 3};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse(x.2)",
               (parser_result)
@@ -204,7 +204,7 @@ bool TestParser(std::ostream& out)
            && (llvm::isa<pink::Dot>(term)));
 
     loc = {14, 0, 14, 33};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse(if true then { 12; } else { 24; })",
              (parser_result)
@@ -213,7 +213,7 @@ bool TestParser(std::ostream& out)
           && (term->GetLoc() == loc)); 
 
     loc = {15, 0, 15, 33};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse(while x == true do { x = false; })",
               (parser_result)
@@ -221,7 +221,7 @@ bool TestParser(std::ostream& out)
            && (llvm::isa<pink::While>(term)));
 
     loc = {16, 0, 16, 5};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse(one())",
          (parser_result)
@@ -229,7 +229,7 @@ bool TestParser(std::ostream& out)
       && (llvm::isa<pink::Application>(term))); 
 
     loc = {17, 0, 17, 6};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse(inc(1))",
           (parser_result)
@@ -237,7 +237,7 @@ bool TestParser(std::ostream& out)
        && (llvm::isa<pink::Application>(term)));
 
     loc = {18, 0, 18, 8}; 
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
 
     result &= Test(out, "Parser::Parse(add(3,4))",
           (parser_result)
@@ -245,7 +245,7 @@ bool TestParser(std::ostream& out)
        && (llvm::isa<pink::Application>(term)));
 
     loc = {19, 0, 19, 16};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(fn one() { 1; };)",
     	   (parser_result)
@@ -253,7 +253,7 @@ bool TestParser(std::ostream& out)
     	&& (llvm::isa<pink::Function>(term)));
     	
     loc = {20, 0, 20, 26};
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(fn inc(x: Int) { x + 1; };)",
     	   (parser_result)
@@ -261,7 +261,7 @@ bool TestParser(std::ostream& out)
     	&& (llvm::isa<pink::Function>(term)));
     
     loc = {21, 0, 21, 46};	
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(fn add(x: Int, y: Int, z: Int) { x + y + z; };)",
     	   (parser_result)
@@ -269,7 +269,7 @@ bool TestParser(std::ostream& out)
     	&& (llvm::isa<pink::Function>(term)));
   
     loc = {22, 0, 22, 56};	
-    parser_result = parser->Parse(env);
+    parser_result = parser->Parse(*env);
     
     result &= Test(out, "Parser::Parse(fn fun(x: Int, y: Int, z: Int) { a := x + y; a == z; };)",
     	   (parser_result)

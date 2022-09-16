@@ -61,7 +61,7 @@ bool TestBind(std::ostream& out)
 
   result &= Test(out, "Bind::ToString()", b0->ToString() == bind_str);
   
-  pink::Outcome<pink::Type*, pink::Error> bind_type = b0->Getype(env);
+  pink::Outcome<pink::Type*, pink::Error> bind_type = b0->Getype(*env);
   
   result &= Test(out, "Bind::Getype()", bind_type && bind_type.GetOne() == env->types->GetNilType());
 

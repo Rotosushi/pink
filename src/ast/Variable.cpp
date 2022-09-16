@@ -33,9 +33,9 @@ namespace pink {
 	  -----------------------------
 			  env |- x : T
 	*/
-	Outcome<Type*, Error> Variable::GetypeV(std::shared_ptr<Environment> env)
+	Outcome<Type*, Error> Variable::GetypeV(const Environment& env)
 	{
-		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env->bindings->Lookup(symbol);
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings->Lookup(symbol);
 		
 		if (bound.hasValue())
 		{
@@ -52,9 +52,9 @@ namespace pink {
 		}
 	}
 	
-	Outcome<llvm::Value*, Error> Variable::Codegen(std::shared_ptr<Environment> env)
+	Outcome<llvm::Value*, Error> Variable::Codegen(const Environment& env)
 	{
-		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env->bindings->Lookup(symbol);
+		llvm::Optional<std::pair<Type*, llvm::Value*>> bound = env.bindings->Lookup(symbol);
 		
 		if (bound.hasValue())
 		{
@@ -203,14 +203,14 @@ namespace pink {
         if  (llvm::isa<llvm::FunctionType>(bound_type)
          || (llvm::isa<llvm::ArrayType>(bound_type))
          || (llvm::isa<llvm::StructType>(bound_type))
-         || env->flags->OnTheLHSOfAssignment()
-         || env->flags->WithinAddressOf())
+         || env.flags->OnTheLHSOfAssignment()
+         || env.flags->WithinAddressOf())
         {
           return Outcome<llvm::Value*, Error> (bound->second);
         }
         else 
         {
-          return Outcome<llvm::Value*, Error>(env->builder->CreateLoad(bound_type, bound->second, symbol));
+          return Outcome<llvm::Value*, Error>(env.instruction_builder->CreateLoad(bound_type, bound->second, symbol));
         }
       }  
 		}

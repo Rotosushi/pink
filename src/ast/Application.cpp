@@ -70,7 +70,7 @@ namespace pink {
    *
    *
    */
-  Outcome<Type*, Error> Application::GetypeV(std::shared_ptr<Environment> env)
+  Outcome<Type*, Error> Application::GetypeV(const Environment& env)
   {
     Outcome<Type*, Error> calleeTy = callee->Getype(env);
 
@@ -131,7 +131,7 @@ namespace pink {
   // the callee and each argument, except for the fact that 
   // we have to call a few additional llvm functions to generate the correct
   // code. 
-  Outcome<llvm::Value*, Error> Application::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Value*, Error> Application::Codegen(const Environment& env)
   {
     // 1: codegen callee to retrieve the function pointer
     Outcome<llvm::Value*, Error> callee_result = callee->Codegen(env);
@@ -177,9 +177,9 @@ namespace pink {
     llvm::CallInst* call = nullptr;
     // 3: codegen a CallInstruction to the callee passing in each argument.
     if (arg_values.size() == 0)
-      call = env->builder->CreateCall(llvm::FunctionCallee(function));
+      call = env.instruction_builder->CreateCall(llvm::FunctionCallee(function));
     else
-      call = env->builder->CreateCall(llvm::FunctionCallee(function), arg_values); 
+      call = env.instruction_builder->CreateCall(llvm::FunctionCallee(function), arg_values); 
     // 4: return the result of the call instruction as the llvm::Value* of this
     //    procedure
     return Outcome<llvm::Value*, Error>(call);

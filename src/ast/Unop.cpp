@@ -33,7 +33,7 @@ namespace pink {
       ----------------------------------------
       			env |- op rhs : T
     */
-    Outcome<Type*, Error> Unop::GetypeV(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Unop::GetypeV(const Environment& env)
     {
     	// get the type of the rhs
     	Outcome<Type*, Error> rhs_result(right->Getype(env));
@@ -42,7 +42,7 @@ namespace pink {
     		return rhs_result;
     	
     	// find the operator used in the env
-    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env->unops->Lookup(op);
+    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env.unops->Lookup(op);
     	
     	if (!unop)
     	{
@@ -62,7 +62,7 @@ namespace pink {
         
         if (!literal)
         {
-          Type* int_ptr_type = env->types->GetPointerType(env->types->GetIntType());
+          Type* int_ptr_type = env.types->GetPointerType(env.types->GetIntType());
           llvm::Optional<std::pair<Type*, UnopCodegen*>> ptr_indirection_unop = unop->second->Lookup(int_ptr_type);
 
           if (!ptr_indirection_unop)
@@ -80,8 +80,8 @@ namespace pink {
         
         if (!literal)
         {
-          PointerType* pt = env->types->GetPointerType(rhs_result.GetOne());
-          Type* int_type = env->types->GetIntType();
+          PointerType* pt = env.types->GetPointerType(rhs_result.GetOne());
+          Type* int_type = env.types->GetIntType();
           llvm::Optional<std::pair<Type*, UnopCodegen*>> address_of_unop = unop->second->Lookup(int_type);
 
           if (!address_of_unop)
@@ -122,7 +122,7 @@ namespace pink {
       			env |- op rhs : unop.generate(rhs.value)
 
     */
-    Outcome<llvm::Value*, Error> Unop::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Value*, Error> Unop::Codegen(const Environment& env)
     {
     	// get the type of the right hand side for operator lookup
     	Outcome<Type*, Error> rhs_type(right->Getype(env));
@@ -140,7 +140,7 @@ namespace pink {
       {
         // we cannot assign to an address value, we can only assign to 
         // a memory location.
-        if (env->flags->OnTheLHSOfAssignment())
+        if (env.flags->OnTheLHSOfAssignment())
         {
           return Outcome<llvm::Value*, Error>(Error(Error::Code::ValueCannotBeAssigned, loc));
         }
@@ -153,11 +153,11 @@ namespace pink {
         // I am fairly sure this is the only thing we can take 
         // address of, but this is a place where we might see unexpected
         // behavior as a result of this descision.
-        env->flags->WithinAddressOf(true);
+        env.flags->WithinAddressOf(true);
 
         rhs_value = right->Codegen(env);
 
-        env->flags->WithinAddressOf(false);
+        env.flags->WithinAddressOf(false);
       }
       else if (strcmp(op, "*") == 0)
       {
@@ -166,28 +166,28 @@ namespace pink {
         // only emit one load, else we want to load the 
         // value from the pointer that we retrieved from
         // loading the pointer the variable was bound to.
-        if (env->flags->OnTheLHSOfAssignment())
+        if (env.flags->OnTheLHSOfAssignment())
         {
           // emit one load. which Variable::Codegen already does for us,
           // so we just have to pretend we aren't on the lhs of assignment
-          env->flags->OnTheLHSOfAssignment(false);
-          env->flags->WithinDereferencePtr(true);
+          env.flags->OnTheLHSOfAssignment(false);
+          env.flags->WithinDereferencePtr(true);
 
           rhs_value = right->Codegen(env);
 
-          env->flags->OnTheLHSOfAssignment(true);
-          env->flags->WithinDereferencePtr(false);
+          env.flags->OnTheLHSOfAssignment(true);
+          env.flags->WithinDereferencePtr(false);
         }
         else 
         {
           // emit two loads, so we just have to emit a load on the llvm::Value*
           // Codegening the rhs returned, so tell Variable::Codegen that we 
           // want to dereference the pointer it has
-          env->flags->WithinDereferencePtr(true);
+          env.flags->WithinDereferencePtr(true);
 
           rhs_value = right->Codegen(env);
 
-          env->flags->WithinDereferencePtr(false);
+          env.flags->WithinDereferencePtr(false);
 
           if (!rhs_value)
           {
@@ -209,7 +209,7 @@ namespace pink {
 
           if (llvm_pointee_type.GetOne()->isSingleValueType())
           {
-            rhs_value = env->builder->CreateLoad(llvm_pointee_type.GetOne(), rhs_value.GetOne(), "deref");    
+            rhs_value = env.instruction_builder->CreateLoad(llvm_pointee_type.GetOne(), rhs_value.GetOne(), "deref");    
           }
           // else emit no load for types that cannot be loaded
         }
@@ -225,7 +225,7 @@ namespace pink {
       }
 
     	// find the literal
-    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env->unops->Lookup(op);
+    	llvm::Optional<std::pair<InternedString, UnopLiteral*>> unop = env.unops->Lookup(op);
     	
     	if (!unop)
     	{

@@ -29,7 +29,7 @@ bool TestEnvironment(std::ostream& out)
     result &= Test(out, "Environment::types", type->ToString() == std::string("Nil"));
 
     pink::Location l(0, 7, 0, 10);
-    llvm::Value* nil = env->builder->getFalse();
+    llvm::Value* nil = env->instruction_builder->getFalse();
 
     env->bindings->Bind(symb, type, nil);
 

@@ -58,8 +58,8 @@ bool TestFunction(std::ostream& out)
   
   result &= Test(out, "Function::classof()", first->classof(first.get()));
   
-  pink::Outcome<pink::Type*, pink::Error> fty_res = first->Getype(env);
-  pink::Outcome<pink::Type*, pink::Error> sty_res = second->Getype(env);
+  pink::Outcome<pink::Type*, pink::Error> fty_res = first->Getype(*env);
+  pink::Outcome<pink::Type*, pink::Error> sty_res = second->Getype(*env);
   
   result &= Test(out, "Function::Getype()", 
              (fty_res) && (sty_res)

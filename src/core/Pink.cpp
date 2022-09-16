@@ -18,21 +18,26 @@ int main(int argc, char** argv)
   // causes a segmentation fault within AddPassesToEmitFile.
   // llvm::InitLLVM(argc, argv);
 
-  llvm::InitializeAllTargetInfos();
-  llvm::InitializeAllTargets();
-  llvm::InitializeAllTargetMCs();
-  llvm::InitializeAllAsmPrinters();
-  llvm::InitializeAllAsmParsers();
-  llvm::InitializeAllDisassemblers();
+  //llvm::InitializeAllTargetInfos();
+  //llvm::InitializeAllTargets();
+  //llvm::InitializeAllTargetMCs();
+  //llvm::InitializeAllAsmPrinters();
+  //llvm::InitializeAllAsmParsers();
+  //llvm::InitializeAllDisassemblers();
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetDisassembler();
 
+ 
   std::shared_ptr<pink::CLIOptions> options = pink::ParseCLIOptions(std::cout, argc, argv);
 	
-  std::shared_ptr<pink::Environment> env = pink::NewGlobalEnv(options);
+  std::unique_ptr<pink::Environment> env = pink::NewGlobalEnv(options);
                         
-  pink::Compile(env);
+  pink::Compile(*env);
 
   if (env->options->emit_object)
-    pink::Link(env);
+    pink::Link(*env);
 
   return 0;
 }

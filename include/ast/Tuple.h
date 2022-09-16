@@ -26,7 +26,7 @@
 namespace pink {
   class Tuple : public Ast {
   private:
-    virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
+    virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
 
   public:
     std::vector<std::unique_ptr<Ast>> members;
@@ -39,6 +39,6 @@ namespace pink {
     virtual std::unique_ptr<Ast> Clone() override;
     virtual std::string ToString() override;
 
-    virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
+    virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
   };
 }

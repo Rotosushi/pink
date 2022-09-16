@@ -28,8 +28,9 @@ namespace pink {
         return std::string("Int");
     }
     
-    Outcome<llvm::Type*, Error> IntType::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Type*, Error> IntType::Codegen(const Environment& env)
     {
-    	return Outcome<llvm::Type*, Error>(env->builder->getInt64Ty());
+    	return Outcome<llvm::Type*, Error>(env.instruction_builder->getInt64Ty());
     }
 }
+

@@ -8,7 +8,7 @@
 
 
 namespace pink{
-  Outcome<llvm::Value*, Error> Cast(llvm::Value* value, llvm::Type* target_type, std::shared_ptr<Environment> env);
+  Outcome<llvm::Value*, Error> Cast(llvm::Value* value, llvm::Type* target_type, const Environment& env);
 }
 
 

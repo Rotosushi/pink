@@ -4,7 +4,7 @@
 
 namespace pink {
 
-  Outcome<llvm::Value*, Error> Cast(llvm::Value* value, llvm::Type* target_type, std::shared_ptr<Environment> env)
+  Outcome<llvm::Value*, Error> Cast(llvm::Value* value, llvm::Type* target_type, const Environment& env)
   {
     llvm::Type* value_type = value->getType();
     
@@ -53,15 +53,15 @@ namespace pink {
         // conversion.
         if (from_bitwidth < to_bitwidth)
         {
-          return Outcome<llvm::Value*, Error>(env->builder->CreateZExt(value, target_type, "zext"));
+          return Outcome<llvm::Value*, Error>(env.instruction_builder->CreateZExt(value, target_type, "zext"));
         }
         else if (from_bitwidth > to_bitwidth)
         {
-          return Outcome<llvm::Value*, Error>(env->builder->CreateTrunc(value, target_type, "trunc"));
+          return Outcome<llvm::Value*, Error>(env.instruction_builder->CreateTrunc(value, target_type, "trunc"));
         }
         else // from_bitwidth == to_bitwidth 
         {
-          return Outcome<llvm::Value*, Error>(env->builder->CreateBitCast(value, target_type, "bitcast"));
+          return Outcome<llvm::Value*, Error>(env.instruction_builder->CreateBitCast(value, target_type, "bitcast"));
         }
       }
       //else if (llvm::PointerType* to_type = llvm::dyn_cast<llvm::PointerType>(target_type))

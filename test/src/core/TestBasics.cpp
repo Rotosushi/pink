@@ -25,7 +25,7 @@
 //    it is for this reason that this section of 
 //    tests might be better written in a more cross 
 //    platform language like python.
-int Run(const char* file, char** argv)
+int Run(const char* file, char* const* argv)
 {
   int result = 0;
 
@@ -93,24 +93,27 @@ bool TestFile(std::string test_contents, int expected_value)
   outfile.close();
 
   char pink[] = "./pink";
+  char arg_filename[filename.length() + 1];
 
-  char* pink_args[] = {
+  memcpy(arg_filename, filename.c_str(), filename.length());
+
+  char * const pink_args[] = {
     pink,
-    filename.data(),
+    arg_filename,
     (char*) nullptr
   };
   
   Run(pink, pink_args);
 
-
   std::string exe_name = StripFilenameExtensions(filename) + "";
+  char arg_exe_name[exe_name.length() + 1];
 
   char* exe_args[] = {
-    exe_name.data(),
+    arg_exe_name,
     (char*) nullptr
   };
 
-  int prog_result = Run(exe_name.data(), exe_args);
+  int prog_result = Run(arg_exe_name, exe_args);
   
   std::string obj_name = StripFilenameExtensions(filename) + ".o";
 

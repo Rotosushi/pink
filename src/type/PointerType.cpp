@@ -50,9 +50,9 @@ namespace pink {
     return result;
   }
 
-  Outcome<llvm::Type*, Error> PointerType::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Type*, Error> PointerType::Codegen(const Environment& env)
   {
-    return Outcome<llvm::Type*, Error>(llvm::PointerType::getUnqual(*env->context));
+    return Outcome<llvm::Type*, Error>(llvm::PointerType::getUnqual(*env.context));
   }
 
 }

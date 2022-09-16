@@ -70,11 +70,11 @@ namespace pink {
 			<< "-O <arg>, --optimize <arg>: specifies the optimization level to use.\n\t valid arguments are:\n\t\t 0 (none),\n\t\t 1 (limited),\n\t\t 2 (regular),\n\t\t 3 (high, may affect compile times),\n\t\t s (small code size), \n\t\t z (very small code size, increases run times)\n"
 			<< "-L --emit-only-llvm: emit llvm IR instead of an executable\n"
 			<< "-l --emit-llvm:      emit llvm IR in addition to an executable\n\n"
-      << "-S --emit-only-asm:  emit target assembly instead of an executable\n"
-      << "-s --emit-asm:       emit target assembly in addition to an executable\n\n"
-      << "-C --emit-only-obj:  emit an object file instead of an executable\n"
-      << "-c --emit-obj:       emit an object file instead of an executable\n\n"
-      << std::endl;
+      		<< "-S --emit-only-asm:  emit target assembly instead of an executable\n"
+      		<< "-s --emit-asm:       emit target assembly in addition to an executable\n\n"
+      		<< "-C --emit-only-obj:  emit an object file instead of an executable\n"
+      		<< "-c --emit-obj:       emit an object file instead of an executable\n\n"
+      		<< std::endl;
 	}
 
   std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv)

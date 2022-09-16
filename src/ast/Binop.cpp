@@ -46,7 +46,7 @@ namespace pink {
       --------------------------------------------------
       			  env |- lhs op rhs : T
     */
-    Outcome<Type*, Error> Binop::GetypeV(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Binop::GetypeV(const Environment& env)
     {
     	// Get the type of both sides
     	Outcome<Type*, Error> lhs_result(left->Getype(env));
@@ -60,7 +60,7 @@ namespace pink {
     		return rhs_result;
     		
     	// find the operator present between both sides in the env 
-    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env->binops->Lookup(op);
+    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env.binops->Lookup(op);
     	
     	if (!binop
         || binop->second->NumOverloads() == 0)
@@ -92,7 +92,7 @@ namespace pink {
 
         if (!literal)
         {
-          Type* int_ptr_type = env->types->GetPointerType(env->types->GetIntType());
+          Type* int_ptr_type = env.types->GetPointerType(env.types->GetIntType());
           llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, it);
           
           if (!ptr_add_binop)
@@ -127,7 +127,7 @@ namespace pink {
     }
     
     
-    Outcome<llvm::Value*, Error> Binop::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Value*, Error> Binop::Codegen(const Environment& env)
     {
       // Get the type and value of both sides
     	Outcome<Type*, Error> lhs_type_result(left->Getype(env));
@@ -170,7 +170,7 @@ namespace pink {
   
 
     	// find the operator present between both sides in the env 
-    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env->binops->Lookup(op);
+    	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env.binops->Lookup(op);
     	
     	if (!binop)
     	{
@@ -216,7 +216,7 @@ namespace pink {
   
         if (!literal)
         {
-          Type* int_ptr_type = env->types->GetPointerType(env->types->GetIntType());
+          Type* int_ptr_type = env.types->GetPointerType(env.types->GetIntType());
           llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, it);
           
           if (!ptr_add_binop)

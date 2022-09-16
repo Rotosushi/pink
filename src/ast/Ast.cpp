@@ -23,7 +23,7 @@ namespace pink {
         return loc;
     }
     
-    Outcome<Type*, Error> Ast::Getype(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Ast::Getype(const Environment& env)
     {
     	if (type)
     	{

@@ -68,7 +68,7 @@ bool TestBlock(std::ostream& out)
   pink::Outcome<pink::Type*, pink::Error> getype_outcome(pink::Error(pink::Error::Code::None, pink::Location()));
   
   result &= Test(out, "Block::Getype()",
-           (getype_outcome = block->Getype(env))
+           (getype_outcome = block->Getype(*env))
         && (getype_outcome.GetOne() == int_t));
   
   result &= Test(out, "pink::Block", result);

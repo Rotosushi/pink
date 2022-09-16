@@ -43,7 +43,7 @@ bool TestFirstPhase(std::ostream& out)
        + std::string("fn global(a: Int, b: Int){(a == b) == x;};\n")
        + std::string("one();\none(1);\ninc(1);\ninc(true);\nadd(1,2);\nadd(1,true);\n"));
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env     = pink::NewGlobalEnv(options, ss);
+  auto env     = pink::NewGlobalEnv(options, &ss);
 
 	/*
 		Parser emits correct Ast for each Ast node kind,
@@ -60,72 +60,72 @@ bool TestFirstPhase(std::ostream& out)
 	
 	
 	// test parsing and typing a nil literal
-	pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result = env->parser->Parse(env);
+	pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse nil, Getype() = Nil", 
 					   (parser_result) 
 				    && ((term  = parser_result.GetOne().get()) != nullptr)
 				    && llvm::isa<pink::Nil>(term)
-				    && (getype_result = term->Getype(env))
+				    && (getype_result = term->Getype(*env))
 				    && (getype_result.GetOne() == env->types->GetNilType()));
 		
 		
 	// test parsing and typing a integer literal
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse 108, Getype() = Int", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Int>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetIntType()));
 			
 	// test parsing and typing a boolean literal
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse false, Getype() = Bool", 
 					 (parser_result) 
 				  && ((term  = parser_result.GetOne().get()) != nullptr)
 				  && llvm::isa<pink::Bool>(term)
-				  && (getype_result = term->Getype(env))
+				  && (getype_result = term->Getype(*env))
 			    && (getype_result.GetOne() == env->types->GetBoolType()));
 	
 	// test parsing and typing a bound variable
 	pink::InternedString x_var  = env->symbols->Intern("x");
 	pink::Type*          x_type = env->types->GetBoolType();
-	llvm::Value*         x_val  = env->builder->getTrue();
+	llvm::Value*         x_val  = env->instruction_builder->getTrue();
 	   
 	env->bindings->Bind(x_var, x_type, x_val);
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Bound Variable, Getype() = Bool", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Variable>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetBoolType()));
 				   
 
 	// test parsing a variable, and typing an unbound variable
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse an Unbound Variable, Getype() = Error", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Variable>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::NameNotBoundInScope));
 	
 	
 	
 	// test parsing a bind expression, binding to a new variable
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Bind expression for a new Variable, Getype() = Bool", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Bind>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetBoolType()));
   
   // we must be careful to remember that typing a bind expression constructs 
@@ -134,107 +134,107 @@ bool TestFirstPhase(std::ostream& out)
 
 
 	// test parsing a bind expression, binding to a already bound variable
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Bind expression for an existing Variable, Getype() = Error", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Bind>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::NameAlreadyBoundInScope));
 
     
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Bind of a new Variable, reusing an existing binding in the expression, Getype() = Bool",
 					   (parser_result)
 					&& ((term = parser_result.GetOne().get()) != nullptr)
-					&& (getype_result = term->Getype(env))
+					&& (getype_result = term->Getype(*env))
 					&& (getype_result.GetOne() == env->types->GetBoolType()));
 			   
 	
 	// test parsing an assignment expression, using the definition of 'x' above.
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse an Assignment to an existing Variable, Getype() = Bool", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Assignment>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetBoolType()));
 				   			   
 	// test parsing an assignment expression, using an unbound variable
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse an Assignment to a nonexistant Variable, Getype() = Error", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Assignment>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::NameNotBoundInScope));
 				   
 				   
 	// test parsing a unop expression which is known, and is provided the correct type
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Unary expression, with a valid unop, and a valid argument type, Getype() = Bool", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Unop>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetBoolType()));
            
 	// test parsing a unop expression which is known, and is provided the incorrect type
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Unary expression, with a valid unop and an invalid argument type, Getype() = Error", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Unop>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 
 	// test parsing a unop expression which is unknown
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Unary expression, with an invalid unop, Getype() = Error", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Unop>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::UnknownUnop));
 				   
 				   
 	// test parsing a binop expression which is known, and is provided the correct types
-	parser_result = env->parser->Parse(env); // a tautology
+	parser_result = env->parser->Parse(*env); // a tautology
 	
 	result &= Test(out, "Parser::Parse a Binary expression which is known and provided valid argument types, Getype() = Bool", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetBoolType()));
 				   
 				   
 	// test parsing a binop expression which is known, and is provided the incorrect types
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Binary expression which is known and provided the incorrect types, Getype() = Error", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 				   
 				   
 	// test parsing a binop expression which is unknown, and is provided the incorrect types
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Binary expression which is unknown, Getype() = Error", 
                (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && llvm::isa<pink::Binop>(term)
-            && !(getype_result = term->Getype(env))
+            && !(getype_result = term->Getype(*env))
             && (getype_result.GetTwo().code == pink::Error::Code::UnknownBinop));
 
   // so, this is an interesting bug right here. because we choose to not even
@@ -274,64 +274,64 @@ bool TestFirstPhase(std::ostream& out)
   // #USE_BEFORE_DEFINITION
 
 	// test parsing a complex binop expression which is known, and is provided the correct types
-	parser_result = env->parser->Parse(env); // a contradiction
+	parser_result = env->parser->Parse(*env); // a contradiction
 	
 	result &= Test(out, "Parser::Parse a complex Binary expression, whose binops are known, and provided the correct types, Getype() = Bool", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetBoolType()));
 				   
 				   
 	// test parsing a complex binop expression which is known, and is provided the incorrect types
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a complex Binary expression whose binops are known, and provided the incorrect types, Getype() = Error",
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 				   
 	// test parsing a complex binop expression which is unknown, and is provided the incorrect types
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a complex Binary expression whose binops are not all known, Getype() = Error",
 	             (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && llvm::isa<pink::Binop>(term)
-            && !(getype_result = term->Getype(env))
+            && !(getype_result = term->Getype(*env))
             && (getype_result.GetTwo().code == pink::Error::Code::UnknownBinop));
 	
 	// test parsing a mixed-type complex binop expression which is known, and is provided the correct types
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a mixed-type complex Binary expression whose binops are all known, and are provided the correct types, Getype() = Bool", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && (getype_result = term->Getype(env))
+				   && (getype_result = term->Getype(*env))
 				   && (getype_result.GetOne() == env->types->GetBoolType()));
 				   
 	// test parsing a mixed-type complex binop expression which is known, and is provided the incorrect types
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a mixed-type complex Binary expression whose binops are all know, and are provided the incorrect types, Getype() = Error", 
 					  (parser_result) 
 				   && ((term  = parser_result.GetOne().get()) != nullptr)
 				   && llvm::isa<pink::Binop>(term)
-				   && !(getype_result = term->Getype(env))
+				   && !(getype_result = term->Getype(*env))
            && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 				   
 	// test parsing a complex binop expression which is unknown, and is provided the incorrect types
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a mixed-type complex Binary expression whose binops are not all known, Getype() = Error", 
                (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && llvm::isa<pink::Binop>(term)
-            && !(getype_result = term->Getype(env))
+            && !(getype_result = term->Getype(*env))
             && (getype_result.GetTwo().code == pink::Error::Code::UnknownBinop));
 		
 	
@@ -341,59 +341,59 @@ bool TestFirstPhase(std::ostream& out)
   pink::Type* int_5_array_t = env->types->GetArrayType(5, int_t);
 
   // test parsing and typing an array literal.
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an array of integers, Getype() = [ Int x 5 ]",
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Array>(term)
-             && (getype_result = term->Getype(env))
+             && (getype_result = term->Getype(*env))
              && (int_5_array_t == getype_result.GetOne()));
 
 	pink::Type* bool_t = env->types->GetBoolType();
 
   pink::Type* bool_4_array_t = env->types->GetArrayType(4, bool_t);
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an array of booleans, Getype() = [ Bool x 4 ]",
               (parser_result)
            && ((term = parser_result.GetOne().get()) != nullptr)
            && llvm::isa<pink::Array>(term)
-           && (getype_result = term->Getype(env))
+           && (getype_result = term->Getype(*env))
            && (bool_4_array_t == getype_result.GetOne()));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an array of Int and Bool, Getype() = Error",
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Array>(term)
-             && !(getype_result = term->Getype(env))
+             && !(getype_result = term->Getype(*env))
              && (getype_result.GetTwo().code == pink::Error::Code::ArrayMemberTypeMismatch));
 
   std::vector<pink::Type*> tuple_5_int_members = {int_t, int_t, int_t, int_t, int_t};
   pink::Type* tuple_5_int_t = env->types->GetTupleType(tuple_5_int_members);
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse a Tuple of all Int, Getype() = (Int,Int,Int,Int,Int)",
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Tuple>(term)
-             && (getype_result = term->Getype(env))
+             && (getype_result = term->Getype(*env))
              && (tuple_5_int_t == getype_result.GetOne())); 
 
   std::vector<pink::Type*> tuple_5_int_bool_members = {int_t,bool_t,int_t,bool_t,int_t};
   pink::Type* tuple_5_int_bool_t = env->types->GetTupleType(tuple_5_int_bool_members);
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse a tuple of Int and Bool, Getype() = (Int,Bool,Int,Bool,Int)",
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Tuple>(term)
-             && (getype_result = term->Getype(env))
+             && (getype_result = term->Getype(*env))
              && (tuple_5_int_bool_t == getype_result.GetOne()));
 
   // 'bind' a variable to a tuple, for typing the dot operator
@@ -402,193 +402,193 @@ bool TestFirstPhase(std::ostream& out)
   pink::Type* t_type = env->types->GetTupleType(member_types);
   
   env->bindings->Bind(t_var, t_type, nullptr);
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse dot operator (t.0) on tuple (Int,Bool,Int,Bool), Getype() = Int",
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Dot>(term)
-             && (getype_result = term->Getype(env))
+             && (getype_result = term->Getype(*env))
              && (int_t == getype_result.GetOne()));
   
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse dot operator (t.1) on tuple (Int,Bool,Int,Bool), Getype() = Bool",
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Dot>(term)
-             && (getype_result = term->Getype(env))
+             && (getype_result = term->Getype(*env))
              && (bool_t == getype_result.GetOne()));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse dot operator (t.5) on tuple (Int, Bool, Int, Bool), Getype() = Error",
                 (parser_result)
              && ((term = parser_result.GetOne().get()) != nullptr)
              && llvm::isa<pink::Dot>(term)
-             && !(getype_result = term->Getype(env))
+             && !(getype_result = term->Getype(*env))
              && (getype_result.GetTwo().code == pink::Error::Code::DotIndexOutOfRange));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse a Conditional, Getype() = Int",
                  (parser_result)
               && ((term = parser_result.GetOne().get()) != nullptr)
               && llvm::isa<pink::Conditional>(term)
-              && (getype_result = term->Getype(env))
+              && (getype_result = term->Getype(*env))
               && (getype_result.GetOne() == int_t));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse a Conditional, Bad test type, Getype() = Error",
                  (parser_result)
               && ((term = parser_result.GetOne().get()) != nullptr)
               && llvm::isa<pink::Conditional>(term)
-              && !(getype_result = term->Getype(env))
+              && !(getype_result = term->Getype(*env))
               && (getype_result.GetTwo().code == pink::Error::Code::CondTestExprTypeMismatch));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse a Conditional, Mismatched body types, Getype() = Error",
                  (parser_result)
               && ((term = parser_result.GetOne().get()) != nullptr)
               && llvm::isa<pink::Conditional>(term)
-              && !(getype_result = term->Getype(env))
+              && !(getype_result = term->Getype(*env))
               && (getype_result.GetTwo().code == pink::Error::Code::CondBodyExprTypeMismatch));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse a While loop, Getype = Nil",
               (parser_result)
            && ((term = parser_result.GetOne().get()) != nullptr)
            && llvm::isa<pink::While>(term)
-           && (getype_result = term->Getype(env))
+           && (getype_result = term->Getype(*env))
            && (nil_t == getype_result.GetOne()));
 
 
 	std::vector<pink::Type*> args_t;
 	pink::Type* simplest_fn_t = env->types->GetFunctionType(int_t, args_t);
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Function, no-arg, Getype() = Nil -> Int",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
-					&& (getype_result = term->Getype(env)) // pink::Outcome<>::operator bool 
+					&& (getype_result = term->Getype(*env)) // pink::Outcome<>::operator bool 
 					&& (getype_result.GetOne() == simplest_fn_t));
 
 
 
   args_t = {int_t};
   pink::Type* inc_fn_t = env->types->GetFunctionType(int_t, args_t);
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse a Function, one arg, Getype() = Int -> Int",
               (parser_result)
            && ((term = parser_result.GetOne().get()) != nullptr)
            && (llvm::isa<pink::Function>(term))
-           && (getype_result = term->Getype(env))
+           && (getype_result = term->Getype(*env))
            && (getype_result.GetOne() == inc_fn_t));
 					
 	args_t = {int_t, int_t};
 	pink::Type* basic_fn_t = env->types->GetFunctionType(int_t, args_t);
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Function, two arg, same result type, Getype() = Int -> Int -> Int",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
-					&& (getype_result = term->Getype(env)) // pink::Outcome<>::operator bool
+					&& (getype_result = term->Getype(*env)) // pink::Outcome<>::operator bool
 					&& (getype_result.GetOne() == basic_fn_t));
 
 	//args_t = {int_t, int_t};
 	pink::Type* comparison_fn_t = env->types->GetFunctionType(bool_t, args_t);
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Function, two arg, different result type, Getpe() = Int -> Int -> Bool",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
-					&& (getype_result = term->Getype(env)) // pink::Outcome<>::operator bool 
+					&& (getype_result = term->Getype(*env)) // pink::Outcome<>::operator bool 
 					&& (getype_result.GetOne() == comparison_fn_t));
 					
 	args_t = {int_t, int_t, int_t};
 	pink::Type* complex_fn_t = env->types->GetFunctionType(bool_t, args_t);
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 
 	result &= Test(out, "Parser::Parse a Function, three arg, different result type, mutiple lines, local binding, Getype() = Int -> Int -> Int -> Bool",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
-					&& (getype_result = term->Getype(env)) // pink::Outcome<>::operator bool 
+					&& (getype_result = term->Getype(*env)) // pink::Outcome<>::operator bool 
 					&& (getype_result.GetOne() == complex_fn_t));
 					
 	args_t = {int_t, int_t};
 	pink::Type* global_fn_t = env->types->GetFunctionType(bool_t, args_t);
-	parser_result = env->parser->Parse(env);
+	parser_result = env->parser->Parse(*env);
 	
 	result &= Test(out, "Parser::Parse a Function, two arg, different result type, uses global variable, Getype() = Int -> Int -> Bool",
 					   (parser_result)
 					&& ((term  = parser_result.GetOne().get()) != nullptr)
 					&& (llvm::isa<pink::Function>(term))
-					&& (getype_result = term->Getype(env)) // pink::Outcome<>::operator bool 
+					&& (getype_result = term->Getype(*env)) // pink::Outcome<>::operator bool 
 					&& (getype_result.GetOne() == global_fn_t));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an Application, no arg, Getype() = Int",
               (parser_result)
            && ((term = parser_result.GetOne().get()) != nullptr)
            && (llvm::isa<pink::Application>(term))
-           && (getype_result = term->Getype(env))
+           && (getype_result = term->Getype(*env))
            && (getype_result.GetOne() == int_t));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an Application, too many args, Getype() = Error",
                (parser_result)
             && ((term = parser_result.GetOne().get()) != nullptr)
             && (llvm::isa<pink::Application>(term))
-            && !(getype_result = term->Getype(env))
+            && !(getype_result = term->Getype(*env))
             && (getype_result.GetTwo().code == pink::Error::Code::ArgNumMismatch));
 
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an Application, one arg, good arg type, Getype() = Int",
              (parser_result)
           && ((term = parser_result.GetOne().get()) != nullptr)
           && (llvm::isa<pink::Application>(term))
-          && (getype_result = term->Getype(env))
+          && (getype_result = term->Getype(*env))
           && (getype_result.GetOne() == int_t));
 
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an Application, one arg, bad arg type, Getype() = Error",
              (parser_result)
           && ((term = parser_result.GetOne().get()) != nullptr)
           && (llvm::isa<pink::Application>(term))
-          && !(getype_result = term->Getype(env))
+          && !(getype_result = term->Getype(*env))
           && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch));
 
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an Application, two arg, good arg types, Getype() = Int",
              (parser_result)
           && ((term = parser_result.GetOne().get()) != nullptr)
           && (llvm::isa<pink::Application>(term))
-          && (getype_result = term->Getype(env))
+          && (getype_result = term->Getype(*env))
           && (getype_result.GetOne() == int_t));
 
-  parser_result = env->parser->Parse(env);
+  parser_result = env->parser->Parse(*env);
 
   result &= Test(out, "Parser::Parse an Application, two arg, bad arg type, Getype() = Error",
              (parser_result)
           && ((term = parser_result.GetOne().get()) != nullptr)
           && (llvm::isa<pink::Application>(term))
-          && !(getype_result = term->Getype(env))
+          && !(getype_result = term->Getype(*env))
           && (getype_result.GetTwo().code == pink::Error::Code::ArgTypeMismatch)); 
 
 	result &= Test(out, "pink First Phase", result);

@@ -28,8 +28,8 @@ namespace pink {
         return std::string("Nil");
     }
     
-    Outcome<llvm::Type*, Error> NilType::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Type*, Error> NilType::Codegen(const Environment& env)
     {
-    	return Outcome<llvm::Type*, Error>(env->builder->getInt1Ty());
+    	return Outcome<llvm::Type*, Error>(env.instruction_builder->getInt1Ty());
     }
 }

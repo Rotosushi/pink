@@ -48,7 +48,7 @@ namespace pink {
       Type*      type;
         
     private:
-    	virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) = 0;
+    	virtual Outcome<Type*, Error> GetypeV(const Environment& env) = 0;
 
     public:
       Ast(const Kind k, Location l);
@@ -141,7 +141,7 @@ namespace pink {
           class itself, which should save
           on computation within Codegen.
       */
-      Outcome<Type*, Error> Getype(std::shared_ptr<Environment> env);
-      virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) = 0;
+      Outcome<Type*, Error> Getype(const Environment& env);
+      virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) = 0;
     };
 }

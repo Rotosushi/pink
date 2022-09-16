@@ -7,9 +7,9 @@
 
 
 namespace pink {
-  llvm::Value* StoreConstAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Constant* src, std::shared_ptr<Environment> env);
-  llvm::Value* StoreValueAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, std::shared_ptr<Environment> env);
-  llvm::Value* StoreAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, std::shared_ptr<Environment> env);
+  void StoreConstAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Constant* src, const Environment& env);
+  void StoreValueAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, const Environment& env);
+  void StoreAggregate(llvm::Type* ty, llvm::Value* dest, llvm::Value* src, const Environment& env);
 
 }
 

@@ -42,14 +42,14 @@ namespace pink {
    *  2) the type of both alternative expressions must match.
    *
    */
-  Outcome<Type*, Error> Conditional::GetypeV(std::shared_ptr<Environment> env)
+  Outcome<Type*, Error> Conditional::GetypeV(const Environment& env)
   {
     Outcome<Type*, Error> test_type_result = test->Getype(env);
 
     if (!test_type_result)
       return test_type_result;
 
-    Type* bool_ty = env->types->GetBoolType();
+    Type* bool_ty = env.types->GetBoolType();
 
     if (bool_ty != test_type_result.GetOne())
     {
@@ -81,7 +81,7 @@ namespace pink {
   }
 
 
-  Outcome<llvm::Value*, Error> Conditional::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Value*, Error> Conditional::Codegen(const Environment& env)
   {
     // the steps outlined here are taken from 
     //  llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl05.html
@@ -140,7 +140,7 @@ namespace pink {
       return test_value_result;
 
     // 2) emit the conditional branch instruction
-    if (env->current_function == nullptr)
+    if (env.current_function == nullptr)
     {
       FatalError("Cannot emit a conditional expression without a basic block available to insert into!", __FILE__, __LINE__);
       return Outcome<llvm::Value*, Error>(nullptr); // FatalError is marked [[noreturn]] so why does the compiler complain about not all code paths returning a value?
@@ -149,18 +149,18 @@ namespace pink {
     // 3) construct the basic blocks we will be emitting code into
     // we want the first alternatives basic block to appear immediately after
     // the current basicblock we are at within the function.
-    llvm::BasicBlock* then_BB = llvm::BasicBlock::Create(*env->context, "then", env->current_function);
+    llvm::BasicBlock* then_BB = llvm::BasicBlock::Create(*env.context, "then", env.current_function);
     // we want the second and merge basic blocks to appear after the first
     // alternatives basic block, which given that the basic blocks which exist 
     // might themselves be modified by emitting the code for the first
     // alternatives basic block means we must wait to append the next two basic 
     // blocks until after we have already emitted the code for the first
     // alternatives basic block.
-    llvm::BasicBlock* else_BB = llvm::BasicBlock::Create(*env->context, "else");
-    llvm::BasicBlock* merge_BB = llvm::BasicBlock::Create(*env->context, "merge");
+    llvm::BasicBlock* else_BB = llvm::BasicBlock::Create(*env.context, "else");
+    llvm::BasicBlock* merge_BB = llvm::BasicBlock::Create(*env.context, "merge");
 
     // 4) emit the conditional branch instruction
-    env->builder->CreateCondBr(test_value_result.GetOne(), then_BB, else_BB);
+    env.instruction_builder->CreateCondBr(test_value_result.GetOne(), then_BB, else_BB);
 
     // 5) emit the code for the first alternative into the basic block
     //    constructed for the first alternative
@@ -174,7 +174,7 @@ namespace pink {
     // that appeared after the conditional expression textually, after 
     // the conditional branch instruction semantically, making all of 
     // it unreachable code.
-    env->builder->SetInsertPoint(then_BB);
+    env.instruction_builder->SetInsertPoint(then_BB);
 
     // #NOTE: if the compiler truly does fail here, doesn't it leave 
     // the compiler in an 'inoperable' state? that is, with a bunch 
@@ -191,7 +191,7 @@ namespace pink {
 
     // after the code appearing within the then block, we want to 
     // branch to the merge block unconditionally
-    env->builder->CreateBr(merge_BB);
+    env.instruction_builder->CreateBr(merge_BB);
 
     // then since the codegen for the first alternative may change 
     // the current block, (such as in the case of a nested conditional
@@ -199,7 +199,7 @@ namespace pink {
     // point to the relevant basic block for the merging of values,
     // we update the then_BB for the later construction 
     // of the PHI node. 
-    then_BB = env->builder->GetInsertBlock();
+    then_BB = env.instruction_builder->GetInsertBlock();
 
     // 6) emit the code for the second alternative into the basic block 
     //    constructed for the second alternative
@@ -208,25 +208,25 @@ namespace pink {
     // functions list of basic blocks here, after emitting the code for the 
     // first alternatives basic block precisely because emitting the code 
     // for the first alternative may modify the basic block list itself.
-    env->current_function->getBasicBlockList().push_back(else_BB);
+    env.current_function->getBasicBlockList().push_back(else_BB);
     // set the current insertion point to the relevant basic block
-    env->builder->SetInsertPoint(else_BB);
+    env.instruction_builder->SetInsertPoint(else_BB);
 
     Outcome<llvm::Value*, Error> second_codegen_result = second->Codegen(env);
 
     if (!second_codegen_result)
       return second_codegen_result;
     // construct the required unconditional branch to the merge block
-    env->builder->CreateBr(merge_BB);
+    env.instruction_builder->CreateBr(merge_BB);
     // since codegen can modify the basic block being inserted into, we 
     // must update the else_BB to be the relevant one.
-    else_BB = env->builder->GetInsertBlock();
+    else_BB = env.instruction_builder->GetInsertBlock();
 
     // 7) emit the code for the merge block
-    env->current_function->getBasicBlockList().push_back(merge_BB);
-    env->builder->SetInsertPoint(merge_BB);
+    env.current_function->getBasicBlockList().push_back(merge_BB);
+    env.instruction_builder->SetInsertPoint(merge_BB);
 
-    llvm::PHINode* pn = env->builder->CreatePHI(first_type_result.GetOne(), 2, "mergeval");
+    llvm::PHINode* pn = env.instruction_builder->CreatePHI(first_type_result.GetOne(), 2, "mergeval");
 
     pn->addIncoming(first_codegen_result.GetOne(), then_BB);
     pn->addIncoming(second_codegen_result.GetOne(), else_BB);

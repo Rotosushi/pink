@@ -8,7 +8,7 @@ namespace pink {
     // represents the literal value nil
     class Nil : public Ast {
     private:
-    	virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
+    	virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
     
     public:
         Nil(Location l);
@@ -21,6 +21,6 @@ namespace pink {
         virtual std::string ToString() override;
 
         
-        virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
+        virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
     };
 }

@@ -68,7 +68,7 @@ namespace pink {
     return result;
   }
 
-  Outcome<llvm::Type*, Error> TupleType::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Type*, Error> TupleType::Codegen(const Environment& env)
   {
     std::vector<llvm::Type*> member_llvm_types;
     
@@ -82,7 +82,7 @@ namespace pink {
       member_llvm_types.push_back(member_type_codegen_result.GetOne());
     }
 
-    return llvm::StructType::get(*env->context, member_llvm_types);
+    return llvm::StructType::get(*env.context, member_llvm_types);
   }
 }
 

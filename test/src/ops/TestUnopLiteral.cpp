@@ -6,10 +6,10 @@
 
 #include "type/IntType.h"
 
-pink::Outcome<llvm::Value*, pink::Error> test_literal_fn(llvm::Value* term, std::shared_ptr<pink::Environment> env)
+pink::Outcome<llvm::Value*, pink::Error> test_literal_fn(llvm::Value* term, const pink::Environment& env)
 {
     pink::Error err(pink::Error::Code::None, pink::Location());
-    if (!term || !env)
+    if (!term)
       return pink::Outcome<llvm::Value*, pink::Error>(err);
     else
       return pink::Outcome<llvm::Value*, pink::Error>(err);
@@ -36,7 +36,7 @@ bool TestUnopLiteral(std::ostream& out)
 
     result &= Test(out, "UnopLiteral::Lookup()", opt.hasValue() && (*opt).first == ty);
 
-    pink::Outcome<llvm::Value*, pink::Error> v = (*opt).second->generate(nullptr, env);
+    pink::Outcome<llvm::Value*, pink::Error> v = (*opt).second->generate(nullptr, *env);
 
     result &= Test(out, "UnopLiteral::generate", !v.GetWhich());
 

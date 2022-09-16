@@ -33,9 +33,9 @@ namespace pink {
     	--------------------
     	  env |- nil : Nil
     */
-    Outcome<Type*, Error> Nil::GetypeV(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Nil::GetypeV(const Environment& env)
     {
-    	Type* nil_type = env->types->GetNilType();
+    	Type* nil_type = env.types->GetNilType();
     	Outcome<Type*, Error> result(nil_type);
     	return result;
     }
@@ -44,9 +44,9 @@ namespace pink {
     	---------------------
     	env |- nil : i1 (0)
     */
-    Outcome<llvm::Value*, Error> Nil::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Value*, Error> Nil::Codegen(const Environment& env)
     {
-    	llvm::Value* nil_value = env->builder->getFalse();
+    	llvm::Value* nil_value = env.instruction_builder->getFalse();
     	Outcome<llvm::Value*, Error> result(nil_value);
     	return result;
     }

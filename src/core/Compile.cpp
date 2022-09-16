@@ -52,51 +52,25 @@ namespace pink {
 		return result;
 	}
 	
-/*
- *  we can handle multiple errors by refactoring the parser 
- *  to maintain it's current position after returning from 
- *  an error, and then being able to contine parsing the 
- *  next line of code; up to some sane error limit.
- * 
- *  we can support parsing from a stream if we have a push 
- *  parser instead of a pull parser, where we don't require
- *  all of the file to be in memory simultaneously.
 
- *  when we define multiple file compilation, we are going to 
- *  allow use-before-definition. we can do this if we catch when 
- *  the parser returns a undefined symbol error then later 
- *  when we parse the definition/declaration of the symbol we go back 
- *  to fill in the usage using that definition. this is only going to 
- *  be done at the global declaration/definition level. because function bodies emit 
- *  code which has an implicit ordering already that I would like to preserve.
- *
- *  anyways, like with false_bindings, we could simply maintain a list of 
- *  undefined symbol usages, and then use that to directly fill in the
- *  usage when we parse the definition/declaration.
- *
- *  there are three main instances of use-before-definition
- *
- *  functions
- *
- *  types
- *
- *  globals
- *
- */	
-	void Compile(std::shared_ptr<Environment> env)
+  /*
+    
+
+  */
+	void Compile(const Environment& env)
 	{
 		//std::string  inbuf(ReadEntireFile(env->options->input_file));
 	  std::fstream infile;
-    std::string outfilename = env->options->output_file;
+    std::string outfilename = env.options->output_file;
 		std::string objoutfilename      = outfilename + ".o";
 		std::string llvmoutfilename     = outfilename + ".ll";
 		std::string assemblyoutfilename = outfilename + ".s";
 
-    infile.open(env->options->input_file);
+    infile.open(env.options->input_file);
     
     if (!infile.is_open())
     {
-      FatalError("Could not open input file " + env->options->input_file, __FILE__, __LINE__);
+      FatalError("Could not open input file " + env.options->input_file, __FILE__, __LINE__);
     }
 
     // it's wasteful to assign the parser when
@@ -105,13 +79,13 @@ namespace pink {
     // modify what the parser is reading from after construction.
     // so we must reconstruct here to only have the output file open
     // during compilation.
-    env->parser = std::make_unique<Parser>(infile);
+    env.parser->SetIStream(&infile);
 
     std::vector<std::unique_ptr<pink::Ast>> valid_terms;
    
-    while (!env->parser->EndOfInput())
+    while (!env.parser->EndOfInput())
     { 
-      pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env->parser->Parse(env);
+      pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> term = env.parser->Parse(env);
       
       if (!term)
       {
@@ -123,7 +97,7 @@ namespace pink {
           // emit, or link together thus we are safe to simply exit.
           if (valid_terms.size() == 0)
           {
-            FatalError("Warning: parsed an empty source file " + env->options->input_file, __FILE__, __LINE__);
+            FatalError("Warning: parsed an empty source file " + env.options->input_file, __FILE__, __LINE__);
           }
           // else we did parse some terms and simply reached the end of the
           // source file, so we can safely continue with compilation of the 
@@ -176,12 +150,12 @@ namespace pink {
     // to allow the type of bound names to be used in later expressions.
     // so, we have to unbind each name that was falsely bound,
     // so that Codegen can bind those names to their actual types.
-    for (InternedString fbnd : env->false_bindings)
+    for (InternedString fbnd : *env.false_bindings)
     {
-      env->bindings->Unbind(fbnd);
+      env.bindings->Unbind(fbnd);
     }
     // then since we unbound them, clear the names from the list
-    env->false_bindings.clear();
+    env.false_bindings->clear();
 
     
     for (std::unique_ptr<pink::Ast>& term : valid_terms)
@@ -198,7 +172,7 @@ namespace pink {
 		// if the optimization level is greater than zero,
     // optimize the code. 
     // #TODO: look more into what would be good optimizations to run.
-		if (env->options->optimization_level != llvm::OptimizationLevel::O0)
+		if (env.options->optimization_level != llvm::OptimizationLevel::O0)
 		{
 			// These are the analysis pass managers that run the actual 
 			// analysis and optimization code against the IR.
@@ -222,14 +196,14 @@ namespace pink {
 			// can perform optimizations together, lazily
 			PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 			
-			llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(env->options->optimization_level);
+			llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(env.options->optimization_level);
 			
 			// Run the optimizer agains the IR 
-			MPM.run(*env->module, MAM);
+			MPM.run(*env.module, MAM);
 		}
 		
 		// emit the module to the output file, according to the format specified
-		if (env->options->emit_llvm)
+		if (env.options->emit_llvm)
 		{
 			std::error_code outfile_error;
 			llvm::raw_fd_ostream outfile(llvmoutfilename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
@@ -244,12 +218,12 @@ namespace pink {
 			
 			// simply print to the output file the 
 			// code generated, as it is already in llvm IR
-			env->module->print(outfile, nullptr);
+			env.module->print(outfile, nullptr);
 			
 			outfile.close();
 		}
 		
-		if (env->options->emit_assembly)
+		if (env.options->emit_assembly)
 		{
       llvm::SmallVector<char> buf;
 	    llvm::raw_svector_ostream outstream(buf);
@@ -273,16 +247,16 @@ namespace pink {
       //
       // notice the nullptr will need to be replaced with a pointer to the 
       // dwarf object output file, once we emit debugging information.
-			if (env->target_machine->addPassesToEmitFile(asmPrintPass, outstream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile))
+			if (env.target_machine->addPassesToEmitFile(asmPrintPass, outstream, nullptr, llvm::CodeGenFileType::CGFT_AssemblyFile))
 			{
 				FatalError("the target_machine " 
-                    + env->target_machine->getTargetTriple().str() 
+                    + env.target_machine->getTargetTriple().str() 
                     + " cannot emit an assembly file of this type",
                    __FILE__,
                    __LINE__);
 			}
 			
-			asmPrintPass.run(*env->module);
+			asmPrintPass.run(*env.module);
 		
       
 		  outfile << outstream.str();
@@ -302,7 +276,7 @@ namespace pink {
 		  }
     }
 		
-		if (env->options->emit_object)
+		if (env.options->emit_object)
 		{	
 			std::error_code outfile_error;
 			llvm::raw_fd_ostream outfile(objoutfilename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
@@ -316,16 +290,16 @@ namespace pink {
 			}
 			
 			llvm::legacy::PassManager objPrintPass;
-			if (env->target_machine->addPassesToEmitFile(objPrintPass, outfile, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile))
+			if (env.target_machine->addPassesToEmitFile(objPrintPass, outfile, nullptr, llvm::CodeGenFileType::CGFT_ObjectFile))
 			{
 				FatalError("the target machine " 
-                    + env->target_machine->getTargetTriple().str() 
+                    + env.target_machine->getTargetTriple().str() 
                     + " cannot emit an object file of this type",
 				           __FILE__, 
                    __LINE__);
 			}
 			
-			objPrintPass.run(*env->module);
+			objPrintPass.run(*env.module);
 			
 			outfile.close();
 		}

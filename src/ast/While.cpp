@@ -35,14 +35,14 @@ namespace pink {
     return result;
   }
 
-  Outcome<Type*, Error> While::GetypeV(std::shared_ptr<Environment> env)
+  Outcome<Type*, Error> While::GetypeV(const Environment& env)
   {
     Outcome<Type*, Error> test_getype_result = test->Getype(env);
 
     if (!test_getype_result)
       return test_getype_result;
 
-    Type* bool_t = env->types->GetBoolType();
+    Type* bool_t = env.types->GetBoolType();
 
     if (bool_t != test_getype_result.GetOne())
     {
@@ -55,7 +55,7 @@ namespace pink {
 
     if (body_getype_result)
     {
-      return Outcome<Type*, Error>(env->types->GetNilType());
+      return Outcome<Type*, Error>(env.types->GetNilType());
     }
     else 
     {
@@ -63,7 +63,7 @@ namespace pink {
     }
   }
 
-  Outcome<llvm::Value*, Error> While::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Value*, Error> While::Codegen(const Environment& env)
   {
     // the general outline of this procedure is as follows:
     // 1) construct the basic block which represents the body of the loop,
@@ -105,7 +105,7 @@ namespace pink {
     if (!body_type_result)
       return Outcome<llvm::Value*, Error>(body_type_result.GetTwo());
  
-    if (env->current_function == nullptr)
+    if (env.current_function == nullptr)
     {
       FatalError("Cannot emit a While loop without a basic block available to insert into!", __FILE__, __LINE__);
       return Outcome<llvm::Value*, Error>(nullptr); // suppress warning about not all code paths returning a value
@@ -120,19 +120,19 @@ namespace pink {
     // loop or conditional appearing in this while loops body or conditional.
     // In the case where there is no recursion, this code safely inserts all three basic blocks
     // one after another, just as would happen if we were to insert all three here.
-    llvm::BasicBlock* test_BB = llvm::BasicBlock::Create(*env->context, "loop_condition", env->current_function);
-    llvm::BasicBlock* body_BB = llvm::BasicBlock::Create(*env->context, "loop_body");
-    llvm::BasicBlock* after_BB = llvm::BasicBlock::Create(*env->context, "loop_end");
+    llvm::BasicBlock* test_BB = llvm::BasicBlock::Create(*env.context, "loop_condition", env.current_function);
+    llvm::BasicBlock* body_BB = llvm::BasicBlock::Create(*env.context, "loop_body");
+    llvm::BasicBlock* after_BB = llvm::BasicBlock::Create(*env.context, "loop_end");
     
     // 2) emit the fallthrough brach instruction
     // NOTE: it is -required- to emit a 'fallthrough' branch instruction 
     // to connect these two basic blocks. otherwise llvm will not compile 
     // the code! because it does not assume adjacency within the list of 
     // basic blocks to imply adjacency of the code within those basic blocks.
-    env->builder->CreateBr(test_BB);
+    env.instruction_builder->CreateBr(test_BB);
 
     // 3) set up the ir builder to emit instructions into the test basic block
-    env->builder->SetInsertPoint(test_BB); 
+    env.instruction_builder->SetInsertPoint(test_BB); 
 
     // 4) emit the test code into the test basic block
     Outcome<llvm::Value*, Error> test_codegen_result = test->Codegen(env);
@@ -140,11 +140,11 @@ namespace pink {
     if (!test_codegen_result)
       return test_codegen_result;
     // 5) emit the conditional branch instruction into the test basic block
-    env->builder->CreateCondBr(test_codegen_result.GetOne(), body_BB, after_BB);
+    env.instruction_builder->CreateCondBr(test_codegen_result.GetOne(), body_BB, after_BB);
 
     // 6) set up for emitting the body code into the body basic block
-    env->builder->SetInsertPoint(body_BB);
-    env->current_function->getBasicBlockList().push_back(body_BB);
+    env.instruction_builder->SetInsertPoint(body_BB);
+    env.current_function->getBasicBlockList().push_back(body_BB);
     // 7) emit the body code
     Outcome<llvm::Value*, Error> body_codegen_result = body->Codegen(env);
 
@@ -153,11 +153,11 @@ namespace pink {
 
     // 8) emit the uncondition branch back up to the test basic block
     //    which makes this a loop.
-    env->builder->CreateBr(test_BB);
+    env.instruction_builder->CreateBr(test_BB);
 
     // 9) set up the ir builder to emit code after the while loop
-    env->builder->SetInsertPoint(after_BB);
-    env->current_function->getBasicBlockList().push_back(after_BB);
+    env.instruction_builder->SetInsertPoint(after_BB);
+    env.current_function->getBasicBlockList().push_back(after_BB);
     
     // return the results of the while loop.
     // #NOTE: we could return the result of evaluating the body as the 
@@ -168,6 +168,6 @@ namespace pink {
     //        that any value that the while loop returns must 
     //        be default constructable from then on. which may
     //        or may not be weird for users.
-    return Outcome<llvm::Value*, Error>(env->builder->getFalse()); 
+    return Outcome<llvm::Value*, Error>(env.instruction_builder->getFalse()); 
   }
 }

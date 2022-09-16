@@ -3,6 +3,6 @@
 
 namespace pink {
   
-  void Link(std::shared_ptr<Environment> env);
+  void Link(const Environment& env);
 
 }

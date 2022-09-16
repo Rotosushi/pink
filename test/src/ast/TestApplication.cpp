@@ -20,12 +20,12 @@ bool TestApplication(std::ostream& out)
   std::stringstream ss;
   ss.str("fn add(x: Int, y: Int) { x + y }");
   
-  auto env     = pink::NewGlobalEnv(options, ss);
+  auto env     = pink::NewGlobalEnv(options, &ss);
 
   // we need to define a function and then construct an application term
   // which calls the function.
 
-  pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> fn = env->parser->Parse(env);
+  pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> fn = env->parser->Parse(*env);
 
   // 'add 5 7'
   pink::Location idloc(1, 0, 1, 2);
@@ -184,7 +184,7 @@ bool TestApplication(std::ostream& out)
 
   env->bindings->Bind(env->symbols->Intern("add"), fn_type, /* llvm::Value* term = */ nullptr);
 
-  pink::Outcome<pink::Type*, pink::Error> app_type = app->Getype(env);
+  pink::Outcome<pink::Type*, pink::Error> app_type = app->Getype(*env);
   result &= Test(out, "Application::Getype()", app_type && app_type.GetOne() == int_type);
 
   // given an application of not a function,

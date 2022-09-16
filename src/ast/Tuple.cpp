@@ -48,7 +48,7 @@ namespace pink {
     return result;
   }
 
-  Outcome<Type*, Error> Tuple::GetypeV(std::shared_ptr<Environment> env)
+  Outcome<Type*, Error> Tuple::GetypeV(const Environment& env)
   {
     std::vector<Type*> member_types;
 
@@ -62,7 +62,7 @@ namespace pink {
       member_types.push_back(member_getype_result.GetOne());
     }
 
-    return Outcome<Type*, Error>(env->types->GetTupleType(member_types));
+    return Outcome<Type*, Error>(env.types->GetTupleType(member_types));
   }
 
   /*
@@ -155,7 +155,7 @@ namespace pink {
     *     class methods. (which are in the end just accessors to an existing 
     *     aggregate, probably std::vector)
    */
-  Outcome<llvm::Value*, Error> Tuple::Codegen(std::shared_ptr<Environment> env)
+  Outcome<llvm::Value*, Error> Tuple::Codegen(const Environment& env)
   {
     std::vector<llvm::Constant*> tuple_elements; 
 

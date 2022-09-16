@@ -9,7 +9,7 @@ namespace pink {
     std::unique_ptr<Ast> callee;
     std::vector<std::unique_ptr<Ast>> arguments;
 
-    virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
+    virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
   public:
     Application(Location location, std::unique_ptr<Ast> callee, std::vector<std::unique_ptr<Ast>> arguments);
     ~Application();
@@ -19,6 +19,6 @@ namespace pink {
     virtual std::unique_ptr<Ast> Clone() override;
     virtual std::string ToString() override;
 
-    virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
+    virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
   };
 }

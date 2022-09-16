@@ -5,7 +5,7 @@
 namespace pink {
   class While : public Ast {
   private:
-    virtual Outcome<Type*, Error> GetypeV(std::shared_ptr<Environment> env) override;
+    virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
 
   public:
     std::unique_ptr<Ast> test;
@@ -19,6 +19,6 @@ namespace pink {
 
     static bool classof(const Ast* ast);
 
-    virtual Outcome<llvm::Value*, Error> Codegen(std::shared_ptr<Environment> env) override;
+    virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
   };
 }

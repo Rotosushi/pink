@@ -63,7 +63,7 @@ bool TestUnop(std::ostream& out)
 
   result &= Test(out, "Unop::ToString()", u0->ToString() == unop_str);
   
-  pink::Outcome<pink::Type*, pink::Error> unop_type = u0->Getype(env);
+  pink::Outcome<pink::Type*, pink::Error> unop_type = u0->Getype(*env);
   
   result &= Test(out, "Unop::Getype()", unop_type && unop_type.GetOne() == int_t);
 

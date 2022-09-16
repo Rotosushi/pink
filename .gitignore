@@ -12,6 +12,7 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# Project specific ignores
 build/
 test/CMakeFiles/
 test/Makefile
@@ -22,7 +23,7 @@ CmakeFiles/
 *.swp
 *.swo
 test/build/
-test/input/
+.vscode/
 old_c_src/
 old_cpp_src/
 

@@ -39,9 +39,9 @@ namespace pink {
        ---------------------
     	env |- false : Bool
     */
-    Outcome<Type*, Error> Bool::GetypeV(std::shared_ptr<Environment> env)
+    Outcome<Type*, Error> Bool::GetypeV(const Environment& env)
     {
-    	Type* bool_type = env->types->GetBoolType();
+    	Type* bool_type = env.types->GetBoolType();
     	Outcome<Type*, Error> result(bool_type);
     	return result;
     }
@@ -53,9 +53,9 @@ namespace pink {
        ---------------------
     	env |- false : i1 (0)
     */
-    Outcome<llvm::Value*, Error> Bool::Codegen(std::shared_ptr<Environment> env)
+    Outcome<llvm::Value*, Error> Bool::Codegen(const Environment& env)
     {
-    	llvm::Value* bool_value = env->builder->getInt1(value);
+    	llvm::Value* bool_value = env.instruction_builder->getInt1(value);
     	Outcome<llvm::Value*, Error> result(bool_value);
     	return result;
     }

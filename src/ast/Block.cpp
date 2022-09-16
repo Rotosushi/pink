@@ -72,7 +72,7 @@ namespace pink {
 			env |- s0; s1; ...; sn; : Tn
 	
 	*/
-	Outcome<Type*, Error> Block::GetypeV(std::shared_ptr<Environment> env)
+	Outcome<Type*, Error> Block::GetypeV(const Environment& env)
 	{
 		Outcome<Type*, Error> result(Error(Error::Code::None, loc));
 		
@@ -91,7 +91,7 @@ namespace pink {
 	/*
 		The value of a block is the value of it's last statement.
 	*/
-	Outcome<llvm::Value*, Error> Block::Codegen(std::shared_ptr<Environment> env)
+	Outcome<llvm::Value*, Error> Block::Codegen(const Environment& env)
 	{
 		Outcome<llvm::Value*, Error> result(Error(Error::Code::None, loc));
 		
