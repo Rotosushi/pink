@@ -17,8 +17,6 @@ namespace pink {
       Binop(Location& loc, InternedString o, std::unique_ptr<Ast> l, std::unique_ptr<Ast> r);
       virtual ~Binop();
 
-      virtual std::unique_ptr<Ast> Clone() override;
-
       static bool classof(const Ast* t);
 
       virtual std::string ToString() override;

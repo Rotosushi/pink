@@ -53,38 +53,162 @@
 */
 
 namespace pink {
-
+	/**
+	 * @brief Holds all of the Options which the user can manipulate via the command line.
+	 * 
+	 */
 	class CLIOptions {
-		public:
-			std::string input_file;
-			std::string output_file;
-			bool verbose;
-			bool emit_assembly;
-			bool emit_object;
-			bool emit_llvm;
-			llvm::OptimizationLevel optimization_level;
-			bool link;
-			// std::string linker-name;
-			// etc...
-    CLIOptions();    
+	public:
+		/**
+		 * @brief holds the name of the file to read from, as specified on the command line
+		 * 
+		 */
+		std::string input_file;
+		/**
+		 * @brief holds the name of the file to write to, as specified on the command line,
+		 * or as computed by from the input file specified and the [emit_assembly](#CLIOptions::emit_assembly),
+		 * [emit_object](#CLIOptions::emit_object), and [emit_llvm](#CLIOptions::emit_llvm) options.
+		 * 
+		 * the default output file name is the input file name with any extensions stripped off
+		 * 	thus if the input file was:
+		 * 		"my/directory/to/input_file.p"
+		 *  the default output file name will be:
+		 * 		"my/directory/to/input_file"
+		 *
+		 * the default object file name will be the default ouput file name with the extension ".o" added.
+		 * thus if the input file was the same as above the default object file name would be:
+		 * 		"my/directory/to/input_file.o"
+		 * 
+		 * the default llvm file name will be the default output file name with the extension of ".ll" added.
+		 * thus if the input file was the same as above the default llvm file name would be:
+		 * 		"my/directory/to/input_file.ll"
+		 * 
+		 * the default assembly file name will be the default output file name with the extension of ".s" added.
+		 * thus if the input file was the same as above the default assembly file name would be:
+		 * 		"my/directory/to/input_file.s"
+		 */
+		std::string output_file;
 
-	CLIOptions(
-		std::string infile, 
-		std::string outfile,
-		bool verbose, 
-		bool emit_assembly, 
-		bool emit_object, 
-		bool emit_llvm,
-		llvm::OptimizationLevel optimization_level,
-		bool link
-	);
+		/**
+		 * @brief set the verbosity level of the program
+		 * 
+		 * the program will be more explicit about what it is doing 
+		 * when verbose is set to true. all verbose messages are written
+		 * to std::cerr
+		 * 
+		 */
+		bool verbose;
 
-	std::string GetExeFilename();
-	std::string GetObjFilename();
-	std::string GetAsmFilename();
-	std::string GetLLVMFilename();
+		/**
+		 * @brief set to emit an assembly file
+		 * 	defaults to false.
+		 * 	if set to true, disables emit_object, emit_llvm, and link
+		 */
+		bool emit_assembly;
+
+		/**
+		 * @brief set to emit an object file
+		 * defaults to true.
+		 * if set to true explicitly, disables emit_assembly, emit_llvm, and link
+		 */
+		bool emit_object;
+
+		/**
+		 * @brief set to emit an llvm file
+		 * defaults to false.
+		 * if set to true, disables emit_assembly, emit_object, and link
+		 */
+		bool emit_llvm;
+
+		/**
+		 * @brief set to link the emitted object file into an executable
+		 * the link step only occurs if emit_object is also true
+		 */
+		bool link;
+
+		/**
+		 * @brief set the optimization level of emitted code.
+		 * 
+		 * setting this to anything other than O0 causes the compiler
+		 * to run an [optimization] [pipeline] upon the [module] before emitting
+		 * the output file.
+		 * 
+		 * [optimization]: https://llvm.org/docs/Passes.html
+		 * [pipeline]: https://llvm.org/docs/NewPassManager.html
+		 * [module]: https://llvm.org/docs/classllvm_1_1Module.html
+		 */
+		llvm::OptimizationLevel optimization_level;
+		// std::string linker-name;
+		// etc...
+		
+		/**
+		 * @brief Construct a new CLIOptions
+		 * 
+		 */
+		CLIOptions();    
+
+		/**
+		 * @brief Construct a new CLIOptions object
+		 * 
+		 * @param infile the input file's name, this is passed directly to std::fstream::open()
+		 * @param outfile the output file's name, this is passed directly to std::fstream::open()
+		 * @param verbose the vebose level of this execution
+		 * @param emit_assembly whether or not to emit an assembly file
+		 * @param emit_object whether or not to emit an object file
+		 * @param emit_llvm whether or not to emit an llvm file
+		 * @param optimization_level the optimization level of this execution
+		 * @param link whether or not to run the linker on an emitted object file.
+		 */
+		CLIOptions(
+			std::string infile, 
+			std::string outfile,
+			bool verbose, 
+			bool emit_assembly, 
+			bool emit_object, 
+			bool emit_llvm,
+			llvm::OptimizationLevel optimization_level,
+			bool link
+		);
+
+		/**
+		 * @brief Get the exe file name
+		 * 
+		 * @return std::string outfile + ""
+		 */
+		std::string GetExeFilename();
+
+		/**
+		 * @brief Get the obj file name 
+		 * 
+		 * @return std::string outfile + ".o"
+		 */
+		std::string GetObjFilename();
+
+		/**
+		 * @brief Get the asm file name
+		 * 
+		 * @return std::string outfile + ".s"
+		 */
+		std::string GetAsmFilename();
+
+		/**
+		 * @brief get the llvm file name
+		 * 
+		 * @return std::string outfile + ".ll"
+		 */
+		std::string GetLLVMFilename();
 	};
 
-  std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv);
+	/**
+	 * @brief Parses the command line options and constructs a new CLIOptions holding the values parsed
+	 * 
+	 * calls getopt_long
+	 * 
+	 * @param out the output stream for any message that ParseCLIOptions will write.
+	 * @param argc the argc as received from main
+	 * @param argv the argv as received from main
+	 * @return std::shared_ptr<CLIOptions> A new instance of a CLIOptions, holding the options parsed from the command line arguments
+	 */
+	std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv);
 
 }

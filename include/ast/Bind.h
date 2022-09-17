@@ -15,12 +15,10 @@ namespace pink {
         Bind(Location l, InternedString i, std::unique_ptr<Ast> t);
         virtual ~Bind();
 
-        virtual std::unique_ptr<Ast> Clone() override;
 
         static bool classof(const Ast* a);
 
         virtual std::string ToString() override;
-
         
         virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
     };

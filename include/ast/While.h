@@ -14,7 +14,6 @@ namespace pink {
     While(Location l, std::unique_ptr<Ast> test, std::unique_ptr<Ast> body);
     virtual ~While();
 
-    virtual std::unique_ptr<Ast> Clone() override;
     virtual std::string ToString() override;
 
     static bool classof(const Ast* ast);

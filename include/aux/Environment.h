@@ -66,62 +66,68 @@ namespace pink {
         so, since we want to use pointers, and we want ownsership, owning pointers 
         seemed the best solution.
     */
-    class Environment {
-    public:
-      std::shared_ptr<std::vector<InternedString>> false_bindings;
-      std::shared_ptr<Flags>             flags;
-      std::shared_ptr<CLIOptions>        options;
-      std::shared_ptr<Parser>            parser;
-      std::shared_ptr<StringInterner>    symbols;
-      std::shared_ptr<StringInterner>    operators;
-      std::shared_ptr<TypeInterner>      types;
-      std::shared_ptr<SymbolTable>       bindings;
-      std::shared_ptr<BinopTable>        binops;
-      std::shared_ptr<UnopTable>         unops;
-      std::shared_ptr<llvm::LLVMContext> context;
-      std::shared_ptr<llvm::Module>      module;
-      std::shared_ptr<llvm::IRBuilder<>> instruction_builder;
-//      std::shared_ptr<llvm::DIBuilder>   debug_builder;
-      const llvm::Target*                target;
-      llvm::TargetMachine*               target_machine;
-      const llvm::DataLayout             data_layout;
-      llvm::Function*                    current_function;
 
-      Environment(
-        std::shared_ptr<Flags>                       flags,
-        std::shared_ptr<CLIOptions>                  options,
-        std::shared_ptr<Parser>                      parser,
-        std::shared_ptr<StringInterner>              symbols,
-        std::shared_ptr<StringInterner>              operators,
-        std::shared_ptr<TypeInterner>                types,
-        std::shared_ptr<SymbolTable>                 bindings,
-        std::shared_ptr<BinopTable>                  binops,
-        std::shared_ptr<UnopTable>                   unops,
-        std::shared_ptr<llvm::LLVMContext>           context,
-        std::shared_ptr<llvm::Module>                module,
-        std::shared_ptr<llvm::IRBuilder<>>           instruction_builder,
-  //      std::shared_ptr<llvm::DIBuilder>             debug_builder,
-        const llvm::Target*                          target,
-        llvm::TargetMachine*                         target_machine,
-        const llvm::DataLayout                       data_layout
-        );
-      // convience constructor for building an   
-      // Environment around an inner scope. 
-      Environment(
-        const Environment& env,
-        std::shared_ptr<SymbolTable> symbols
-        );
-      
-      // convience constructor for building an   
-      // Environment around an inner scope. 
-      Environment(
-        const Environment& env,
-        std::shared_ptr<SymbolTable> symbols,
-        std::shared_ptr<llvm::IRBuilder<>> builder,
-        llvm::Function* current_function
-        );
-    };
+  /**
+   * @brief [Environment] owns all of the data structures which are shared between the 
+   *  different algorithms within the compiler.
+   * 
+   */
+  class Environment {
+  public:
+    std::shared_ptr<std::vector<InternedString>> false_bindings;
+    std::shared_ptr<Flags>             flags;
+    std::shared_ptr<CLIOptions>        options;
+    std::shared_ptr<Parser>            parser;
+    std::shared_ptr<StringInterner>    symbols;
+    std::shared_ptr<StringInterner>    operators;
+    std::shared_ptr<TypeInterner>      types;
+    std::shared_ptr<SymbolTable>       bindings;
+    std::shared_ptr<BinopTable>        binops;
+    std::shared_ptr<UnopTable>         unops;
+    std::shared_ptr<llvm::LLVMContext> context;
+    std::shared_ptr<llvm::Module>      module;
+    std::shared_ptr<llvm::IRBuilder<>> instruction_builder;
+    //      std::shared_ptr<llvm::DIBuilder>   debug_builder;
+    const llvm::Target*                target;
+    llvm::TargetMachine*               target_machine;
+    const llvm::DataLayout             data_layout;
+    llvm::Function*                    current_function;
 
-    std::unique_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options);
-    std::unique_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream* instream);
+    Environment(
+      std::shared_ptr<Flags>                       flags,
+      std::shared_ptr<CLIOptions>                  options,
+      std::shared_ptr<Parser>                      parser,
+      std::shared_ptr<StringInterner>              symbols,
+      std::shared_ptr<StringInterner>              operators,
+      std::shared_ptr<TypeInterner>                types,
+      std::shared_ptr<SymbolTable>                 bindings,
+      std::shared_ptr<BinopTable>                  binops,
+      std::shared_ptr<UnopTable>                   unops,
+      std::shared_ptr<llvm::LLVMContext>           context,
+      std::shared_ptr<llvm::Module>                module,
+      std::shared_ptr<llvm::IRBuilder<>>           instruction_builder,
+      //      std::shared_ptr<llvm::DIBuilder>             debug_builder,
+      const llvm::Target*                          target,
+      llvm::TargetMachine*                         target_machine,
+      const llvm::DataLayout                       data_layout
+    );
+    // convience constructor for building an   
+    // Environment around an inner scope. 
+    Environment(
+      const Environment& env,
+      std::shared_ptr<SymbolTable> symbols
+    );
+
+    // convience constructor for building an   
+    // Environment around an inner scope. 
+    Environment(
+      const Environment& env,
+      std::shared_ptr<SymbolTable> symbols,
+      std::shared_ptr<llvm::IRBuilder<>> builder,
+      llvm::Function* current_function
+    );
+  };
+
+  std::unique_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options);
+  std::unique_ptr<Environment> NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream* instream);
 }

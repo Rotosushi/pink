@@ -13,10 +13,14 @@
 
 
 namespace pink {
-  /*
-    
-
-  */
+  /**
+   * @brief Compile implements the process of constructing a valid llvm::Module representing the input file
+   * 
+   * @param env Compile uses env.options to retrieve the optimization level and input file name. 
+   *  then uses env.parser to parse the input file into a set of pink::Ast*'s 
+   *  then these terms are translated into llvm IR via Ast::Codegen, 
+   *  all of which is added to the env.module during Code generation 
+   */
 	void Compile(const Environment& env)
 	{
 		//std::string  inbuf(ReadEntireFile(env->options->input_file));

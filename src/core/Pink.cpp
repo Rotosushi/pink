@@ -32,6 +32,7 @@ int main(int argc, char** argv)
   // compile the given source file
   pink::Compile(*env);
 
+  // emit the requested output format
   if (env->options->emit_llvm)
     EmitLLVMFile(*env, env->options->GetLLVMFilename());
 
@@ -42,7 +43,7 @@ int main(int argc, char** argv)
     EmitObjectFile(*env, env->options->GetObjFilename());
 
   // if due to the options we are linking a program,
-  // and we have emitted the object file, 
+  // and we have emitted an object file, 
   // then we may safely call link.
   if (env->options->link && env->options->emit_object)
     pink::Link(*env);

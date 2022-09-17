@@ -22,7 +22,7 @@ add_compile_options(-O0 -gdwarf-4 -Wall -Wextra)
 cmake_policy(SET CMP0076 NEW)
 
 # finding and setting up LLVM to be linked into this project
-find_package(LLVM 15 REQUIRED CONFIG)
+find_package(LLVM 16 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")

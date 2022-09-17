@@ -26,7 +26,6 @@ namespace pink {
 		
 		static bool classof(const Ast* ast);
 		
-		virtual std::unique_ptr<Ast> Clone() override;
 		virtual std::string ToString() override;
 		
 		

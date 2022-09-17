@@ -24,6 +24,7 @@ CmakeFiles/
 *.swo
 test/build/
 .vscode/
+docs/
 old_c_src/
 old_cpp_src/
 
