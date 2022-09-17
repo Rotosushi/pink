@@ -59,7 +59,7 @@ bool TestVariable(std::ostream& out)
   
   pink::Outcome<pink::Type*, pink::Error> variable_type = v0->Getype(*env);
   
-  result &= Test(out, "Variable::Getype()", variable_type && variable_type.GetOne() == nil_t);
+  result &= Test(out, "Variable::Getype()", variable_type && variable_type.GetFirst() == nil_t);
 
   result &= Test(out, "pink::Variable", result);
   out << "\n-----------------------\n";

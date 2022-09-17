@@ -69,7 +69,7 @@ bool TestBlock(std::ostream& out)
   
   result &= Test(out, "Block::Getype()",
            (getype_outcome = block->Getype(*env))
-        && (getype_outcome.GetOne() == int_t));
+        && (getype_outcome.GetFirst() == int_t));
   
   result &= Test(out, "pink::Block", result);
   out << "\n-----------------------\n";

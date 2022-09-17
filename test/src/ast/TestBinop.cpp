@@ -73,7 +73,7 @@ bool TestBinop(std::ostream& out)
   
   pink::Outcome<pink::Type*, pink::Error> binop_type = b0->Getype(*env);
   
-  result &= Test(out, "Binop::Getype()", binop_type && binop_type.GetOne() == int_t);
+  result &= Test(out, "Binop::Getype()", binop_type && binop_type.GetFirst() == int_t);
 
   result &= Test(out, "pink::Binop", result);
   out << "\n-----------------------\n";

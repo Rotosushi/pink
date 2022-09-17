@@ -58,19 +58,19 @@ namespace pink {
     		return rhs_type;
     		
     	// make sure the left and right hand sides are the same type
-    	if (lhs_type.GetOne() != rhs_type.GetOne())
+    	if (lhs_type.GetFirst() != rhs_type.GetFirst())
     	{
         std::string errmsg = std::string("storage type: ")
-                           + lhs_type.GetOne()->ToString()
+                           + lhs_type.GetFirst()->ToString()
                            + ", value type: "
-                           + rhs_type.GetOne()->ToString();
+                           + rhs_type.GetFirst()->ToString();
     		Error error(Error::Code::AssigneeTypeMismatch, loc, errmsg);
     		return Outcome<Type*, Error>(error);
     	}
     	else 
     	{
     	// the types are equivalent, so it's immaterial which one we return.
-    		Outcome<Type*, Error> result(lhs_type.GetOne());
+    		Outcome<Type*, Error> result(lhs_type.GetFirst());
     		return result;
     	}
     }
@@ -82,12 +82,12 @@ namespace pink {
     	Outcome<Type*, Error> lhs_type_result(left->Getype(env));
     	
     	if (!lhs_type_result)
-    		return Outcome<llvm::Value*, Error>(lhs_type_result.GetTwo());
+    		return Outcome<llvm::Value*, Error>(lhs_type_result.GetSecond());
     		
-    	Outcome<llvm::Type*, Error> lhs_type = lhs_type_result.GetOne()->Codegen(env);
+    	Outcome<llvm::Type*, Error> lhs_type = lhs_type_result.GetFirst()->Codegen(env);
     	
     	if (!lhs_type)
-    		return Outcome<llvm::Value*, Error>(lhs_type.GetTwo());
+    		return Outcome<llvm::Value*, Error>(lhs_type.GetSecond());
 
       env.flags->OnTheLHSOfAssignment(true);
 
@@ -101,12 +101,12 @@ namespace pink {
     	Outcome<Type*, Error> rhs_type_result(right->Getype(env));
     	
     	if (!rhs_type_result)
-    		return Outcome<llvm::Value*, Error>(rhs_type_result.GetTwo());
+    		return Outcome<llvm::Value*, Error>(rhs_type_result.GetSecond());
     		
-    	Outcome<llvm::Type*, Error> rhs_type = rhs_type_result.GetOne()->Codegen(env);
+    	Outcome<llvm::Type*, Error> rhs_type = rhs_type_result.GetFirst()->Codegen(env);
     	
     	if (!rhs_type)
-    		return Outcome<llvm::Value*, Error>(rhs_type.GetTwo());
+    		return Outcome<llvm::Value*, Error>(rhs_type.GetSecond());
     		
     	Outcome<llvm::Value*, Error> rhs_value(right->Codegen(env));
     	
@@ -114,12 +114,12 @@ namespace pink {
     		return rhs_value;
     		
     	// make sure the left and right hand sides are the same type
-    	if (lhs_type.GetOne() != rhs_type.GetOne())
+    	if (lhs_type.GetFirst() != rhs_type.GetFirst())
     	{ 
         std::string errmsg = std::string("storage type: ")
-                           + LLVMTypeToString(lhs_type.GetOne())
+                           + LLVMTypeToString(lhs_type.GetFirst())
                            + ", value type: "
-                           + LLVMTypeToString(rhs_type.GetOne());
+                           + LLVMTypeToString(rhs_type.GetFirst());
     		Error error(Error::Code::AssigneeTypeMismatch, loc, errmsg);
     		return Outcome<llvm::Value*, Error>(error);
     	}
@@ -187,21 +187,21 @@ namespace pink {
     		// only to a pointer, pointing to a valid memory location in the modules global 
     		// space or the local stack frame, so we check that the bound value 
     		// is able to be assigned to.
-        if (llvm::isa<llvm::StructType>(lhs_type.GetOne()))
+        if (llvm::isa<llvm::StructType>(lhs_type.GetFirst()))
         {
-          llvm::Value* right_value = rhs_value.GetOne();
+          llvm::Value* right_value = rhs_value.GetFirst();
   
-          StoreAggregate(lhs_type.GetOne(), lhs_value.GetOne(), rhs_value.GetOne(), env);          
+          StoreAggregate(lhs_type.GetFirst(), lhs_value.GetFirst(), rhs_value.GetFirst(), env);          
 
           return Outcome<llvm::Value*, Error>(right_value);
         }
-        else if (llvm::isa<llvm::AllocaInst>(lhs_value.GetOne()) 
-    		|| (llvm::isa<llvm::GlobalVariable>(lhs_value.GetOne()))
-        || (lhs_value.GetOne()->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID))
+        else if (llvm::isa<llvm::AllocaInst>(lhs_value.GetFirst()) 
+    		|| (llvm::isa<llvm::GlobalVariable>(lhs_value.GetFirst()))
+        || (lhs_value.GetFirst()->getType()->getTypeID() == llvm::Type::TypeID::PointerTyID))
     		{
-          llvm::Value* right_value = rhs_value.GetOne();
+          llvm::Value* right_value = rhs_value.GetFirst();
           
-          env.instruction_builder->CreateStore(right_value, lhs_value.GetOne());
+          env.instruction_builder->CreateStore(right_value, lhs_value.GetFirst());
           
           // return the value of the right hand side as the result to support nesting assignment
           return Outcome<llvm::Value*, Error>(right_value);
@@ -209,7 +209,7 @@ namespace pink {
     		else 
     		{
           std::string errmsg = std::string("value is: ")
-                             + LLVMValueToString(lhs_value.GetOne());
+                             + LLVMValueToString(lhs_value.GetFirst());
 				  Error error(Error::Code::ValueCannotBeAssigned, loc, errmsg);
     			return Outcome<llvm::Value*, Error>(error);
     		}

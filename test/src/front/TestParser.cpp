@@ -82,7 +82,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(nil)", 
     		(parser_result) 
-    	 && ((term  = parser_result.GetOne().get()) != nullptr) 
+    	 && ((term  = parser_result.GetFirst().get()) != nullptr) 
     	 && (llvm::isa<pink::Nil>(term))
        && (term->GetLoc() == loc));
 
@@ -91,7 +91,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(10)", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Int>(term))
       && (term->GetLoc() == loc));
     
@@ -100,7 +100,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(true)", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Bool>(term))
       && (term->GetLoc() == loc));
     
@@ -109,7 +109,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(x)", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Variable>(term))
       && (term->GetLoc() == loc));
    
@@ -118,7 +118,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(x := 1)", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Bind>(term))
       && (term->GetLoc() == loc));
     
@@ -127,7 +127,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(x = 2)", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Assignment>(term))
       && (term->GetLoc() == loc));
     
@@ -136,7 +136,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(!true)", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Unop>(term))
       && (term->GetLoc() == loc));
     
@@ -148,7 +148,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(1 + 1)", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Binop>(term))
       && (term->GetLoc() == loc));
     
@@ -165,7 +165,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(6 + 3 * 4 == 3 * 2 + 12)",
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Binop>(term))
       && (term->GetLoc() == loc));
     
@@ -174,7 +174,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse((1 + 1) * (1 + 1))", 
     	   (parser_result) 
-    	&& ((term  = parser_result.GetOne().get()) != nullptr) 
+    	&& ((term  = parser_result.GetFirst().get()) != nullptr) 
     	&& (llvm::isa<pink::Binop>(term))
       && (term->GetLoc() == loc));  
 
@@ -183,7 +183,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse([0, 1, 2, 3, 4])",
           (parser_result)
-       && ((term = parser_result.GetOne().get()) != nullptr)
+       && ((term = parser_result.GetFirst().get()) != nullptr)
        && (llvm::isa<pink::Array>(term))
        && (term->GetLoc() == loc));
 
@@ -192,7 +192,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse((0,1,2,3,4))",
               (parser_result)
-           && ((term = parser_result.GetOne().get()) != nullptr)
+           && ((term = parser_result.GetFirst().get()) != nullptr)
            && (llvm::isa<pink::Tuple>(term)));
     
     loc = {13, 0, 13, 3};
@@ -200,7 +200,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse(x.2)",
               (parser_result)
-           && ((term = parser_result.GetOne().get()) != nullptr)
+           && ((term = parser_result.GetFirst().get()) != nullptr)
            && (llvm::isa<pink::Dot>(term)));
 
     loc = {14, 0, 14, 33};
@@ -208,7 +208,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse(if true then { 12; } else { 24; })",
              (parser_result)
-          && ((term = parser_result.GetOne().get()) != nullptr)
+          && ((term = parser_result.GetFirst().get()) != nullptr)
           && (llvm::isa<pink::Conditional>(term))
           && (term->GetLoc() == loc)); 
 
@@ -217,7 +217,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse(while x == true do { x = false; })",
               (parser_result)
-           && ((term = parser_result.GetOne().get()) != nullptr)
+           && ((term = parser_result.GetFirst().get()) != nullptr)
            && (llvm::isa<pink::While>(term)));
 
     loc = {16, 0, 16, 5};
@@ -225,7 +225,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse(one())",
          (parser_result)
-      && ((term = parser_result.GetOne().get()) != nullptr)
+      && ((term = parser_result.GetFirst().get()) != nullptr)
       && (llvm::isa<pink::Application>(term))); 
 
     loc = {17, 0, 17, 6};
@@ -233,7 +233,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse(inc(1))",
           (parser_result)
-       && ((term = parser_result.GetOne().get()) != nullptr)
+       && ((term = parser_result.GetFirst().get()) != nullptr)
        && (llvm::isa<pink::Application>(term)));
 
     loc = {18, 0, 18, 8}; 
@@ -241,7 +241,7 @@ bool TestParser(std::ostream& out)
 
     result &= Test(out, "Parser::Parse(add(3,4))",
           (parser_result)
-       && ((term = parser_result.GetOne().get()) != nullptr)
+       && ((term = parser_result.GetFirst().get()) != nullptr)
        && (llvm::isa<pink::Application>(term)));
 
     loc = {19, 0, 19, 16};
@@ -249,7 +249,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(fn one() { 1; };)",
     	   (parser_result)
-    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((term = parser_result.GetFirst().get()) != nullptr)
     	&& (llvm::isa<pink::Function>(term)));
     	
     loc = {20, 0, 20, 26};
@@ -257,7 +257,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(fn inc(x: Int) { x + 1; };)",
     	   (parser_result)
-    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((term = parser_result.GetFirst().get()) != nullptr)
     	&& (llvm::isa<pink::Function>(term)));
     
     loc = {21, 0, 21, 46};	
@@ -265,7 +265,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(fn add(x: Int, y: Int, z: Int) { x + y + z; };)",
     	   (parser_result)
-    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((term = parser_result.GetFirst().get()) != nullptr)
     	&& (llvm::isa<pink::Function>(term)));
   
     loc = {22, 0, 22, 56};	
@@ -273,7 +273,7 @@ bool TestParser(std::ostream& out)
     
     result &= Test(out, "Parser::Parse(fn fun(x: Int, y: Int, z: Int) { a := x + y; a == z; };)",
     	   (parser_result)
-    	&& ((term = parser_result.GetOne().get()) != nullptr)
+    	&& ((term = parser_result.GetFirst().get()) != nullptr)
     	&& (llvm::isa<pink::Function>(term)));
 
     result &= Test(out, "pink::Parser", result);

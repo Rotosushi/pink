@@ -44,10 +44,10 @@ namespace pink {
 
     Type* bool_t = env.types->GetBoolType();
 
-    if (bool_t != test_getype_result.GetOne())
+    if (bool_t != test_getype_result.GetFirst())
     {
       std::string errmsg = std::string("conditional has type: ")
-                         + test_getype_result.GetOne()->ToString();
+                         + test_getype_result.GetFirst()->ToString();
       return Outcome<Type*, Error>(Error(Error::Code::WhileTestTypeMismatch, test->GetLoc(), errmsg));
     }
 
@@ -88,22 +88,22 @@ namespace pink {
     Outcome<Type*, Error> test_getype_result = test->Getype(env);
 
     if (!test_getype_result)
-      return Outcome<llvm::Value*, Error>(test_getype_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(test_getype_result.GetSecond());
 
-    Outcome<llvm::Type*, Error> test_type_result = test_getype_result.GetOne()->Codegen(env);
+    Outcome<llvm::Type*, Error> test_type_result = test_getype_result.GetFirst()->Codegen(env);
 
     if (!test_type_result)
-      return Outcome<llvm::Value*, Error>(test_type_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(test_type_result.GetSecond());
   
     Outcome<Type*, Error> body_getype_result = body->Getype(env);
 
     if (!body_getype_result)
-      return Outcome<llvm::Value*, Error>(body_getype_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(body_getype_result.GetSecond());
 
-    Outcome<llvm::Type*, Error> body_type_result = body_getype_result.GetOne()->Codegen(env);
+    Outcome<llvm::Type*, Error> body_type_result = body_getype_result.GetFirst()->Codegen(env);
 
     if (!body_type_result)
-      return Outcome<llvm::Value*, Error>(body_type_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(body_type_result.GetSecond());
  
     if (env.current_function == nullptr)
     {
@@ -140,7 +140,7 @@ namespace pink {
     if (!test_codegen_result)
       return test_codegen_result;
     // 5) emit the conditional branch instruction into the test basic block
-    env.instruction_builder->CreateCondBr(test_codegen_result.GetOne(), body_BB, after_BB);
+    env.instruction_builder->CreateCondBr(test_codegen_result.GetFirst(), body_BB, after_BB);
 
     // 6) set up for emitting the body code into the body basic block
     env.instruction_builder->SetInsertPoint(body_BB);

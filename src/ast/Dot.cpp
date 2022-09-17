@@ -76,12 +76,12 @@ namespace pink {
     if (!right_getype_result)
       return right_getype_result;
 
-    TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetOne());
+    TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
 
     if (left_type == nullptr)
     {
       std::string errmsg = std::string("left has type: ")
-                         + left_getype_result.GetOne()->ToString();
+                         + left_getype_result.GetFirst()->ToString();
       Error error(Error::Code::DotLeftIsNotAStruct, loc, errmsg);
       return Outcome<Type*, Error>(error);
     }
@@ -91,7 +91,7 @@ namespace pink {
     if (index == nullptr)
     {
       std::string errmsg = std::string("right has type: ")
-                         + right_getype_result.GetOne()->ToString();
+                         + right_getype_result.GetFirst()->ToString();
       Error error(Error::Code::DotRightIsNotAnInt, loc, errmsg);
       return Outcome<Type*, Error>(error);
     }
@@ -128,20 +128,20 @@ namespace pink {
     Outcome<Type*, Error> left_getype_result = left->Getype(env);
 
     if (!left_getype_result)
-      return Outcome<llvm::Value*, Error>(left_getype_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(left_getype_result.GetSecond());
 
     Outcome<Type*, Error> right_getype_result = right->Getype(env);
     
     if (!right_getype_result)
-      return Outcome<llvm::Value*, Error>(right_getype_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(right_getype_result.GetSecond());
 
 
-    TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetOne());
+    TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
 
     if (left_type == nullptr)
     {
       std::string errmsg = std::string("left has type: ")
-                         + left_getype_result.GetOne()->ToString();
+                         + left_getype_result.GetFirst()->ToString();
       Error error(Error::Code::DotLeftIsNotAStruct, loc, errmsg);
       return Outcome<llvm::Value*, Error>(error);
     }
@@ -149,24 +149,24 @@ namespace pink {
     Outcome<llvm::Type*, Error> left_type_codegen_result = left_type->Codegen(env);
 
     if (!left_type_codegen_result)
-      return Outcome<llvm::Value*, Error>(left_type_codegen_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(left_type_codegen_result.GetSecond());
 
 
-    llvm::StructType* struct_t = llvm::cast<llvm::StructType>(left_type_codegen_result.GetOne());
+    llvm::StructType* struct_t = llvm::cast<llvm::StructType>(left_type_codegen_result.GetFirst());
 
     Outcome<llvm::Value*, Error> left_codegen_result = left->Codegen(env);
 
     if (!left_codegen_result)
       return left_codegen_result;
     
-    llvm::Value* left_value = left_codegen_result.GetOne();
+    llvm::Value* left_value = left_codegen_result.GetFirst();
 
     Int* index = llvm::dyn_cast<Int>(right.get());
 
     if (index == nullptr)
     {
       std::string errmsg = std::string("right has type: ")
-                         + right_getype_result.GetOne()->ToString();
+                         + right_getype_result.GetFirst()->ToString();
       Error error(Error::Code::DotRightIsNotAnInt, loc, errmsg);
       return Outcome<llvm::Value*, Error>(error);
     }

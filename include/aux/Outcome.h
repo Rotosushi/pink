@@ -1,52 +1,165 @@
+/**
+ * @file Outcome.h
+ * @brief Header for class Outcome
+ * @version 0.1
+ * 
+ */
 #pragma once
 #include <utility> //
 #include "aux/Error.h"
 
 namespace pink {
-    /*
-        A simple class which allows one to pass one of two
-        alternatives through a single datatype.
 
-        used during parsing, typechecking, and codegeneration
-        to handle  the possiblity of syntax, type, or semantic
-        errors.
-
-        There is a slight bug in this class, where if you instanciate
-        with two of the same class then the constructors become ambiguous,
-        so the build doesn't compile, but it works for the use-case,
-        and it's a comptime error not a runtime one, so that makes it
-        much more bearable. also, if you are in a situation where you
-        want the outcome to be two distinct instances of the same type,
-        can't that already be supported with a single return value of 
-        that same type?
-
+   /**
+    * @brief A container holding one of two alternatives, but not both.
+    * 
+    * \warning this class cannot be typed (legally constructed) if both alternative
+    * types are the same type. This is fine however, because if you want to 
+    * return the same type in two different states to represent the return 
+    * value of a given function, that can be accomplished by simply using that
+    * type directly as the return value of that function.
+    * 
+    * @tparam T the first alternative's type
+    * @tparam U the second alternative's type
     */
     template <class T, class U>
     class Outcome {
     private:
+        /**
+         * @brief which alternative is currently active
+         * true when the first alternative is active
+         * false when the second alternative is active
+         */
         bool which;
+
+        /**
+         * @brief the first alternative
+         * 
+         */
         T one;
+
+        /**
+         * @brief the second alternative
+         * 
+         */
         U two;
 
     public:
+        /**
+         * @brief there is no way to construct an Outcome without providing one of the alternatives
+         * 
+         */
         Outcome() = delete;
+
+        /**
+         * @brief Destroy the Outcome
+         * 
+         */
         ~Outcome();
+
+        /**
+         * @brief Construct a new Outcome, holding a first alternative equal to t
+         * 
+         * @param t the value of the first alternative
+         */
         Outcome(const T& t);
+
+        /**
+         * @brief Construct a new Outcome, holding a first alternative equal to t
+         * 
+         * @param t the value of the first alternative
+         */
         Outcome(T&& t);
+
+        /**
+         * @brief Construct a new Outcome, holding a second alternative equal to u
+         * 
+         * @param u the value of the second alternative
+         */
         Outcome(const U& u);
+
+        /**
+         * @brief Construct a new Outcome, holding a second alternative equal to u
+         * 
+         * @param u the value of the second alternative
+         */
         Outcome(U&& u);
+
+        /**
+         * @brief Construct a new Outcome, equal to another outcome
+         * 
+         * @param other the other Outcome to copy the contents of
+         */
         Outcome(const Outcome& other);
+
+        /**
+         * @brief Construct a new Outcome, equal to another outcome
+         * 
+         * @param other the other Outcome to copy the contents of
+         */
         Outcome(Outcome&& other);
 
+        /**
+         * @brief Assign this Outcome to the value of the given first alternative t
+         * 
+         * @param t the value of the first alternative
+         * @return Outcome& this Outcome
+         */
         Outcome& operator=(const T& t);
+
+        /**
+         * @brief Assign this Outcome to the value of the given second alternative u
+         * 
+         * @param u the value of the second alternative
+         * @return Outcome& this Outcome
+         */
         Outcome& operator=(const U& u);
+
+        /**
+         * @brief Assign this Outcome to the value of another Outcome
+         * 
+         * @param other the other Outcome to copy
+         * @return Outcome& this Outcome
+         */
         Outcome& operator=(const Outcome& other);
+
+        /**
+         * @brief Assign this Outcome to the value of another Outcome
+         * 
+         * @param other the other Outcome to copy
+         * @return Outcome& this Outcome
+         */
         Outcome& operator=(Outcome&& other);
+
+        /**
+         * @brief returns which alternative is held
+         * 
+         * @return true when the first alternative is held
+         * @return false when the second alternative is held
+         */
         operator bool();
+
+        /**
+         * @brief Get which alternative is held
+         * 
+         * @return true when the first alternative is held
+         * @return false when the second alternative is held
+         */
         bool GetWhich();
 
-        T& GetOne();
-        U& GetTwo();
+        /**
+         * @brief Get the first alternative
+         * 
+         * @return T& the member t
+         */
+        T& GetFirst();
+
+        /**
+         * @brief Get the second alternative
+         * 
+         * @return U& the member u
+         */
+        U& GetSecond();
     };
 
     template <class T, class U>
@@ -164,7 +277,7 @@ namespace pink {
     }
 
     template <class T, class U>
-    T& Outcome<T, U>::GetOne()
+    T& Outcome<T, U>::GetFirst()
     {
         if (which)
             return one;
@@ -177,7 +290,7 @@ namespace pink {
     }
 
     template <class T, class U>
-    U& Outcome<T, U>::GetTwo()
+    U& Outcome<T, U>::GetSecond()
     {
         if (which)
         {

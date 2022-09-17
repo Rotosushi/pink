@@ -1,3 +1,9 @@
+/**
+ * @file CLIOptions.h
+ * @brief Header for class CLIOptions
+ * @version 0.1
+ * 
+ */
 #pragma once 
 #include <memory>
 #include <string>

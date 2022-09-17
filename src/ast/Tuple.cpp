@@ -59,7 +59,7 @@ namespace pink {
       if (!member_getype_result)
         return member_getype_result;
 
-      member_types.push_back(member_getype_result.GetOne());
+      member_types.push_back(member_getype_result.GetFirst());
     }
 
     return Outcome<Type*, Error>(env.types->GetTupleType(member_types));
@@ -162,14 +162,14 @@ namespace pink {
     Outcome<Type*, Error> tuple_getype_result = this->Getype(env);
 
     if (!tuple_getype_result)
-      return Outcome<llvm::Value*, Error>(tuple_getype_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(tuple_getype_result.GetSecond());
 
-    Outcome<llvm::Type*, Error> tuple_type_codegen_result = tuple_getype_result.GetOne()->Codegen(env);
+    Outcome<llvm::Type*, Error> tuple_type_codegen_result = tuple_getype_result.GetFirst()->Codegen(env);
 
     if (!tuple_type_codegen_result)
-      return Outcome<llvm::Value*, Error>(tuple_type_codegen_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(tuple_type_codegen_result.GetSecond());
 
-    llvm::StructType* tuple_type = llvm::dyn_cast<llvm::StructType>(tuple_type_codegen_result.GetOne());
+    llvm::StructType* tuple_type = llvm::dyn_cast<llvm::StructType>(tuple_type_codegen_result.GetFirst());
 
     if (tuple_type == nullptr)
     {
@@ -184,7 +184,7 @@ namespace pink {
       if (!initializer_result)
         return initializer_result;
 
-      if (llvm::Constant* initializer = llvm::dyn_cast<llvm::Constant>(initializer_result.GetOne()))
+      if (llvm::Constant* initializer = llvm::dyn_cast<llvm::Constant>(initializer_result.GetFirst()))
       {
         tuple_elements.push_back(initializer);
       }

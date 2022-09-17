@@ -79,7 +79,7 @@ namespace pink {
         
         if (term_type)
         {
-          if (ArrayType* at = llvm::dyn_cast<ArrayType>(term_type.GetOne()))
+          if (ArrayType* at = llvm::dyn_cast<ArrayType>(term_type.GetFirst()))
           {
             // array's decompose into pointers to their first element.
             env.false_bindings->push_back(symbol);
@@ -96,9 +96,9 @@ namespace pink {
             // type statements that occur later within the same block.
             env.false_bindings->push_back(symbol);
             
-            env.bindings->Bind(symbol, term_type.GetOne(), nullptr); // construct a false binding to type later statements within this same block.
+            env.bindings->Bind(symbol, term_type.GetFirst(), nullptr); // construct a false binding to type later statements within this same block.
             
-            Outcome<Type*, Error> result(term_type.GetOne());
+            Outcome<Type*, Error> result(term_type.GetFirst());
             return result;
           }
         }
@@ -159,14 +159,14 @@ namespace pink {
 			
 			if (!term_type_result)
 			{
-				return Outcome<llvm::Value*, Error>(term_type_result.GetTwo());
+				return Outcome<llvm::Value*, Error>(term_type_result.GetSecond());
 			}
 			
 			// get the llvm representation of the type
-			Outcome<llvm::Type*, Error> term_type = term_type_result.GetOne()->Codegen(env);
+			Outcome<llvm::Type*, Error> term_type = term_type_result.GetFirst()->Codegen(env);
 			
 			if (!term_type)
-				return Outcome<llvm::Value*, Error>(term_type.GetTwo());
+				return Outcome<llvm::Value*, Error>(term_type.GetSecond());
 			
 			// get the llvm representation of the term's value
 			Outcome<llvm::Value*, Error> term_value_result = term->Codegen(env);
@@ -174,7 +174,7 @@ namespace pink {
 			if (!term_value_result)
 				return term_value_result;
 
-      llvm::Value* term_value = term_value_result.GetOne();
+      llvm::Value* term_value = term_value_result.GetFirst();
 			// ptr is the thing we bind variables too, so it needs 
       // declared in a greater scope than where we can initialize 
       // it, to unify the result of the cases of decomposing 
@@ -187,7 +187,7 @@ namespace pink {
 				//	which should be fine, as the ir_builder will also be associated with the same module.
 				// in the case of a global variable, the name is bound to the address of 
 				// the global variable's location constructed w.r.t. the module.
-				ptr = env.module->getOrInsertGlobal(symbol, term_type.GetOne());
+				ptr = env.module->getOrInsertGlobal(symbol, term_type.GetFirst());
 				
 				llvm::GlobalVariable* global = env.module->getGlobalVariable(symbol);
 				
@@ -225,7 +225,7 @@ namespace pink {
         // nature of types, i think we will need to define a recursive
         // proceudre to emit the correct sequence of Load instructions.
         // and we cannot simply use a loop here.
-        llvm::Type* rhs_type = term_type.GetOne();
+        llvm::Type* rhs_type = term_type.GetFirst();
 
         if (rhs_type->isSingleValueType())
         {
@@ -311,7 +311,7 @@ namespace pink {
                                           symbol
                                           );
           /*
-          llvm::ConstantStruct* cs = llvm::cast<llvm::ConstantStruct>(term_value.GetOne());
+          llvm::ConstantStruct* cs = llvm::cast<llvm::ConstantStruct>(term_value.GetFirst());
 
           size_t i = 0;
           while(llvm::Constant* member = cs->getAggregateElement(i))
@@ -335,7 +335,7 @@ namespace pink {
         }
 			}
 			// we use term_type_result, as that holds a pink::Type*, which is what Bind expects.
-			env.bindings->Bind(symbol, term_type_result.GetOne(), ptr); // bind the symbol to the newly created value
+			env.bindings->Bind(symbol, term_type_result.GetFirst(), ptr); // bind the symbol to the newly created value
 			
 			return Outcome<llvm::Value*, Error>(term_value); // return the value of the right hand side to support nested binds.
 		}

@@ -1,6 +1,11 @@
+/**
+ * @file Compile.h
+ * @brief Header for the function Compile
+ * @version 0.1
+ * 
+ */
 #pragma once 
 
-#include "aux/CLIOptions.h"
 #include "aux/Environment.h"
 
 
@@ -39,7 +44,19 @@
 */
 
 namespace pink {
-  void Compile(const Environment& env);
+	/**
+	 * @brief Runs the Compilation process over the given Environment
+	 * 
+	 * Broadly:
+	 * 	1) Construct an Ast representing a single term of the langauge
+	 * 	2) Attempt to give that term a type
+	 *  	- if we *could* type the term, then add it to a list of valid terms for this compilation unit
+	 * 		- if we *could not* type the term, then report the Error as the reason and end compilation.
+	 *  3) Attempt to generate the code from each of the valid terms constructed by steps 1 and 2.
+	 *  
+	 * @param[in,out] env the environment representing the compilation unit to compile.
+	 */
+	void Compile(const Environment& env);
 }
 
 

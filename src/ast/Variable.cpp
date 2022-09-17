@@ -68,9 +68,9 @@ namespace pink {
         Outcome<llvm::Type*, Error> type_result(bound->first->Codegen(env));
 
         if (!type_result)
-          return Outcome<llvm::Value*, Error>(type_result.GetTwo());
+          return Outcome<llvm::Value*, Error>(type_result.GetSecond());
 
-        llvm::Type* bound_type = type_result.GetOne();
+        llvm::Type* bound_type = type_result.GetFirst();
 
         // llvm gives us pointers to the memory it allocates, this is fine,
         // as it gives us the means to assign new values and retrieve the 

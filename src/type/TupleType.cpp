@@ -79,7 +79,7 @@ namespace pink {
       if (!member_type_codegen_result)
         return member_type_codegen_result;
 
-      member_llvm_types.push_back(member_type_codegen_result.GetOne());
+      member_llvm_types.push_back(member_type_codegen_result.GetFirst());
     }
 
     return llvm::StructType::get(*env.context, member_llvm_types);

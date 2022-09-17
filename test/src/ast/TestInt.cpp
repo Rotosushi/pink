@@ -53,7 +53,7 @@ bool TestInt(std::ostream& out)
   
   pink::Outcome<pink::Type*, pink::Error> int_type = i0->Getype(*env);
   
-  result &= Test(out, "Int::Getype()", int_type && int_type.GetOne() == int_t);
+  result &= Test(out, "Int::Getype()", int_type && int_type.GetFirst() == int_t);
   
   result &= Test(out, "pink::Int", result);
   out << "\n-----------------------\n";

@@ -49,7 +49,7 @@ namespace pink {
       
       if (!term)
       {
-        pink::Error error(term.GetTwo());
+        pink::Error error(term.GetSecond());
         
         if (error.code == Error::Code::EndOfFile)
         {
@@ -74,7 +74,7 @@ namespace pink {
       }
       else 
       {
-        pink::Outcome<pink::Type*, pink::Error> type = term.GetOne()->Getype(env);
+        pink::Outcome<pink::Type*, pink::Error> type = term.GetFirst()->Getype(env);
        
         // if not type and error == use-before-definition
         // {
@@ -91,11 +91,11 @@ namespace pink {
         // } 
         if (!type) 
         {
-          FatalError(type.GetTwo().ToString(""), __FILE__, __LINE__);
+          FatalError(type.GetSecond().ToString(""), __FILE__, __LINE__);
         }
         else 
         {
-          valid_terms.push_back(std::move(term.GetOne()));
+          valid_terms.push_back(std::move(term.GetFirst()));
         }
       }
     }
@@ -125,7 +125,7 @@ namespace pink {
 
 		  if (!value)
 		  {
-			  FatalError(value.GetTwo().ToString(""), __FILE__, __LINE__);
+			  FatalError(value.GetSecond().ToString(""), __FILE__, __LINE__);
 		  }
     }
 

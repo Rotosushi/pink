@@ -51,10 +51,10 @@ namespace pink {
 
     Type* bool_ty = env.types->GetBoolType();
 
-    if (bool_ty != test_type_result.GetOne())
+    if (bool_ty != test_type_result.GetFirst())
     {
       std::string errmsg = std::string("condition has type: ")
-                         + test_type_result.GetOne()->ToString();
+                         + test_type_result.GetFirst()->ToString();
       return Outcome<Type*, Error> (Error(Error::Code::CondTestExprTypeMismatch, test->GetLoc(), errmsg));
     }
 
@@ -68,16 +68,16 @@ namespace pink {
     if (!second_type_result)
       return second_type_result;
 
-    if (first_type_result.GetOne() != second_type_result.GetOne())
+    if (first_type_result.GetFirst() != second_type_result.GetFirst())
     {
       std::string errmsg = std::string("first alternative has type: ")
-                         + first_type_result.GetOne()->ToString()
+                         + first_type_result.GetFirst()->ToString()
                          + ", second alternative has type: "
-                         + second_type_result.GetOne()->ToString();
+                         + second_type_result.GetFirst()->ToString();
       return Outcome<Type*, Error> (Error(Error::Code::CondBodyExprTypeMismatch, loc, errmsg));
     }
 
-    return Outcome<Type*, Error>(first_type_result.GetOne());
+    return Outcome<Type*, Error>(first_type_result.GetFirst());
   }
 
 
@@ -108,12 +108,12 @@ namespace pink {
     Outcome<Type*, Error> test_getype_result = test->Getype(env);
 
     if (!test_getype_result)
-      return Outcome<llvm::Value*, Error>(test_getype_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(test_getype_result.GetSecond());
 
-    Outcome<llvm::Type*, Error> test_type_result = test_getype_result.GetOne()->Codegen(env);
+    Outcome<llvm::Type*, Error> test_type_result = test_getype_result.GetFirst()->Codegen(env);
 
     if (!test_type_result)
-      return Outcome<llvm::Value*, Error>(test_type_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(test_type_result.GetSecond());
 
     // since we are inside of the codegen routine, then we can assume 
     // that the type of this expression is good, which means the types 
@@ -123,12 +123,12 @@ namespace pink {
     Outcome<Type*, Error> first_getype_result = first->Getype(env);
 
     if (!first_getype_result)
-      return Outcome<llvm::Value*, Error>(first_getype_result.GetTwo()); 
+      return Outcome<llvm::Value*, Error>(first_getype_result.GetSecond()); 
 
-    Outcome<llvm::Type*, Error> first_type_result = first_getype_result.GetOne()->Codegen(env);
+    Outcome<llvm::Type*, Error> first_type_result = first_getype_result.GetFirst()->Codegen(env);
 
     if (!first_type_result)
-      return Outcome<llvm::Value*, Error>(first_type_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(first_type_result.GetSecond());
 
     // 1) emit the code for the test expression
     // we want to generate the code for the test expression within the 
@@ -160,7 +160,7 @@ namespace pink {
     llvm::BasicBlock* merge_BB = llvm::BasicBlock::Create(*env.context, "merge");
 
     // 4) emit the conditional branch instruction
-    env.instruction_builder->CreateCondBr(test_value_result.GetOne(), then_BB, else_BB);
+    env.instruction_builder->CreateCondBr(test_value_result.GetFirst(), then_BB, else_BB);
 
     // 5) emit the code for the first alternative into the basic block
     //    constructed for the first alternative
@@ -226,10 +226,10 @@ namespace pink {
     env.current_function->getBasicBlockList().push_back(merge_BB);
     env.instruction_builder->SetInsertPoint(merge_BB);
 
-    llvm::PHINode* pn = env.instruction_builder->CreatePHI(first_type_result.GetOne(), 2, "mergeval");
+    llvm::PHINode* pn = env.instruction_builder->CreatePHI(first_type_result.GetFirst(), 2, "mergeval");
 
-    pn->addIncoming(first_codegen_result.GetOne(), then_BB);
-    pn->addIncoming(second_codegen_result.GetOne(), else_BB);
+    pn->addIncoming(first_codegen_result.GetFirst(), then_BB);
+    pn->addIncoming(second_codegen_result.GetFirst(), else_BB);
     return Outcome<llvm::Value*, Error>(pn);
   }
 

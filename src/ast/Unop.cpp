@@ -56,9 +56,9 @@ namespace pink {
     	// find the overload of the operator for the given type
     	llvm::Optional<std::pair<Type*, UnopCodegen*>> literal;
       PointerType* pt = nullptr;
-      if (((pt = llvm::dyn_cast<PointerType>(rhs_result.GetOne())) != nullptr) && (strcmp(op, "*") == 0))
+      if (((pt = llvm::dyn_cast<PointerType>(rhs_result.GetFirst())) != nullptr) && (strcmp(op, "*") == 0))
       {
-        literal = unop->second->Lookup(rhs_result.GetOne());
+        literal = unop->second->Lookup(rhs_result.GetFirst());
         
         if (!literal)
         {
@@ -76,11 +76,11 @@ namespace pink {
       }
       else if (strcmp(op, "&") == 0)
       {
-        literal = unop->second->Lookup(rhs_result.GetOne());
+        literal = unop->second->Lookup(rhs_result.GetFirst());
         
         if (!literal)
         {
-          PointerType* pt = env.types->GetPointerType(rhs_result.GetOne());
+          PointerType* pt = env.types->GetPointerType(rhs_result.GetFirst());
           Type* int_type = env.types->GetIntType();
           llvm::Optional<std::pair<Type*, UnopCodegen*>> address_of_unop = unop->second->Lookup(int_type);
 
@@ -90,12 +90,12 @@ namespace pink {
           }
 
           UnopCodegenFn address_of_fn = address_of_unop->second->generate;
-          literal = unop->second->Register(rhs_result.GetOne(), pt, address_of_fn);
+          literal = unop->second->Register(rhs_result.GetFirst(), pt, address_of_fn);
         }
       }
       else
       {
-        literal = unop->second->Lookup(rhs_result.GetOne());
+        literal = unop->second->Lookup(rhs_result.GetFirst());
       }
 
     	if (!literal)
@@ -103,7 +103,7 @@ namespace pink {
         std::string errmsg = std::string("could not find an implementation of ")
                            + std::string(op)
                            + " for the given type: "
-                           + rhs_result.GetOne()->ToString();
+                           + rhs_result.GetFirst()->ToString();
     		Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
     		Outcome<Type*, Error> result(error);
     		return result;
@@ -129,7 +129,7 @@ namespace pink {
     	
     	if (!rhs_type)
       {
-    		return Outcome<llvm::Value*, Error>(rhs_type.GetTwo());
+    		return Outcome<llvm::Value*, Error>(rhs_type.GetSecond());
       }
 
     	// get the value to generate the llvm ir
@@ -198,18 +198,18 @@ namespace pink {
           // within the ptr.
           // we know that the Type of the rhs is a PointerType, otherwise the 
           // typechecker would have never typed this expression.
-          PointerType* ptr_type = llvm::cast<pink::PointerType>(rhs_type.GetOne());
+          PointerType* ptr_type = llvm::cast<pink::PointerType>(rhs_type.GetFirst());
 
           Outcome<llvm::Type*, Error> llvm_pointee_type = ptr_type->pointee_type->Codegen(env);
 
           if (!llvm_pointee_type)
           {
-            return Outcome<llvm::Value*, Error>(llvm_pointee_type.GetTwo());
+            return Outcome<llvm::Value*, Error>(llvm_pointee_type.GetSecond());
           }
 
-          if (llvm_pointee_type.GetOne()->isSingleValueType())
+          if (llvm_pointee_type.GetFirst()->isSingleValueType())
           {
-            rhs_value = env.instruction_builder->CreateLoad(llvm_pointee_type.GetOne(), rhs_value.GetOne(), "deref");    
+            rhs_value = env.instruction_builder->CreateLoad(llvm_pointee_type.GetFirst(), rhs_value.GetFirst(), "deref");    
           }
           // else emit no load for types that cannot be loaded
         }
@@ -235,7 +235,7 @@ namespace pink {
     	}
     	
     	// find the overload of the operator for the given type
-    	llvm::Optional<std::pair<Type*, UnopCodegen*>> literal = unop->second->Lookup(rhs_type.GetOne());
+    	llvm::Optional<std::pair<Type*, UnopCodegen*>> literal = unop->second->Lookup(rhs_type.GetFirst());
     	
     	if (!literal)
     	{
@@ -245,7 +245,7 @@ namespace pink {
     	}
     	
     	// use the operators associated generator expression to generate the llvm ir 
-    	Outcome<llvm::Value*, Error> unop_value(literal->second->generate(rhs_value.GetOne(), env));
+    	Outcome<llvm::Value*, Error> unop_value(literal->second->generate(rhs_value.GetFirst(), env));
     	// either outcome, return the result.
     	return unop_value;
     }

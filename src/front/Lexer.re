@@ -16,7 +16,7 @@ namespace pink {
         cursor = marker = token = buffer.begin();
     }
 
-    std::string& Lexer::GetBuf()
+    const std::string& Lexer::GetBuf()
     {
       return buffer;
     }
@@ -207,7 +207,7 @@ namespace pink {
                 "false" { UpdateLoc(); return Token::False; }
                 "Bool"  { UpdateLoc(); return Token::BoolType; }
                 
-                "fn"	  { UpdateLoc(); return Token::Fn; }
+                "fn"	{ UpdateLoc(); return Token::Fn; }
                 "if"    { UpdateLoc(); return Token::If; }
                 "then"  { UpdateLoc(); return Token::Then; }
                 "else"  { UpdateLoc(); return Token::Else; }                
@@ -215,14 +215,14 @@ namespace pink {
                 "do"    { UpdateLoc(); return Token::Do; }
 
                 "."     { UpdateLoc(); return Token::Dot; }
-        				","		  { UpdateLoc(); return Token::Comma; }
-				        ";"		  { UpdateLoc(); return Token::Semicolon; }
+        		","		{ UpdateLoc(); return Token::Comma; }
+				";"		{ UpdateLoc(); return Token::Semicolon; }
                 ":"     { UpdateLoc(); return Token::Colon; }
                 "="     { UpdateLoc(); return Token::Equals; }
                 ":="    { UpdateLoc(); return Token::ColonEq; }
                 "("     { UpdateLoc(); return Token::LParen; }
                 ")"     { UpdateLoc(); return Token::RParen; }
-                "{"  		{ UpdateLoc(); return Token::LBrace; }
+                "{"     { UpdateLoc(); return Token::LBrace; }
                 "}"	  	{ UpdateLoc(); return Token::RBrace; }
                 "["     { UpdateLoc(); return Token::LBracket; }
                 "]"     { UpdateLoc(); return Token::RBracket; }                

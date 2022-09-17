@@ -16,12 +16,12 @@ bool TestOutcome(std::ostream& out)
     // when Two is held, operator bool returns false
     result &= Test(out, "Outcome<T, U>::Outcome(U u)::operator bool()", !o1);
 
-    int i0 = o0.GetOne();
+    int i0 = o0.GetFirst();
 
     result &= Test(out, "Outcome<T, U>::GetOne()", i0 == 1);
 
 
-    char c1 = o1.GetTwo();
+    char c1 = o1.GetSecond();
 
     result &= Test(out, "Outcome<T, U>::GetTwo()", c1 == 'g');
 

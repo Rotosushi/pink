@@ -8,12 +8,6 @@ namespace pink {
 
     }
 
-    StringInterner::StringInterner(const StringInterner& other)
-        : set(other.set)
-    {
-
-    }
-
     InternedString StringInterner::Intern(const char* str)
     {
         auto elem = set.try_emplace(str);

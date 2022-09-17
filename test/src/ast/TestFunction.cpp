@@ -63,8 +63,8 @@ bool TestFunction(std::ostream& out)
   
   result &= Test(out, "Function::Getype()", 
              (fty_res) && (sty_res)
-          && (fty_res.GetOne()->EqualTo(ftype))
-          && (sty_res.GetOne()->EqualTo(stype)));
+          && (fty_res.GetFirst()->EqualTo(ftype))
+          && (sty_res.GetFirst()->EqualTo(stype)));
   
   
 	result &= Test(out, "pink::Function", result);

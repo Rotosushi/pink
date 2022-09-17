@@ -126,9 +126,9 @@ namespace pink {
 
         // if the llvm::Type is not a single value type,
         // promote the type to a pointer type
-        if (arg_res.GetOne()->isSingleValueType())
+        if (arg_res.GetFirst()->isSingleValueType())
         {
-          llvm_args.emplace_back(arg_res.GetOne());
+          llvm_args.emplace_back(arg_res.GetFirst());
         }
         else
         {
@@ -151,9 +151,9 @@ namespace pink {
 			
 			if (llvm_args.size() > 0)
 			{ 
-        if (res_res.GetOne()->isSingleValueType() || res_res.GetOne()->isVoidTy())
+        if (res_res.GetFirst()->isSingleValueType() || res_res.GetFirst()->isVoidTy())
         {
-				  llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetOne(), llvm_args, /* isVarArg */ false);
+				  llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetFirst(), llvm_args, /* isVarArg */ false);
 				  return Outcome<llvm::Type*, Error>(fn_ty);
         }
         else
@@ -166,10 +166,10 @@ namespace pink {
 			}
 			else 
 			{
-        llvm::Type* res_ty = res_res.GetOne();
+        llvm::Type* res_ty = res_res.GetFirst();
         if (res_ty->isSingleValueType() || res_ty->isVoidTy())
         {
-				  llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetOne(), /* isVararg */ false);
+				  llvm::Type* fn_ty = llvm::FunctionType::get(res_res.GetFirst(), /* isVararg */ false);
 				  return Outcome<llvm::Type*, Error>(fn_ty);
 			  }
         else

@@ -52,7 +52,7 @@ bool TestBool(std::ostream& out)
   
   pink::Outcome<pink::Type*, pink::Error> bool_type = b0->Getype(*env);
   
-  result &= Test(out, "Bool::Getype()", bool_type && bool_type.GetOne() == bool_t);
+  result &= Test(out, "Bool::Getype()", bool_type && bool_type.GetFirst() == bool_t);
 
   result &= Test(out, "pink::Result", result);
   out << "\n-----------------------\n";

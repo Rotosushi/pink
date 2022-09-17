@@ -35,7 +35,7 @@ namespace pink {
     		
     		if (result)
     		{
-    			type = result.GetOne();
+    			type = result.GetFirst();
     		}
     		
     		return result;

@@ -55,7 +55,7 @@ bool TestAssignment(std::ostream& out)
 	
 	pink::Outcome<pink::Type*, pink::Error> asgn_type = asgn->Getype(*env);
 	
-	result &= Test(out, "Assignment::Getype()", asgn_type && asgn_type.GetOne() == nil_t);
+	result &= Test(out, "Assignment::Getype()", asgn_type && asgn_type.GetFirst() == nil_t);
 	
 	result &= Test(out, "pink::Assignment", result);
   out << "\n-----------------------\n";

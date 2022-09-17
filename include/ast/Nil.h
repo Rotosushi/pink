@@ -1,3 +1,9 @@
+/**
+ * @file Nil.h
+ * @brief Header for class Nil
+ * @version 0.1
+ * 
+ */
 #pragma once
 #include <string>
 #include <iostream>

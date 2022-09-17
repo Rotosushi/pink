@@ -78,11 +78,11 @@ namespace pink {
       return calleeTy;
 
     // check that we have something we can call
-    FunctionType* calleeFnTy = llvm::dyn_cast<FunctionType>(calleeTy.GetOne());
+    FunctionType* calleeFnTy = llvm::dyn_cast<FunctionType>(calleeTy.GetFirst());
 
     if (calleeFnTy == nullptr)
     {
-      Error error(Error::Code::TypeCannotBeCalled, loc, calleeTy.GetOne()->ToString());
+      Error error(Error::Code::TypeCannotBeCalled, loc, calleeTy.GetFirst()->ToString());
       return Outcome<Type*, Error>(error);
     }
 
@@ -104,9 +104,9 @@ namespace pink {
       Outcome<Type*, Error> outcome = arg->Getype(env);
 
       if (!outcome)
-        return Outcome<Type*, Error>(outcome.GetTwo());
+        return Outcome<Type*, Error>(outcome.GetSecond());
 
-      argTys.push_back(outcome.GetOne());
+      argTys.push_back(outcome.GetFirst());
     }
 
     // chech that each arguments type matches
@@ -138,20 +138,20 @@ namespace pink {
 
     if (!callee_result)
     {
-      return Outcome<llvm::Value*, Error>(callee_result.GetTwo());
+      return Outcome<llvm::Value*, Error>(callee_result.GetSecond());
     }
 
-    if (callee_result.GetOne() == nullptr)
+    if (callee_result.GetFirst() == nullptr)
     {
       FatalError("Function implementation was empty!", __FILE__, __LINE__);
     }
 
-    llvm::Function* function = llvm::dyn_cast<llvm::Function>(callee_result.GetOne());
+    llvm::Function* function = llvm::dyn_cast<llvm::Function>(callee_result.GetFirst());
 
     if (function == nullptr)
     {
       std::string errmsg = std::string(", type was: ")
-                         + LLVMValueToString(callee_result.GetOne());
+                         + LLVMValueToString(callee_result.GetFirst());
       Error error(Error::Code::TypeCannotBeCalled, loc, errmsg);
       return Outcome<llvm::Value*, Error>(error);
     }
@@ -166,12 +166,12 @@ namespace pink {
       Outcome<llvm::Value*, Error> arg_result = arg->Codegen(env);
 
       if (!arg_result)
-        return Outcome<llvm::Value*, Error>(arg_result.GetTwo());
+        return Outcome<llvm::Value*, Error>(arg_result.GetSecond());
 
-      if (arg_result.GetOne() == nullptr)
+      if (arg_result.GetFirst() == nullptr)
         FatalError("The argument is nullptr!", __FILE__, __LINE__);
 
-      arg_values.push_back(arg_result.GetOne());
+      arg_values.push_back(arg_result.GetFirst());
     }
     
     llvm::CallInst* call = nullptr;

@@ -25,6 +25,11 @@ namespace pink {
         return outer;
     }
 
+    bool SymbolTable::IsGlobal()
+    {
+        return outer == nullptr;
+    }
+
     llvm::Optional<std::pair<Type*, llvm::Value*>> SymbolTable::Lookup(InternedString symbol)
     {
         auto iter = map.find(symbol);

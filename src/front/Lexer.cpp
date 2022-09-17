@@ -18,7 +18,7 @@ namespace pink {
         cursor = marker = token = buffer.begin();
     }
 
-    std::string& Lexer::GetBuf()
+    const std::string& Lexer::GetBuf()
     {
       return buffer;
     }

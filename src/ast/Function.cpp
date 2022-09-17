@@ -153,7 +153,7 @@ namespace pink {
 			  arg_types.emplace_back(pair.second);
 			}
 
-			FunctionType* func_ty = env.types->GetFunctionType(body_result.GetOne(), arg_types);
+			FunctionType* func_ty = env.types->GetFunctionType(body_result.GetFirst(), arg_types);
       // okay, so before we return we need to take care of one more thing,
       // making sure the rest of the program knows of the existance of this 
       // function. and how do we do that? using an early binding of the 
@@ -190,14 +190,14 @@ namespace pink {
 			
 			if (!getype_result)
 			{
-				return Outcome<llvm::Value*, Error>(getype_result.GetTwo());
+				return Outcome<llvm::Value*, Error>(getype_result.GetSecond());
 			}
 			
-			Outcome<llvm::Type*, Error> ty_codegen_result = getype_result.GetOne()->Codegen(env);
+			Outcome<llvm::Type*, Error> ty_codegen_result = getype_result.GetFirst()->Codegen(env);
 			
 			if (!ty_codegen_result)
 			{
-				return Outcome<llvm::Value*, Error>(ty_codegen_result.GetTwo());
+				return Outcome<llvm::Value*, Error>(ty_codegen_result.GetSecond());
 			}
 
       /*
@@ -215,7 +215,7 @@ namespace pink {
        *  return value.
        * 
        */
-      pink::FunctionType* p_fn_ty = llvm::cast<pink::FunctionType>(getype_result.GetOne());
+      pink::FunctionType* p_fn_ty = llvm::cast<pink::FunctionType>(getype_result.GetFirst());
 
       Outcome<llvm::Type*, Error> p_fn_ret_ty_result(Error(Error::Code::None, Location()));
       llvm::Type* fn_ret_ty = nullptr;
@@ -231,9 +231,9 @@ namespace pink {
         Outcome<llvm::Type*, Error> main_fn_ty_result = main_fn_ty->Codegen(env);
 
         if (!main_fn_ty_result)
-          return Outcome<llvm::Value*, Error>(main_fn_ty_result.GetTwo());
+          return Outcome<llvm::Value*, Error>(main_fn_ty_result.GetSecond());
 
-        function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty_result.GetOne());
+        function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty_result.GetFirst());
         
         fn_ret_ty = function_ty->getReturnType();        
 
@@ -247,11 +247,11 @@ namespace pink {
         p_fn_ret_ty_result = p_fn_ty->result->Codegen(env);
 
         if (!p_fn_ret_ty_result)
-          return Outcome<llvm::Value*, Error>(p_fn_ret_ty_result.GetTwo());
+          return Outcome<llvm::Value*, Error>(p_fn_ret_ty_result.GetSecond());
 
-        fn_ret_ty = p_fn_ret_ty_result.GetOne();
+        fn_ret_ty = p_fn_ret_ty_result.GetFirst();
 
-			  function_ty = llvm::cast<llvm::FunctionType>(ty_codegen_result.GetOne());
+			  function_ty = llvm::cast<llvm::FunctionType>(ty_codegen_result.GetFirst());
 			
 			  function = llvm::Function::Create(function_ty, 
 				  		 									          llvm::Function::ExternalLinkage, 
@@ -304,9 +304,9 @@ namespace pink {
           Outcome<llvm::Type*, Error> param_ty_codegen_result = p_fn_ty->arguments[i]->Codegen(env);
 
           if (!param_ty_codegen_result)
-            return Outcome<llvm::Value*, Error>(param_ty_codegen_result.GetTwo());
+            return Outcome<llvm::Value*, Error>(param_ty_codegen_result.GetSecond());
 
-          llvm::Type* param_ty = param_ty_codegen_result.GetOne();
+          llvm::Type* param_ty = param_ty_codegen_result.GetFirst();
 
           // since this type is not a single value type, this parameter needs
           // the byval(<ty>) parameter attribute
@@ -330,9 +330,9 @@ namespace pink {
           Outcome<llvm::Type*, Error> param_ty_codegen_result = p_fn_ty->arguments[i]->Codegen(env);
 
           if (!param_ty_codegen_result)
-            return Outcome<llvm::Value*, Error>(param_ty_codegen_result.GetTwo());
+            return Outcome<llvm::Value*, Error>(param_ty_codegen_result.GetSecond());
 
-          llvm::Type* param_ty = param_ty_codegen_result.GetOne();
+          llvm::Type* param_ty = param_ty_codegen_result.GetFirst();
 
           // since this type is not a single value type, this parameter needs
           // the byval(<ty>) parameter attribute
@@ -378,7 +378,7 @@ namespace pink {
         //if (!param_ty_result)
         //  return Outcome<llvm::Value*, Error>(param_ty_result.GetTwo());
 
-        //llvm::Type* arg_ty = param_ty_result.GetOne();
+        //llvm::Type* arg_ty = param_ty_result.GetFirst();
         llvm::Argument* arg = function->getArg(i);
         
         llvm::Type* arg_ty = arg->getType();
@@ -478,7 +478,7 @@ namespace pink {
         llvm::FunctionType* iasm1Ty = llvm::FunctionType::get(int64Ty, intArgsTy, false);
         llvm::FunctionType* iasm2Ty = llvm::FunctionType::get(voidTy, noArgsTy, false);
        
-        llvm::Value* bodyVal = body_result.GetOne();
+        llvm::Value* bodyVal = body_result.GetFirst();
         llvm::InlineAsm* iasm1 = nullptr;
         // So, llvm generates smaller instruction sizes when it handles 
         // it's different types, this is perfectly fine, except that 
@@ -643,7 +643,7 @@ namespace pink {
         if (!cast_result)
           return cast_result;
 
-        std::vector<llvm::Value*> iasm1Args = { cast_result.GetOne() };
+        std::vector<llvm::Value*> iasm1Args = { cast_result.GetFirst() };
 
         local_builder->CreateCall(iasm1Ty, iasm1, iasm1Args);
 
@@ -668,11 +668,11 @@ namespace pink {
 			  // we need to be aware of return value sizes here.
         if (fn_ret_ty->isSingleValueType())
         {
-          local_builder->CreateRet(body_result.GetOne());
+          local_builder->CreateRet(body_result.GetFirst());
         }
         else 
         {
-          StoreAggregate(fn_ret_ty, function->getArg(0), body_result.GetOne(), *local_env);
+          StoreAggregate(fn_ret_ty, function->getArg(0), body_result.GetFirst(), *local_env);
         }
       }
 
@@ -683,7 +683,7 @@ namespace pink {
       // definition. so first we erase the incomplete definition, and 
       // then create the full definition.
       env.bindings->Unbind(name);
-      env.bindings->Bind(name, getype_result.GetOne(), function);
+      env.bindings->Bind(name, getype_result.GetFirst(), function);
 
 			// return the function as the result of code generation
 			return Outcome<llvm::Value*, Error>(function);

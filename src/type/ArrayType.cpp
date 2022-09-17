@@ -62,6 +62,6 @@ namespace pink {
     if (!member_result)
       return member_result;
 
-    return Outcome<llvm::Type*, Error>(llvm::ArrayType::get(member_result.GetOne(), size));
+    return Outcome<llvm::Type*, Error>(llvm::ArrayType::get(member_result.GetFirst(), size));
   }
 }

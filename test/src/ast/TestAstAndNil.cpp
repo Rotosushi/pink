@@ -53,7 +53,7 @@ bool TestAstAndNil(std::ostream& out)
   
   pink::Outcome<pink::Type*, pink::Error> nil_type = a->Getype(*env);
   
-  result &= Test(out, "Nil::Getype()", nil_type && nil_type.GetOne() == nil_t);
+  result &= Test(out, "Nil::Getype()", nil_type && nil_type.GetFirst() == nil_t);
 
   result &= Test(out, "pink::Nil", result);
   out << "\n-----------------------\n";

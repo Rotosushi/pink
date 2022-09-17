@@ -185,7 +185,7 @@ bool TestApplication(std::ostream& out)
   env->bindings->Bind(env->symbols->Intern("add"), fn_type, /* llvm::Value* term = */ nullptr);
 
   pink::Outcome<pink::Type*, pink::Error> app_type = app->Getype(*env);
-  result &= Test(out, "Application::Getype()", app_type && app_type.GetOne() == int_type);
+  result &= Test(out, "Application::Getype()", app_type && app_type.GetFirst() == int_type);
 
   // given an application of not a function,
   // do we get an error?
