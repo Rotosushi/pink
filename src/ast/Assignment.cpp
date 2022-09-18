@@ -21,12 +21,7 @@ namespace pink {
     bool Assignment::classof(const Ast* ast)
     {
     	return ast->getKind() == Ast::Kind::Assignment;
-	}
-
-    std::unique_ptr<Ast> Assignment::Clone()
-    {
-        return std::make_unique<Assignment>(loc, left->Clone(), right->Clone());
-    }
+	  }
 
     std::string Assignment::ToString()
     {

@@ -27,12 +27,6 @@ namespace pink {
 		
 		}
 		
-		std::unique_ptr<Ast> Function::Clone()
-		{
-			std::unique_ptr<Ast> result = std::make_unique<Function>(loc, name, arguments, body->Clone(), bindings->OuterScope());
-			return result;
-		}
-		
 		bool Function::classof(const Ast* a)
 		{
 			return a->getKind() == Ast::Kind::Function;

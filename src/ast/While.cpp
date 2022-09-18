@@ -21,11 +21,6 @@ namespace pink {
     return ast->getKind() == Ast::Kind::While;
   }
 
-  std::unique_ptr<Ast> While::Clone()
-  {
-    return std::make_unique<While>(loc, test->Clone(), body->Clone());
-  }
-
   std::string While::ToString()
   {
     std::string result("while ");

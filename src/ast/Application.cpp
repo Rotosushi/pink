@@ -22,18 +22,6 @@ namespace pink {
     return ast->getKind() == Ast::Kind::Application;
   }
 
-  std::unique_ptr<Ast> Application::Clone()
-  {
-    std::vector<std::unique_ptr<Ast>> args;
-
-    for (std::unique_ptr<Ast>& arg : arguments)
-    {
-      args.emplace_back(arg->Clone());
-    }
-
-    return std::unique_ptr<Application>(new Application(loc, callee->Clone(), std::move(args)));
-  }
-
   std::string Application::ToString()
   {
     std::string result;

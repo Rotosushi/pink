@@ -4,7 +4,7 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    Int::Int(Location l, int i)
+    Int::Int(Location l, long long i)
         : Ast(Ast::Kind::Int, l), value(i)
     {
 
@@ -13,11 +13,6 @@ namespace pink {
     Int::~Int()
     {
 
-    }
-
-    std::unique_ptr<Ast> Int::Clone()
-    {
-        return std::make_unique<Int>(loc, value);
     }
 
     bool Int::classof(const Ast* a)

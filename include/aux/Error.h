@@ -38,6 +38,9 @@ namespace pink {
         MissingLBrace,
         MissingRBrace,
         MissingRBracket,
+        MissingVar,
+        MissingBindId,
+        MissingBindColonEq,
         MissingFn,
         MissingFnName,
         MissingArgName,
@@ -54,6 +57,7 @@ namespace pink {
         UnknownUnop,
         UnknownBasicToken,
         UnknownTypeToken,
+        BadTopLevelExpression,
 
         // type errors
         TypeCannotBeCalled,

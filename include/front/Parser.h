@@ -79,48 +79,151 @@ namespace pink {
      * I think it would be better as: 
      * 
      * top = function
-     *     | variable
+     *     | bind
      * 
-     * variable = "var" id ":=" affix ";"
+     * 
+     * bind = "var" id ":=" affix ";"
+     * 
+     * // this comment is a diagram of the resulting node structure in the tree
+     * // ->   bind
+     * //     /    \ 
+     * //    id    affix
+     * 
      *       
      * function = "fn" id "(" [arg {"," arg}] ")" block
      * 
+     * // ->      function
+     * //        /   |    \
+     * //      id  [arg]   block
+     * 
+     * 
      * arg = id ":" type
+     * 
+     * // ->    arg
+     * //      /   \
+     * //     id   type
+     * 
      * 
      * block = "{" {term} "}"
      * 
+     * // ->   block 
+     * //        |
+     * //      [term]
+     * 
      * term = conditional
      *      | while
-     *      | variable
+     *      | bind
      *      | affix ";"
      * 
-     * conditional = "if" "(" affix ")" block "else" block
+     * 
+     * conditional = "if" "(" affix ")" block "else" block 
+     * 
+     * // ->           if
+     * //        /      |      \
+     * //    affix    block     block
+     * 
      * 
      * while = "while" "(" affix ")" block
      * 
-     * affix = infix "=" affix
-     *       | infix "(" [affix {"," affix}] ")"
-     *       | infix
+     * // ->        while
+     * //          /     \ 
+     * //      affix     block
      * 
-     * infix = dot [operator infix-parser] // <- this is actually a call to the op-prec parser
+     * affix = composite "=" affix                   // (1)
+     *       | composite "(" [affix {"," affix}] ")" // (2)
+     *       | composite                             // (3)
      * 
-     * dot = basic ["." dot]
+     * // (1) ->       assign
+     * //             /      \ 
+     * //     composite      affix
      * 
-     * basic = id
-     *       | integer
-     *       | "true"
-     *       | "false"
-     *       | "(" affix {"," affix} ")"
-     *       | "[" affix {"," affix} "]"
+     * // (2) ->       application
+     * //             /           \ 
+     * //     composite          [affix]
      * 
-     * type = basic_type
+     * // (3) ->       composite
      * 
-     * basic_type = "Int"
-     *            | "Bool"
-     *            | "(" type {"," type} ")"
-     *            | "[" type "x" int "]"
-     *            | "ptr" type
      * 
+     * composite = dot operator infix-parser // (1) <- this is actually a call to the op-prec parser
+     *           | dot                       // (2)
+     *
+     * // (1) ->       op
+     * //            /    \ 
+     * //          lhs    rhs
+     * 
+     * 
+     * // (2) ->    dot 
+     * 
+     * dot = basic {"." basic}
+     * 
+     * // (1) ->       basic
+     * 
+     * // (2) ->        dot
+     * //             /     \
+     * //           dot      basic
+     * //         /     \ 
+     * //       ...     basic
+     * //     /     \ 
+     * // basic    basic
+     *
+     * 
+     * 
+     * basic = id                        // (1)
+     *       | integer                   // (2)
+     *       | operator basic            // (3)
+     *       | "true"                    // (4)
+     *       | "false"                   // (5)
+     *       | "(" affix {"," affix} ")" // (6) (7)
+     *       | "[" affix {"," affix} "]" // (8)
+     * 
+     * // (1) ->    id
+     * 
+     * // (2) ->    int
+     * 
+     * // (3) ->    unop
+     * //          /    \ 
+     * //   operator     basic
+     * 
+     * // (4) ->    bool
+     * // (5) ->    bool
+     * 
+     * // (6) ->    affix
+     * // (7) ->    tuple
+     * //             |
+     * //          [affix]
+     * 
+     * // (8) ->    array
+     * //             |
+     * //          [affix]
+     * 
+     * 
+     * type = "Int"
+     *      | "Bool"
+     *      | "(" type {"," type} ")"
+     *      | "[" type "x" int "]"
+     *      | "ptr" type
+     * 
+     * // the only oddity I notice from this grammar is that
+     * // an expression combining assignment and infix expressions
+     * // would parse as follows:
+     * 
+     * // -> x = 45 + y = 64;
+     * // ->    =
+     * //     /   \ 
+     * //    x     +
+     * //         / \
+     * //        45  =
+     * //           / \
+     * //          y  64
+     * 
+     * // as opposed to what may be more intuitive:
+     * // ->    +
+     * //     /   \
+     * //    =     =
+     * //   / \   / \ 
+     * //  x  45 y   64
+     * //
+     * //
      */
     class Parser {
     private:
@@ -131,21 +234,21 @@ namespace pink {
         std::istream* input_stream;
 
         void yyfill();
-        // primes tok, loc, and txt, with their new values
-        // from the next token in the buffer.
         void nexttok();
 
+        Outcome<std::unique_ptr<Ast>, Error> ParseTop(const Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseFunction(const Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseVariable(const Environment& env);
+        Outcome<std::pair<InternedString, Type*>, Error> ParseArgument(const Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseBlock(const Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseTerm(const Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseConditional(const Environment& env);
+        Outcome<std::unique_ptr<Ast>, Error> ParseWhile(const Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseAffix(const Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseComposite(const Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseDot(const Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseInfix(std::unique_ptr<Ast> left, Precedence precedence, const Environment& env);
         Outcome<std::unique_ptr<Ast>, Error> ParseBasic(const Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseBlock(const Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseConditional(const Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseWhile(const Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseFunction(const Environment& env);
-        Outcome<std::pair<InternedString, Type*>, Error> ParseArgument(const Environment& env);
         Outcome<Type*, Error> ParseType(const Environment& env);
         Outcome<Type*, Error> ParseBasicType(const Environment& env);
     public:

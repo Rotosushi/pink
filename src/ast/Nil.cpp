@@ -14,11 +14,6 @@ namespace pink {
 
     }
 
-    std::unique_ptr<Ast> Nil::Clone()
-    {
-        return std::make_unique<Nil>(loc);
-    }
-
     bool Nil::classof(const Ast* a)
     {
         return a->getKind() == Ast::Kind::Nil;

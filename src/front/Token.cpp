@@ -21,7 +21,7 @@ namespace pink {
             case Token::Semicolon:{ return std::string("Token::Semicolon");}
             case Token::Colon:    { return std::string("Token::Colon");    }
             case Token::Equals:   { return std::string("Token::Equals");   }
-      			case Token::ColonEq:  { return std::string("Token::ColonEq");  }
+      		case Token::ColonEq:  { return std::string("Token::ColonEq");  }
             case Token::LParen:   { return std::string("Token::LParen");   }
             case Token::RParen:   { return std::string("Token::RParen");   }
             case Token::LBrace:	  { return std::string("Token::LBrace");   }
@@ -36,7 +36,10 @@ namespace pink {
             case Token::True:     { return std::string("Token::True");     }
             case Token::False:    { return std::string("Token::False");    }
             case Token::BoolType: { return std::string("Token::BoolType"); }
-            case Token::Fn:		    { return std::string("Token::Fn");       }
+            case Token::Ptr:      { return std::string("Token::Ptr");      }
+            
+            case Token::Fn:		   { return std::string("Token::Fn");      }
+            case Token::Var:      { return std::string("Token::Var");      }
             case Token::If:       { return std::string("Token::If");       }
             case Token::Then:     { return std::string("Token::Then");     }
             case Token::Else:     { return std::string("Token::Else");     }

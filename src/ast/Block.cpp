@@ -35,18 +35,6 @@ namespace pink {
 		return ast->getKind() == Ast::Kind::Block;
 	}
 	
-	std::unique_ptr<Ast> Block::Clone()
-	{
-		std::vector<std::unique_ptr<Ast>> stmnts;
-		
-		for (auto& stmt : statements)
-		{
-			stmnts.emplace_back(stmt->Clone());
-		}
-		
-		return std::make_unique<Block>(loc, stmnts);
-	}
-	
 	std::string Block::ToString()
 	{
 		std::string result("{ ");

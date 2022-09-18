@@ -34,8 +34,10 @@ namespace pink {
         True,    // "true"
         False,   // "false"
         BoolType,// "Bool"
+        Ptr,     // "ptr"
                 
         Fn,      // 'fn'
+        Var,     // 'var'
         If,      // 'if'
         Then,    // 'then'
         Else,    // 'else'

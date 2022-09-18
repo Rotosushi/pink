@@ -13,11 +13,6 @@ namespace pink {
 
     }
 
-    std::unique_ptr<Ast> Binop::Clone()
-    {
-        return std::make_unique<Binop>(loc, op, left->Clone(), right->Clone());
-    }
-
     bool Binop::classof(const Ast* t)
     {
         return t->getKind() == Ast::Kind::Binop;

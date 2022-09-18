@@ -20,16 +20,6 @@ namespace pink {
     return ast->getKind() == Ast::Kind::Tuple;
   }
 
-  std::unique_ptr<Ast> Tuple::Clone()
-  {
-    std::vector<std::unique_ptr<Ast>> m;
-
-    for (auto& member : members)
-      m.emplace_back(member->Clone());
-
-    return std::make_unique<Tuple>(loc, std::move(m));
-  }
-
   std::string Tuple::ToString()
   {
     std::string result("(");

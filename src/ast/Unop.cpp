@@ -13,11 +13,6 @@ namespace pink {
 
     }
 
-    std::unique_ptr<Ast> Unop::Clone()
-    {
-        return std::make_unique<Unop>(loc, op, right->Clone());
-    }
-
     bool Unop::classof(const Ast* t)
     {
         return t->getKind() == Ast::Kind::Unop;

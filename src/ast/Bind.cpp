@@ -22,11 +22,6 @@ namespace pink {
     
     }
 
-    std::unique_ptr<Ast> Bind::Clone()
-    {
-        return std::make_unique<Bind>(loc, symbol, term->Clone());
-    }
-
     bool Bind::classof(const Ast* a)
     {
         return a->getKind() == Ast::Kind::Bind;
@@ -73,7 +68,7 @@ namespace pink {
     	*/
     	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env.bindings->LookupLocal(symbol));
     
-    	if (!bound.hasValue())
+    	if (!bound.has_value())
     	{
         Outcome<Type*, Error> term_type = term->Getype(env);
         
@@ -152,7 +147,7 @@ namespace pink {
     {
     	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env.bindings->LookupLocal(symbol));
     
-    	if (!bound.hasValue())
+    	if (!bound.has_value())
     	{
     		// retrieve the type of the term
 			Outcome<Type*, Error> term_type_result = term->Getype(env);

@@ -78,6 +78,9 @@ namespace pink {
         case Error::Code::MissingLBrace:     return "Syntax Error: Expected '{'";
         case Error::Code::MissingRBrace:     return "Syntax Error: Expected '}'";
         case Error::Code::MissingRBracket:   return "Syntax Error: Expected ']'";
+        case Error::Code::MissingVar:        return "Syntax Error: Expected 'var'";
+        case Error::Code::MissingBindId:     return "Syntax Error: Expected identifier for bind expression";
+        case Error::Code::MissingBindColonEq:return "Syntax Error: Missing ':=' within bind expression";
         case Error::Code::MissingFn:         return "Syntax Error: Missing 'fn'";
         case Error::Code::MissingFnName:     return "Syntax Error: Missing function name";
         case Error::Code::MissingArgName:    return "Syntax Error: Missing argument name";
@@ -94,7 +97,8 @@ namespace pink {
         case Error::Code::UnknownUnop:       return "Syntax Error: Unknown unary operator";
         case Error::Code::UnknownBasicToken: return "Syntax Error: Unknown basic token. expected to parse a term"; 
         case Error::Code::UnknownTypeToken:  return "Syntax Error: Unknown type token. expected to parse a type";        
-        
+        case Error::Code::BadTopLevelExpression: return "Syntax Error: Bad top level expression";
+
         // type errors
         case Error::Code::TypeCannotBeCalled:      return "Type Error: Provided type cannot be called"; 
         case Error::Code::ArgNumMismatch:          return "Type Error: Incorrect amount of arguments provided for the given function";

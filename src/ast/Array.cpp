@@ -25,18 +25,6 @@ namespace pink {
     return ast->getKind() == Ast::Kind::Array;
   }
 
-  std::unique_ptr<Ast> Array::Clone()
-  {
-    std::vector<std::unique_ptr<Ast>> membs;
-
-    for (std::unique_ptr<Ast>& memb : members)
-    {
-      membs.emplace_back(memb->Clone());
-    }
-
-    return std::unique_ptr<Array>(new Array(loc, std::move(membs)));
-  }
-
   std::string Array::ToString()
   {
     std::string result;

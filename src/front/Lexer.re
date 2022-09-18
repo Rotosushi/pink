@@ -206,8 +206,10 @@ namespace pink {
                 "true"  { UpdateLoc(); return Token::True; }
                 "false" { UpdateLoc(); return Token::False; }
                 "Bool"  { UpdateLoc(); return Token::BoolType; }
-                
+                "ptr"   { UpdateLoc(); return Token::Ptr; }
+
                 "fn"	{ UpdateLoc(); return Token::Fn; }
+                "var"   { UpdateLoc(); return Token::Var; }
                 "if"    { UpdateLoc(); return Token::If; }
                 "then"  { UpdateLoc(); return Token::Then; }
                 "else"  { UpdateLoc(); return Token::Else; }                

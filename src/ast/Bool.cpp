@@ -14,11 +14,6 @@ namespace pink {
 
     }
 
-    std::unique_ptr<Ast> Bool::Clone()
-    {
-        return std::make_unique<Bool>(loc, value);
-    }
-
     bool Bool::classof(const Ast* a)
     {
         return a->getKind() == Ast::Kind::Bool;

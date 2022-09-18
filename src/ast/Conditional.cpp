@@ -20,11 +20,6 @@ namespace pink {
     return ast->getKind() == Ast::Kind::Conditional;
   }
 
-  std::unique_ptr<Ast> Conditional::Clone()
-  {
-    return std::make_unique<Conditional>(loc, test->Clone(), first->Clone(), second->Clone());
-  }
-
   std::string Conditional::ToString()
   {
     std::string result = "if ";

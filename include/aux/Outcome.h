@@ -91,12 +91,6 @@ namespace pink {
          * @param other the other Outcome to copy the contents of
          */
         Outcome(const Outcome& other);
-
-        /**
-         * @brief Construct a new Outcome, equal to another outcome
-         * 
-         * @param other the other Outcome to copy the contents of
-         */
         Outcome(Outcome&& other);
 
         /**
@@ -122,14 +116,8 @@ namespace pink {
          * @return Outcome& this Outcome
          */
         Outcome& operator=(const Outcome& other);
-
-        /**
-         * @brief Assign this Outcome to the value of another Outcome
-         * 
-         * @param other the other Outcome to copy
-         * @return Outcome& this Outcome
-         */
         Outcome& operator=(Outcome&& other);
+        
 
         /**
          * @brief returns which alternative is held

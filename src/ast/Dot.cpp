@@ -21,11 +21,6 @@ namespace pink {
     return ast->getKind() == Ast::Kind::Dot;
   }
 
-  std::unique_ptr<Ast> Dot::Clone()
-  {
-    return std::make_unique<Dot>(loc, left->Clone(), right->Clone());
-  }
-
   std::string Dot::ToString()
   {
     return left->ToString() + "." + right->ToString();
