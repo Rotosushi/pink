@@ -31,22 +31,19 @@
 
 
 namespace pink {
-    /*
-        
-    
-      
-    */
 
   /**
    * @brief Environment owns all of the data structures which are shared between the 
    *  different algorithms within the compiler.
+   * 
+   * 
    * 
    * The Environment is the data structure that is passed
    * through each phase of the compiler, where it is used
    * to hold state for the future. So that the symbols,
    * bindings, types etc.. created are saved for later use.
    * 
-   * #NOTE: #ASIDE: 9/13/2022
+   * NOTE ASIDE 9/13/2022
    * We are using std::shared_ptr for the members of the environment over 
    * std::unique_ptr, because we want to have the ability to build new 
    * Environments which represent local scopes, and not reconstruct any 
@@ -295,7 +292,7 @@ namespace pink {
      * @brief Construct a new Environment
      * 
      * it is safe to pass in default initialized values for the [flags](#Flags),
-     * [options](#CLIOPtions), [parser](#Parser), [symbols](#StringInterner), 
+     * [options](#CLIOptions), [parser](#Parser), [symbols](#StringInterner), 
      * [operators](#StringInterner), [types](#TypeInterner), [bindings](#SymbolTable),
      * [binops](#BinopTable), [unops](#UnopTable), and [llvmContext].
      * 

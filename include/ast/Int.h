@@ -1,6 +1,6 @@
 /**
  * @file Int.h
- * @brief Represents an instance of an integer within the [Ast](#Ast)
+ * @brief Header for class Int
  * @version 0.1
  */
 #pragma once

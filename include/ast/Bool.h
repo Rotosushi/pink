@@ -1,6 +1,6 @@
 /**
  * @file Bool.h
- * @brief Represents an instance of a boolean value within an [Ast](#Ast)
+ * @brief Header for class Bool
  * @version 0.1
  * 
  */

@@ -60,6 +60,10 @@ namespace pink {
          * @return InternedString the InternedString representing the string passed in
          */
         InternedString Intern(const char* str);
+
+        /**
+         * @copydoc StringInterner::Intern(const char* str)
+         */
         InternedString Intern(std::string& str);
     };
 

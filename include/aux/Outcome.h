@@ -91,6 +91,10 @@ namespace pink {
          * @param other the other Outcome to copy the contents of
          */
         Outcome(const Outcome& other);
+
+        /**
+         * @copydoc Outcome::Outcome(const Outcome& other)
+         */
         Outcome(Outcome&& other);
 
         /**
@@ -116,6 +120,10 @@ namespace pink {
          * @return Outcome& this Outcome
          */
         Outcome& operator=(const Outcome& other);
+
+        /**
+         * @copydoc Outcome::operator=(const Outcome& other)
+         */
         Outcome& operator=(Outcome&& other);
         
 

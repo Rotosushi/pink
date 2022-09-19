@@ -1,3 +1,8 @@
+/**
+ * @file BinopLiteral.h
+ * @brief Header for class BinopLiteral
+ * @version 0.1
+ */
 #pragma once
 #include <utility> // std::pair
 #include <memory>  // std::unique_ptr
@@ -9,40 +14,93 @@
 #include "ops/PrecedenceAndAssociativity.h"
 
 namespace pink {
-
+    /**
+     * @brief Represents a single binary operator
+     * 
+     */
     class BinopLiteral {
     private:
-        // because pink::Types are interned, std::pair<>::operator ==
-        // works how we would want it too, namely, pointers can be used 
-        // as unique handles to each type programmatically.
+        /**
+         * @brief the set of generator functions associated with this binop
+         * 
+         */
         llvm::DenseMap<std::pair<Type*, Type*>, std::unique_ptr<BinopCodegen>> overloads;
 
     public:
+        /**
+         * @brief The precedence of this binary operator
+         * 
+         */
         Precedence precedence;
+
+        /**
+         * @brief The associativity of this binary operator
+         * 
+         */
         Associativity associativity;
-        bool isDefault;
+
 
         BinopLiteral() = delete;
-        // #TODO: consider this:
-        // on one hand, if we are creating a binop literal without an
-        // associated implementation, it is almost certainly a default 
-        // binop and thus it seems perfectly reasonable to make the default 
-        // value of isDefault true for convenience. additionally, if you 
-        // have an associated implementation it is most likely that the binop 
-        // is being defined by the user, and thus will not be a default
-        // binop literal. on the other hand, it might be confusing to users of 
-        // the api of this class that one constructor's default value for
-        // isDefault is different than the other constructor.
-        BinopLiteral(Precedence p, Associativity a, bool isDefault = true);
-        BinopLiteral(Precedence p, Associativity a, Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn, bool isDefault = false);
+        /**
+         * @brief Construct a new Binop Literal
+         * 
+         * @param p the precedence of this binop
+         * @param a the associativity of this binop
+         */
+        BinopLiteral(Precedence p, Associativity a);
+
+        /**
+         * @brief Construct a new Binop Literal
+         * 
+         * @param p the precedence of this binop
+         * @param a the associativity of this binop
+         * @param left_t the left argument Type of the generator function
+         * @param right_t the right argument Type of the generator function
+         * @param ret_t the return Type of the generator function
+         * @param fn the generator function
+         */
+        BinopLiteral(Precedence p, Associativity a, Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn);
+
+        /**
+         * @brief Destroy the Binop Literal
+         * 
+         */
         ~BinopLiteral();
 
+        /**
+         * @brief Return the number of implementations this binop has
+         * 
+         * @return unsigned the number of overloads of this binop
+         */
         unsigned NumOverloads() const;
 
+        /**
+         * @brief Register a new implementation of this binop
+         * 
+         * @param left_t the left argument Type of the generator function
+         * @param right_t the right argument Type of the generator function
+         * @param ret_t the return Type of the generator function
+         * @param fn the generator function
+         * @return std::pair<std::pair<Type*, Type*>, BinopCodegen*> the new overload
+         */
         std::pair<std::pair<Type*, Type*>, BinopCodegen*> Register(Type* left_t, Type* right_t, Type* ret_t, BinopCodegenFn fn);
 
+        /**
+         * @brief Remove an existing implementation of this binop
+         * 
+         * @param left_t the left argument Type of the implementation to remove
+         * @param right_t the right argument Type of the implementation to remove
+         */
         void Unregister(Type*  left_t, Type* right_t);
 
+        /**
+         * @brief Lookup an implementation of the binop corresponding to the given Types
+         * 
+         * @param left_t the left argument Type of the implementation
+         * @param right_t the right argument Type of the implementation
+         * @return llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> if true the implementation of the binop,
+         * if false then nothing.
+         */
         llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> Lookup(Type* left_t, Type* right_t);
     };
 }

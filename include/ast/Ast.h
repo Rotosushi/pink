@@ -101,7 +101,8 @@ namespace pink {
      * 
      *  Any class written to represent a node within the Ast must inherit from Ast.
      * 
-     * @headerfile Ast.h "ast/Ast.h"
+     * \note Ast is pure virtual, so there is no way to construct a plain Ast,
+     * only an instance of a derived Ast may be constructed.
      */
     class Ast {
     public:
@@ -112,7 +113,7 @@ namespace pink {
        * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
        * 
        * 
-       *  Ast::Kind is used as a tag to identify the which node kind
+       *  Ast::Kind is used as a tag to identify which node kind
        *  is currently instanciated when inspecting a variable of type (Ast*)
        *  
        */
@@ -156,7 +157,7 @@ namespace pink {
         
     private:
       /**
-       * @brief The pure virtual method which implements type checking of this Ast
+       * @brief The pure virtual method which implements type checking of this Ast expression
        * 
        * @param env The Environment to type check against; An [Environment](#Environment) as if constructed by [NewGlobalEnv](#NewGlobalEnv)
        * 
@@ -199,7 +200,7 @@ namespace pink {
       
 
       /**
-       * @brief Converts the Ast to it's canonical string representation.
+       * @brief Computes the canonical string representation of this Ast
        * 
        * by canonical I simply mean that if the [parser](#Parser) were to read in 
        * the string returned by ToString it would construct the exact same Ast as 

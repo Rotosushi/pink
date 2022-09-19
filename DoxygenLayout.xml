@@ -153,12 +153,12 @@
       <namespaces visible="yes" title=""/>
       <concepts visible="yes" title=""/>
       <constantgroups visible="yes" title=""/>
-      <defines title=""/>
-      <typedefs title=""/>
+      <defines visible="yes" title=""/>
+      <typedefs visible="yes" title=""/>
       <sequences title=""/>
       <dictionaries title=""/>
       <enums title=""/>
-      <functions title=""/>
+      <functions visible="yes" title=""/>
       <variables title=""/>
       <membergroups visible="yes"/>
     </memberdecl>

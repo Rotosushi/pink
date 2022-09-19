@@ -113,6 +113,10 @@ namespace pink {
          * @param text the text to append to the current buffer
          */
         void AppendBuf(const char* text);
+
+        /**
+         * @copydoc Lexer::AppendBuf(const char* text)
+         */
         void AppendBuf(std::string& text);
 
         /**

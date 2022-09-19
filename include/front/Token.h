@@ -1,3 +1,9 @@
+/**
+ * @file Token.h
+ * @brief Header for enum class Token
+ * @version 0.1
+ * 
+ */
 #pragma once
 #include <string>
 

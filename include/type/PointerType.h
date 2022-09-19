@@ -1,3 +1,8 @@
+/**
+ * @file PointerType.h
+ * @brief Header for class PointerType
+ * @version 0.1
+ */
 #pragma once 
 #include <string>
 
@@ -48,18 +53,67 @@
   */
 
 namespace pink {
+  /**
+   * @brief Represents the Type of a Pointer
+   * 
+   */
   class PointerType : public Type {
   public:
+    /**
+     * @brief The type of what the Pointer is pointing to, it's 'pointee'.
+     * 
+     */
     Type* pointee_type;
 
+    /**
+     * @brief Construct a new PointerType
+     * 
+     * @param pointee_type the Type of what this pointer is pointing to.
+     */
     PointerType(Type* pointee_type);
+
+    /**
+     * @brief Destroy the PointerType
+     * 
+     */
     virtual ~PointerType();
 
-    static bool classof(const Type* t);
+    /**
+     * @brief Implements LLVM style [RTTI] for this class
+     * 
+     * @param type the type being tested
+     * @return true if type *is* an instance of PointerType
+     * @return false if type *is not* an instance of PointerType
+     */
+    static bool classof(const Type* type);
 
+    /**
+     * @brief Computes if other is equivalent to this PointerType
+     * 
+     * @param other the other type
+     * @return true if other *is* equivalent to this PointerType
+     * @return false if other  *is not* equivalent to this PointerType
+     */
     virtual bool EqualTo(Type* other) override;
+
+    /**
+     * @brief Compute the cannonical string representation of this PointerType
+     * 
+     * @return std::string the string representation
+     */
     virtual std::string ToString() override;
 
+    /**
+     * @brief Compute the llvm::Type equivalent to this PointerType
+     * 
+     * \note llvm::PointerType's do not store any Pointee type. if you want to
+     * know the llvm version of this pointee type, you have to compute it directly
+     * from this->pointee_type
+     * 
+     * @param env the environment of this compilation unit
+     * @return Outcome<llvm::Type*, Error> if true, the llvm::Type equivalent to this PointerType,
+     * if false then the Error encountered
+     */
     virtual Outcome<llvm::Type*, Error> Codegen(const Environment& env) override;
   };
 }

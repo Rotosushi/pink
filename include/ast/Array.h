@@ -1,3 +1,8 @@
+/**
+ * @file Array.h
+ * @brief Header for class Array
+ * @version 0.1
+ */
 #pragma once 
 #include <vector>
 
@@ -60,20 +65,70 @@
  *
  */
 namespace pink {
+
+  /**
+   * @brief Array represents a c-style array expression
+   * 
+   */
   class Array : public Ast {
     private:
+    /**
+     * @brief The members of the array
+     * 
+     */
     std::vector<std::unique_ptr<Ast>> members;
     
+    /**
+     * @brief Compute the Type of the Array expression.
+     * 
+     * @param env the environment of this compilation unit
+     * @return Outcome<Type*, Error> if true, the array type,
+     * if false the Error encountered.
+     */
     virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
     
     public: 
+    /**
+     * @brief Construct a new Array
+     * 
+     * @param location the textual location of this array
+     * @param members the members of this array
+     */
     Array(Location location, std::vector<std::unique_ptr<Ast>> members);
+
+    /**
+     * @brief Destroy the Array
+     * 
+     */
     ~Array();
 
+    /**
+     * @brief Implements LLVM style [RTTI] for this class
+     * 
+     * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
+     * 
+     * @param ast the ast to check
+     * @return true if ast *is* an instance of an Array
+     * @return false if ast *is not* an instance of an Array
+     */
     static bool classof(const Ast* ast);
 
+    /**
+     * @brief Compute the cannonical string representation of this Array expression
+     * 
+     * @return std::string the string representation
+     */
     virtual std::string ToString() override;
 
+    /**
+     * @brief Compute the llvm::ConstantArray representing this Array
+     * 
+     * Due to a language limitation all members must be llvm::Constants themselves.
+     * 
+     * @param env the environment of this compilation unit
+     * @return Outcome<llvm::Value*, Error> if true, the llvm::ConstantArray,
+     * if false, the Error encountered.
+     */
     virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
   };
 }

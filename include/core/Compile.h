@@ -43,6 +43,12 @@
 
 */
 
+/**
+ * @brief The namespace for the entire project
+ * 
+ * \todo where is the best place to put the documentation for the whole namespace?
+ * 
+ */
 namespace pink {
 	/**
 	 * @brief Runs the Compilation process over the given Environment

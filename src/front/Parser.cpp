@@ -104,7 +104,7 @@ namespace pink {
       loc = lexer.yyloc();
       txt = lexer.yytxt();
 
-      while (tok == Token::End && !input_stream->eof())
+      while (EndOfInput() && !input_stream->eof())
       {
         yyfill();
         tok = lexer.yylex();
@@ -389,7 +389,7 @@ namespace pink {
       }
       else if (tok == Token::Var)
       {
-        return ParseVariable(env);
+        return ParseBind(env);
       }
       else // assume the text appearing defines a term other than a function or variable
       {
@@ -420,7 +420,7 @@ namespace pink {
     /*
       variable = "var" id ":=" affix ";"
     */
-   Outcome<std::unique_ptr<Ast>, Error> Parser::ParseVariable(const Environment& env)
+   Outcome<std::unique_ptr<Ast>, Error> Parser::ParseBind(const Environment& env)
    {
       Location lhs_loc = loc;
       InternedString symbol = nullptr;
@@ -628,7 +628,7 @@ namespace pink {
       }
       else if (tok == Token::Var)
       {
-        return ParseVariable(env);
+        return ParseBind(env);
       }
       else // assume this is an affix term 
       {
@@ -798,6 +798,10 @@ namespace pink {
     }
 
 
+    /*
+      composite = dot
+                | dot operator infix-parser
+    */
     Outcome<std::unique_ptr<Ast>, Error> Parser::ParseComposite(const Environment& env)
     {
       Location lhs_loc = loc;
@@ -932,7 +936,11 @@ namespace pink {
     		nexttok(); // eat the op
 
     		// unops all bind to their immediate right hand side
-    		auto rhs = ParseBasic(env);    	
+        // we don't want to recurr to affix, as then a unop
+        // will break any infix expression it appears within
+        // in two, however we do want to easily take the 
+        // address of a member or indirect a pointer member.
+    		auto rhs = ParseDot(env);    	
     		
     		if (!rhs)
     			return rhs.GetSecond();

@@ -165,6 +165,10 @@ namespace pink {
        * @return std::string the text representing this particular error..
        */
       std::string ToString(const char* txt);
+
+      /**
+       * @copydoc Error::ToString(const char* txt)
+       */
       std::string ToString(std::string& txt);
 
       /**
@@ -175,6 +179,10 @@ namespace pink {
        * @return std::ostream& the output stream given
        */
       std::ostream& Print(std::ostream& out, std::string& txt);
+
+      /**
+       * @copydoc Error::Print(std::ostream& out, std::string& txt)
+       */
       std::ostream& Print(std::ostream& out, const char* txt);
   };
 
@@ -196,6 +204,10 @@ namespace pink {
    * @param line the line this error occured within
    */
   void FatalError(const char* dsc, const char* file, size_t line);
+
+  /**
+   * @copydoc FatalError(const char* dsc, const char * file, size_t line)
+   */
   void FatalError(std::string dsc, const char* file, size_t line);
 
 }

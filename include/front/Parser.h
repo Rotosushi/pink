@@ -30,171 +30,50 @@ namespace pink {
      * 
      * The EBNF grammar the parser accepts is:
      * 
-     * term = affix ";"
-     * 
-     * affix = function
-     *       | composite [operator infix-parser] // <- infix-parser is actually a call to the op-prec parser
-     * 
-     * composite = dot
-     *           | dot "=" affix
-     *           | dot "(" [affix {"," affix}] ")"
-     * 
-     * dot = basic
-     *     | basic '.' affix
-     * 
-     * basic = id [":=" affix]
-     *       | operator basic
-     *       | "(" affix {"," affix} ")"
-     *       | "[" affix {"," affix} "]"
-     *       | "nil"
-     *       | int
-     *       | "true"
-     *       | "false"
-     *       | conditional
-     *       | while
-     * 
-     * function = "fn" id "(" [arg {"," arg}] ")" block
-     * 
-     * arg = id ":" type
-     * 
-     * block = "{" {term} "}"
-     * 
-     * conditional = "if" affix "then" block "else" block
-     * 
-     * while = "while" affix "do" block
-     * 
-     * type = basicType [*]
-     * 
-     * basicType = "Nil"
-     *           | "Int"
-     *           | "Bool"
-     * 
+     *
      * id = [a-zA-Z_][a-zA-Z0-9_]* // <- this is the regular expression used for re2c
+     * 
      * operator = [*+\-/%<=>&|\^!~@$]+; // <- this is the regular expression used for re2c
-     * int = [0-9]+
      * 
-     * -------------------------------------
-     * 
-     * after updating the EBNF to exactly what the parser accepts,
-     * I think it would be better as: 
+     * int = [0-9]+ // <- this is the regular expression used for re2c
      * 
      * top = function
      *     | bind
      * 
-     * 
      * bind = "var" id ":=" affix ";"
-     * 
-     * // this comment is a diagram of the resulting node structure in the tree
-     * // ->   bind
-     * //     /    \ 
-     * //    id    affix
-     * 
      *       
      * function = "fn" id "(" [arg {"," arg}] ")" block
      * 
-     * // ->      function
-     * //        /   |    \
-     * //      id  [arg]   block
-     * 
-     * 
      * arg = id ":" type
      * 
-     * // ->    arg
-     * //      /   \
-     * //     id   type
-     * 
-     * 
      * block = "{" {term} "}"
-     * 
-     * // ->   block 
-     * //        |
-     * //      [term]
      * 
      * term = conditional
      *      | while
      *      | bind
      *      | affix ";"
      * 
-     * 
      * conditional = "if" "(" affix ")" block "else" block 
-     * 
-     * // ->           if
-     * //        /      |      \
-     * //    affix    block     block
-     * 
      * 
      * while = "while" "(" affix ")" block
      * 
-     * // ->        while
-     * //          /     \ 
-     * //      affix     block
-     * 
-     * affix = composite "=" affix                   // (1)
-     *       | composite "(" [affix {"," affix}] ")" // (2)
-     *       | composite                             // (3)
-     * 
-     * // (1) ->       assign
-     * //             /      \ 
-     * //     composite      affix
-     * 
-     * // (2) ->       application
-     * //             /           \ 
-     * //     composite          [affix]
-     * 
-     * // (3) ->       composite
+     * affix = composite "=" affix                   
+     *       | composite "(" [affix {"," affix}] ")" 
+     *       | composite                             
      * 
      * 
-     * composite = dot operator infix-parser // (1) <- this is actually a call to the op-prec parser
-     *           | dot                       // (2)
-     *
-     * // (1) ->       op
-     * //            /    \ 
-     * //          lhs    rhs
+     * composite = dot operator infix-parser
+     *           | dot                       
      * 
+     * dot = basic {"." basic} // (1) (2)
      * 
-     * // (2) ->    dot 
-     * 
-     * dot = basic {"." basic}
-     * 
-     * // (1) ->       basic
-     * 
-     * // (2) ->        dot
-     * //             /     \
-     * //           dot      basic
-     * //         /     \ 
-     * //       ...     basic
-     * //     /     \ 
-     * // basic    basic
-     *
-     * 
-     * 
-     * basic = id                        // (1)
-     *       | integer                   // (2)
-     *       | operator basic            // (3)
-     *       | "true"                    // (4)
-     *       | "false"                   // (5)
-     *       | "(" affix {"," affix} ")" // (6) (7)
-     *       | "[" affix {"," affix} "]" // (8)
-     * 
-     * // (1) ->    id
-     * 
-     * // (2) ->    int
-     * 
-     * // (3) ->    unop
-     * //          /    \ 
-     * //   operator     basic
-     * 
-     * // (4) ->    bool
-     * // (5) ->    bool
-     * 
-     * // (6) ->    affix
-     * // (7) ->    tuple
-     * //             |
-     * //          [affix]
-     * 
-     * // (8) ->    array
-     * //             |
-     * //          [affix]
+     * basic = id                        
+     *       | integer                   
+     *       | operator dot              
+     *       | "true"                    
+     *       | "false"                   
+     *       | "(" affix {"," affix} ")" 
+     *       | "[" affix {"," affix} "]" 
      * 
      * 
      * type = "Int"
@@ -203,71 +82,298 @@ namespace pink {
      *      | "[" type "x" int "]"
      *      | "ptr" type
      * 
-     * // the only oddity I notice from this grammar is that
-     * // an expression combining assignment and infix expressions
-     * // would parse as follows:
-     * 
-     * // -> x = 45 + y = 64;
-     * // ->    =
-     * //     /   \ 
-     * //    x     +
-     * //         / \
-     * //        45  =
-     * //           / \
-     * //          y  64
-     * 
-     * // as opposed to what may be more intuitive:
-     * // ->    +
-     * //     /   \
-     * //    =     =
-     * //   / \   / \ 
-     * //  x  45 y   64
-     * //
-     * //
      */
     class Parser {
     private:
+        /**
+         * @brief The Lexer used to translate input text into Tokens.
+         * 
+         */
         Lexer         lexer;
+
+        /**
+         * @brief The current Token being processed
+         * 
+         */
         Token         tok;
+
+        /**
+         * @brief The textual location of the current Token
+         * 
+         */
         Location      loc;
+
+        /**
+         * @brief The text which caused the Lexer to return the current Token
+         * 
+         */
         std::string   txt;
+
+        /**
+         * @brief The input stream to pull more input from.
+         * 
+         */
         std::istream* input_stream;
 
+        /**
+         * @brief Called to append another line of source text to the processing buffer.
+         * 
+         * Calling this procedure is handled by nexttok
+         */
         void yyfill();
+
+        /**
+         * @brief Get the next Token from the input stream.
+         * 
+         * stores the next Token in tok, as well as filling 
+         * loc and txt with their data.
+         */
         void nexttok();
 
+        /**
+         * @brief Get a line of text from the input stream
+         * 
+         * acts exactly as std::getline, filling the buffer passed
+         * from the input stream until it encounters the newline char '\\n'
+         * except that unlike std::getline it appends the '\\n' 
+         * to the buffer. This is to preserve the '\\n' for the 
+         * lexer in order for the lexer to correctly count it's
+         * position within the source file.
+         * 
+         * @param str the string to fill with the new line
+         */
+        void Getline(std::string& str);
+
+        /**
+         * @brief Parses Top level expressions
+         * 
+         * top = function
+         *     | bind
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered. 
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseTop(const Environment& env);
+
+        /**
+         * @brief Parses Function expressions
+         * 
+         * function = "fn" id "(" [arg {"," arg}] ")" block
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered. 
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseFunction(const Environment& env);
-        Outcome<std::unique_ptr<Ast>, Error> ParseVariable(const Environment& env);
+
+        /**
+         * @brief Parses Bind expressions
+         * 
+         * bind = "var" id ":=" affix ";"
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.  
+         */
+        Outcome<std::unique_ptr<Ast>, Error> ParseBind(const Environment& env);
+
+        /**
+         * @brief Parses Argument expressions
+         * 
+         * arg = id ":" type
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered. 
+         */
         Outcome<std::pair<InternedString, Type*>, Error> ParseArgument(const Environment& env);
+
+        /**
+         * @brief Parses Block expressions
+         * 
+         * block = "{" {term} "}"
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered. 
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseBlock(const Environment& env);
+
+        /**
+         * @brief Parses Term expressions
+         * 
+         * term = conditional
+         *      | while
+         *      | bind
+         *      | affix ";"
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered. 
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseTerm(const Environment& env);
+
+        /**
+         * @brief Parses Conditional expressions
+         * 
+         * conditional = "if" "(" affix ")" block "else" block 
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.  
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseConditional(const Environment& env);
+
+        /**
+         * @brief Parses While expressions
+         * 
+         * while = "while" "(" affix ")" block
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.  
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseWhile(const Environment& env);
+
+        /**
+         * @brief Parses Affix expressions
+         * 
+         * affix = composite "=" affix               
+         *       | composite "(" [affix {"," affix}] ")"
+         *       | composite                            
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseAffix(const Environment& env);
+
+        /**
+         * @brief Parses Composite expressions
+         * 
+         * composite = dot operator infix-parser // <- this is actually a call to the op-prec parser
+         *           | dot                       
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseComposite(const Environment& env);
+
+        /**
+         * @brief Parses Dot expressions
+         * 
+         * dot = basic {"." basic}
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseDot(const Environment& env);
+
+        /**
+         * @brief Parses Infix expressions
+         * 
+         * This is an implementation of an [Operator] Precedence Parser
+         * [Operator]: https://en.wikipedia.org/wiki/Operator-precedence_parser "precedence"
+         * 
+         * @param left the first left hand side term of the binary operator expression
+         * @param precedence the initial precedence to parse against, an initial call to this expression should pass 0 here.
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered. 
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseInfix(std::unique_ptr<Ast> left, Precedence precedence, const Environment& env);
+
+        /**
+         * @brief Parses Basic expressions
+         * 
+         * basic = id                        
+         *       | integer                   
+         *       | operator dot              
+         *       | "true"                    
+         *       | "false"                   
+         *       | "(" affix {"," affix} ")" 
+         *       | "[" affix {"," affix} "]" 
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered. 
+         */
         Outcome<std::unique_ptr<Ast>, Error> ParseBasic(const Environment& env);
+
+        /**
+         * @brief Parses Type expressions
+         * 
+         * type = "Int"
+         *      | "Bool"
+         *      | "(" type {"," type} ")"
+         *      | "[" type "x" int "]"
+         *      | "ptr" type
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.  
+         */
         Outcome<Type*, Error> ParseType(const Environment& env);
-        Outcome<Type*, Error> ParseBasicType(const Environment& env);
     public:
-        Parser(); // by default the parser reads input from std::cin
+        /**
+         * @brief Construct a new Parser
+         * 
+         * the default initialization of the input stream is std::cin
+         */
+        Parser();
+
+        /**
+         * @brief Construct a new Parser
+         * 
+         * @param input_stream the input stream to read from, *CANNOT* be nullptr.
+         */
         Parser(std::istream* input_stream);
+
+        /**
+         * @brief Destroy the Parser
+         * 
+         */
         ~Parser();
        
+        /**
+         * @brief Test if the Parser is at the end of it's input
+         * 
+         * @return true if the Lexer is not at the end of it's buffer
+         * @return false if the Lexer is at the end of it's buffer
+         */
         bool EndOfInput(); 
+
+        /**
+         * @brief Get the Buf
+         * 
+         * @return const std::string& The Lexer's buffer
+         */
         const std::string& GetBuf();
+
+        /**
+         * @brief Get the input stream
+         * 
+         * @return std::istream* the input stream of the parser
+         */
         std::istream* GetIStream();
+
+        /**
+         * @brief Set the input stream
+         * 
+         * @param input_stream the input stream to set. *CANNOT* be nullptr
+         */
         void SetIStream(std::istream* input_stream);
-        // acts exactly as std::getline, filling the buffer passed
-        // from the input stream until it encounters the newline char '\n'
-        // except that unlike std::getline it appends the '\n' 
-        // to the buffer. This is to preserve the '\n' for the 
-        // lexer in order for the lexer to correctly count it's
-        // position within the source file.
-        void Getline(std::string& str);
         
+        /**
+         * @brief The entry point of the LL(1) Parser
+         * 
+         * @param env The environment associated with this compilation unit
+         * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression which was parsed.
+         * if false, then the Error which was encountered.
+         */
         Outcome<std::unique_ptr<Ast>, Error> Parse(const Environment& env);
     };
 }
