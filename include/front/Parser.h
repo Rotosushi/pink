@@ -30,58 +30,57 @@ namespace pink {
      * 
      * The EBNF grammar the parser accepts is:
      * 
-     *
-     * id = [a-zA-Z_][a-zA-Z0-9_]* // <- this is the regular expression used for re2c
-     * 
-     * operator = [*+\-/%<=>&|\^!~@$]+; // <- this is the regular expression used for re2c
-     * 
-     * int = [0-9]+ // <- this is the regular expression used for re2c
-     * 
-     * top = function
-     *     | bind
-     * 
-     * bind = "var" id ":=" affix ";"
-     *       
-     * function = "fn" id "(" [arg {"," arg}] ")" block
-     * 
-     * arg = id ":" type
-     * 
-     * block = "{" {term} "}"
-     * 
-     * term = conditional
-     *      | while
-     *      | bind
-     *      | affix ";"
-     * 
-     * conditional = "if" "(" affix ")" block "else" block 
-     * 
-     * while = "while" "(" affix ")" block
-     * 
-     * affix = composite "=" affix                   
-     *       | composite "(" [affix {"," affix}] ")" 
-     *       | composite                             
-     * 
-     * 
-     * composite = dot operator infix-parser
-     *           | dot                       
-     * 
-     * dot = basic {"." basic} // (1) (2)
-     * 
-     * basic = id                        
-     *       | integer                   
-     *       | operator dot              
-     *       | "true"                    
-     *       | "false"                   
-     *       | "(" affix {"," affix} ")" 
-     *       | "[" affix {"," affix} "]" 
-     * 
-     * 
-     * type = "Int"
-     *      | "Bool"
-     *      | "(" type {"," type} ")"
-     *      | "[" type "x" int "]"
-     *      | "ptr" type
-     * 
+     * \verbatim
+    
+        top = function
+            | bind
+     
+        bind = "var" id ":=" affix ";"
+      
+        function = "fn" id "(" [arg {"," arg}] ")" block
+ 
+        arg = id ":" type
+
+        block = "{" {term} "}"
+     
+        term = conditional
+             | while
+             | bind
+             | affix ";"
+
+
+        conditional = "if" "(" affix ")" block "else" block 
+ 
+        while = "while" "(" affix ")" block
+
+        affix = composite "=" affix                   
+              | composite "(" [affix {"," affix}] ")" 
+              | composite                             
+ 
+        composite = dot operator infix-parser
+                  | dot                       
+
+        dot = basic {"." basic} // (1) (2)
+    
+        basic = id                        
+              | integer                   
+              | operator dot              
+              | "true"                    
+              | "false"                   
+              | "(" affix {"," affix} ")" 
+              | "[" affix {"," affix} "]" 
+ 
+        type = "Int"
+             | "Bool"
+             | "(" type {"," type} ")"
+             | "[" type "x" integer "]"
+             | "ptr" type
+
+        id = [a-zA-Z_][a-zA-Z0-9_]* // <- these are the regular expressions used for re2c
+        operator = [*+\-/%<=>&|\^!~@$]+;
+        integer = [0-9]+
+     
+        \endverbatim
      */
     class Parser {
     private:

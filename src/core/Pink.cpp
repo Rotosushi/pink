@@ -14,16 +14,16 @@ int main(int argc, char** argv)
 {
   llvm::InitLLVM llvm(argc, argv);
 
-  //llvm::InitializeAllTargetInfos();
-  //llvm::InitializeAllTargets();
-  //llvm::InitializeAllTargetMCs();
-  //llvm::InitializeAllAsmPrinters();
-  //llvm::InitializeAllAsmParsers();
-  //llvm::InitializeAllDisassemblers();
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetDisassembler();
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmPrinters();
+  llvm::InitializeAllAsmParsers();
+  llvm::InitializeAllDisassemblers();
+  //llvm::InitializeNativeTarget();
+  //llvm::InitializeNativeTargetAsmPrinter();
+  //llvm::InitializeNativeTargetAsmParser();
+  //llvm::InitializeNativeTargetDisassembler();
 
 
   std::shared_ptr<pink::CLIOptions> options = pink::ParseCLIOptions(std::cout, argc, argv);

@@ -42,13 +42,13 @@ bool TestBinopLiteral(std::ostream& out)
 
     auto opt = binop.Lookup(ty, ty);
 
-    result &= Test(out, "BinopLiteral::Lookup()", opt.hasValue() && (*opt).first == std::make_pair(ty, ty));
+    result &= Test(out, "BinopLiteral::Lookup()", opt.has_value() && (*opt).first == std::make_pair(ty, ty));
 
     binop.Unregister(ty, ty);
 
     opt = binop.Lookup(ty, ty);
 
-    result &= Test(out, "BinopLiteral::Unregister()", !opt.hasValue());
+    result &= Test(out, "BinopLiteral::Unregister()", !opt.has_value());
 
     result &= Test(out, "pink::BinopLiteral", result);
     out << "\n-----------------------\n";

@@ -18,11 +18,11 @@ bool TestUnopPrimitives(std::ostream& out)
 
     auto opt0 = env->unops->Lookup(minus_str);
 
-    result &= Test(out, "UnopPrimitive::IntNegation", opt0.hasValue() && (*opt0).first == minus_str);
+    result &= Test(out, "UnopPrimitive::IntNegation", opt0.has_value() && (*opt0).first == minus_str);
 
     auto opt1 = env->unops->Lookup(bang_str);
 
-    result &= Test(out, "UnopPrimitive::BoolNegation", opt1.hasValue() && (*opt1).first == bang_str);
+    result &= Test(out, "UnopPrimitive::BoolNegation", opt1.has_value() && (*opt1).first == bang_str);
 
 
     result &= Test(out, "pink::UnopPrimitives", result);

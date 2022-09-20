@@ -37,7 +37,7 @@ bool TestEnvironment(std::ostream& out)
 
     // since they point to the same memory, nil, and the bound
     // term's pointer values compare equal if everything works.
-    result &= Test(out, "Environment::bindings", term.hasValue() && (*term).first == type && (*term).second == nil);
+    result &= Test(out, "Environment::bindings", term.has_value() && (*term).first == type && (*term).second == nil);
 
     // #TODO: write more env tests. 
 

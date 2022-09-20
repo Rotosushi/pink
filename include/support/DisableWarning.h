@@ -56,8 +56,8 @@ this version is more opaque than the first version imo.
 #endif
 */
 
-/**
- * @brief Disables the given warning around the block of code passed to the macro
+/*
+ * 
  * 
  * called like:
  * 
@@ -94,6 +94,10 @@ this version is more opaque than the first version imo.
  * 
  */
 #if defined(__GNUC__)
+/**
+ * @brief Disables the given warning around the block of code passed to the macro
+ * 
+ */
 #define NOWARN(warnoption, ...)                   \
     DO_PRAGMA(GCC diagnostic push)                \
     DO_PRAGMA(GCC diagnostic ignored #warnoption) \

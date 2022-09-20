@@ -41,13 +41,13 @@ bool TestUnopTable(std::ostream& out)
 
   auto opt = unop_table.Lookup(minus);
 
-  result &= Test(out, "UnopTable::Lookup", opt.hasValue() && pair.first == minus);
+  result &= Test(out, "UnopTable::Lookup", opt.has_value() && pair.first == minus);
 
   unop_table.Unregister(minus);
 
   auto opt1 = unop_table.Lookup(minus);
 
-  result &= Test(out, "UnopTable::Unregister", !opt1.hasValue());
+  result &= Test(out, "UnopTable::Unregister", !opt1.has_value());
 
 
   result &= Test(out, "pink::UnopTable", result);

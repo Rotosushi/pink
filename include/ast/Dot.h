@@ -9,7 +9,7 @@
 
 namespace pink {
   /**
-   * @brief Implements the Dot operator expression
+   * @brief Represents a member access expression.
    * 
    * this expression represents extracting a value from an aggregate type
    * 

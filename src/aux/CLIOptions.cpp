@@ -13,8 +13,9 @@ namespace pink {
       emit_assembly(false),
       emit_object(true),
       emit_llvm(false),
-      optimization_level(llvm::OptimizationLevel::O0),
-      link(true)
+	  link(true),
+      optimization_level(llvm::OptimizationLevel::O0)
+      
   {
 
   }
@@ -26,38 +27,46 @@ namespace pink {
       bool emit_asm, 
       bool emit_obj, 
       bool emit_llvm, 
-      llvm::OptimizationLevel optimization_level,
-      bool link)
+      bool link,
+	  llvm::OptimizationLevel optimization_level)
 		: input_file(infile), output_file(outfile), verbose(verbose),
 		  emit_assembly(emit_asm), emit_object(emit_obj), emit_llvm(emit_llvm),
-		  optimization_level(optimization_level), link(link)
+		  link(link), optimization_level(optimization_level)
 	{
 	
 	}
 
+	std::string CLIOptions::RemoveTrailingExtensions(std::string filename)
+	{
+		auto first_extension = filename.end();
+		std::string search_string("/");
 
-  /* 
-   *  This function searches for the first '.' appearing in the 
-   *  given input string and returns the string containing 
-   *  everything up to that point. if there is no '.' in the 
-   *  input string, then the entire string is returned.
-   *
-   *
-   */
-  std::string RemoveTrailingExtensions(std::string filename)
-  {
-    auto it = std::find(filename.begin(), filename.end(), '.');
-    return std::string(filename.begin(), it);
-  }
+		// find the -last- occurance of "/" in the filename
+		auto last_directory  = std::find_end(filename.begin(),
+											 filename.end(), 
+											 search_string.begin(), 
+											 search_string.end());
+		
+
+		if (last_directory == filename.end()) // if "/" did not appear in the filename
+			first_extension = std::find(filename.begin(), filename.end(), '.');
+		else // "/" did appear in the filename
+			first_extension = std::find(last_directory, filename.end(), '.');
+
+		// if std::find did not find '.' then this call becomes equivalent to
+		// return std::string(filename.begin(), filename.end());
+		return std::string(filename.begin(), first_extension);
+	}
 	
-	void PrintVersion(std::ostream& out)
+	std::ostream& PrintVersion(std::ostream& out)
 	{
 		out << "pink version: " << pink_VERSION_MAJOR 
 		    << "." << pink_VERSION_MINOR << std::endl; 
+		return out;
 	}
 
 
-	void PrintHelp(std::ostream& out)
+	std::ostream& PrintHelp(std::ostream& out)
 	{
 		out << "pink Usage: \n" 
 			<< "General program options: \n"
@@ -74,7 +83,8 @@ namespace pink {
       		<< "-s --emit-asm:       emit target assembly in addition to an executable\n\n"
       		<< "-C --emit-only-obj:  emit an object file instead of an executable\n"
       		<< "-c --emit-obj:       emit an object file instead of an executable\n\n"
-      		<< std::endl;
+      		<< "\n";
+	    return out;
 	}
 
   std::shared_ptr<CLIOptions> ParseCLIOptions(std::ostream& out, int argc, char** argv)
@@ -300,8 +310,8 @@ namespace pink {
 		if (output_file == "")
 		{
 			// given a filename like "/my/favorite/directory/my_file.p"
-			// output_file should equal "/my/favorite/directory/my_file"
-			output_file = RemoveTrailingExtensions(input_file);
+			// output_file will equal "/my/favorite/directory/my_file"
+			output_file = CLIOptions::RemoveTrailingExtensions(input_file);
 		}
 	
 		return std::make_shared<CLIOptions>(
@@ -311,8 +321,8 @@ namespace pink {
         emit_asm, 
         emit_obj, 
         emit_llvm, 
-        optimization_level, 
-        link
+		link,
+        optimization_level 
         );
 	}
 

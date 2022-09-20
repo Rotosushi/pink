@@ -18,7 +18,8 @@ namespace pink {
     typedef const char* InternedString;
 
     /**
-     * @brief holds a unique instance of each string it is asked to manage
+     * @brief Wrapper around a set of strings.
+     * 
      * only one instance of a given sequence of characters will be stored
      * at any given time. thus, to know if a given sequence of characters 
      * is equal to another, we need only compare pointers to said strings.

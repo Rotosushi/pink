@@ -40,7 +40,7 @@ bool TestUnopLiteral(std::ostream& out)
 
     auto opt = unop.Lookup(ty);
 
-    result &= Test(out, "UnopLiteral::Lookup()", opt.hasValue() && (*opt).first == ty);
+    result &= Test(out, "UnopLiteral::Lookup()", opt.has_value() && (*opt).first == ty);
 
     pink::Outcome<llvm::Value*, pink::Error> v = (*opt).second->generate(nullptr, *env);
 
@@ -50,7 +50,7 @@ bool TestUnopLiteral(std::ostream& out)
 
     opt = unop.Lookup(ty);
 
-    result &= Test(out, "UnopLiteral::Unregister()", !opt.hasValue());
+    result &= Test(out, "UnopLiteral::Unregister()", !opt.has_value());
 
 
     result &= Test(out, "pink::UnopLiteral", result);

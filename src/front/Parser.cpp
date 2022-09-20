@@ -114,68 +114,7 @@ namespace pink {
     }
 
 
-    /*  
-     *  So, Parse returns a single term when it is called.
-     *  how then does our language handle source files which are longer than 
-     *  a single line of text? 
-     *  well, Parse is designed to work in a 'push' style rather than a 'pull' 
-     *  style. that is, instead of expecting all of the source to be parsed 
-     *  to be available all at once. the Parser instead has a reference to an
-     *  input stream and will ask for more source when it finishes parsing the
-     *  single line. in this way, the caller of Parse is expected to repeatedly 
-     *  call Parse, to eventually parse all of the source. 
-     *  
-     *  the grammar that this parser accepts, 
-     *  in (mostly) BNF form is:
-     *  
-     *  #TODO: make this parser match this grammar. (the grammar just changed)
-     *
-     *  term := affix ';'
-     *
-     *  affix := function
-     *         | definition
-     *         | application
-     *         | application '=' affix
-     *         | 
-     *         | application (operator application)* // this isn't actually a simple
-     *                                   // kleen star, but actually an entrance 
-     *                                   // to an operator precedence parser.
-     *                                   // however this is optional, just like
-     *                                   // the kleen star is, and I don't know 
-     *                                   // how to specify an operator
-     *                                   // precedence parser in BNF syntax.
-     *                                   // especially given it's a subset of
-     *                                   // LR parsable languages. and
-     *                                   // otherwise this language is LL(1)
-     *  
-     *  application := basic
-     *               | basic '(' (affix (',' affix)*)? ')'
-     *
-     *
-     *  basic := nil
-     *         | true
-     *         | false
-     *         | integer
-     *         | operator basic
-     *         | '(' affix ')' 
-     *         | id
-     *         | '[' (affix (',' affix)*)? ']'
-     *         | '[' (affix 'x' affix)? ']'
-     *
-     *  function := 'fn' id '(' (arg (',' arg)*)? ')' '{' term+ '}'
-     *
-     *  definition := id ':=' affix
-     *
-     *  arg := id ':' type
-     *
-     *  type := basic_type ('*')?
-     *
-     *  basic_type := 'Nil'
-     *              | 'Int'
-     *              | 'Bool'
-     *              | '[' type 'x' affix ']'
-     *
-     *
+    /*
 
 
 
@@ -360,6 +299,9 @@ namespace pink {
      *
      *       *
  */
+
+
+
     Outcome<std::unique_ptr<Ast>, Error> Parser::Parse(const Environment& env)
     { 
       if (tok == Token::End && EndOfInput() && !input_stream->eof())
@@ -393,6 +335,8 @@ namespace pink {
       }
       else // assume the text appearing defines a term other than a function or variable
       {
+        /*
+        // this seems like an okay idea, but it needs more thought
         if (tok == Token::LBrace)
         {
           auto block = ParseBlock(env);
@@ -412,7 +356,7 @@ namespace pink {
           if (!loop)
             return loop.GetSecond();
         }
-        
+        */
         return Error(Error::Code::BadTopLevelExpression, loc, "only variables and functions may be declared at global scope");
       }
     }

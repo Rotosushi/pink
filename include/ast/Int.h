@@ -10,7 +10,7 @@
 
 namespace pink {
     /**
-     * @brief [Int](#Int) is an [Ast](#Ast) node representing an integer value
+     * @brief Represents an integer value within an expression
      * 
      * can hold any integer from -2^64 to 2^(64) - 1
      * 

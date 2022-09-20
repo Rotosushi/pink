@@ -39,17 +39,17 @@ bool TestBinopTable(std::ostream& out)
 
   auto pair = binop_table.Register(plus, p, a, ty, ty, ty, test_binop_table_fn);
 
-  result &= Test(out, "BinopTable::Register", pair.first == plus && !pair.second->isDefault);
+  result &= Test(out, "BinopTable::Register", pair.first == plus);
 
   auto opt = binop_table.Lookup(plus);
 
-  result &= Test(out, "BinopTable::Lookup", opt.hasValue() && opt->first == plus);
+  result &= Test(out, "BinopTable::Lookup", opt.has_value() && opt->first == plus);
 
   binop_table.Unregister(plus);
 
   auto opt1 = binop_table.Lookup(plus);
 
-  result &= Test(out, "BinopTable::Unregister", opt1.hasValue() && opt->second->isDefault);
+  result &= Test(out, "BinopTable::Unregister", opt1.has_value());
 
   result &= Test(out, "pink::BinopTable", result);
   out << "\n-----------------------\n";

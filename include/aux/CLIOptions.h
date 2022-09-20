@@ -162,8 +162,9 @@ namespace pink {
 		 * @param emit_assembly whether or not to emit an assembly file
 		 * @param emit_object whether or not to emit an object file
 		 * @param emit_llvm whether or not to emit an llvm file
-		 * @param optimization_level the optimization level of this execution
 		 * @param link whether or not to run the linker on an emitted object file.
+		 * @param optimization_level the optimization level of this execution
+		 *
 		 */
 		CLIOptions(
 			std::string infile, 
@@ -172,9 +173,38 @@ namespace pink {
 			bool emit_assembly, 
 			bool emit_object, 
 			bool emit_llvm,
-			llvm::OptimizationLevel optimization_level,
-			bool link
+			bool link,
+			llvm::OptimizationLevel optimization_level
 		);
+
+		/**
+		 * @brief Remove trailing filename extensions 
+		 * 
+		 * searches for the first '.' appearing in the 
+		 * given input string and returns the string containing 
+		 * everything up to that point. if there is no '.' in the 
+		 * input string, then the entire string is returned.
+		 * 
+		 * @param filename the filename to remove the extensions of
+		 * @return std::string the new filename with no extensions
+  	 	 */
+		static std::string RemoveTrailingExtensions(std::string filename);
+
+		/**
+		 * @brief Print the version of pink
+		 * 
+		 * @param out the output stream to write to
+		 * @return std::ostream& the given output stream
+		 */
+		static std::ostream& PrintVersion(std::ostream& out);
+
+		/**
+		 * @brief Print the Help text
+		 * 
+		 * @param out the output stream to write to
+		 * @return std::ostream& the given output stream
+		 */
+		static std::ostream& PrintHelp(std::ostream& out);
 
 		/**
 		 * @brief Get the exe file name

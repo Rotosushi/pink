@@ -9,7 +9,7 @@
 
 namespace pink {
     /**
-     * @brief Represents an instance of a Token within the [Lexer](#Lexer) and [Parser](#Parser)
+     * @brief Represents an instance of a Token within the [Lexer](#pink::Lexer) and [Parser](#pink::Parser)
      * 
      */
     enum class Token {

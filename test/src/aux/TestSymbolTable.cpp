@@ -55,13 +55,13 @@ bool TestSymbolTable(std::ostream& out)
     env->bindings->Bind(x, nil_t, nil);
     llvm::Optional<std::pair<pink::Type*, llvm::Value*>> s0 = env->bindings->Lookup(x);
 
-    result &= Test(out, "SymbolTable::Bind()", s0.hasValue());
+    result &= Test(out, "SymbolTable::Bind()", s0.has_value());
     result &= Test(out, "SymbolTable::Lookup()", (*s0).first == nil_t && (*s0).second == nil);
 
     env->bindings->Unbind(x);
     llvm::Optional<std::pair<pink::Type*, llvm::Value*>> s1 = env->bindings->Lookup(x);
 
-    result &= Test(out, "SymbolTable::Unbind()", !s1.hasValue());
+    result &= Test(out, "SymbolTable::Unbind()", !s1.has_value());
 
     result &= Test(out, "pink::SymbolTable", result);
     out << "\n-----------------------\n";
