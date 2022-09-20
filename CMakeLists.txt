@@ -185,6 +185,8 @@ set_property(
 	PROPERTY ADDITIONAL_CLEAN_FILES src/front/Lexer.cpp
 )
 
+add_link_options(-gdwarf-4)
+
 target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
 
 target_include_directories(libpink PUBLIC include ${LLVM_LIBRARY_DIRS})

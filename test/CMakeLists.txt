@@ -13,7 +13,9 @@ set (CMAKE_CXX_STANDARD_REQUIRED True)
 
 cmake_policy(SET CMP0076 NEW)
 
-find_package(LLVM REQUIRED CONFIG)
+add_compile_options(-O0 -gdwarf-4 -Wall -Wextra)
+
+find_package(LLVM 16 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -67,6 +69,7 @@ target_sources(pink-test PUBLIC
 
 target_link_libraries(pink-test libpink)
 
+add_link_options(-gdwarf-4)
 
 target_include_directories(pink-test PUBLIC
 						   "${PROJECT_BINARY_DIR}"
