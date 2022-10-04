@@ -1,10 +1,11 @@
 fn main()
 {
-    x := y := 0;
-    a := &x;
-    b := &y;
+    var x := 0;
+    var y := 0;
+    var a := &x;
+    var b := &y;
     *a = 5;
     *b = 9;
-    z := *a + *b;
+    var z := *a + *b;
     z;
-};
+}

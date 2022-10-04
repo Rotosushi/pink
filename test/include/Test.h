@@ -58,8 +58,8 @@ constexpr auto TEST_VARIABLE          = 0x0000'0000'8000;
 constexpr auto TEST_BIND              = 0x0000'0001'0000;
 constexpr auto TEST_BINOP             = 0x0000'0002'0000;
 constexpr auto TEST_UNOP              = 0x0000'0004'0000;
-constexpr auto TEST_ASSIGNMENT 		    = 0x0000'0008'0000;
-constexpr auto TEST_BLOCK			        = 0x0000'0010'0000;
+constexpr auto TEST_ASSIGNMENT 		  = 0x0000'0008'0000;
+constexpr auto TEST_BLOCK			  = 0x0000'0010'0000;
 constexpr auto TEST_FUNCTION          = 0x0000'0020'0000;
 constexpr auto TEST_APPLICATION       = 0x0000'0040'0000;
 // type tests
@@ -70,7 +70,7 @@ constexpr auto TEST_FUNCTION_TYPE     = 0x0000'0400'0000;
 // frontend tests
 constexpr auto TEST_TOKEN             = 0x0000'0800'0000;
 constexpr auto TEST_LEXER             = 0x0000'1000'0000;
-constexpr auto TEST_PARSER			      = 0x0000'2000'0000;
+constexpr auto TEST_PARSER			  = 0x0000'2000'0000;
 // kernel tests
 constexpr auto TEST_UNOP_PRIMITIVES   = 0x0000'4000'0000;
 constexpr auto TEST_BINOP_PRIMITIVES  = 0x0000'8000'0000;
@@ -98,7 +98,7 @@ bool Test(std::ostream& out, std::string test_name, bool test);
     once.
 */
 size_t RunTests(std::ostream& out, size_t flags);
-void PrintPassedTests(std::ostream& out, size_t test_results);
+void PrintPassedTests(std::ostream& out, size_t tests_run, size_t test_results);
 
 
 

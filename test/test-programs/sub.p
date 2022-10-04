@@ -1,8 +1,9 @@
 fn main()
 {
-    x := y := 0;
+    var x := 0;
+    var y := 0;
     x = 10;
     y = 7;
-    z := x - y;
+    var z := x - y;
     z; 
-};
+}

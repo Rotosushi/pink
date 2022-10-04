@@ -3,28 +3,25 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    Bool::Bool(Location l, bool b)
-        : Ast(Ast::Kind::Bool, l), value(b)
+    Bool::Bool(const Location& location, const bool value)
+        : Ast(Ast::Kind::Bool, location), value(value)
     {
 
     }
 
-    Bool::~Bool()
+    auto Bool::classof(const Ast* ast) -> bool
     {
-
+        return ast->getKind() == Ast::Kind::Bool;
     }
 
-    bool Bool::classof(const Ast* a)
-    {
-        return a->getKind() == Ast::Kind::Bool;
-    }
-
-    std::string Bool::ToString()
+    auto Bool::ToString() const -> std::string
     {
         if (value)
-            return std::string("true");
-        else
-            return std::string("false");
+        {
+            return "true";
+        }
+        
+        return "false";
     }
     
     /*
@@ -34,11 +31,9 @@ namespace pink {
        ---------------------
     	env |- false : Bool
     */
-    Outcome<Type*, Error> Bool::GetypeV(const Environment& env)
+    auto Bool::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
     {
-    	Type* bool_type = env.types->GetBoolType();
-    	Outcome<Type*, Error> result(bool_type);
-    	return result;
+    	return {env.types->GetBoolType()};
     }
     
     /*
@@ -48,10 +43,8 @@ namespace pink {
        ---------------------
     	env |- false : i1 (0)
     */
-    Outcome<llvm::Value*, Error> Bool::Codegen(const Environment& env)
+    auto Bool::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
     {
-    	llvm::Value* bool_value = env.instruction_builder->getInt1(value);
-    	Outcome<llvm::Value*, Error> result(bool_value);
-    	return result;
+    	return {env.instruction_builder->getInt1(value)};
     }
 }

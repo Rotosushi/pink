@@ -49,20 +49,18 @@ namespace pink {
           // emit, or link together thus we are safe to simply exit.
           if (valid_terms.size() == 0)
           {
-            FatalError("Warning: parsed an empty source file " + env.options->input_file, __FILE__, __LINE__);
+            FatalError("Parsed an empty source file " + env.options->input_file, __FILE__, __LINE__);
           }
           // else we did parse some terms and simply reached the end of the
           // source file, so we can safely continue with compilation of the 
           // valid terms.
-          break; 
+          break; // out of while loop
         }
-        else
-        {
-          // #TODO: Handle more than the first error detected in the input code.
-          // #TODO: Extract the line that produced the error from the buffer and 
-          // 			pass it as an argument here.
-          FatalError(error.ToString(""), __FILE__, __LINE__);
-        }
+        // #TODO: Handle more than the first error detected in the input code.
+        // #TODO: Extract the line that produced the error from the buffer and 
+        // 			pass it as an argument here.
+        std::string bad_source = env.parser->ExtractLine(error.loc);
+        FatalError(error.ToString(bad_source), __FILE__, __LINE__);
       }
       else 
       {
@@ -83,7 +81,9 @@ namespace pink {
         // } 
         if (!type) 
         {
-          FatalError(type.GetSecond().ToString(""), __FILE__, __LINE__);
+          pink::Error error(type.GetSecond());
+          std::string bad_source = env.parser->ExtractLine(error.loc);
+          FatalError(error.ToString(bad_source), __FILE__, __LINE__);
         }
         else 
         {
@@ -117,7 +117,9 @@ namespace pink {
 
 		  if (!value)
 		  {
-			  FatalError(value.GetSecond().ToString(""), __FILE__, __LINE__);
+        pink::Error error(value.GetSecond());
+        std::string bad_source(env.parser->ExtractLine(error.loc));
+			  FatalError(error.ToString(bad_source), __FILE__, __LINE__);
 		  }
     }
 
@@ -138,21 +140,21 @@ namespace pink {
 			llvm::ModuleAnalysisManager MAM;
 			
 			// https://llvm.org/doxygen/classllvm_1_1PassBuilder.html
-			llvm::PassBuilder PB;
+			llvm::PassBuilder passBuilder;
 		
 			// #TODO: what are the default Alias Analysis that this constructs?
-			FAM.registerPass([&]{ return PB.buildDefaultAAPipeline(); });
+			FAM.registerPass([&]{ return passBuilder.buildDefaultAAPipeline(); });
 			
 			// Register the AnalysisManagers with the Pass Builder
-			PB.registerModuleAnalyses(MAM);
-			PB.registerCGSCCAnalyses(CGAM);
-			PB.registerFunctionAnalyses(FAM);
-			PB.registerLoopAnalyses(LAM);
+			passBuilder.registerModuleAnalyses(MAM);
+			passBuilder.registerCGSCCAnalyses(CGAM);
+			passBuilder.registerFunctionAnalyses(FAM);
+			passBuilder.registerLoopAnalyses(LAM);
 			// This registers each of the passes with eachother, so they 
 			// can perform optimizations together, lazily
-			PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+			passBuilder.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 			
-			llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(env.options->optimization_level);
+			llvm::ModulePassManager MPM = passBuilder.buildPerModuleDefaultPipeline(env.options->optimization_level);
 			
 			// Run the optimizer agains the IR 
 			MPM.run(*env.module, MAM);

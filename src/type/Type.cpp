@@ -1,19 +1,7 @@
 #include "type/Type.h"
 
 namespace pink {
-    Type::Type(Type::Kind k)
-        : kind(k)
-    {
+Type::Type(Type::Kind kind) : kind(kind) {}
 
-    }
-
-    Type::~Type()
-    {
-
-    }
-
-    Type::Kind Type::getKind() const
-    {
-        return kind;
-    }
-}
+auto Type::getKind() const -> Type::Kind { return kind; }
+} // namespace pink

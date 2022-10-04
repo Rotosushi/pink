@@ -7,29 +7,20 @@
 #include "llvm/IR/GlobalVariable.h"
 
 namespace pink {
-    Bind::Bind(Location l, InternedString i, std::unique_ptr<Ast> t)
-        : Ast(Ast::Kind::Bind, l), symbol(i), term(std::move(t))
+    Bind::Bind(const Location& location, InternedString symbol, std::unique_ptr<Ast> affix)
+      : Ast(Ast::Kind::Bind, location), symbol(symbol), affix(std::move(affix))
     {
 
     }
 
-    /*
-        each node assumes ownership of the passed in pointer,
-        then, the whole tree owns itself.
-    */
-    Bind::~Bind()
+    auto Bind::classof(const Ast* ast) -> bool
     {
-    
+      return ast->getKind() == Ast::Kind::Bind;
     }
 
-    bool Bind::classof(const Ast* a)
+    auto Bind::ToString() const -> std::string
     {
-        return a->getKind() == Ast::Kind::Bind;
-    }
-
-    std::string Bind::ToString()
-    {
-        return std::string(symbol) += " := " + term->ToString();
+      return std::string(symbol) += " := " + affix->ToString();
     }
     
     /*
@@ -42,7 +33,7 @@ namespace pink {
     		have both type and value that we can construct 
     		a binding in the symboltable.
     */
-    Outcome<Type*, Error> Bind::GetypeV(const Environment& env)
+    auto Bind::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
     {
     	/*
     		 for the case of a binding statement, which declares a new variable,
@@ -70,50 +61,40 @@ namespace pink {
     
     	if (!bound.has_value())
     	{
-        Outcome<Type*, Error> term_type = term->Getype(env);
+        Outcome<Type*, Error> affix_type = affix->Getype(env);
         
-        if (term_type)
+        if (affix_type)
         {
-          if (ArrayType* at = llvm::dyn_cast<ArrayType>(term_type.GetFirst()))
+          if (auto* array_type = llvm::dyn_cast<ArrayType>(affix_type.GetFirst()))
           {
             // array's decompose into pointers to their first element.
             env.false_bindings->push_back(symbol);
          
-            Type* ptrTy = env.types->GetPointerType(at->member_type);
+            Type* ptr_type = env.types->GetPointerType(array_type->member_type);
 
-            env.bindings->Bind(symbol, ptrTy, nullptr);
-            Outcome<Type*, Error> result(ptrTy);
-            return result;
+            env.bindings->Bind(symbol, ptr_type, nullptr);
+            return {ptr_type};
           }
-          else
-          {
-            // construct a false binding so we can properly 
-            // type statements that occur later within the same block.
-            env.false_bindings->push_back(symbol);
-            
-            env.bindings->Bind(symbol, term_type.GetFirst(), nullptr); // construct a false binding to type later statements within this same block.
-            
-            Outcome<Type*, Error> result(term_type.GetFirst());
-            return result;
-          }
+          // construct a false binding so we can properly 
+          // type statements that occur later within the same block.
+          env.false_bindings->push_back(symbol);
+          
+          env.bindings->Bind(symbol, affix_type.GetFirst(), nullptr); // construct a false binding to type later statements within this same block.
+        
+          return {affix_type.GetFirst()};
         }
-        else 
-        {
-          return term_type;
-        }
+        // affix type is actually an Error object
+        return affix_type;
       }
-      else 
-      {
-        // #TODO: if the binding term has the same type as what the symbol 
-        //  is already bound to, we could treat the binding as equivalent 
-        //  to an assignment instead of an error. different types would still be an error.
-        std::string errmsg = std::string(symbol)
-                           + " has type: "
-                           + bound->first->ToString();
-        Error error(Error::Code::NameAlreadyBoundInScope, loc, errmsg);
-        Outcome<Type*, Error> result(error);
-        return result;
-      }
+      // The name is already bound to some type, so we cannot 
+      // type this bind expression.
+      // note: if the binding term has the same type as what the symbol 
+      //  is already bound to, we could treat the binding as equivalent 
+      //  to an assignment instead of an error. different types would still be an error.
+      std::string errmsg = std::string(symbol)
+                          + " has type: "
+                          + bound->first->ToString();
+      return {Error(Error::Code::NameAlreadyBoundInScope, loc, errmsg)};
     }
     
     
@@ -143,31 +124,35 @@ namespace pink {
       constant array live in memory that we can validly construct a GEP? 
       i dunno, only one way to see if it works, i just hope it doesn't segfault.
     */
-    Outcome<llvm::Value*, Error> Bind::Codegen(const Environment& env)
+    auto Bind::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
     {
     	llvm::Optional<std::pair<Type*, llvm::Value*>> bound(env.bindings->LookupLocal(symbol));
     
     	if (!bound.has_value())
     	{
     		// retrieve the type of the term
-			Outcome<Type*, Error> term_type_result = term->Getype(env);
+			Outcome<Type*, Error> term_type_result = affix->Getype(env);
 			
 			if (!term_type_result)
 			{
-				return Outcome<llvm::Value*, Error>(term_type_result.GetSecond());
+				return {term_type_result.GetSecond()};
 			}
 			
 			// get the llvm representation of the type
 			Outcome<llvm::Type*, Error> term_type = term_type_result.GetFirst()->Codegen(env);
 			
 			if (!term_type)
-				return Outcome<llvm::Value*, Error>(term_type.GetSecond());
+      {
+				return {term_type.GetSecond()};
+      }
 			
 			// get the llvm representation of the term's value
-			Outcome<llvm::Value*, Error> term_value_result = term->Codegen(env);
+			Outcome<llvm::Value*, Error> term_value_result = affix->Codegen(env);
 			
 			if (!term_value_result)
+      {
 				return term_value_result;
+      }
 
       llvm::Value* term_value = term_value_result.GetFirst();
 			// ptr is the thing we bind variables too, so it needs 
@@ -188,13 +173,12 @@ namespace pink {
 				
 				if (llvm::isa<llvm::Constant>(term_value))
 				{
-					llvm::Constant* constant = llvm::dyn_cast<llvm::Constant>(term_value);
+					auto* constant = llvm::dyn_cast<llvm::Constant>(term_value);
 					global->setInitializer(constant);
 				}
 				else 
 				{
-					Error error(Error::Code::NonConstGlobalInit, term->GetLoc());
-					return Outcome<llvm::Value*, Error>(error);
+					return {Error(Error::Code::NonConstGlobalInit, affix->GetLoc())};
 				}
 			}
 			else // this is a local scope, so construct a local binding
@@ -234,9 +218,9 @@ namespace pink {
           // we can store the value into the stack (alloca) at some 
           // point after we construct it. in this case, relative to 
           // where the bind declaration is located syntactically.
-          env.instruction_builder->CreateStore(term_value, ptr, symbol);
+          env.instruction_builder->CreateStore(term_value, ptr);
         } 
-        else if (llvm::ArrayType* at = llvm::dyn_cast<llvm::ArrayType>(rhs_type))
+        else if (auto* array_type = llvm::dyn_cast<llvm::ArrayType>(rhs_type))
         {
           //  
           //llvm::ConstantArray* ca = llvm::dyn_cast<llvm::ConstantArray>(term_value);
@@ -246,37 +230,11 @@ namespace pink {
           //  FatalError("term value was not a ConstantArray", __FILE__, __LINE__);
           //}
 
-          ptr = local_builder.CreateAlloca(at,
+          ptr = local_builder.CreateAlloca(array_type,
                             env.data_layout.getAllocaAddrSpace(),
-                            local_builder.getInt64(at->getNumElements()),
+                            local_builder.getInt64(array_type->getNumElements()),
                             symbol
                             );
-          
-          /*          
-          std::string globalname = std::string("array_initalizer_") + symbol;
-          llvm::Value* globalval = env->module->getOrInsertGlobal(globalname, at);
-          llvm::GlobalVariable* global = env->module->getGlobalVariable(globalname);
-          global->setInitializer(ca);    
-          
-          env->builder->CreateMemCpy(ptr, 
-                                     env->data_layout.getABITypeAlign(at),
-                                     global,
-                                     env->data_layout.getABITypeAlign(at),
-                                     env->data_layout.getTypeStoreSize(at->getElementType()) * at->getNumElements());
-          
-          
-          size_t length = at->getNumElements();
-          for (size_t i = 0; i < length; i++)
-          {
-            
-            llvm::Value* elemPtr = env->builder->CreateConstGEP2_32(at, ptr, 0, i);
-
-            // now that we have a pointer to the memory to store the value, 
-            // we can store the corresponding value.
-            env->builder->CreateStore(ca->getAggregateElement(i), elemPtr, symbol);
-          }
-          */
-
           // This function encapsulates the series of GEP and store
           // instructions needed to store a potentially recursive 
           // aggregate type.
@@ -290,61 +248,40 @@ namespace pink {
           // so why is the dyn_cast returning nullptr if we can follow the 
           // execution and see that the llvm::Value is in fact an instance of 
           // an llvm::ConstantArray?
-          StoreAggregate(at, ptr, term_value, env);
+          StoreAggregate(array_type, ptr, term_value, env);
 
           // array types decompose to pointer types when referenced 
           // by name within the program, so we bind the array name 
           // to a pointer to the first element.
           //ptr = env->builder->CreateBitCast(ptr, env->builder->getPtrTy(env->data_layout.getAllocaAddrSpace()), "bcast");
-          ptr = env.instruction_builder->CreateConstGEP2_64(at, ptr, 0, 0);
+          ptr = env.instruction_builder->CreateConstGEP2_64(array_type, ptr, 0, 0);
         }
-        else if (llvm::StructType* st = llvm::dyn_cast<llvm::StructType>(rhs_type))
+        else if (auto* struct_type = llvm::dyn_cast<llvm::StructType>(rhs_type))
         {
-          ptr = local_builder.CreateAlloca(st,
+          ptr = local_builder.CreateAlloca(struct_type,
                                           env.data_layout.getAllocaAddrSpace(),
                                           nullptr,
                                           symbol
                                           );
-          /*
-          llvm::ConstantStruct* cs = llvm::cast<llvm::ConstantStruct>(term_value.GetFirst());
 
-          size_t i = 0;
-          while(llvm::Constant* member = cs->getAggregateElement(i))
-          {
-            llvm::Value* elemPtr = env->builder->CreateConstGEP2_32(st, ptr, 0, i);
-            env->builder->CreateStore(member, elemPtr, symbol);
-            i++;
-          }
-          */
-          StoreAggregate(st, ptr, term_value, env);
-          // I think Ptr being set equal to the allocation is correct, 
-          // and since we are done storing the constant elements we can
-          // continue on to finish this binding.
+          StoreAggregate(struct_type, ptr, term_value, env);
         }
         else
         {
-          // FatalError is marked [[noreturn]] and the compiler still complains 
-          // about not all code paths returning a value, i don't get it.
           FatalError("Unsupported Type* passed to Bind's allocator", __FILE__, __LINE__);
-          return Outcome<llvm::Value*, Error>(Error(Error::Code::None, loc));
         }
 			}
 			// we use term_type_result, as that holds a pink::Type*, which is what Bind expects.
 			env.bindings->Bind(symbol, term_type_result.GetFirst(), ptr); // bind the symbol to the newly created value
 			
-			return Outcome<llvm::Value*, Error>(term_value); // return the value of the right hand side to support nested binds.
+			return {term_value}; // return the value of the right hand side to support nested binds.
 		}
-		else 
-		{
 			// #TODO: if the binding term has the same type as what the symbol 
 			//  is already bound to, we could treat the binding as equivalent 
 			//  to an assignment here.
       std::string errmsg = std::string(symbol)
                          + " already bound to type: "
                          + bound->first->ToString();
-			Error error(Error::Code::NameAlreadyBoundInScope, loc);
-			Outcome<llvm::Value*, Error> result(error);
-			return result;
-		}
-    }
+			return {Error(Error::Code::NameAlreadyBoundInScope, loc)};
+  }
 }

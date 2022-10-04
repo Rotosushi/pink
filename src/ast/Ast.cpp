@@ -2,43 +2,36 @@
 
 
 namespace pink {
-    Ast::Ast(const Ast::Kind k, Location l)
-        : kind(k), loc(l), type(nullptr)
+    Ast::Ast(const Ast::Kind kind, const Location& location)
+        : kind(kind), loc(location), type(nullptr)
     {
 
     }
 
-    Ast::~Ast()
-    {
-
-    }
-
-    Ast::Kind Ast::getKind() const
+    auto Ast::getKind() const -> const Ast::Kind&
     {
         return kind;
     }
 
-    Location Ast::GetLoc() const
+    auto Ast::GetLoc() const -> const Location&
     {
         return loc;
     }
     
-    Outcome<Type*, Error> Ast::Getype(const Environment& env)
+    auto Ast::Getype(const Environment& env) -> Outcome<Type*, Error>
     {
-    	if (type)
+    	if (type != nullptr)
     	{
-    		return Outcome<Type*, Error>(type);
+    		return {type};
     	}
-    	else 
-    	{
-    		Outcome<Type*, Error> result = this->GetypeV(env);
-    		
-    		if (result)
-    		{
-    			type = result.GetFirst();
-    		}
-    		
-    		return result;
-    	}
+
+        Outcome<Type*, Error> result = this->GetypeV(env);
+        
+        if (result)
+        {
+            type = result.GetFirst();
+        }
+        
+        return result;
     }
 }

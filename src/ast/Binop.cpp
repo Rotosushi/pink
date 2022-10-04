@@ -2,38 +2,41 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    Binop::Binop(Location& loc, InternedString o, std::unique_ptr<Ast> l, std::unique_ptr<Ast> r)
-        : Ast(Ast::Kind::Binop, loc), op(o), left(std::move(l)), right(std::move(r))
+    Binop::Binop(const Location& location, InternedString opr, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
+        : Ast(Ast::Kind::Binop, location), op(opr), left(std::move(left)), right(std::move(right))
     {
 
     }
 
-    Binop::~Binop()
+    auto Binop::classof(const Ast* ast) -> bool
     {
-
+        return ast->getKind() == Ast::Kind::Binop;
     }
 
-    bool Binop::classof(const Ast* t)
-    {
-        return t->getKind() == Ast::Kind::Binop;
-    }
-
-    std::string Binop::ToString()
+    auto Binop::ToString() const -> std::string
     {
     	std::string result;
     	if (llvm::isa<Binop>(left))
-    		result += "(" + left->ToString() + ")";
+    	{
+        result += "(" + left->ToString() + ")";
+      }
     	else 
-    		result += left->ToString();
+    	{
+        result += left->ToString();
+      }
     		
     	result += " " + std::string(op) + " ";
     	
     	if (llvm::isa<Binop>(right))
-    		result += "(" + right->ToString() + ")";
+    	{
+        result += "(" + right->ToString() + ")";
+      }
     	else 
-    		result += right->ToString();
+    	{
+        result += right->ToString();
+      }
     		
-        return result;
+      return result;
     }
     
     /*
@@ -41,18 +44,22 @@ namespace pink {
       --------------------------------------------------
       			  env |- lhs op rhs : T
     */
-    Outcome<Type*, Error> Binop::GetypeV(const Environment& env)
+    auto Binop::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
     {
     	// Get the type of both sides
     	Outcome<Type*, Error> lhs_result(left->Getype(env));
     	
     	if (!lhs_result)
+      {
     		return lhs_result;
+      }
     		
     	Outcome<Type*, Error> rhs_result(right->Getype(env));
     	
     	if (!rhs_result)
+      {
     		return rhs_result;
+      }
     		
     	// find the operator present between both sides in the env 
     	llvm::Optional<std::pair<InternedString, BinopLiteral*>> binop = env.binops->Lookup(op);
@@ -62,39 +69,38 @@ namespace pink {
     	{
         std::string errmsg = std::string("unknown op: ")
                            + op;
-    		Error error(Error::Code::UnknownBinop, loc, errmsg);
-    		Outcome<Type*, Error> result(error);
-    		return result;
+    		return {Error(Error::Code::UnknownBinop, loc, errmsg)};
     	}
 
       // #TODO: unop also needs this treatment for * and & operators.
       llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal;
-      PointerType* pt = nullptr;
-      if (((pt = llvm::dyn_cast<PointerType>(lhs_result.GetFirst())) != nullptr) && (strcmp(op, "+") == 0))
+      auto* pointer_type = llvm::dyn_cast<PointerType>(lhs_result.GetFirst());
+      if ((pointer_type != nullptr) && (strcmp(op, "+") == 0))
       {
         literal = binop->second->Lookup(lhs_result.GetFirst(), rhs_result.GetFirst());
 
-        IntType* it = llvm::dyn_cast<IntType>(rhs_result.GetFirst());
-        if (it == nullptr)
+        auto* int_type = llvm::dyn_cast<IntType>(rhs_result.GetFirst());
+        if (int_type == nullptr)
         {
           std::string errmsg = std::string("lhs has pointer type: ")
-                             + pt->ToString()
+                             + pointer_type->ToString()
                              + " however rhs is not an Int, rhs has type: "
                              + rhs_result.GetFirst()->ToString();
-          Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
-          return Outcome<Type*, Error>(error);
+          return {Error(Error::Code::ArgTypeMismatch, loc, errmsg)};
         }
 
         if (!literal)
         {
-          Type* int_ptr_type = env.types->GetPointerType(env.types->GetIntType());
-          llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, it);
+          Type* int_ptr_type = env.types->GetPointerType(int_type);
+          llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, int_type);
           
           if (!ptr_add_binop)
+          {
             FatalError("Couldn't find int ptr arithmetic binop!", __FILE__, __LINE__);
+          }
           
-          BinopCodegenFn ptr_arith_fn =  ptr_add_binop->second->generate;
-          literal = binop->second->Register(lhs_result.GetFirst(), it, lhs_result.GetFirst(), ptr_arith_fn); 
+          BinopCodegenFn ptr_arith_fn = ptr_add_binop->second->generate;
+          literal = binop->second->Register(lhs_result.GetFirst(), int_type, lhs_result.GetFirst(), ptr_arith_fn); 
         }
       }
       else
@@ -111,57 +117,63 @@ namespace pink {
                            + lhs_result.GetFirst()->ToString()
                            + ", right: "
                            + rhs_result.GetFirst()->ToString();
-        Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
-    		Outcome<Type*, Error> result(error);
-    		return result;
+    		return {Error(Error::Code::ArgTypeMismatch, loc, errmsg)};
     	}
     	
     	// return the result type of calling the operator given the types of both sides
-    	Outcome<Type*, Error> result(literal->second->result_type);
-    	return result;
+    	return {literal->second->result_type};
     }
     
     
-    Outcome<llvm::Value*, Error> Binop::Codegen(const Environment& env)
+    auto Binop::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
     {
       // Get the type and value of both sides
     	Outcome<Type*, Error> lhs_type_result(left->Getype(env));
     	
     	if (!lhs_type_result)
-    		return Outcome<llvm::Value*, Error>(lhs_type_result.GetSecond());
-
+      {
+    		return {lhs_type_result.GetSecond()};
+      }
 
     	Outcome<llvm::Type*, Error> lhs_type_codegen = lhs_type_result.GetFirst()->Codegen(env);
     	
     	if (!lhs_type_codegen)
-    		return Outcome<llvm::Value*, Error>(lhs_type_codegen.GetSecond());
+      {
+    		return {lhs_type_codegen.GetSecond()};
+      }
 
       llvm::Type* lhs_type = lhs_type_codegen.GetFirst();
   
-      
-
     	Outcome<llvm::Value*, Error> lhs_value(left->Codegen(env));
     	
     	if (!lhs_value)
+      {
     		return lhs_value;
+      }
 
     	Outcome<Type*, Error> rhs_type_result(right->Getype(env));
     	
     	if (!rhs_type_result)
-    		return Outcome<llvm::Value*, Error>(rhs_type_result.GetSecond());
+      {
+    		return {rhs_type_result.GetSecond()};
+      }
     
 
     	Outcome<llvm::Type*, Error> rhs_type_codegen = rhs_type_result.GetFirst()->Codegen(env);
     		
     	if (!rhs_type_codegen)
-    		return Outcome<llvm::Value*, Error>(rhs_type_codegen.GetSecond());
+      {
+    		return {rhs_type_codegen.GetSecond()};
+      }
   
       llvm::Type* rhs_type = rhs_type_codegen.GetFirst();
 
     	Outcome<llvm::Value*, Error> rhs_value(right->Codegen(env));
     	
     	if (!rhs_value)
+      {
     		return rhs_value;
+      }
   
 
     	// find the operator present between both sides in the env 
@@ -171,13 +183,11 @@ namespace pink {
     	{
         std::string errmsg = std::string("unknown op: ")
                            + op;
-    		Error error(Error::Code::UnknownBinop, loc, errmsg);
-    		Outcome<llvm::Value*, Error> result(error);
-    		return result;
+    		return {Error(Error::Code::UnknownBinop, loc, errmsg)};
     	}
     	
       llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> literal;
-      PointerType* pt = nullptr;
+      auto* pointer_type = llvm::dyn_cast<PointerType>(lhs_type_result.GetFirst());
       // if this is a pointer addition operation, we must pass the pointee_type
       // into the binop code generation function for the GEP instruction within.
       // we can also safely add a new implementation of pointer addition no
@@ -186,39 +196,41 @@ namespace pink {
       // it is only the structure of the BinopLiteral itself that is going to 
       // fail to find an implementation for any arbitrary array type we can 
       // define.
-      if (((pt = llvm::dyn_cast<PointerType>(lhs_type_result.GetFirst())) != nullptr) && (strcmp(op, "+") == 0))
+      if ((pointer_type != nullptr) && (strcmp(op, "+") == 0))
       {
-        Outcome<llvm::Type*, Error> pointee_type_result = pt->pointee_type->Codegen(env);
+        Outcome<llvm::Type*, Error> pointee_type_result = pointer_type->pointee_type->Codegen(env);
        
         if (!pointee_type_result)
-          return Outcome<llvm::Value*, Error>(pointee_type_result.GetSecond());
+        {
+          return {pointee_type_result.GetSecond()};
+        }
 
         lhs_type = pointee_type_result.GetFirst();
 
-        IntType* it = llvm::dyn_cast<IntType>(rhs_type_result.GetFirst());
-        if (it == nullptr)
+        auto* int_type = llvm::dyn_cast<IntType>(rhs_type_result.GetFirst());
+        if (int_type == nullptr)
         {
           std::string errmsg = std::string("lhs has pointer type: ")
-                             + pt->ToString()
+                             + pointer_type->ToString()
                              + " however rhs is not an Int, rhs has type: "
                              + rhs_type_result.GetFirst()->ToString();
-
-          Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
-          return Outcome<llvm::Value*, Error>(error);
+          return {Error(Error::Code::ArgTypeMismatch, loc, errmsg)};
         }
 
-        literal = binop->second->Lookup(lhs_type_result.GetFirst(), it);
+        literal = binop->second->Lookup(lhs_type_result.GetFirst(), int_type);
   
         if (!literal)
         {
           Type* int_ptr_type = env.types->GetPointerType(env.types->GetIntType());
-          llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, it);
+          llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>> ptr_add_binop = binop->second->Lookup(int_ptr_type, int_type);
           
           if (!ptr_add_binop)
+          {
             FatalError("Couldn't find int ptr arithmetic binop!", __FILE__, __LINE__);
-          
+          }
+
           BinopCodegenFn ptr_arith_fn =  ptr_add_binop->second->generate;
-          literal = binop->second->Register(lhs_type_result.GetFirst(), it, lhs_type_result.GetFirst(), ptr_arith_fn); 
+          literal = binop->second->Register(lhs_type_result.GetFirst(), int_type, lhs_type_result.GetFirst(), ptr_arith_fn); 
         }
       }
       else
@@ -235,13 +247,10 @@ namespace pink {
                            + lhs_type_result.GetFirst()->ToString()
                            + ", right: "
                            + rhs_type_result.GetFirst()->ToString();
-    		Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
-    		Outcome<llvm::Value*, Error> result(error);
-    		return result;
+    		return {Error(Error::Code::ArgTypeMismatch, loc, errmsg)};
     	}
     	
     	// use the lhs and rhs values to generate the binop expression.
-    	Outcome<llvm::Value*, Error> binop_value(literal->second->generate(lhs_type, lhs_value.GetFirst(), rhs_type, rhs_value.GetFirst(), env));
-    	return binop_value;
+    	return {literal->second->generate(lhs_type, lhs_value.GetFirst(), rhs_type, rhs_value.GetFirst(), env)};
     }
 }

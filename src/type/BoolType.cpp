@@ -2,34 +2,20 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    BoolType::BoolType()
-        : Type(Type::Kind::Bool)
-    {
+BoolType::BoolType() : Type(Type::Kind::Bool) {}
 
-    }
-
-    BoolType::~BoolType()
-    {
-
-    }
-
-    bool BoolType::classof(const Type* t)
-    {
-        return t->getKind() == Type::Kind::Bool;
-    }
-
-    bool BoolType::EqualTo(Type* other)
-    {
-        return other->getKind() == Type::Kind::Bool;
-    }
-
-    std::string BoolType::ToString()
-    {
-        return std::string("Bool");
-    }
-    
-    Outcome<llvm::Type*, Error> BoolType::Codegen(const Environment& env)
-    {
-    	return Outcome<llvm::Type*, Error>(env.instruction_builder->getInt1Ty());
-    }
+auto BoolType::classof(const Type *type) -> bool {
+  return type->getKind() == Type::Kind::Bool;
 }
+
+auto BoolType::EqualTo(Type *other) const -> bool {
+  return other->getKind() == Type::Kind::Bool;
+}
+
+auto BoolType::ToString() const -> std::string { return {"Bool"}; }
+
+auto BoolType::Codegen(const Environment &env) const
+    -> Outcome<llvm::Type *, Error> {
+  return {env.instruction_builder->getInt1Ty()};
+}
+} // namespace pink

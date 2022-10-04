@@ -3,56 +3,40 @@
 
 #include "llvm/IR/DerivedTypes.h"
 
-
 namespace pink {
-  PointerType::PointerType(Type* pointee_type)
-    : Type(Type::Kind::Pointer), pointee_type(pointee_type)
-  {
+PointerType::PointerType(Type *pointee_type)
+    : Type(Type::Kind::Pointer), pointee_type(pointee_type) {}
 
-  }
+auto PointerType::classof(const Type *type) -> bool {
+  return type->getKind() == Type::Kind::Pointer;
+}
 
-  PointerType::~PointerType()
-  {
-
-  }
-
-  bool PointerType::classof(const Type* t)
-  {
-    return t->getKind() == Type::Kind::Pointer;
-  }
-
-  bool PointerType::EqualTo(Type* other)
-  {
-    bool equal = true;
-    
-    if (PointerType* pt = llvm::dyn_cast<PointerType>(other))
-    {
-      if (pt->pointee_type != this->pointee_type)
-      {
-        equal = false;
-      }  
-    }
-    else 
-    {
+auto PointerType::EqualTo(Type *other) const -> bool {
+  bool equal = true;
+  auto *pointer_type = llvm::dyn_cast<PointerType>(other);
+  if (pointer_type != nullptr) {
+    if (pointer_type->pointee_type != this->pointee_type) {
       equal = false;
     }
-
-    return equal;
+  } else {
+    equal = false;
   }
 
-  std::string PointerType::ToString()
-  {
-    std::string result;
-
-    result += pointee_type->ToString();
-    result += "*";
-
-    return result;
-  }
-
-  Outcome<llvm::Type*, Error> PointerType::Codegen(const Environment& env)
-  {
-    return Outcome<llvm::Type*, Error>(llvm::PointerType::getUnqual(*env.context));
-  }
-
+  return equal;
 }
+
+auto PointerType::ToString() const -> std::string {
+  std::string result;
+
+  result += pointee_type->ToString();
+  result += "*";
+
+  return result;
+}
+
+auto PointerType::Codegen(const Environment &env) const
+    -> Outcome<llvm::Type *, Error> {
+  return {llvm::PointerType::getUnqual(*env.context)};
+}
+
+} // namespace pink

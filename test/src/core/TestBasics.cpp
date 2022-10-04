@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <random> 
 
 #include <fstream>
 #include <algorithm>
@@ -68,12 +69,6 @@ int Run(const char* file, char* const* argv)
 }
 
 
-std::string StripFilenameExtensions(std::string filename)
-{
-  auto it = std::find(filename.begin(), filename.end(), '.');
-  return std::string(filename.begin(), it);
-}
-
 /*  
  * This function wraps the core test actions for a file within a function,  
  * Since we are testing the execution of the compiler itself, we are going 
@@ -83,6 +78,21 @@ std::string StripFilenameExtensions(std::string filename)
  *  2: compile that file into an executable
  *  3: run that executable and check the exit code matches expected_value.
  *      return true when the code matches, false otherwise.
+ * 
+ * note: i realize that this is not how the exit code for programs is actually 
+ * intended to be used, however we have no other way of observing the results 
+ * of executing the output program. We can modify this procedure to pipe the 
+ * output of the program into somewhere we can inspect. in this way we should 
+ * be able to write more complex tests and more complex programs.
+ * but that relies on the compiler defining read/write routines, strings in some 
+ * capacity, and defining the stdin, stdout, and stderr io streams for the program 
+ * to utilize this functionality.
+ * 
+ * note: The exit_code itself can only contain 8 bits of information, so we can 
+ * only reliably test the behavior of the program if the programs output is also 
+ * restricted to this range of values. (I suppose we could also force whatever 
+ * value we compute into a byte sized scalar, which would cut off the number in 
+ * the same way that getting the exit_code does. but that is very opaque.)
  */
 bool TestFile(std::string test_contents, int expected_value)
 {
@@ -181,21 +191,38 @@ bool TestBasics(std::ostream& out)
   
   bool result = true;
   out << "\n----------------------------------\n";
-  out << "Testing pink basic core functionality: \n";
+  out << "Testing pink basic functionality: \n";
 
+  // the tests are defined such that we can run them multiple 
+  // times with different random numbers, so we are not cherry 
+  // picking behavior to test.
   int numIter = 1;
 
-  srand(time(0));
+  std::random_device rnd;
+  std::mt19937_64 gen(rnd());
+  
+  // various distributions which are used within the test cases.
+  std::uniform_int_distribution<> zero_to_one_hundred(0, 100);
+  std::uniform_int_distribution<> one_to_one_hundred(1, 100);
+  std::uniform_int_distribution<> zero_to_fifty(0, 50);
+  std::uniform_int_distribution<> one_to_fifty(1, 50);
+  std::uniform_int_distribution<> zero_to_ten(0, 10);
+  std::uniform_int_distribution<> one_to_ten(1, 10);
+  std::uniform_int_distribution<> zero_to_five(0, 5);
+  std::uniform_int_distribution<> zero_to_four(0, 4);
+  std::uniform_int_distribution<> zero_to_one(0, 1);
+  std::bernoulli_distribution     true_or_false(0.5); 
+
 
   for (int i = 0; i < numIter; i++)
   {
-    int num = rand() % 100;
+    int num = zero_to_one_hundred(gen);
     std::string numstr = std::to_string(num);
     result &= Test(
         out, 
-        "Simple main [" + numstr + "]",
+        "Simple main " + numstr + "",
         TestFile(
-          std::string("fn main () { ") + numstr + "; };\n",
+          std::string("fn main () { ") + numstr + "; }\n",
           num
         )
     );
@@ -203,29 +230,14 @@ bool TestBasics(std::ostream& out)
 
   for (int i = 0; i < numIter; i++)
   {
-    int num1 = rand() % 100;
+    int num1 = zero_to_one_hundred(gen);
     std::string num1str = std::to_string(num1);
 
     result &= Test(
           out,
           "Bind: x := " + num1str,
           TestFile(
-              std::string("fn main() { x := ") + num1str + ";x;};\n",
-              num1
-            )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 100;
-    std::string num1str = std::to_string(num1);
-
-    result &= Test(
-          out,
-          "Compound Bind: x := y := " + num1str,
-          TestFile(
-              std::string("fn main() { x := y := ") + num1str + ";x;};\n",
+              std::string("fn main() { var x := ") + num1str + "; x;}\n",
               num1
             )
         );
@@ -233,272 +245,245 @@ bool TestBasics(std::ostream& out)
   
   for (int i = 0; i < numIter; i++)
   {
-    int num1 = rand() % 100;
+    int num1 = zero_to_one_hundred(gen);
     std::string num1str = std::to_string(num1);
 
     result &= Test(
           out,
           "Assignment: x = " + num1str,
           TestFile(
-              std::string("fn main() { x := 0; x =") + num1str + ";x;};\n",
+              std::string("fn main() { var x := 0; x =") + num1str + "; x;}\n",
               num1
             )
         );
   }
-  
+
   for (int i = 0; i < numIter; i++)
   {
-    int num1 = rand() % 100;
+    int num1 = zero_to_one_hundred(gen);
     std::string num1str = std::to_string(num1);
 
     result &= Test(
           out,
           "Compound Assignment: x = y = " + num1str,
           TestFile(
-              std::string("fn main() { x := y := 0; x = y = " + num1str + "; x == y;};\n"),
+              std::string("fn main() { var x := 0; var y := 0; x = y = " + num1str + "; x == y;}\n"),
               true
             )
         );
   }
-  
+
+  // tests that the lhs and rhs of an assignment expression treat 
+  // variables distinctly
   for (int i = 0; i < numIter; i++)
   {
-    int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 + num2);
-
-    result &= Test(
-      out,
-      "Addition: x = (" + num1str + "); y = (" + num2str + "); x + y = " + resstr,
-      TestFile(
-        std::string("fn main () { x := 0; y := 0; c := 0; x = ") + num1str + "; y = " + num2str + "; c = x + y; c;};\n",
-        num1 + num2
-        ) 
-    );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 50;
+    int num1 = zero_to_one_hundred(gen);
     int res  = num1 + num1;
     std::string num1str = std::to_string(num1), resstr = std::to_string(res);
 
     result &= Test(
         out,
-        "Assignment to modified self: x = " + num1str + ", x + x = " + resstr,
+        "Assignment to modified self: x = " + num1str + ", x + x == " + resstr,
         TestFile(
-          std::string("fn main () { x := ") + num1str + "; x = x + x; x;};\n",
+          std::string("fn main () { var x := ") + num1str + "; x = x + x; x;}\n",
           res
           )
         );
   }
   
+  
   for (int i = 0; i < numIter; i++)
   {
-    int num1 = rand() % 11, num2 = rand() % 11; // x, y | x * y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 * num2);
+    int num1 = 0;
+    int num2 = 0; // x, y | x + y <= 100
+    int res  = 0;
+    std::string num1str;
+    std::string num2str;
+    std::string resstr; 
+    // select a random binary operator defined for integers
+    int numop = zero_to_four(gen);
+    const char* op = nullptr;
+    // initialize variables according to the behavior of the operator selected
+    switch (numop)
+    {
+      case 0: 
+        op      = "+";
+        num1    = zero_to_one_hundred(gen);
+        num2    = zero_to_one_hundred(gen);
+        res     = num1 + num2;
+        num1str = std::to_string(num1);
+        num2str = std::to_string(num2);
+        resstr  = std::to_string(num1 + num2);
+        break;
+
+      case 1: 
+      {
+        op     = "-"; 
+        int n1 = one_to_one_hundred(gen);
+        int n2 = one_to_one_hundred(gen);
+        // ensure subtraction does not produce a negative value
+        if (n1 > n2) 
+          { num1 = n1; num2 = n2; }
+        else 
+          { num1 = n2; num2 = n1; }
+
+        res = num1 - num2;
+        num1str = std::to_string(num1);
+        num2str = std::to_string(num2);
+        resstr = std::to_string(num1 - num2);
+        break;
+      }
+
+      case 2: 
+        op = "*"; 
+        // ensure that multiplication doesn't produce values greater than one hundred
+        // note: we can construct values up to 255 without worry, but one hundred 
+        // is an easy bounds to think about. it also makes this symmetric, as to 
+        // bound at 200, the largest multiplication term we can test is (10 * 20)
+        // we could also bound at 250 with (10 * 25)
+        num1    = zero_to_ten(gen);
+        num2    = zero_to_ten(gen);
+        res     = num1 * num2;
+        num1str = std::to_string(num1);
+        num2str = std::to_string(num2);
+        resstr  = std::to_string(num1 * num2);
+        break;
+
+      case 3: 
+        op = "/";
+        // ensure that division doesn't have zero on the bottom
+        num1    = zero_to_one_hundred(gen);
+        num2    = one_to_one_hundred(gen);
+        res     = num1 / num2;
+        num1str = std::to_string(num1);
+        num2str = std::to_string(num2);
+        resstr  = std::to_string(num1 / num2);
+        break;
+
+      case 4:
+        op      = "%";
+        num1    = zero_to_one_hundred(gen);
+        num2    = one_to_one_hundred(gen);
+        res     = num1 % num2;
+        num1str = std::to_string(num1);
+        num2str = std::to_string(num2);
+        resstr  = std::to_string(num1 % num2);
+        break;
+    }
 
     result &= Test(
       out,
-      "Multiplication: x = (" + num1str + "); y = (" + num2str + "); x * y = " + resstr,
+      "Int Arithmetic Binop: x = " + num1str + "; y = " + num2str + "; x " + std::string(op) + " y == " + resstr,
       TestFile(
-        std::string("fn main () { x := y := c := 0; x = ") + num1str + "; y = " + num2str + "; c = x * y; c; };\n",
-        num1 * num2
+        std::string("fn main () { var x := 0; var y := 0; x = ") + num1str + "; y = " + num2str + "; var c := x " + std::string(op) + " y; c;}\n",
+        res
         ) 
     );
   }
   
+
   for (int i = 0; i < numIter; i++)
   {
-    int num1 = rand() % 100, num2 = (rand() % 99) + 1; // x, y | x / y <= 100
+    int num1 = zero_to_one_hundred(gen);
+    int num2 = zero_to_one_hundred(gen);
+    bool res = false;
     std::string num1str = std::to_string(num1);
     std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 / num2);
+    std::string resstr; 
+    // select a random binary operator defined for integers
+    int numop = zero_to_five(gen);
+    const char* op = nullptr;
+
+    // initialize variables according to the behavior of the operator selected
+    switch (numop)
+    {
+      case 0: 
+        op     = "==";
+        res    = (num1 == num2);
+        resstr = res ? "true" : "false";
+        break;
+
+      case 1: 
+        op     = "!=";
+        res    =  (num1 != num2);
+        resstr = res ? "true" : "false";
+        break;
+
+      case 2: 
+        op     = "<";
+        res    =  (num1 < num2);
+        resstr = res ? "true" : "false";
+        break;
+
+      case 3: 
+        op     = "<=";
+        res    =  (num1 <= num2);
+        resstr = res ? "true" : "false";
+        break;
+
+      case 4:
+        op     = ">";
+        res    =  (num1 > num2);
+        resstr = res ? "true" : "false";
+        break;
+
+      case 5:
+        op     = ">=";
+        res    =  (num1 >= num2);
+        resstr = res ? "true" : "false";
+        break;
+    }
 
     result &= Test(
-        out,
-        "Division: x (" + num1str + ") / y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main(){ x := y := c := 0; x = ") + num1str + "; y = " + num2str + "; c = x / y; c; };\n",
-          num1 / num2
-          )
-        );
+      out,
+      "Int Comparison Binop: x = " + num1str + "; y = " + num2str + "; x " + std::string(op) + " y == " + resstr,
+      TestFile(
+        std::string("fn main () { var x := 0; var y := 0; x = ") + num1str + "; y = " + num2str + "; var c := x " + std::string(op) + " y; c;}\n",
+        res
+        ) 
+    );
   }
+
 
   for (int i = 0; i < numIter; i++)
   {
-    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 % num2);
+    // test boolean arithmetic operators
+    bool b1 = true_or_false(gen);
+    bool b2 = true_or_false(gen);
+    bool res = false;
+    std::string b1str = b1 ? "true" : "false";
+    std::string b2str = b2 ? "true" : "false";
+    std::string resstr;
+    std::string op;
+
+    int numop = zero_to_one(gen);
+    switch(numop)
+    {
+      case 0:
+        op = "&";
+        res = b1 && b2;
+        resstr = res ? "true" : "false";
+        break;
+
+      case 1:
+        op = "|";
+        res = b1 || b2;
+        resstr = res ? "true" : "false";
+        break;
+    }
 
     result &= Test(
-        out,
-        "Modulus: x (" + num1str + ") % y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main() { x := y := c := 0; x = ") + num1str + "; y = " + num2str + "; c = x % y; c; };\n",
-          num1 % num2
-          )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 == num2);
-
-    result &= Test(
-        out,
-        "Integer Equality: x (" + num1str + ") == y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x == y; c; };\n",
-          num1 == num2
-          )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 != num2);
-
-    result &= Test(
-        out,
-        "Integer Inequality: x (" + num1str + ") != y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x != y; c; };\n",
-          num1 != num2
-          )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 < num2);
-
-    result &= Test(
-        out,
-        "Integer less than: x (" + num1str + ") < y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x < y; c; };\n",
-          num1 < num2
-          )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 <= num2);
-
-    result &= Test(
-        out,
-        "Integer less than or equal: x (" + num1str + ") <= y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x <= y; c; };\n",
-          num1 <= num2
-          )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 > num2);
-
-    result &= Test(
-        out,
-        "Integer greater than: x (" + num1str + ") > y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x > y; c; };\n",
-          num1 > num2
-          )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    int num1 = rand() % 100, num2 = rand() % 100; // x, y | x / y <= 100
-    std::string num1str = std::to_string(num1);
-    std::string num2str = std::to_string(num2);
-    std::string resstr  = std::to_string(num1 >= num2);
-
-    result &= Test(
-        out,
-        "Integer greater than or equal: x (" + num1str + ") >= y (" + num2str + ") = " + resstr,
-        TestFile(
-          std::string("fn main(){ x := y := 0; c := false; x = ") + num1str + "; y = " + num2str + "; c = x >= y; c; };\n",
-          num1 >= num2
-          )
-        );
-  }
-
-  for (int i = 0; i < numIter; i++)
-  {
-    bool b1 = rand() % 2, b2 = rand() % 2;
-    std::string b1str = b1 == 0 ? "false" : "true";
-    std::string b2str = b2 == 0 ? "false" : "true";
-    std::string resstr  = b1 || b2 ? "true" : "false";
-    
-    result &= Test(
-        out,
-        "Boolean Or: x (" + b1str + ") | y (" + b2str + ") = " + resstr,
-        TestFile(
-         std::string("fn main(){") + b1str + " | " + b2str + ";};\n",
-         b1 | b2
-         )
-        ); 
+      out,
+      "Boolean Arithmetic Binop: x = " + b1str + "; y = " + b2str + "; x " + op + " y == " + resstr,
+      TestFile(
+        "fn main () { var x := " + b1str + "; var y := " + b2str + "; var z := x " + op + " y; z; }",
+        res
+      )
+    );
   }
   
-  for (int i = 0; i < numIter; i++)
-  {
-    bool b1 = rand() % 2, b2 = rand() % 2;
-    std::string b1str = b1 == 0 ? "false" : "true";
-    std::string b2str = b2 == 0 ? "false" : "true";
-    std::string resstr  = b1 && b2 ? "true" : "false";
-    
-    result &= Test(
-        out,
-        "Boolean And: x (" + b1str + ") & y (" + b2str + ") = " + resstr,
-        TestFile(
-         std::string("fn main(){") + b1str + " & " + b2str + ";};\n",
-         b1 && b2
-         )
-        ); 
-  }
-  
-  for (int i = 0; i < numIter; i++)
-  {
-    bool b1 = rand() % 2, b2 = rand() % 2;
 
-    std::string b1str = b1 == 0 ? "false" : "true";
-    std::string b2str = b2 == 0 ? "false" : "true";
-    std::string resstr  = b1 == b2 ? "true" : "false";
-    
-    result &= Test(
-        out,
-        "Booleans Equality: x (" + b1str + ") == y (" + b2str + ") = " + resstr,
-        TestFile(
-         std::string("fn main(){") + b1str + " == " + b2str + ";};\n",
-         b1 == b2
-         )
-        ); 
-  }
-
+/*
   for (int i = 0; i < numIter; i++)
   {
     int num1 = rand() % 50, num2 = rand() % 50; // x, y | x + y <= 100
@@ -924,7 +909,7 @@ bool TestBasics(std::ostream& out)
         num1 % num2)
       ); 
   }
-  
+  */
   result &= Test(out, "basic core functionality", result);
   out << "\n---------------------------------\n";
   return result;

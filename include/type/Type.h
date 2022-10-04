@@ -11,98 +11,99 @@
 #include "llvm/IR/Type.h"
 
 namespace pink {
-	class Environment;
+class Environment;
 
-    /**
-     * @brief Represents an instance of a Type
-     * 
-     * \note Type is pure virtual, so there is no way to construct a plain Type,
-     * only an instance of a derived Type may be constructed
-     */
-    class Type {
-    public:
-        /**
-         * @brief Type::Kind is deifined so as to conform to LLVM style [RTTI]
-         * 
-         * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-         * 
-         * Type::Kind is used as a tag to identify which kind of type is currently 
-         * constructed that a given Type* points to.
-         *
-         */
-        enum class Kind {
-            Void,
-            Nil,
-            Bool,
-            Int,
-            
-            Function,
-            Pointer,
-            Array,
-            Tuple,
-        };
+/**
+ * @brief Represents an instance of a Type
+ *
+ * \note Type is pure virtual, so there is no way to construct a plain Type,
+ * only an instance of a derived Type may be constructed
+ */
+class Type {
+public:
+  /**
+   * @brief Type::Kind is deifined so as to conform to LLVM style [RTTI]
+   *
+   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
+   *
+   * Type::Kind is used as a tag to identify which kind of type is currently
+   * constructed that a given Type* points to.
+   *
+   */
+  enum class Kind {
+    Void,
+    Nil,
+    Bool,
+    Int,
 
-    protected:
-        /**
-         * @brief The kind of this particular Type
-         * 
-         */
-        Kind     kind;
+    Function,
+    Pointer,
+    Array,
+    Tuple,
+  };
 
-    public:
-        /**
-         * @brief Construct a new Type
-         * 
-         * @param k the kind of Type being constructed
-         */
-        Type(Kind k);
+protected:
+  /**
+   * @brief The kind of this particular Type
+   *
+   */
+  Kind kind;
 
-        /**
-         * @brief Destroy the Type
-         * 
-         */
-        virtual ~Type();
+public:
+  /**
+   * @brief Construct a new Type
+   *
+   * @param kind the kind of Type being constructed
+   */
+  Type(Kind kind);
 
-        /**
-         * @brief Get the Kind of this Type
-         * 
-         * @return Kind the Type::Kind of this Type
-         */
-        Kind getKind() const;
+  /**
+   * @brief Destroy the Type
+   *
+   */
+  virtual ~Type() = default;
 
-        /*
-            
-        */
+  /**
+   * @brief Get the Kind of this Type
+   *
+   * @return Kind the Type::Kind of this Type
+   */
+  [[nodiscard]] auto getKind() const -> Kind;
 
-        /**
-         * @brief Computes Equality of this type and other type.
-         * 
-         * \note since types are interned, we can use pointer
-         *  comparison as a replacement for simple equality.
-         *  However, types still need to sometimes be compared
-         *  structurally, for instance within the type interner
-         *  itself. This is what is accomplished with EqualTo
-         * 
-         * @param other the other type to compare against
-         * @return true if other *is* equivalent to this type
-         * @return false if other *is not* equivalent to this type
-         */
-        virtual bool EqualTo(Type* other) = 0;
+  /*
 
-        /**
-         * @brief Computes the cannonical string representation of this Type
-         * 
-         * @return std::string the string representation
-         */
-        virtual std::string ToString() = 0;
+  */
 
-        /**
-         * @brief Computes the llvm::Type equivalent to this Type
-         * 
-         * @param env the environment of this compilation unit
-         * @return Outcome<llvm::Type*, Error> if true then the llvm::Type equivalent to this Type,
-         * if false then the Error encountered
-         */
-        virtual Outcome<llvm::Type*, Error> Codegen(const Environment& env) = 0;
-    };
-}
+  /**
+   * @brief Computes Equality of this type and other type.
+   *
+   * \note since types are interned, we can use pointer
+   *  comparison as a replacement for simple equality.
+   *  However, types still need to sometimes be compared
+   *  structurally, for instance within the type interner
+   *  itself. This is what is accomplished with EqualTo
+   *
+   * @param other the other type to compare against
+   * @return true if other *is* equivalent to this type
+   * @return false if other *is not* equivalent to this type
+   */
+  virtual auto EqualTo(Type *other) const -> bool = 0;
+
+  /**
+   * @brief Computes the cannonical string representation of this Type
+   *
+   * @return std::string the string representation
+   */
+  [[nodiscard]] virtual auto ToString() const -> std::string = 0;
+
+  /**
+   * @brief Computes the llvm::Type equivalent to this Type
+   *
+   * @param env the environment of this compilation unit
+   * @return Outcome<llvm::Type*, Error> if true then the llvm::Type equivalent
+   * to this Type, if false then the Error encountered
+   */
+  [[nodiscard]] virtual auto Codegen(const Environment &env) const
+      -> Outcome<llvm::Type *, Error> = 0;
+};
+} // namespace pink

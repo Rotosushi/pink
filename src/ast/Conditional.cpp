@@ -4,23 +4,18 @@
 #include "aux/Environment.h"
 
 namespace pink {
-  Conditional::Conditional(Location loc, std::unique_ptr<Ast> test, std::unique_ptr<Ast> first, std::unique_ptr<Ast> second)
-    : Ast(Ast::Kind::Conditional, loc), test(std::move(test)), first(std::move(first)), second(std::move(second))
+  Conditional::Conditional(const Location& location, std::unique_ptr<Ast> test, std::unique_ptr<Ast> first, std::unique_ptr<Ast> second)
+    : Ast(Ast::Kind::Conditional, location), test(std::move(test)), first(std::move(first)), second(std::move(second))
   {
 
   }
 
-  Conditional::~Conditional()
-  {
-
-  }
-
-  bool Conditional::classof(const Ast* ast)
+  auto Conditional::classof(const Ast* ast) -> bool
   {
     return ast->getKind() == Ast::Kind::Conditional;
   }
 
-  std::string Conditional::ToString()
+  auto Conditional::ToString() const -> std::string
   {
     std::string result = "if ";
     result += test->ToString();
@@ -37,12 +32,14 @@ namespace pink {
    *  2) the type of both alternative expressions must match.
    *
    */
-  Outcome<Type*, Error> Conditional::GetypeV(const Environment& env)
+  auto Conditional::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
   {
     Outcome<Type*, Error> test_type_result = test->Getype(env);
 
     if (!test_type_result)
+    {
       return test_type_result;
+    }
 
     Type* bool_ty = env.types->GetBoolType();
 
@@ -50,18 +47,22 @@ namespace pink {
     {
       std::string errmsg = std::string("condition has type: ")
                          + test_type_result.GetFirst()->ToString();
-      return Outcome<Type*, Error> (Error(Error::Code::CondTestExprTypeMismatch, test->GetLoc(), errmsg));
+      return {Error(Error::Code::CondTestExprTypeMismatch, test->GetLoc(), errmsg)};
     }
 
     Outcome<Type*, Error> first_type_result = first->Getype(env);
 
     if (!first_type_result)
+    {
       return first_type_result;
+    }
 
     Outcome<Type*, Error> second_type_result = second->Getype(env);
 
     if (!second_type_result)
+    {
       return second_type_result;
+    }
 
     if (first_type_result.GetFirst() != second_type_result.GetFirst())
     {
@@ -69,14 +70,14 @@ namespace pink {
                          + first_type_result.GetFirst()->ToString()
                          + ", second alternative has type: "
                          + second_type_result.GetFirst()->ToString();
-      return Outcome<Type*, Error> (Error(Error::Code::CondBodyExprTypeMismatch, loc, errmsg));
+      return {Error(Error::Code::CondBodyExprTypeMismatch, loc, errmsg)};
     }
 
-    return Outcome<Type*, Error>(first_type_result.GetFirst());
+    return {first_type_result.GetFirst()};
   }
 
 
-  Outcome<llvm::Value*, Error> Conditional::Codegen(const Environment& env)
+  auto Conditional::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
   {
     // the steps outlined here are taken from 
     //  llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl05.html
@@ -103,12 +104,16 @@ namespace pink {
     Outcome<Type*, Error> test_getype_result = test->Getype(env);
 
     if (!test_getype_result)
-      return Outcome<llvm::Value*, Error>(test_getype_result.GetSecond());
+    {
+      return {test_getype_result.GetSecond()};
+    }
 
     Outcome<llvm::Type*, Error> test_type_result = test_getype_result.GetFirst()->Codegen(env);
 
     if (!test_type_result)
-      return Outcome<llvm::Value*, Error>(test_type_result.GetSecond());
+    {
+      return {test_type_result.GetSecond()};
+    }
 
     // since we are inside of the codegen routine, then we can assume 
     // that the type of this expression is good, which means the types 
@@ -118,12 +123,16 @@ namespace pink {
     Outcome<Type*, Error> first_getype_result = first->Getype(env);
 
     if (!first_getype_result)
-      return Outcome<llvm::Value*, Error>(first_getype_result.GetSecond()); 
+    {
+      return {first_getype_result.GetSecond()}; 
+    }
 
     Outcome<llvm::Type*, Error> first_type_result = first_getype_result.GetFirst()->Codegen(env);
 
     if (!first_type_result)
-      return Outcome<llvm::Value*, Error>(first_type_result.GetSecond());
+    {
+      return {first_type_result.GetSecond()};
+    }
 
     // 1) emit the code for the test expression
     // we want to generate the code for the test expression within the 
@@ -132,13 +141,15 @@ namespace pink {
     Outcome<llvm::Value*, Error> test_value_result = test->Codegen(env);
 
     if (!test_value_result)
+    {
       return test_value_result;
+    }
 
     // 2) emit the conditional branch instruction
     if (env.current_function == nullptr)
     {
       FatalError("Cannot emit a conditional expression without a basic block available to insert into!", __FILE__, __LINE__);
-      return Outcome<llvm::Value*, Error>(nullptr); // FatalError is marked [[noreturn]] so why does the compiler complain about not all code paths returning a value?
+      return {nullptr}; // FatalError is marked [[noreturn]] so why does the compiler complain about not all code paths returning a value?
     }
 
     // 3) construct the basic blocks we will be emitting code into
@@ -182,7 +193,9 @@ namespace pink {
     Outcome<llvm::Value*, Error> first_codegen_result = first->Codegen(env);
 
     if (!first_codegen_result)
+    {
       return first_codegen_result;
+    }
 
     // after the code appearing within the then block, we want to 
     // branch to the merge block unconditionally
@@ -210,7 +223,9 @@ namespace pink {
     Outcome<llvm::Value*, Error> second_codegen_result = second->Codegen(env);
 
     if (!second_codegen_result)
+    {
       return second_codegen_result;
+    }
     // construct the required unconditional branch to the merge block
     env.instruction_builder->CreateBr(merge_BB);
     // since codegen can modify the basic block being inserted into, we 
@@ -221,11 +236,11 @@ namespace pink {
     env.current_function->getBasicBlockList().push_back(merge_BB);
     env.instruction_builder->SetInsertPoint(merge_BB);
 
-    llvm::PHINode* pn = env.instruction_builder->CreatePHI(first_type_result.GetFirst(), 2, "mergeval");
+    llvm::PHINode* phi_node = env.instruction_builder->CreatePHI(first_type_result.GetFirst(), 2, "mergeval");
 
-    pn->addIncoming(first_codegen_result.GetFirst(), then_BB);
-    pn->addIncoming(second_codegen_result.GetFirst(), else_BB);
-    return Outcome<llvm::Value*, Error>(pn);
+    phi_node->addIncoming(first_codegen_result.GetFirst(), then_BB);
+    phi_node->addIncoming(second_codegen_result.GetFirst(), else_BB);
+    return {phi_node};
   }
 
 }

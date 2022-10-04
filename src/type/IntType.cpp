@@ -2,35 +2,20 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    IntType::IntType()
-        : Type(Type::Kind::Int)
-    {
+IntType::IntType() : Type(Type::Kind::Int) {}
 
-    }
-
-    IntType::~IntType()
-    {
-
-    }
-
-    bool IntType::classof(const Type* t)
-    {
-        return t->getKind() == Type::Kind::Int;
-    }
-
-    bool IntType::EqualTo(Type* other)
-    {
-        return other->getKind() == Type::Kind::Int;
-    }
-
-    std::string IntType::ToString()
-    {
-        return std::string("Int");
-    }
-    
-    Outcome<llvm::Type*, Error> IntType::Codegen(const Environment& env)
-    {
-    	return Outcome<llvm::Type*, Error>(env.instruction_builder->getInt64Ty());
-    }
+auto IntType::classof(const Type *type) -> bool {
+  return type->getKind() == Type::Kind::Int;
 }
 
+auto IntType::EqualTo(Type *other) const -> bool {
+  return other->getKind() == Type::Kind::Int;
+}
+
+auto IntType::ToString() const -> std::string { return {"Int"}; }
+
+auto IntType::Codegen(const Environment &env) const
+    -> Outcome<llvm::Type *, Error> {
+  return {env.instruction_builder->getInt64Ty()};
+}
+} // namespace pink

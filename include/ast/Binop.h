@@ -10,86 +10,89 @@
 #include "aux/StringInterner.h"
 
 namespace pink {
-    /**
-     * @brief Represents an instance of a binary operator expression
-     * 
-     */
-    class Binop : public Ast {
-    private:
-      /**
-       * @brief Compute the Type of this Binop expression
-       * 
-       * the type of a binop expression is the return type after applying the binop.
-       * 
-       * @param env the environment of this compilation unit
-       * @return Outcome<Type*, Error> if true the type of the binop expression,
-       * if false the Error encountered.
-       */
-    	virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
-    
-    public:
-      /**
-       * @brief The binary operator of this expression
-       * 
-       */
-      InternedString       op;
+/**
+ * @brief Represents an instance of a binary operator expression
+ *
+ */
+class Binop : public Ast {
+private:
+  /**
+   * @brief Compute the Type of this Binop expression
+   *
+   * the type of a binop expression is the return type after applying the binop.
+   *
+   * @param env the environment of this compilation unit
+   * @return Outcome<Type*, Error> if true the type of the binop expression,
+   * if false the Error encountered.
+   */
+  [[nodiscard]] auto GetypeV(const Environment &env) const
+      -> Outcome<Type *, Error> override;
 
-      /**
-       * @brief the left hand side of the binop expression
-       * 
-       */
-      std::unique_ptr<Ast> left;
+public:
+  /**
+   * @brief The binary operator of this expression
+   *
+   */
+  InternedString op;
 
-      /**
-       * @brief the right hand side of the binop expression
-       * 
-       */
-      std::unique_ptr<Ast> right;
+  /**
+   * @brief the left hand side of the binop expression
+   *
+   */
+  std::unique_ptr<Ast> left;
 
-      /**
-       * @brief Construct a new Binop
-       * 
-       * @param loc the textual location of this binop expression
-       * @param op the operator of the binop expression
-       * @param left the left hand side of the binop expression
-       * @param right the right hand side of the binop expression
-       */
-      Binop(Location& loc, InternedString op, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right);
-      
-      /**
-       * @brief Destroy the Binop
-       * 
-       */
-      virtual ~Binop();
+  /**
+   * @brief the right hand side of the binop expression
+   *
+   */
+  std::unique_ptr<Ast> right;
 
-      /**
-       * @brief Implements LLVM style [RTTI] for this class
-       * 
-       * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-       * 
-       * @param ast the ast to test
-       * @return true if ast *is* an instance of a Binop
-       * @return false if ast *is not* an instance of a Binop
-       */
-      static bool classof(const Ast* ast);
+  /**
+   * @brief Construct a new Binop
+   *
+   * @param location the textual location of this binop expression
+   * @param opr the operator of the binop expression
+   * @param left the left hand side of the binop expression
+   * @param right the right hand side of the binop expression
+   */
+  Binop(const Location &location, InternedString opr, std::unique_ptr<Ast> left,
+        std::unique_ptr<Ast> right);
 
-      /**
-       * @brief Compute the cannonical string representation of the Binop expression
-       * 
-       * @return std::string the string representation
-       */
-      virtual std::string ToString() override;
+  /**
+   * @brief Destroy the Binop
+   *
+   */
+  ~Binop() override = default;
 
-      /**
-       * @brief Compute the Value of this Binop expression
-       * 
-       * the value is the result value after applying the binop to the 
-       * value of the left and right sides.
-       * 
-       * @param env the environment of this compilation unit
-       * @return Outcome<llvm::Value*, Error> if true the value after applying the binop,
-       * if false the Error encountered.
-       */
-      virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
-    };
-}
+  /**
+   * @brief Implements LLVM style [RTTI] for this class
+   *
+   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
+   *
+   * @param ast the ast to test
+   * @return true if ast *is* an instance of a Binop
+   * @return false if ast *is not* an instance of a Binop
+   */
+  static auto classof(const Ast *ast) -> bool;
+
+  /**
+   * @brief Compute the cannonical string representation of the Binop expression
+   *
+   * @return std::string the string representation
+   */
+  [[nodiscard]] auto ToString() const -> std::string override;
+
+  /**
+   * @brief Compute the Value of this Binop expression
+   *
+   * the value is the result value after applying the binop to the
+   * value of the left and right sides.
+   *
+   * @param env the environment of this compilation unit
+   * @return Outcome<llvm::Value*, Error> if true the value after applying the
+   * binop, if false the Error encountered.
+   */
+  [[nodiscard]] auto Codegen(const Environment &env) const
+      -> Outcome<llvm::Value *, Error> override;
+};
+} // namespace pink

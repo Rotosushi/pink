@@ -22,7 +22,7 @@ int main()
 
   size_t results = RunTests(std::cout, TEST_ALL);
 
-  PrintPassedTests(std::cout, results);
+  PrintPassedTests(std::cout, TEST_ALL, results);
 
   return 0;
 }

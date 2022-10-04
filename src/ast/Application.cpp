@@ -6,38 +6,35 @@
 #include "support/LLVMValueToString.h"
 
 namespace pink {
-  Application::Application(Location location, std::unique_ptr<Ast> callee, std::vector<std::unique_ptr<Ast>> arguments)
+  Application::Application(const Location& location, std::unique_ptr<Ast> callee, std::vector<std::unique_ptr<Ast>> arguments)
     : Ast(Ast::Kind::Application, location), callee(std::move(callee)), arguments(std::move(arguments))
   {
 
   }
 
-  Application::~Application()
-  {
-
-  }
-
-  bool Application::classof(const Ast* ast)
+  auto Application::classof(const Ast* ast) -> bool
   {
     return ast->getKind() == Ast::Kind::Application;
   }
 
-  std::string Application::ToString()
+  auto Application::ToString() const -> std::string
   {
     std::string result;
     
     result += callee->ToString();
     result += " ";
 
-    size_t i = 0;
-    for (std::unique_ptr<Ast>& arg : arguments)
+    size_t idx = 0;
+    for (const auto& arg : arguments)
     {
       result += arg->ToString();
       
-      if (i < (arguments.size() - 1))
+      if (idx < (arguments.size() - 1))
+      {
         result += ", ";
+      }
 
-      i++;
+      idx++;
     }
 
     return result;
@@ -58,7 +55,7 @@ namespace pink {
    *
    *
    */
-  Outcome<Type*, Error> Application::GetypeV(const Environment& env)
+  auto Application::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
   {
     Outcome<Type*, Error> calleeTy = callee->Getype(env);
 
@@ -66,12 +63,12 @@ namespace pink {
       return calleeTy;
 
     // check that we have something we can call
-    FunctionType* calleeFnTy = llvm::dyn_cast<FunctionType>(calleeTy.GetFirst());
+    auto* calleeFnTy = llvm::dyn_cast<FunctionType>(calleeTy.GetFirst());
 
     if (calleeFnTy == nullptr)
     {
       Error error(Error::Code::TypeCannotBeCalled, loc, calleeTy.GetFirst()->ToString());
-      return Outcome<Type*, Error>(error);
+      return {error};
     }
 
     // check that the number of arguments matches
@@ -82,51 +79,53 @@ namespace pink {
                          + ", actual args: "
                          + std::to_string(arguments.size());
       Error error(Error::Code::ArgNumMismatch, loc, errmsg);
-      return Outcome<Type*, Error>(error);
+      return {error};
     }
     
     std::vector<Type*> argTys;
     // check that each argument can be typed
-    for (std::unique_ptr<Ast>& arg : arguments)
+    for (const auto& arg : arguments)
     {
       Outcome<Type*, Error> outcome = arg->Getype(env);
 
       if (!outcome)
-        return Outcome<Type*, Error>(outcome.GetSecond());
+      {
+        return {outcome.GetSecond()};
+      }
 
       argTys.push_back(outcome.GetFirst());
     }
 
     // chech that each arguments type matches
-    for (size_t i = 0; i < arguments.size(); i++)
+    for (size_t idx = 0; idx < arguments.size(); idx++)
     {
-      if (argTys[i] != calleeFnTy->arguments[i])
+      if (argTys[idx] != calleeFnTy->arguments[idx])
       {
         std::string errmsg = std::string("expected arg type: ")
-                           + calleeFnTy->arguments[i]->ToString()
+                           + calleeFnTy->arguments[idx]->ToString()
                            + ", actual arg type: "
-                           + argTys[i]->ToString();
+                           + argTys[idx]->ToString();
         Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
-        return Outcome<Type*, Error>(error);
+        return {error};
       }
     }
 
     // return the functions result type as the type of the application term.
-    return Outcome<Type*, Error>(calleeFnTy->result);
+    return {calleeFnTy->result};
   }
 
   // The procedure is largely identical to Getype, in that we simply codegen
   // the callee and each argument, except for the fact that 
   // we have to call a few additional llvm functions to generate the correct
   // code. 
-  Outcome<llvm::Value*, Error> Application::Codegen(const Environment& env)
+  auto Application::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
   {
     // 1: codegen callee to retrieve the function pointer
     Outcome<llvm::Value*, Error> callee_result = callee->Codegen(env);
 
     if (!callee_result)
     {
-      return Outcome<llvm::Value*, Error>(callee_result.GetSecond());
+      return {callee_result.GetSecond()};
     }
 
     if (callee_result.GetFirst() == nullptr)
@@ -134,14 +133,14 @@ namespace pink {
       FatalError("Function implementation was empty!", __FILE__, __LINE__);
     }
 
-    llvm::Function* function = llvm::dyn_cast<llvm::Function>(callee_result.GetFirst());
+    auto* function = llvm::dyn_cast<llvm::Function>(callee_result.GetFirst());
 
     if (function == nullptr)
     {
       std::string errmsg = std::string(", type was: ")
                          + LLVMValueToString(callee_result.GetFirst());
       Error error(Error::Code::TypeCannotBeCalled, loc, errmsg);
-      return Outcome<llvm::Value*, Error>(error);
+      return {error};
     }
 
 
@@ -149,28 +148,36 @@ namespace pink {
     //    argument
     std::vector<llvm::Value*> arg_values;
 
-    for (std::unique_ptr<Ast>& arg : arguments)
+    for (const auto& arg : arguments)
     {
       Outcome<llvm::Value*, Error> arg_result = arg->Codegen(env);
 
       if (!arg_result)
-        return Outcome<llvm::Value*, Error>(arg_result.GetSecond());
+      {
+        return {arg_result.GetSecond()};
+      }
 
       if (arg_result.GetFirst() == nullptr)
+      {
         FatalError("The argument is nullptr!", __FILE__, __LINE__);
+      }
 
       arg_values.push_back(arg_result.GetFirst());
     }
     
     llvm::CallInst* call = nullptr;
     // 3: codegen a CallInstruction to the callee passing in each argument.
-    if (arg_values.size() == 0)
+    if (arg_values.empty())
+    {
       call = env.instruction_builder->CreateCall(llvm::FunctionCallee(function));
+    }
     else
-      call = env.instruction_builder->CreateCall(llvm::FunctionCallee(function), arg_values); 
+    {
+      call = env.instruction_builder->CreateCall(llvm::FunctionCallee(function), arg_values);
+    } 
     // 4: return the result of the call instruction as the llvm::Value* of this
     //    procedure
-    return Outcome<llvm::Value*, Error>(call);
+    return {call};
   }
 
 }

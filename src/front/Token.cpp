@@ -1,76 +1,135 @@
-#include "aux/Error.h"
 #include "front/Token.h"
+#include "aux/Error.h"
 
 namespace pink {
-	/*
-		Error reporting/Status Dumping subroutine for 
-		examining the state of the Lexer/Parser
-	*/
-    std::string TokenToString(Token t)
-    {
-        switch (t)
-        {
-            case Token::Error:    { return std::string("Token::Error");    }
-            case Token::End:      { return std::string("Token::End");      }
-            case Token::Id:       { return std::string("Token::Id");       }
-            case Token::FullyQualifiedId: { return std::string("Token::FullyQualifiedId"); }
-            case Token::Op:       { return std::string("Token::Op");       }
+/*
+        Error reporting/Status Dumping subroutine for
+        examining the state of the Lexer/Parser
+*/
+auto TokenToString(const Token token) -> std::string {
+  switch (token) {
+  case Token::Error: {
+    return {"Token::Error"};
+  }
+  case Token::End: {
+    return {"Token::End"};
+  }
+  case Token::Id: {
+    return {"Token::Id"};
+  }
+  case Token::FullyQualifiedId: {
+    return {"Token::FullyQualifiedId"};
+  }
+  case Token::Op: {
+    return {"Token::Op"};
+  }
 
-            case Token::Dot:      { return std::string("Token::Dot");      }
-            case Token::Comma:	  { return std::string("Token::Comma");    }
-            case Token::Semicolon:{ return std::string("Token::Semicolon");}
-            case Token::Colon:    { return std::string("Token::Colon");    }
-            case Token::Equals:   { return std::string("Token::Equals");   }
-      		case Token::ColonEq:  { return std::string("Token::ColonEq");  }
-            case Token::LParen:   { return std::string("Token::LParen");   }
-            case Token::RParen:   { return std::string("Token::RParen");   }
-            case Token::LBrace:	  { return std::string("Token::LBrace");   }
-            case Token::RBrace:   { return std::string("Token::RBrace");   }
-            case Token::LBracket: { return std::string("Token::LBracket"); }
-            case Token::RBracket: { return std::string("Token::RBracket"); }
+  case Token::Dot: {
+    return {"Token::Dot"};
+  }
+  case Token::Comma: {
+    return {"Token::Comma"};
+  }
+  case Token::Semicolon: {
+    return {"Token::Semicolon"};
+  }
+  case Token::Colon: {
+    return {"Token::Colon"};
+  }
+  case Token::Equals: {
+    return {"Token::Equals"};
+  }
+  case Token::ColonEq: {
+    return {"Token::ColonEq"};
+  }
+  case Token::LParen: {
+    return {"Token::LParen"};
+  }
+  case Token::RParen: {
+    return {"Token::RParen"};
+  }
+  case Token::LBrace: {
+    return {"Token::LBrace"};
+  }
+  case Token::RBrace: {
+    return {"Token::RBrace"};
+  }
+  case Token::LBracket: {
+    return {"Token::LBracket"};
+  }
+  case Token::RBracket: {
+    return {"Token::RBracket"};
+  }
 
-            case Token::Nil:      { return std::string("Token::Nil");      }
-            case Token::NilType:  { return std::string("Token::NilType");  }
-            case Token::Int:      { return std::string("Token::Int");      }
-            case Token::IntType:  { return std::string("Token::IntType");  }
-            case Token::True:     { return std::string("Token::True");     }
-            case Token::False:    { return std::string("Token::False");    }
-            case Token::BoolType: { return std::string("Token::BoolType"); }
-            case Token::Ptr:      { return std::string("Token::Ptr");      }
-            
-            case Token::Fn:		   { return std::string("Token::Fn");      }
-            case Token::Var:      { return std::string("Token::Var");      }
-            case Token::If:       { return std::string("Token::If");       }
-            case Token::Then:     { return std::string("Token::Then");     }
-            case Token::Else:     { return std::string("Token::Else");     }
-            case Token::While:    { return std::string("Token::While");    }
-            case Token::Do:       { return std::string("Token::Do");       }
-            default:
-            {
-                FatalError("Unknown Token Kind", __FILE__, __LINE__);
-                return std::string("Unknown");
-            }
-        }
-    }
-    
-    /*
-    	Only returns false on Token::Error,
-    	every other token is considered a 
-    	valid token. This function mainly 
-    	exists so that we can use an assignment 
-    	statement within the while conditions 
-    	within Parser::ParseInfix. which are there 
-    	so that we are peeking the next token 
-    	while we parse an infix expression.
-    */
-    bool TokenToBool(Token t)
-    {
-    	switch (t)
-    	{
-    	case Token::Error:
-    		return false;
-    	default:
-    		return true;
-    	}
-    }
+  case Token::Nil: {
+    return {"Token::Nil"};
+  }
+  case Token::NilType: {
+    return {"Token::NilType"};
+  }
+  case Token::Int: {
+    return {"Token::Int"};
+  }
+  case Token::IntType: {
+    return {"Token::IntType"};
+  }
+  case Token::True: {
+    return {"Token::True"};
+  }
+  case Token::False: {
+    return {"Token::False"};
+  }
+  case Token::BoolType: {
+    return {"Token::BoolType"};
+  }
+  case Token::Ptr: {
+    return {"Token::Ptr"};
+  }
+
+  case Token::Fn: {
+    return {"Token::Fn"};
+  }
+  case Token::Var: {
+    return {"Token::Var"};
+  }
+  case Token::If: {
+    return {"Token::If"};
+  }
+  case Token::Then: {
+    return {"Token::Then"};
+  }
+  case Token::Else: {
+    return {"Token::Else"};
+  }
+  case Token::While: {
+    return {"Token::While"};
+  }
+  case Token::Do: {
+    return {"Token::Do"};
+  }
+  default: {
+    FatalError("Unknown Token Kind", __FILE__, __LINE__);
+    return {"Unknown"};
+  }
+  }
 }
+
+/*
+    Only returns false on Token::Error,
+    every other token is considered a
+    valid token. This function mainly
+    exists so that we can use an assignment
+    statement within the while conditions
+    within Parser::ParseInfix. which are there
+    so that we are peeking the next token
+    while we parse an infix expression.
+*/
+auto TokenToBool(const Token token) -> bool {
+  switch (token) {
+  case Token::Error:
+    return false;
+  default:
+    return true;
+  }
+}
+} // namespace pink

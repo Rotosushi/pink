@@ -15,8 +15,8 @@ namespace pink {
     std::string objoutfilename = env.options->output_file + ".o";
     std::string exeoutfilename = env.options->output_file + "";
 
-    llvm::raw_os_ostream std_err(std::cerr);
-    llvm::raw_os_ostream std_out(std::cout);
+    llvm::raw_os_ostream std_err = std::cerr;
+    llvm::raw_os_ostream std_out = std::cout;
     
     //#TODO find these files in a more dynamic way
     // #NOTE: even though we do not use these files

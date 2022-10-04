@@ -5,23 +5,19 @@
 #include "aux/Environment.h"
 
 namespace pink {
-  Dot::Dot(Location location, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
+  Dot::Dot(const Location& location, std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Dot, location), left(std::move(left)), right(std::move(right))
   {
 
   }
 
-  Dot::~Dot()
-  {
-
-  }
 
   bool Dot::classof(const Ast* ast)
   {
     return ast->getKind() == Ast::Kind::Dot;
   }
 
-  std::string Dot::ToString()
+  auto Dot::ToString() const -> std::string
   {
     return left->ToString() + "." + right->ToString();
   }
@@ -59,36 +55,39 @@ namespace pink {
    *  the result type of the Dot operator.
    *
    */
-  Outcome<Type*, Error> Dot::GetypeV(const Environment& env)
+  auto Dot::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
   {
     Outcome<Type*, Error> left_getype_result = left->Getype(env);
 
     if (!left_getype_result)
+    {
       return left_getype_result;
+    }
 
     Outcome<Type*, Error> right_getype_result = right->Getype(env);
 
     if (!right_getype_result)
+    {
       return right_getype_result;
+    }
 
-    TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
+    auto* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
 
     if (left_type == nullptr)
     {
       std::string errmsg = std::string("left has type: ")
                          + left_getype_result.GetFirst()->ToString();
-      Error error(Error::Code::DotLeftIsNotAStruct, loc, errmsg);
-      return Outcome<Type*, Error>(error);
+      return {Error(Error::Code::DotLeftIsNotAStruct, loc, errmsg)};
     }
 
-    Int* index = llvm::dyn_cast<Int>(right.get());
+    auto* index = llvm::dyn_cast<Int>(right.get());
 
     if (index == nullptr)
     {
       std::string errmsg = std::string("right has type: ")
                          + right_getype_result.GetFirst()->ToString();
-      Error error(Error::Code::DotRightIsNotAnInt, loc, errmsg);
-      return Outcome<Type*, Error>(error);
+      
+      return {Error(Error::Code::DotRightIsNotAnInt, loc, errmsg)};
     }
 
     if (static_cast<size_t>(index->value) > left_type->member_types.size())
@@ -97,12 +96,10 @@ namespace pink {
                          + std::to_string(left_type->member_types.size())
                          + " elements, index is: "
                          + std::to_string(index->value);
-      Error error(Error::Code::DotIndexOutOfRange, loc, errmsg);
-      return Outcome<Type*, Error> (error);
+      return {Error(Error::Code::DotIndexOutOfRange, loc, errmsg)};
     }
 
-    Type* result_type = left_type->member_types[index->value];
-    return Outcome<Type*, Error>(result_type);
+    return {left_type->member_types[index->value]};
   }
 
   /*
@@ -118,52 +115,57 @@ namespace pink {
    *
    *
    */
-  Outcome<llvm::Value*, Error> Dot::Codegen(const Environment& env)
+  auto Dot::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
   {
     Outcome<Type*, Error> left_getype_result = left->Getype(env);
 
     if (!left_getype_result)
-      return Outcome<llvm::Value*, Error>(left_getype_result.GetSecond());
+    {
+      return {left_getype_result.GetSecond()};
+    }
 
     Outcome<Type*, Error> right_getype_result = right->Getype(env);
     
     if (!right_getype_result)
-      return Outcome<llvm::Value*, Error>(right_getype_result.GetSecond());
+    {
+      return {right_getype_result.GetSecond()};
+    }
 
-
-    TupleType* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
+    auto* left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
 
     if (left_type == nullptr)
     {
       std::string errmsg = std::string("left has type: ")
                          + left_getype_result.GetFirst()->ToString();
-      Error error(Error::Code::DotLeftIsNotAStruct, loc, errmsg);
-      return Outcome<llvm::Value*, Error>(error);
+      return {Error(Error::Code::DotLeftIsNotAStruct, loc, errmsg)};
     }
 
     Outcome<llvm::Type*, Error> left_type_codegen_result = left_type->Codegen(env);
 
     if (!left_type_codegen_result)
-      return Outcome<llvm::Value*, Error>(left_type_codegen_result.GetSecond());
+    {
+      return {left_type_codegen_result.GetSecond()};
+    }
 
 
-    llvm::StructType* struct_t = llvm::cast<llvm::StructType>(left_type_codegen_result.GetFirst());
+    auto* struct_t = llvm::cast<llvm::StructType>(left_type_codegen_result.GetFirst());
 
     Outcome<llvm::Value*, Error> left_codegen_result = left->Codegen(env);
 
     if (!left_codegen_result)
+    {
       return left_codegen_result;
-    
+    }
+
     llvm::Value* left_value = left_codegen_result.GetFirst();
 
-    Int* index = llvm::dyn_cast<Int>(right.get());
+    auto* index = llvm::dyn_cast<Int>(right.get());
 
     if (index == nullptr)
     {
       std::string errmsg = std::string("right has type: ")
                          + right_getype_result.GetFirst()->ToString();
-      Error error(Error::Code::DotRightIsNotAnInt, loc, errmsg);
-      return Outcome<llvm::Value*, Error>(error);
+      return {Error(Error::Code::DotRightIsNotAnInt, loc, errmsg)};
     }
 
     if (static_cast<size_t>(index->value) > left_type->member_types.size())
@@ -172,8 +174,7 @@ namespace pink {
                          + std::to_string(left_type->member_types.size())
                          + " elements, index is: "
                          + std::to_string(index->value);
-      Error error(Error::Code::DotIndexOutOfRange, loc, errmsg);
-      return Outcome<llvm::Value*, Error> (error);
+      return {Error(Error::Code::DotIndexOutOfRange, loc, errmsg)};
     }
 
     llvm::Value* result = nullptr;
@@ -183,10 +184,14 @@ namespace pink {
     if (!env.flags->WithinAddressOf() 
      && !env.flags->OnTheLHSOfAssignment()
      && member_type->isSingleValueType())
+    {
       result = env.instruction_builder->CreateLoad(member_type, gep);
+    }
     else 
+    {
       result = gep;
+    }
 
-    return Outcome<llvm::Value*, Error>(result);
+    return {result};
   }
 }

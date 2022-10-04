@@ -13,6 +13,8 @@ set (CMAKE_CXX_STANDARD_REQUIRED True)
 
 cmake_policy(SET CMP0076 NEW)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS True)
+
 add_compile_options(-O0 -gdwarf-4 -Wall -Wextra)
 
 find_package(LLVM 16 REQUIRED CONFIG)
@@ -41,27 +43,36 @@ target_sources(pink-test PUBLIC
 	src/ast/TestBlock.cpp
 	src/ast/TestFunction.cpp
 	src/ast/TestApplication.cpp
+
 	src/aux/TestEnvironment.cpp
 	src/aux/TestError.cpp
 	src/aux/TestOutcome.cpp
 	src/aux/TestStringInterner.cpp
 	src/aux/TestSymbolTable.cpp
 	src/aux/TestTypeInterner.cpp
+
 	src/ops/TestBinopCodegen.cpp
 	src/ops/TestBinopLiteral.cpp
 	src/ops/TestBinopTable.cpp
 	src/ops/TestUnopCodegen.cpp
 	src/ops/TestUnopLiteral.cpp
 	src/ops/TestUnopTable.cpp
+
 	src/type/TestTypeAndNilType.cpp
 	src/type/TestIntType.cpp
 	src/type/TestBoolType.cpp
 	src/type/TestFunctionType.cpp
+
 	src/kernel/TestBinopPrimitives.cpp
 	src/kernel/TestUnopPrimitives.cpp
+
 	src/front/TestToken.cpp
 	src/front/TestLexer.cpp
 	src/front/TestParser.cpp
+
+	src/support/Common.cpp
+	src/support/GenerateRandomAst.cpp
+
 	src/core/TestFirstPhase.cpp
 	src/core/TestBasics.cpp
 )

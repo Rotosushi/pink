@@ -10,73 +10,76 @@
 #include "aux/StringInterner.h"
 
 namespace pink {
-    /**
-     * @brief Represents a unary operator expression
-     * 
-     */
-    class Unop : public Ast {
-    private:
-        /**
-         * @brief Compute the Type of this Unop expression
-         * 
-         * @param env the environment of this compilation unit
-         * @return Outcome<Type*, Error> if true the Type of this Unop expression,
-         * if false the Error encountered
-         */
-   		virtual Outcome<Type*, Error> GetypeV(const Environment& env) override;
-    public:
-        /**
-         * @brief the Unary Operator this expression represents
-         * 
-         */
-        InternedString op;
+/**
+ * @brief Represents a unary operator expression
+ *
+ */
+class Unop : public Ast {
+private:
+  /**
+   * @brief Compute the Type of this Unop expression
+   *
+   * @param env the environment of this compilation unit
+   * @return Outcome<Type*, Error> if true the Type of this Unop expression,
+   * if false the Error encountered
+   */
+  [[nodiscard]] auto GetypeV(const Environment &env) const
+      -> Outcome<Type *, Error> override;
 
-        /**
-         * @brief The argument to the Unary operation
-         * 
-         */
-        std::unique_ptr<Ast> right;
+public:
+  /**
+   * @brief the Unary Operator this expression represents
+   *
+   */
+  InternedString op;
 
-    /**
-     * @brief Construct a new Unop
-     * 
-     * @param loc the textual location of this Unop expression 
-     * @param op the unary operator
-     * @param right the argument to the operation
-     */
-    Unop(Location& loc, InternedString op, std::unique_ptr<Ast> right);
+  /**
+   * @brief The argument to the Unary operation
+   *
+   */
+  std::unique_ptr<Ast> right;
 
-    /**
-     * @brief Destroy the Unop
-     * 
-     */
-    virtual ~Unop();
+  /**
+   * @brief Construct a new Unop
+   *
+   * @param location the textual location of this Unop expression
+   * @param opr the unary operator
+   * @param right the argument to the operation
+   */
+  Unop(const Location &loc, InternedString opr, std::unique_ptr<Ast> right);
 
-    /**
-     * @brief Implements LLVM style [RTTI] for this class
-     * 
-     * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-     * 
-     * @param ast the ast to test
-     * @return true if ast *is* an instance of a Unop expression
-     * @return false if ast *is not* an instance of a Unop expression
-     */
-    static bool classof(const Ast* ast);
+  /**
+   * @brief Destroy the Unop
+   *
+   */
+  ~Unop() override = default;
 
-    /**
-     * @brief Compute the cannonical string representation of this Unop expression
-     * 
-     * @return std::string the string representation
-     */
-    virtual std::string ToString() override;
-    
-    /**
-     * @brief Compute the result Value of this Unop Expression
-     * 
-     * @param env the environment of this compilation unit
-     * @return Outcome<llvm::Value*, Error> if true the result Value of this Unop expression,
-     * if false the Error encountered
-     */
-    virtual Outcome<llvm::Value*, Error> Codegen(const Environment& env) override;
-    };
-}
+  /**
+   * @brief Implements LLVM style [RTTI] for this class
+   *
+   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
+   *
+   * @param ast the ast to test
+   * @return true if ast *is* an instance of a Unop expression
+   * @return false if ast *is not* an instance of a Unop expression
+   */
+  static auto classof(const Ast *ast) -> bool;
+
+  /**
+   * @brief Compute the cannonical string representation of this Unop expression
+   *
+   * @return std::string the string representation
+   */
+  [[nodiscard]] auto ToString() const -> std::string override;
+
+  /**
+   * @brief Compute the result Value of this Unop Expression
+   *
+   * @param env the environment of this compilation unit
+   * @return Outcome<llvm::Value*, Error> if true the result Value of this Unop
+   * expression, if false the Error encountered
+   */
+  [[nodiscard]] auto Codegen(const Environment &env) const
+      -> Outcome<llvm::Value *, Error> override;
+};
+} // namespace pink

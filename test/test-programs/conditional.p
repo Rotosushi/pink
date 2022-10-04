@@ -1,6 +1,9 @@
 fn main()
 {
-    x := y := z := 0;
+    var x := 0;
+    var y := 0;
+    var z := 0;
+    
     x = 10;
     y = 5;
 
@@ -13,4 +16,4 @@ fn main()
         z = y;
     };
     z;
-};
+}

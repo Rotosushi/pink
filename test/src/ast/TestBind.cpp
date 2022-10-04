@@ -55,7 +55,7 @@ bool TestBind(std::ostream& out)
   result &= Test(out, "Bind::GetLoc()", bl == l2);
 
   result &= Test(out, "Bind::symbol", b0->symbol == v);
-  result &= Test(out, "Bind::term", b0->term.get() == n0_p);
+  result &= Test(out, "Bind::term", b0->affix.get() == n0_p);
 
   std::string bind_str = std::string(v) + std::string(" := ") + n0_p->ToString();
 

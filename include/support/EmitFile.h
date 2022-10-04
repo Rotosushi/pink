@@ -8,27 +8,27 @@
 #include "aux/Environment.h"
 
 namespace pink {
-    /**
-     * @brief Emit an object file from the module in env, named filename
-     * 
-     * @param env the env holding the module to emit
-     * @param filename the name of the object file to emit
-     */
-    void EmitObjectFile(const Environment& env, const std::string& filename);
+/**
+ * @brief Emit an object file from the module in env, named filename
+ *
+ * @param env the env holding the module to emit
+ * @param filename the name of the object file to emit
+ */
+void EmitObjectFile(const Environment &env, const std::string &filename);
 
-    /**
-     * @brief Emit an assembly file from the module in env, named filename
-     * 
-     * @param env the env holding the module to emit
-     * @param filename the name of the object file to emit
-     */
-    void EmitAssemblyFile(const Environment& env, const std::string& filename);
+/**
+ * @brief Emit an assembly file from the module in env, named filename
+ *
+ * @param env the env holding the module to emit
+ * @param filename the name of the object file to emit
+ */
+void EmitAssemblyFile(const Environment &env, const std::string &filename);
 
-    /**
-     * @brief Emit an llvm source file from the module in env, named filename
-     * 
-     * @param env the env holding the module to emit
-     * @param filename the name of the llvm source file to emit
-     */
-    void EmitLLVMFile(const Environment& env, const std::string& filename);
-}
+/**
+ * @brief Emit an llvm source file from the module in env, named filename
+ *
+ * @param env the env holding the module to emit
+ * @param filename the name of the llvm source file to emit
+ */
+void EmitLLVMFile(const Environment &env, const std::string &filename);
+} // namespace pink

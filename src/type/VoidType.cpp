@@ -2,36 +2,21 @@
 
 #include "aux/Environment.h"
 
-namespace pink 
-{
-  VoidType::VoidType()
-    : Type(Type::Kind::Void)
-  {
+namespace pink {
+VoidType::VoidType() : Type(Type::Kind::Void) {}
 
-  }
-
-  VoidType::~VoidType()
-  {
-
-  }
-
-  bool VoidType::classof(const Type* t)
-  {
-    return t->getKind() == Type::Kind::Void;
-  }
-
-  bool VoidType::EqualTo(Type* other)
-  {
-    return other->getKind() == Type::Kind::Void;
-  }
-
-  std::string VoidType::ToString()
-  {
-    return std::string("Void");
-  }
-
-  Outcome<llvm::Type*, Error> VoidType::Codegen(const Environment& env)
-  {
-    return env.instruction_builder->getVoidTy();
-  }
+auto VoidType::classof(const Type *type) -> bool {
+  return type->getKind() == Type::Kind::Void;
 }
+
+auto VoidType::EqualTo(Type *other) const -> bool {
+  return other->getKind() == Type::Kind::Void;
+}
+
+auto VoidType::ToString() const -> std::string { return {"Void"}; }
+
+auto VoidType::Codegen(const Environment &env) const
+    -> Outcome<llvm::Type *, Error> {
+  return {env.instruction_builder->getVoidTy()};
+}
+} // namespace pink

@@ -13,12 +13,11 @@ namespace pink {
     void EmitObjectFile(const Environment& env, const std::string& filename)
     {
         std::error_code outfile_error;
-        llvm::raw_fd_ostream outfile(filename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
+        llvm::raw_fd_ostream outfile(filename, outfile_error);
         
         if (outfile_error)
         {
             std::stringstream error_message;
-            
             error_message << outfile_error;
             pink::FatalError("Could not open output file [" + filename + "] because of an error: " + error_message.str(), __FILE__, __LINE__);
         }
@@ -41,7 +40,7 @@ namespace pink {
     void EmitAssemblyFile(const Environment& env, const std::string& filename)
     {
         std::error_code outfile_error;
-        llvm::raw_fd_ostream outfile(filename, outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
+        llvm::raw_fd_ostream outfile(filename, outfile_error); 
         
         if (outfile_error)
         {

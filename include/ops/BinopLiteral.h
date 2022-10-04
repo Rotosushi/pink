@@ -91,7 +91,7 @@ namespace pink {
          * @param left_t the left argument Type of the implementation to remove
          * @param right_t the right argument Type of the implementation to remove
          */
-        void Unregister(Type*  left_t, Type* right_t);
+        void Unregister(Type* left_t, Type* right_t);
 
         /**
          * @brief Lookup an implementation of the binop corresponding to the given Types

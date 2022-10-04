@@ -2,43 +2,25 @@
 
 namespace pink {
 
-  Flags::Flags()
-  {
-
-  }
-
-  Flags::~Flags()
-  {
-
-  }
-
-  bool Flags::OnTheLHSOfAssignment()
-  {
-    return flags[LHSOfAssignment];
-  }
-
-  bool Flags::OnTheLHSOfAssignment(bool state)
-  {
-    return flags[LHSOfAssignment] = state;
-  }
-
-  bool Flags::WithinAddressOf()
-  {
-    return flags[inAddressOf];
-  }
-
-  bool Flags::WithinAddressOf(bool state)
-  {
-    return flags[inAddressOf] = state;
-  }
-
-  bool Flags::WithinDereferencePtr()
-  {
-    return flags[inDereferencePtr];
-  }
-
-  bool Flags::WithinDereferencePtr(bool state)
-  {
-    return flags[inDereferencePtr] = state;
-  }
+auto Flags::OnTheLHSOfAssignment() const -> bool {
+  return flags[LHSOfAssignment];
 }
+
+auto Flags::OnTheLHSOfAssignment(bool state) -> bool {
+  return flags[LHSOfAssignment] = state;
+}
+
+auto Flags::WithinAddressOf() const -> bool { return flags[inAddressOf]; }
+
+auto Flags::WithinAddressOf(bool state) -> bool {
+  return flags[inAddressOf] = state;
+}
+
+auto Flags::WithinDereferencePtr() const -> bool {
+  return flags[inDereferencePtr];
+}
+
+auto Flags::WithinDereferencePtr(bool state) -> bool {
+  return flags[inDereferencePtr] = state;
+}
+} // namespace pink

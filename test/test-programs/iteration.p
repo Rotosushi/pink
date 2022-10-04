@@ -1,6 +1,7 @@
 fn main()
 {
-    a := b := 0;
+    var a := 0
+    var b := 0;
     a = 15;
 
     while (a < 50) do 
@@ -9,4 +10,4 @@ fn main()
         b = b + 1;
     };
     b;
-};
+}

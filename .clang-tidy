@@ -1,0 +1,8 @@
+Checks: 
+    bugprone-*,
+    modernize-*,
+    performance-*,
+    portability-*,
+    readability-*,
+    -readability-avoid-const-params-in-decls
+

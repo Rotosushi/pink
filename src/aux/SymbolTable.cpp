@@ -3,82 +3,48 @@
 #include "aux/SymbolTable.h"
 
 namespace pink {
-    SymbolTable::SymbolTable()
-        : map(), outer(nullptr)
-    {
+SymbolTable::SymbolTable() : outer(nullptr) {}
 
+SymbolTable::SymbolTable(SymbolTable *outer_scope) : outer(outer_scope) {}
+
+auto SymbolTable::OuterScope() const -> SymbolTable * { return outer; }
+
+auto SymbolTable::IsGlobal() const -> bool { return outer == nullptr; }
+
+auto SymbolTable::Lookup(InternedString symbol) const
+    -> llvm::Optional<std::pair<Type *, llvm::Value *>> {
+  auto iter = map.find(symbol);
+  if (iter == map.end()) {
+    // attempt to find the symbol in the outer scope.
+    if (outer != nullptr) {
+      return outer->Lookup(symbol);
     }
-
-    SymbolTable::SymbolTable(SymbolTable* o)
-        : map(), outer(o)
-    {
-
-    }
-
-    SymbolTable::~SymbolTable()
-    {
-        
-    }
-
-    SymbolTable* SymbolTable::OuterScope()
-    {
-        return outer;
-    }
-
-    bool SymbolTable::IsGlobal()
-    {
-        return outer == nullptr;
-    }
-
-    llvm::Optional<std::pair<Type*, llvm::Value*>> SymbolTable::Lookup(InternedString symbol)
-    {
-        auto iter = map.find(symbol);
-        if (iter == map.end())
-        {
-        	// attempt to find the symbol in the outer scope.
-        	if (outer != nullptr)
-        	{
-        		return outer->Lookup(symbol);
-        	}
-        	else 
-        	{
-        		// This is the global scope, if it isn't here, it isn't bound.
-        		return llvm::Optional<std::pair<Type*, llvm::Value*>>();
-        	}
-        }   
-        else
-        {
-        	return llvm::Optional<std::pair<Type*, llvm::Value*>>(iter->second);
-        }    
-    }
-    
-    llvm::Optional<std::pair<Type*, llvm::Value*>> SymbolTable::LookupLocal(InternedString symbol)
-    {
-    	auto iter = map.find(symbol);
-        if (iter == map.end())
-        {
-        	return llvm::Optional<std::pair<Type*, llvm::Value*>>();
-        }   
-        else
-        {
-        	return llvm::Optional<std::pair<Type*, llvm::Value*>>(iter->second);
-        }    
-    }
-
-    void SymbolTable::Bind(InternedString symbol, Type* type, llvm::Value* term)
-    {
-        map.insert(std::make_pair(symbol, std::make_pair(type, term)));
-    }
-
-    void SymbolTable::Unbind(InternedString symbol)
-    {
-        auto iter = map.find(symbol);
-
-        if (iter == map.end())
-            return;
-        else
-        {
-            map.erase(iter);
-        }
-    }
+    // This is the global scope, if it isn't here, it isn't bound.
+    return {};
+  }
+  return {iter->second};
 }
+
+auto SymbolTable::LookupLocal(InternedString symbol) const
+    -> llvm::Optional<std::pair<Type *, llvm::Value *>> {
+  auto iter = map.find(symbol);
+  if (iter == map.end()) {
+    return {};
+  }
+  return {iter->second};
+}
+
+void SymbolTable::Bind(InternedString symbol, Type *type, llvm::Value *term) {
+  map.insert(std::make_pair(symbol, std::make_pair(type, term)));
+}
+
+void SymbolTable::Unbind(InternedString symbol) {
+  auto iter = map.find(symbol);
+
+  if (iter == map.end()) {
+    return;
+  }
+
+  map.erase(iter);
+}
+} // namespace pink

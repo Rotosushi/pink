@@ -9,29 +9,24 @@
 #include "llvm/IR/Constants.h"
 
 namespace pink {
-  Array::Array(Location location, std::vector<std::unique_ptr<Ast>> members)
+  Array::Array(const Location& location, std::vector<std::unique_ptr<Ast>> members)
     : Ast(Ast::Kind::Array, location), members(std::move(members))
   {
 
   }
 
-  Array::~Array()
-  {
-
-  }
-
-  bool Array::classof(const Ast* ast)
+  auto Array::classof(const Ast* ast) -> bool
   {
     return ast->getKind() == Ast::Kind::Array;
   }
 
-  std::string Array::ToString()
+  auto Array::ToString() const -> std::string
   {
     std::string result;
     result += "[";
     
     size_t i = 0;
-    for (std::unique_ptr<Ast>& memb : members)
+    for (const auto& memb : members)
     {
       result += memb->ToString();
 
@@ -53,33 +48,35 @@ namespace pink {
    *
    *
    */
-  Outcome<Type*, Error> Array::GetypeV(const Environment& env)
+  auto Array::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
   {
-    size_t i = 0;
+    size_t idx = 0;
     std::vector<Type*> membTys;
-    for (std::unique_ptr<Ast>& memb : members)
+    for (const auto& memb : members)
     {
       Outcome<Type*, Error> memb_result = memb->Getype(env);
 
       if (!memb_result)
+      {
         return memb_result;
+      }
 
       membTys.push_back(memb_result.GetFirst());
 
       if (memb_result.GetFirst() != membTys[0])
       { 
         std::string errmsg = std::string("at position: ")
-                           + std::to_string(i)
+                           + std::to_string(idx)
                            + ", expected type: "
                            + membTys[0]->ToString()
                            + ", actual type: "
                            + memb_result.GetFirst()->ToString();
-        return Outcome<Type*, Error>(Error(Error::Code::ArrayMemberTypeMismatch, loc));
+        return {Error(Error::Code::ArrayMemberTypeMismatch, loc)};
       }
-      i += 1;
+      idx += 1;
     }    
     
-    return Outcome<Type*, Error>(env.types->GetArrayType(members.size(), membTys[0]));
+    return {env.types->GetArrayType(members.size(), membTys[0])};
   }
 
   /*  The value of an array is a llvm::ConstantArray of the same length 
@@ -88,51 +85,46 @@ namespace pink {
    *
    *
    */
-  Outcome<llvm::Value*, Error> Array::Codegen(const Environment& env)
+  auto Array::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
   {
-    Outcome<Type*, Error> type_result = this->Getype(env);
+    assert(type != nullptr);
     
-    if (!type_result)
-    {
-      return Outcome<llvm::Value*, Error>(type_result.GetSecond());
-    } 
-    
-    Outcome<llvm::Type*, Error> llvm_type = type_result.GetFirst()->Codegen(env);
+    Outcome<llvm::Type*, Error> llvm_type = type->Codegen(env);
 
     if (!llvm_type)
     {
-      return Outcome<llvm::Value*, Error>(llvm_type.GetSecond());
+      return {llvm_type.GetSecond()};
     }
 
     // if should be safe to cast the type of this term to an ArrayType,
     // given that this term represents arrays. we should be able to expect 
     // that the type of this is an ArrayType.
-    llvm::ArrayType* array_type = llvm::cast<llvm::ArrayType>(llvm_type.GetFirst());
+    auto* array_type = llvm::cast<llvm::ArrayType>(llvm_type.GetFirst());
 
     std::vector<llvm::Constant*> cmembers;
 
-    for (std::unique_ptr<Ast>& member : members)
+    for (const auto& member : members)
     {
       Outcome<llvm::Value*, Error> member_result = member->Codegen(env);
 
       if (!member_result)
       {
-        return Outcome<llvm::Value*, Error>(member_result.GetSecond());
+        return {member_result.GetSecond()};
       }
 
-      llvm::Constant* cmember = llvm::dyn_cast<llvm::Constant>(member_result.GetFirst());
+      auto* cmember = llvm::dyn_cast<llvm::Constant>(member_result.GetFirst());
 
       if (cmember == nullptr)
       {
-        std::string errmsg = std::string("llvm::Value* is: ")
+        std::string errmsg = std::string("llvm::Value* is not an llvm::Constant*; The Value* -> ")
                            + LLVMValueToString(member_result.GetFirst());
-        return Outcome<llvm::Value*, Error>(Error(Error::Code::NonConstArrayInit, loc, errmsg));
+        return {Error(Error::Code::NonConstArrayInit, loc, errmsg)};
       }
 
       cmembers.push_back(cmember);
     }
 
-    return Outcome<llvm::Value*, Error>(llvm::ConstantArray::get(array_type, cmembers));
+    return {llvm::ConstantArray::get(array_type, cmembers)};
   }
 }
 

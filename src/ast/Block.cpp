@@ -3,51 +3,46 @@
 #include "aux/Environment.h"
 
 namespace pink {
-	Block::Block(Location loc)
-		: Ast(Ast::Kind::Block, loc)
+	Block::Block(const Location& location)
+		: Ast(Ast::Kind::Block, location)
 	{
 	
 	}
 	
-	Block::Block(Location loc, std::vector<std::unique_ptr<Ast>>& stmnts)
-		: Ast(Ast::Kind::Block, loc), statements(std::move(stmnts))
+	Block::Block(const Location& location, std::vector<std::unique_ptr<Ast>>& stmnts)
+		: Ast(Ast::Kind::Block, location), statements(std::move(stmnts))
 	{
 	
 	}
 	
-	Block::~Block()
-	{
-	
-	}
-	
-	Block::iterator Block::begin()
+	auto Block::begin() const -> Block::const_iterator
 	{
 		return statements.begin();
 	}
 	
-	Block::iterator Block::end()
+	auto Block::end() const -> Block::const_iterator
 	{
 		return statements.end();
 	}
 	
-	bool Block::classof(const Ast* ast)
+	auto Block::classof(const Ast* ast) -> bool
 	{
 		return ast->getKind() == Ast::Kind::Block;
 	}
 	
-	std::string Block::ToString()
+	auto Block::ToString() const -> std::string
 	{
 		std::string result("{ ");
 		
 		// #TODO: Make this prepend the correct number of 
 		// 			tabs to properly indent the block at 
 		//			the current level of nesting.
-		for (auto& stmt : statements)
+		for (const auto& stmt : statements)
 		{
 			result += stmt->ToString() + ";\n";
 		}
 
-    result += " }";
+    	result += " }";
 		
 		return result;
 	}
@@ -60,16 +55,18 @@ namespace pink {
 			env |- s0; s1; ...; sn; : Tn
 	
 	*/
-	Outcome<Type*, Error> Block::GetypeV(const Environment& env)
+	auto Block::GetypeV(const Environment& env) const -> Outcome<Type*, Error>
 	{
 		Outcome<Type*, Error> result(Error(Error::Code::None, loc));
 		
-		for (auto& stmt : statements)
+		for (const auto& stmt : statements)
 		{
 			result = stmt->Getype(env);
 			
 			if (!result)
+			{
 				return result;
+			}
 		}
 
 		return result;
@@ -79,16 +76,18 @@ namespace pink {
 	/*
 		The value of a block is the value of it's last statement.
 	*/
-	Outcome<llvm::Value*, Error> Block::Codegen(const Environment& env)
+	auto Block::Codegen(const Environment& env) const -> Outcome<llvm::Value*, Error>
 	{
 		Outcome<llvm::Value*, Error> result(Error(Error::Code::None, loc));
 		
-		for (auto& stmt : statements)
+		for (const auto& stmt : statements)
 		{
 			result = stmt->Codegen(env);
 			
 			if (!result)
+			{
 				return result;
+			}
 		}
 		
 		return result;

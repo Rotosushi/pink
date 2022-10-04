@@ -17,6 +17,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 message(STATUS "using c compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "using c++ compiler: ${CMAKE_CXX_COMPILER}")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS True)
+
 add_compile_options(-O0 -gdwarf-4 -Wall -Wextra)
 
 cmake_policy(SET CMP0076 NEW)
@@ -169,6 +171,7 @@ add_library(libpink STATIC
 	src/support/LLVMValueToString.cpp
 	src/support/LLVMTypeToString.cpp 
 	src/support/EmitFile.cpp
+
 )
 			   
 
