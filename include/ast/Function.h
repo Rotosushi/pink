@@ -11,6 +11,10 @@
 #include "aux/StringInterner.h"
 #include "aux/SymbolTable.h"
 
+#include "type/FunctionType.h"
+
+#include "llvm/IR/DerivedTypes.h"
+
 /*
         we need a way of calling any closure type without knowing the type of
    the closure. that is the way which we can handle calling a closure given
@@ -267,6 +271,45 @@ private:
    */
   [[nodiscard]] auto GetypeV(const Environment &env) const
       -> Outcome<Type *, Error> override;
+
+  /**
+   * @brief Emit the instructions which return a value from the main function
+   *
+   * @param env  the environment of this compilation unit
+   * @param body_value the value of the body, to be returned.
+   * @return Outcome<llvm::Value *, Error> if true, nullptr, if false the error
+   * encountered.
+   */
+  static auto CodegenMainReturn(const Environment &env, llvm::Value *body_value)
+      -> Outcome<llvm::Value *, Error>;
+
+  /**
+   * @brief Add the function parameter attributes to the given function.
+   *
+   * @param env the environment of this compilation unit
+   * @param function the function to add parameter attributes too
+   * @param function_type the llvm type of the function
+   * @param p_function_type the pink type of the function
+   * @return Outcome<llvm::Value *, Error> if true nullptr, if false the error
+   * encountered
+   */
+  static auto
+  CodegenParameterAttributes(const Environment &env, llvm::Function *function,
+                             const llvm::FunctionType *function_type,
+                             const pink::FunctionType *p_function_type)
+      -> Outcome<llvm::Value *, Error>;
+
+  /**
+   * @brief Emit the instructions to create local variables for all arguments of
+   * the given function
+   *
+   * @param env the environment of this compilation unit
+   * @param function the function to emit arguments for
+   * @param p_function_type the pink function type of the function
+   */
+  void CodegenArgumentInit(const Environment &env,
+                           const llvm::Function *function,
+                           const pink::FunctionType *p_function_type) const;
 
 public:
   /**

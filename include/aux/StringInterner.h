@@ -15,7 +15,7 @@ namespace pink {
  * @brief represents a string which has been interned by the string interner.
  *
  */
-typedef const char *InternedString;
+using InternedString = const char *;
 
 /**
  * @brief Wrapper around a set of strings.
@@ -59,12 +59,12 @@ public:
    * @param str the string to intern
    * @return InternedString the InternedString representing the string passed in
    */
-  InternedString Intern(const char *str);
+  auto Intern(const char *str) -> InternedString;
 
   /**
    * @copydoc StringInterner::Intern(const char* str)
    */
-  InternedString Intern(std::string &str);
+  auto Intern(std::string &str) -> InternedString;
 };
 
 } // namespace pink

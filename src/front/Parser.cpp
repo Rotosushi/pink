@@ -120,7 +120,7 @@ auto Parser::ExtractLine(const Location &loc) const -> std::string {
   size_t lines_seen = 1; // we start counting lines at 1
 
   // while we haven't reached the line we are looking for
-  while (lines_seen < loc.firstLine) {
+  while (lines_seen < loc.firstLine.data) {
 
     if (*cursor == '\n') {
       lines_seen++;

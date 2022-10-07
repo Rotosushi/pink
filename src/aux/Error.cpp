@@ -18,7 +18,7 @@ auto Error::ToString(std::string &errtxt) const -> std::string {
   result += errtxt + "\n";
 
   for (size_t i = 0; i < errtxt.size(); i++) {
-    if ((i < loc.firstColumn) || (i > loc.lastColumn)) {
+    if ((i < loc.firstColumn.data) || (i >= loc.lastColumn.data)) {
       result += "-";
     } else {
       result += "^";

@@ -7,13 +7,12 @@
 
 #include "llvm/Support/Error.h"
 
-
 namespace pink {
-  /**
-   * @brief Prints the given llvm::Error to a string
-   * 
-   * @param error the error to print
-   * @return std::string the string that was printed
-   */
-  std::string LLVMErrorToString(llvm::Error& error);
-}
+/**
+ * @brief Prints the given llvm::Error to a string
+ *
+ * @param error the error to print
+ * @return std::string the string that was printed
+ */
+auto LLVMErrorToString(const llvm::Error &error) -> std::string;
+} // namespace pink

@@ -58,8 +58,8 @@ namespace pink {
 // emit the uitofp instruction
 //
 //
-Outcome<llvm::Value *, Error> Cast(llvm::Value *value, llvm::Type *target_type,
-                                   const Environment &env) {
+auto Cast(llvm::Value *value, llvm::Type *target_type, const Environment &env)
+    -> Outcome<llvm::Value *, Error> {
   llvm::Type *value_type = value->getType();
 
   // so based on the to_type and the from_type we need to choose our cast
@@ -73,15 +73,13 @@ Outcome<llvm::Value *, Error> Cast(llvm::Value *value, llvm::Type *target_type,
   // floating point types
   //
   //
-  if (llvm::IntegerType *from_type =
-          llvm::dyn_cast<llvm::IntegerType>(value_type)) {
+  if (auto *from_type = llvm::dyn_cast<llvm::IntegerType>(value_type)) {
     // so there are a few main cast operations on integer types
     // an int type cast to another int type
     // an int type cast to a float type
     // an int type cast to a pointer type
     //
-    if (llvm::IntegerType *to_type =
-            llvm::dyn_cast<llvm::IntegerType>(target_type)) {
+    if (auto *to_type = llvm::dyn_cast<llvm::IntegerType>(target_type)) {
       unsigned from_bitwidth = from_type->getBitWidth();
       unsigned to_bitwidth = to_type->getBitWidth();
 
@@ -106,33 +104,28 @@ Outcome<llvm::Value *, Error> Cast(llvm::Value *value, llvm::Type *target_type,
       // of the value, so we can know to emit a zext or sext for integer
       // conversion.
       if (from_bitwidth < to_bitwidth) {
-        return Outcome<llvm::Value *, Error>(
-            env.instruction_builder->CreateZExt(value, target_type, "zext"));
-      } else if (from_bitwidth > to_bitwidth) {
-        return Outcome<llvm::Value *, Error>(
-            env.instruction_builder->CreateTrunc(value, target_type, "trunc"));
-      } else // from_bitwidth == to_bitwidth
-      {
-        return Outcome<llvm::Value *, Error>(
-            env.instruction_builder->CreateBitCast(value, target_type,
-                                                   "bitcast"));
+        return {
+            env.instruction_builder->CreateZExt(value, target_type, "zext")};
       }
+
+      if (from_bitwidth > to_bitwidth) {
+        return {
+            env.instruction_builder->CreateTrunc(value, target_type, "trunc")};
+      }
+
+      // from_bitwidth == to_bitwidth
+      return {env.instruction_builder->CreateBitCast(value, target_type,
+                                                     "bitcast")};
     }
     // else if (llvm::PointerType* to_type =
     // llvm::dyn_cast<llvm::PointerType>(target_type)) else if
     // (to_type->isFloatingPointTy());
-    else {
-      return Outcome<llvm::Value *, Error>(
-          Error(Error::Code::CannotCastToType, Location()));
-    }
+    return {Error(Error::Code::CannotCastToType, Location())};
   }
   // else if (llvm::PointerType* from_type =
   // llvm::dyn_cast<llvm::PointerType>(target_type)) else if
   // (from_type->isFloatingPointTy())
-  else {
-    return Outcome<llvm::Value *, Error>(
-        Error(Error::Code::CannotCastFromType, Location()));
-  }
+  return {Error(Error::Code::CannotCastFromType, Location())};
 }
 
 } // namespace pink

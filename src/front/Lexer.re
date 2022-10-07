@@ -105,15 +105,15 @@ void Lexer::UpdateLoc() {
   */
   auto length = cursor - token;
 
-  loc.firstLine = loc.lastLine;
-  loc.firstColumn = loc.lastColumn;
+  loc.firstLine.data = loc.lastLine.data;
+  loc.firstColumn.data = loc.lastColumn.data;
 
   for (long i = 0; i < length; i++) {
     if (token[i] == '\n') {
-      loc.lastLine += 1;
-      loc.lastColumn = loc.firstColumn = 0;
+      loc.lastLine.data += 1;
+      loc.lastColumn.data = loc.firstColumn.data = 0;
     } else {
-      loc.lastColumn += 1;
+      loc.lastColumn.data += 1;
     }
   }
 }
@@ -144,7 +144,7 @@ auto Lexer::yyloc() -> Location { return loc; }
                     -unop-application-not-an-ident,
                     binop-application-not-an-ident- more-text
 
-    id=[a-zA-Z_]([-]?[a-zA-Z0-9_])*;
+    hyphen-id = id ('-' id)+;
 */
 /*!re2c
     re2c:api:style = free-form;

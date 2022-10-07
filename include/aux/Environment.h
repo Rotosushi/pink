@@ -372,7 +372,7 @@ public:
               std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
               //      std::shared_ptr<llvm::DIBuilder> debug_builder,
               const llvm::Target *target, llvm::TargetMachine *target_machine,
-              const llvm::DataLayout data_layout);
+              const llvm::DataLayout &data_layout);
 
   /**
    * @brief Construct a new Environment, as a copy of the given Environment

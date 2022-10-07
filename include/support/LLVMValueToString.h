@@ -9,11 +9,11 @@
 #include "llvm/IR/Value.h"
 
 namespace pink {
-  /**
-   * @brief Print the given llvm::Value to a string
-   * 
-   * @param value the value to print
-   * @return std::string the string which was printed
-   */
-  std::string LLVMValueToString(llvm::Value* value);
-}
+/**
+ * @brief Print the given llvm::Value to a string
+ *
+ * @param value the value to print
+ * @return std::string the string which was printed
+ */
+auto LLVMValueToString(const llvm::Value *value) -> std::string;
+} // namespace pink

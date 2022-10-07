@@ -228,17 +228,20 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
   }
 
   // #NOTE: 9/16/2022
-  // if the input file is still empty after parsing
+  // if input_file is still empty after parsing
   // all available options, then we assume there is at
   // least one more option, which is the input file.
   // (except for handling multiple source files this
-  //  is the default behavior of many compilers,
+  //  is the default behavior of many compilers, any
+  //  options appearing on the command line not associated
+  //  with any particualr option are considered to be input
+  //  files to the compiler.)
   //  this check allows the program to be called like:
   //  ->	pink input_file.p
   //  and the default behavior is to emit an executable
   //  named:
   //  -> input_file
-  //  )
+  //
   if (input_file.empty()) {
     // optind is now the index of the first
     // argv element that is not an option.

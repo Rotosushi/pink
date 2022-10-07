@@ -28,36 +28,80 @@ namespace pink {
  */
 class Location {
 public:
+  class FirstLine {
+  public:
+    size_t data;
+
+    FirstLine(int data) : data(data) {}
+
+    auto operator==(const FirstLine &other) const -> bool {
+      return data == other.data;
+    }
+  };
+
+  class FirstColumn {
+  public:
+    size_t data;
+
+    FirstColumn(int data) : data(data) {}
+
+    auto operator==(const FirstColumn &other) const -> bool {
+      return data == other.data;
+    }
+  };
+
+  class LastLine {
+  public:
+    size_t data;
+
+    LastLine(int data) : data(data) {}
+
+    auto operator==(const LastLine &other) const -> bool {
+      return data == other.data;
+    }
+  };
+
+  class LastColumn {
+  public:
+    size_t data;
+
+    LastColumn(int data) : data(data) {}
+
+    auto operator==(const LastColumn &other) const -> bool {
+      return data == other.data;
+    }
+  };
+
   /**
    * @brief holds the number of the first line that this Location appears on.
    *
    */
-  size_t firstLine;
+  FirstLine firstLine;
 
   /**
    * @brief holds the number of the first column that this Location appears on.
    *
    */
-  size_t firstColumn;
+  FirstColumn firstColumn;
 
   /**
    * @brief holds the number of the last line that this Location appears on
    *
    */
-  size_t lastLine;
+  LastLine lastLine;
 
   /**
    * @brief holds the number of the last column that this Location appears on
    *
    */
-  size_t lastColumn;
+  LastColumn lastColumn;
 
   /**
    * @brief Construct a new Location
    *
    * the default Location is (0, 0, 0, 0)
    */
-  Location() = default;
+  Location() : firstLine(0), firstColumn(0), lastLine(0), lastColumn(0) {}
 
   /**
    * @brief Construct a new Location from another Location
@@ -74,8 +118,8 @@ public:
    * @param lastLine the lastLine
    * @param lastColumn the lastColumn
    */
-  Location(size_t firstLine, size_t firstColumn, size_t lastLine,
-           size_t lastColumn);
+  Location(FirstLine firstLine, FirstColumn firstColumn, LastLine lastLine,
+           LastColumn lastColumn);
 
   /**
    * @brief Assigns this Location to the value of another Location
