@@ -57,7 +57,7 @@ enum class Token {
  *
  * all this does is uniquely identify the tokens themselves.
  * it does not reproduce the string which was lexed to return
- * a Token::Id, it simply returns "Token::Id". etc.
+ * a Token::Id, it simply returns "Token::Id". etc...
  *
  * @param t the token to translate
  * @return std::string the string representing the token

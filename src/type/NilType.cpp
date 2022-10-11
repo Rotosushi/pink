@@ -5,11 +5,11 @@ namespace pink {
 NilType::NilType() : Type(Type::Kind::Nil) {}
 
 auto NilType::classof(const Type *type) -> bool {
-  return type->getKind() == Type::Kind::Nil;
+  return type->GetKind() == Type::Kind::Nil;
 }
 
 auto NilType::EqualTo(Type *other) const -> bool {
-  return other->getKind() == Type::Kind::Nil;
+  return other->GetKind() == Type::Kind::Nil;
 }
 
 auto NilType::ToString() const -> std::string { return {"Nil"}; }

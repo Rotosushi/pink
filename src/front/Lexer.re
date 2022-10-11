@@ -105,15 +105,15 @@ void Lexer::UpdateLoc() {
   */
   auto length = cursor - token;
 
-  loc.firstLine.data = loc.lastLine.data;
-  loc.firstColumn.data = loc.lastColumn.data;
+  loc.firstLine = loc.lastLine;
+  loc.firstColumn = loc.lastColumn;
 
   for (long i = 0; i < length; i++) {
     if (token[i] == '\n') {
-      loc.lastLine.data += 1;
-      loc.lastColumn.data = loc.firstColumn.data = 0;
+      loc.lastLine += 1;
+      loc.lastColumn = loc.firstColumn = 0;
     } else {
-      loc.lastColumn.data += 1;
+      loc.lastColumn += 1;
     }
   }
 }

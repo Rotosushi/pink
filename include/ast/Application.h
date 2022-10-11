@@ -59,6 +59,14 @@ public:
    */
   ~Application() override = default;
 
+  Application(const Application &other) = delete;
+
+  Application(Application &&other) = default;
+
+  auto operator=(const Application &other) -> Application & = delete;
+
+  auto operator=(Application &&other) -> Application & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

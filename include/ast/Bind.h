@@ -61,6 +61,14 @@ public:
    */
   ~Bind() override = default;
 
+  Bind(const Bind &other) = delete;
+
+  Bind(Bind &&other) = default;
+
+  auto operator=(const Bind &other) -> Bind & = delete;
+
+  auto operator=(Bind &&other) -> Bind & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

@@ -65,6 +65,13 @@ public:
    */
   ~Block() override = default;
 
+  Block(const Block &other) = delete;
+
+  Block(Block &&other) = default;
+
+  auto operator=(const Block &other) -> Block & = delete;
+
+  auto operator=(Block &&other) -> Block & = default;
   /**
    * @brief Get the iterator to the beginning of the block
    *

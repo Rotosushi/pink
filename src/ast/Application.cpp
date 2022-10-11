@@ -12,7 +12,7 @@ Application::Application(const Location &location, std::unique_ptr<Ast> callee,
       arguments(std::move(arguments)) {}
 
 auto Application::classof(const Ast *ast) -> bool {
-  return ast->getKind() == Ast::Kind::Application;
+  return ast->GetKind() == Ast::Kind::Application;
 }
 
 auto Application::ToString() const -> std::string {
@@ -55,14 +55,15 @@ auto Application::GetypeV(const Environment &env) const
     -> Outcome<Type *, Error> {
   Outcome<Type *, Error> calleeTy = callee->Getype(env);
 
-  if (!calleeTy)
+  if (!calleeTy) {
     return calleeTy;
+  }
 
   // check that we have something we can call
   auto *calleeFnTy = llvm::dyn_cast<FunctionType>(calleeTy.GetFirst());
 
   if (calleeFnTy == nullptr) {
-    Error error(Error::Code::TypeCannotBeCalled, loc,
+    Error error(Error::Code::TypeCannotBeCalled, GetLoc(),
                 calleeTy.GetFirst()->ToString());
     return {error};
   }
@@ -72,7 +73,7 @@ auto Application::GetypeV(const Environment &env) const
     std::string errmsg = std::string("expected args: ") +
                          std::to_string(calleeFnTy->arguments.size()) +
                          ", actual args: " + std::to_string(arguments.size());
-    Error error(Error::Code::ArgNumMismatch, loc, errmsg);
+    Error error(Error::Code::ArgNumMismatch, GetLoc(), errmsg);
     return {error};
   }
 
@@ -94,7 +95,7 @@ auto Application::GetypeV(const Environment &env) const
       std::string errmsg = std::string("expected arg type: ") +
                            calleeFnTy->arguments[idx]->ToString() +
                            ", actual arg type: " + argTys[idx]->ToString();
-      Error error(Error::Code::ArgTypeMismatch, loc, errmsg);
+      Error error(Error::Code::ArgTypeMismatch, GetLoc(), errmsg);
       return {error};
     }
   }
@@ -125,7 +126,7 @@ auto Application::Codegen(const Environment &env) const
   if (function == nullptr) {
     std::string errmsg = std::string(", type was: ") +
                          LLVMValueToString(callee_result.GetFirst());
-    Error error(Error::Code::TypeCannotBeCalled, loc, errmsg);
+    Error error(Error::Code::TypeCannotBeCalled, GetLoc(), errmsg);
     return {error};
   }
 

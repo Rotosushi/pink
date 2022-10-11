@@ -139,9 +139,9 @@ public:
     Int,
   };
 
-protected:
-  const Kind kind;
-  const Location loc;
+private:
+  Kind kind;
+  Location loc;
   Type *type;
 
   /** @property kind
@@ -155,7 +155,6 @@ protected:
    * [type](#Type) of this Ast node
    */
 
-private:
   /**
    * @brief The pure virtual method which implements type checking of this Ast
    * expression
@@ -183,19 +182,27 @@ public:
    * @param location the textual [location](#Location) of the ast object being
    * constructed
    */
-  Ast(Kind kind, const Location &location);
+  Ast(Kind kind, Location location);
 
   /**
    * @brief Destroy an Ast object
    */
   virtual ~Ast() = default;
 
+  Ast(const Ast &other) = delete;
+
+  Ast(Ast &&other) = default;
+
+  auto operator=(const Ast &other) -> Ast & = delete;
+
+  auto operator=(Ast &&other) noexcept -> Ast & = default;
+
   /**
    * @brief Get the Kind
    *
    * @return Kind the [kind](#Kind) of the Ast object
    */
-  [[nodiscard]] auto getKind() const -> const Kind &;
+  [[nodiscard]] auto GetKind() const -> const Kind &;
 
   /**
    * @brief Get the Loc
@@ -203,6 +210,17 @@ public:
    * @return Location the syntactic [location](#Location) of the Ast object
    */
   [[nodiscard]] auto GetLoc() const -> const Location &;
+
+  /**
+   * @brief Get the Type
+   *
+   * \note: the type is only filled in an Ast after Getype has been
+   * called on this Ast. That is, immediately after construction of
+   * an Ast, GetType will return nullptr,
+   *
+   * @return const Type* the type of this ast, or nullptr
+   */
+  [[nodiscard]] auto GetType() const -> Type *;
 
   /**
    * @brief Computes the canonical string representation of this Ast

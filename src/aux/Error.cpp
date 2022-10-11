@@ -1,9 +1,7 @@
 #include "aux/Error.h"
 
 namespace pink {
-Error::Error() : code(Error::Code::None) {}
-
-Error::Error(Error::Code code, const Location &loc, std::string text)
+Error::Error(Error::Code code, Location loc, std::string text)
     : code(code), loc(loc), text(std::move(text)) {}
 
 auto Error::ToString(const char *txt) const -> std::string {
@@ -14,12 +12,12 @@ auto Error::ToString(const char *txt) const -> std::string {
 auto Error::ToString(std::string &errtxt) const -> std::string {
   std::string result;
 
-  result += CodeToErrText(code) + std::string(": ") + text + "\n";
+  result += CodeToErrText(code) + std::string(": ") + std::string(text) + "\n";
   result += errtxt + "\n";
 
   for (size_t i = 0; i < errtxt.size(); i++) {
-    if ((i < loc.firstColumn.data) || (i >= loc.lastColumn.data)) {
-      result += "-";
+    if ((i < loc.firstColumn) || (i >= loc.lastColumn)) {
+      result += " ";
     } else {
       result += "^";
     }
@@ -39,7 +37,7 @@ auto Error::Print(std::ostream &out, const char *txt) const -> std::ostream & {
   return out;
 }
 
-auto Error::CodeToErrText(Error::Code code) -> const char * {
+constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
   switch (code) {
   case Error::Code::None:
     return "Default Error, this should not be printed";

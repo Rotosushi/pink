@@ -60,6 +60,14 @@ public:
    */
   ~Conditional() override = default;
 
+  Conditional(const Conditional &other) = delete;
+
+  Conditional(Conditional &&other) = default;
+
+  auto operator=(const Conditional &other) -> Conditional & = delete;
+
+  auto operator=(Conditional &&other) -> Conditional & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

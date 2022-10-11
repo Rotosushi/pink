@@ -3,6 +3,8 @@ Checks:
     modernize-*,
     performance-*,
     portability-*,
+    clang-analyzer-*,
+    cppcoreguidelines-*,
     readability-*,
     -readability-avoid-const-params-in-decls
 

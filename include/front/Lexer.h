@@ -6,6 +6,7 @@
  */
 #pragma once
 #include <string>
+#include <string_view>
 
 #include "aux/Location.h"
 #include "front/Token.h"

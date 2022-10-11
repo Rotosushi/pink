@@ -28,7 +28,7 @@ private:
    * position of each flag. that is, the first enum member defined gets position
    * 0, the next position 1, and so on.
    */
-  enum Kind {
+  enum Kind : uint8_t {
     LHSOfAssignment,
     inAddressOf,
     inDereferencePtr,
@@ -56,6 +56,14 @@ public:
    *
    */
   ~Flags() = default;
+
+  Flags(Flags &other) = default;
+
+  Flags(Flags &&other) = default;
+
+  auto operator=(Flags const &other) -> Flags & = default;
+
+  auto operator=(Flags &&other) -> Flags & = default;
 
   /**
    * @brief the state of the LHSOfAssignment flag

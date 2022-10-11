@@ -51,6 +51,14 @@ public:
    */
   ~Bool() override = default;
 
+  Bool(const Bool &other) = delete;
+
+  Bool(Bool &&other) = default;
+
+  auto operator=(const Bool &other) -> Bool & = delete;
+
+  auto operator=(Bool &&other) -> Bool & = default;
+
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node
    * kind

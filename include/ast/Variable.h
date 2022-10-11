@@ -47,6 +47,14 @@ public:
    */
   ~Variable() override = default;
 
+  Variable(const Variable &other) = delete;
+
+  Variable(Variable &&other) = default;
+
+  auto operator=(const Variable &other) -> Variable & = delete;
+
+  auto operator=(Variable &&other) -> Variable & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

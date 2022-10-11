@@ -1,29 +1,28 @@
-#include "Test.h"
 #include "ast/TestVariable.h"
+#include "Test.h"
 
 #include "ast/Variable.h"
 #include "aux/Environment.h"
 
 #include "ast/Nil.h"
 
-bool TestVariable(std::ostream& out)
-{
+bool TestVariable(std::ostream &out) {
   bool result = true;
   result = true;
 
   out << "\n-----------------------\n";
   out << "Testing pink::Variable: \n";
-  
+
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);  
-  
+  auto env = pink::NewGlobalEnv(options);
+
   pink::InternedString v = env->symbols->Intern("v");
-    
-  llvm::Value* nil = env->instruction_builder->getFalse();
-  pink::Type*  nil_t = env->types->GetNilType();
-  
+
+  llvm::Value *nil = env->instruction_builder->getFalse();
+  pink::Type *nil_t = env->types->GetNilType();
+
   env->bindings->Bind(v, nil_t, nil);
-  
+
   pink::Location l0(0, 3, 0, 7);
   std::unique_ptr<pink::Variable> v0 = std::make_unique<pink::Variable>(l0, v);
 
@@ -45,7 +44,8 @@ bool TestVariable(std::ostream& out)
 
       -) Variable::ToString() == "v"
   */
-  result &= Test(out, "Variable::GetKind()", v0->getKind() == pink::Ast::Kind::Variable);
+  result &= Test(out, "Variable::GetKind()",
+                 v0->GetKind() == pink::Ast::Kind::Variable);
 
   result &= Test(out, "Variable::classof()", v0->classof(v0.get()));
 
@@ -56,10 +56,11 @@ bool TestVariable(std::ostream& out)
   result &= Test(out, "Variable::symbol", v0->symbol == v);
 
   result &= Test(out, "Variable::ToString()", v0->ToString() == v);
-  
-  pink::Outcome<pink::Type*, pink::Error> variable_type = v0->Getype(*env);
-  
-  result &= Test(out, "Variable::Getype()", variable_type && variable_type.GetFirst() == nil_t);
+
+  pink::Outcome<pink::Type *, pink::Error> variable_type = v0->Getype(*env);
+
+  result &= Test(out, "Variable::Getype()",
+                 variable_type && variable_type.GetFirst() == nil_t);
 
   result &= Test(out, "pink::Variable", result);
   out << "\n-----------------------\n";

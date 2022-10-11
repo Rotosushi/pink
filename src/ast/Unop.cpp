@@ -7,7 +7,7 @@ Unop::Unop(const Location &location, InternedString opr,
     : Ast(Ast::Kind::Unop, location), op(opr), right(std::move(right)) {}
 
 auto Unop::classof(const Ast *ast) -> bool {
-  return ast->getKind() == Ast::Kind::Unop;
+  return ast->GetKind() == Ast::Kind::Unop;
 }
 
 auto Unop::ToString() const -> std::string { return op + right->ToString(); }
@@ -31,7 +31,7 @@ auto Unop::GetypeV(const Environment &env) const -> Outcome<Type *, Error> {
 
   if (!unop) {
     std::string errmsg = std::string("unknown unop: ") + op;
-    return {Error(Error::Code::UnknownUnop, loc, errmsg)};
+    return {Error(Error::Code::UnknownUnop, GetLoc(), errmsg)};
   }
 
   // find the overload of the operator for the given type
@@ -80,7 +80,7 @@ auto Unop::GetypeV(const Environment &env) const -> Outcome<Type *, Error> {
     std::string errmsg =
         "could not find an implementation of " + std::string(op) +
         " for the given type: " + rhs_result.GetFirst()->ToString();
-    return {Error(Error::Code::ArgTypeMismatch, loc, errmsg)};
+    return {Error(Error::Code::ArgTypeMismatch, GetLoc(), errmsg)};
   }
 
   // return the result type of applying the operator to the given type
@@ -111,7 +111,7 @@ auto Unop::Codegen(const Environment &env) const
     // we cannot assign to an address value, we can only assign to
     // a memory location.
     if (env.flags->OnTheLHSOfAssignment()) {
-      return {Error(Error::Code::ValueCannotBeAssigned, loc)};
+      return {Error(Error::Code::ValueCannotBeAssigned, GetLoc())};
     }
 
     // take the address of the rhs,
@@ -190,7 +190,7 @@ auto Unop::Codegen(const Environment &env) const
       env.unops->Lookup(op);
 
   if (!unop) {
-    return {Error(Error::Code::UnknownUnop, loc, op)};
+    return {Error(Error::Code::UnknownUnop, GetLoc(), op)};
   }
 
   // find the overload of the operator for the given type
@@ -198,7 +198,7 @@ auto Unop::Codegen(const Environment &env) const
       unop->second->Lookup(rhs_type.GetFirst());
 
   if (!literal) {
-    return {Error(Error::Code::ArgTypeMismatch, loc,
+    return {Error(Error::Code::ArgTypeMismatch, GetLoc(),
                   rhs_type.GetFirst()->ToString())};
   }
 

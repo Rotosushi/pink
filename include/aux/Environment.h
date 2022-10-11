@@ -32,8 +32,7 @@ namespace pink {
 
 /**
  * @brief Environment owns all of the data structures which are shared between
- the
- *  different algorithms within the compiler.
+ the different algorithms within the compiler.
  *
  *
  *
@@ -42,7 +41,7 @@ namespace pink {
  * to hold state for the future. So that the symbols,
  * bindings, types etc.. created are saved for later use.
  *
- * NOTE ASIDE 9/13/2022
+ * \note: 9/13/2022
  * We are using std::shared_ptr for the members of the environment over
  * std::unique_ptr, because we want to have the ability to build new
  * Environments which represent local scopes, and not reconstruct any
@@ -59,8 +58,7 @@ namespace pink {
  environment.
  * Thus std::shared_ptr fits the use case perfectly. and we are willing to
  * accept the overhead of the shared_ptr for each member.
-
- * the other benefiet would also extend were we to use std::unique_ptr, in that
+ * the other benefit would also extend were we to use std::unique_ptr, in that
  * we want the environment to 'own' the members it holds. many members
  * of the environment require complex initialization routines which must be done
  * on each construction, this is code want to place in a function,
@@ -291,7 +289,15 @@ public:
    *
    *
    */
+  // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
+  // conceptually the env is interchangeable with all of it's members as
+  // arguments to any function taking an env, but that is slow.
+  // That is why we use member
+  // access instead of get/set for each member, and that is why this
+  // member is const, because it will never be modified by the program
+  // after valid construction.
   const llvm::DataLayout data_layout;
+  // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
 
   /**
    * @brief This holds the current [llvmFunction] being compiled

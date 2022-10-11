@@ -45,7 +45,7 @@ bool TestApplication(std::ostream &out) {
 
   // given an application term can we access the peripheral data?
   result &= Test(out, "Application::getKind()",
-                 app->getKind() == pink::Ast::Kind::Application);
+                 app->GetKind() == pink::Ast::Kind::Application);
 
   result &= Test(out, "Application::classof()", app->classof(app.get()));
 

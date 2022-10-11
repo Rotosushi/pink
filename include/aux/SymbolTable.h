@@ -47,12 +47,17 @@ public:
   SymbolTable();
 
   /**
-   * @brief We never want to construct a new symbol table as a copy of another
-   * symbol table
+   * @brief Copy Constructor
    *
    * @param other the symbol table to copy
    */
-  SymbolTable(const SymbolTable &other) = delete;
+  SymbolTable(const SymbolTable &other) = default;
+
+  SymbolTable(SymbolTable &&other) = default;
+
+  auto operator=(const SymbolTable &other) -> SymbolTable & = default;
+
+  auto operator=(SymbolTable &&other) -> SymbolTable & = default;
 
   /**
    * @brief Construct a new local Symbol Table.

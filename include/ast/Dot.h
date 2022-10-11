@@ -56,6 +56,14 @@ public:
    */
   ~Dot() override = default;
 
+  Dot(const Dot &other) = delete;
+
+  Dot(Dot &&other) = default;
+
+  auto operator=(const Dot &other) -> Dot & = delete;
+
+  auto operator=(Dot &&other) -> Dot & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

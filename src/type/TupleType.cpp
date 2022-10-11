@@ -9,7 +9,7 @@ TupleType::TupleType(const std::vector<Type *> &member_types)
     : Type(Type::Kind::Tuple), member_types(member_types) {}
 
 auto TupleType::classof(const Type *type) -> bool {
-  return type->getKind() == Type::Kind::Tuple;
+  return type->GetKind() == Type::Kind::Tuple;
 }
 
 auto TupleType::EqualTo(Type *other) const -> bool {

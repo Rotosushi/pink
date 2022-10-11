@@ -9,7 +9,7 @@ Tuple::Tuple(const Location &location,
     : Ast(Ast::Kind::Tuple, location), members(std::move(members)) {}
 
 auto Tuple::classof(const Ast *ast) -> bool {
-  return ast->getKind() == Ast::Kind::Tuple;
+  return ast->GetKind() == Ast::Kind::Tuple;
 }
 
 auto Tuple::ToString() const -> std::string {
@@ -141,9 +141,10 @@ auto Tuple::Codegen(const Environment &env) const
 
   std::vector<llvm::Constant *> tuple_elements(members.size());
 
-  assert(type != nullptr);
+  assert(GetType() != nullptr);
 
-  Outcome<llvm::Type *, Error> tuple_type_codegen_result = type->Codegen(env);
+  Outcome<llvm::Type *, Error> tuple_type_codegen_result =
+      GetType()->Codegen(env);
 
   if (!tuple_type_codegen_result) {
     return {tuple_type_codegen_result.GetSecond()};
@@ -165,7 +166,7 @@ auto Tuple::Codegen(const Environment &env) const
     } else {
       std::string errmsg =
           std::string("value is: ") + LLVMValueToString(initializer);
-      return {Error(Error::Code::NonConstTupleInit, loc, errmsg)};
+      return {Error(Error::Code::NonConstTupleInit, GetLoc(), errmsg)};
     }
   }
 

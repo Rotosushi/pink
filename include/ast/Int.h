@@ -56,6 +56,14 @@ public:
    */
   ~Int() override = default;
 
+  Int(const Int &other) = delete;
+
+  Int(Int &&other) = default;
+
+  auto operator=(const Int &other) -> Int & = delete;
+
+  auto operator=(Int &&other) -> Int & = default;
+
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node
    * kind

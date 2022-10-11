@@ -55,7 +55,7 @@ bool TestBlock(std::ostream &out) {
   std::unique_ptr<pink::Block> block = std::make_unique<pink::Block>(l6, stmts);
 
   result &=
-      Test(out, "Block::getKind()", block->getKind() == pink::Ast::Kind::Block);
+      Test(out, "Block::getKind()", block->GetKind() == pink::Ast::Kind::Block);
 
   result &= Test(out, "Block::GetLoc()", block->GetLoc() == l6);
 

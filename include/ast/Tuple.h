@@ -36,7 +36,8 @@ private:
    * @return Outcome<Type*, Error> if true the Type of this Tuple,
    * if false the Error encountered.
    */
-  auto GetypeV(const Environment &env) const -> Outcome<Type *, Error> override;
+  [[nodiscard]] auto GetypeV(const Environment &env) const
+      -> Outcome<Type *, Error> override;
 
 public:
   /**
@@ -59,6 +60,14 @@ public:
    */
   ~Tuple() override = default;
 
+  Tuple(const Tuple &other) = delete;
+
+  Tuple(Tuple &&other) = default;
+
+  auto operator=(const Tuple &other) -> Tuple & = delete;
+
+  auto operator=(Tuple &&other) -> Tuple & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *
@@ -75,7 +84,7 @@ public:
    *
    * @return std::string the string representation
    */
-  auto ToString() const -> std::string override;
+  [[nodiscard]] auto ToString() const -> std::string override;
 
   /**
    * @brief Compute the value of this Tuple
@@ -87,7 +96,7 @@ public:
    * @return Outcome<llvm::Value*, Error> if true an llvm::ConstantStruct,
    * if false the Error encountered
    */
-  auto Codegen(const Environment &env) const
+  [[nodiscard]] auto Codegen(const Environment &env) const
       -> Outcome<llvm::Value *, Error> override;
 };
 } // namespace pink

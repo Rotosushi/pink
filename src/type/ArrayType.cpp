@@ -7,7 +7,7 @@ ArrayType::ArrayType(size_t size, Type *member_type)
     : Type(Type::Kind::Array), size(size), member_type(member_type) {}
 
 auto ArrayType::classof(const Type *type) -> bool {
-  return type->getKind() == Type::Kind::Array;
+  return type->GetKind() == Type::Kind::Array;
 }
 
 auto ArrayType::EqualTo(Type *other) const -> bool {

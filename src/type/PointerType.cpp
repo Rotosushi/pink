@@ -8,7 +8,7 @@ PointerType::PointerType(Type *pointee_type)
     : Type(Type::Kind::Pointer), pointee_type(pointee_type) {}
 
 auto PointerType::classof(const Type *type) -> bool {
-  return type->getKind() == Type::Kind::Pointer;
+  return type->GetKind() == Type::Kind::Pointer;
 }
 
 auto PointerType::EqualTo(Type *other) const -> bool {

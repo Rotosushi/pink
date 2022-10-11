@@ -284,7 +284,8 @@ private:
       -> Outcome<llvm::Value *, Error>;
 
   /**
-   * @brief Add the function parameter attributes to the given function.
+   * @brief Add the correct function parameter attributes given the defintion
+   * of this function to the passed in llvm::Function.
    *
    * @param env the environment of this compilation unit
    * @param function the function to add parameter attributes too
@@ -354,6 +355,14 @@ public:
    *
    */
   ~Function() override = default;
+
+  Function(const Function &other) = delete;
+
+  Function(Function &&other) = default;
+
+  auto operator=(const Function &other) -> Function & = delete;
+
+  auto operator=(Function &&other) -> Function & = default;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

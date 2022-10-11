@@ -54,6 +54,14 @@ public:
    */
   ~Unop() override = default;
 
+  Unop(const Unop &other) = delete;
+
+  Unop(Unop &&other) = default;
+
+  auto operator=(const Unop &other) -> Unop & = delete;
+
+  auto operator=(Unop &&other) -> Unop & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

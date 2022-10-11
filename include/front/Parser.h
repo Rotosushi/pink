@@ -34,52 +34,54 @@ class Environment;
  *
  * \verbatim
 
-    top = function
+top = function
+    | bind
+
+bind = "var" id ":=" affix ";"
+
+function = "fn" id "(" [arg {"," arg}] ")" block
+
+arg = id ":" type
+
+block = "{" {term} "}"
+
+term = conditional
+        | while
         | bind
-
-    bind = "var" id ":=" affix ";"
-
-    function = "fn" id "(" [arg {"," arg}] ")" block
-
-    arg = id ":" type
-
-    block = "{" {term} "}"
-
-    term = conditional
-         | while
-         | bind
-         | affix ";"
+        | affix ";"
 
 
-    conditional = "if" "(" affix ")" block "else" block
+conditional = "if" "(" affix ")" block "else" block
 
-    while = "while" "(" affix ")" block
+while = "while" "(" affix ")" block
 
-    affix = composite "=" affix
-          | composite "(" [affix {"," affix}] ")"
-          | composite
+affix = composite "=" affix
+        | composite "(" [affix {"," affix}] ")"
+        | composite
 
-    composite = dot operator infix-parser
-              | dot
+composite = dot operator infix-parser
+            | dot
 
-    dot = basic {"." basic} // (1) (2)
+dot = basic {"." basic} // (1) (2)
 
-    basic = id
-          | integer
-          | operator dot
-          | "true"
-          | "false"
-          | "(" affix {"," affix} ")"
-          | "[" affix {"," affix} "]"
+basic = id
+        | integer
+        | operator dot
+        | "true"
+        | "false"
+        | "(" affix {"," affix} ")"
+        | "[" affix {"," affix} "]"
 
-    type = "Int"
-         | "Bool"
-         | "(" type {"," type} ")"
-         | "[" type "x" integer "]"
-         | "ptr" type
+type = "Int"
+        | "Bool"
+        | "(" type {"," type} ")"
+        | "[" type "x" integer "]"
+        | "ptr" type
 
-    id = [a-zA-Z_][a-zA-Z0-9_]* // <- these are the regular expressions used for
- re2c operator = [*+\-/%<=>&|\^!~@$]+; integer = [0-9]+
+// these are the regular expressions used by re2c
+id = [a-zA-Z_][a-zA-Z0-9_]*
+operator = [*+\-/%<=>&|\^!~@$]+;
+integer = [0-9]+
 
     \endverbatim
  */
@@ -172,8 +174,10 @@ private:
   /**
    * @brief Parses Top level expressions
    *
+   * \verbatim
    * top = function
    *     | bind
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -184,7 +188,9 @@ private:
   /**
    * @brief Parses Function expressions
    *
+   * \verbatim
    * function = "fn" id "(" [arg {"," arg}] ")" block
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -196,7 +202,9 @@ private:
   /**
    * @brief Parses Bind expressions
    *
+   * \verbatim
    * bind = "var" id ":=" affix ";"
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -208,7 +216,9 @@ private:
   /**
    * @brief Parses Argument expressions
    *
+   * \verbatim
    * arg = id ":" type
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -220,7 +230,9 @@ private:
   /**
    * @brief Parses Block expressions
    *
+   * \verbatim
    * block = "{" {term} "}"
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -232,10 +244,12 @@ private:
   /**
    * @brief Parses Term expressions
    *
+   * \verbatim
    * term = conditional
    *      | while
    *      | bind
    *      | affix ";"
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -247,7 +261,9 @@ private:
   /**
    * @brief Parses Conditional expressions
    *
+   * \verbatim
    * conditional = "if" "(" affix ")" block "else" block
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -259,7 +275,9 @@ private:
   /**
    * @brief Parses While expressions
    *
+   * \verbatim
    * while = "while" "(" affix ")" block
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -271,9 +289,11 @@ private:
   /**
    * @brief Parses Affix expressions
    *
+   * \verbatim
    * affix = composite "=" affix
    *       | composite "(" [affix {"," affix}] ")"
    *       | composite
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -285,7 +305,9 @@ private:
   /**
    * @brief Parses Assignment expressions
    *
+   * \verbatim
    * assignment = composite "=" affix
+   * \endverbatim
    *
    * @param env the environment associated with this compilation unit
    * @param composite the lhs of the assignment
@@ -298,6 +320,10 @@ private:
   /**
    * @brief Parses an Application expression
    *
+   * \verbatim
+   * application = composite "(" [affix {"," affix}] ")"
+   * \endverbatim
+   *
    * @param env the environment associated with this compilation unit
    * @param composite the callee of the application
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
@@ -309,8 +335,13 @@ private:
   /**
    * @brief Parses Composite expressions
    *
-   * composite = dot operator infix-parser // <- this is actually a call to the
-   * op-prec parser | dot
+   * \verbatim
+   * composite = dot operator infix-parser
+   *           | dot
+   * \endverbatim
+   *
+   * \note infix-parser is actually the call into the operator precedence
+   * parser, meaning this one line consumes the entire infix expression.
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -322,7 +353,12 @@ private:
   /**
    * @brief Parses Dot expressions
    *
+   * \verbatim
    * dot = basic {"." basic}
+   * \endverbatim
+   *
+   * this function is here to give "." a higher
+   * operator precedence than any possible operator.
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -335,11 +371,11 @@ private:
    *
    * This is an implementation of an [Operator] Precedence Parser
    * [Operator]: https://en.wikipedia.org/wiki/Operator-precedence_parser
-   * "precedence"
+   *
    *
    * @param left the first left hand side term of the binary operator expression
    * @param precedence the initial precedence to parse against, an initial call
-   * to this expression should pass 0 here.
+   * to this expression must pass 0 here.
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
@@ -351,6 +387,7 @@ private:
   /**
    * @brief Parses Basic expressions
    *
+   * \verbatim
    * basic = id
    *       | integer
    *       | operator dot
@@ -358,6 +395,7 @@ private:
    *       | "false"
    *       | "(" affix {"," affix} ")"
    *       | "[" affix {"," affix} "]"
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -369,7 +407,9 @@ private:
   /**
    * @brief Parses a Tuple
    *
+   * \verbatim
    *  "(" affix {"," affix} ")"
+   * \endverbatim
    *
    * \note assuming that we start from the comma
    *
@@ -384,7 +424,9 @@ private:
   /**
    * @brief Parses an Array
    *
+   * \verbatim
    * "[" affix {"," affix} "]"
+   * \endverbatim
    *
    * @param env the environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
@@ -396,11 +438,13 @@ private:
   /**
    * @brief Parses Type expressions
    *
+   * \verbatim
    * type = "Int"
    *      | "Bool"
    *      | "(" type {"," type} ")"
    *      | "[" type "x" int "]"
    *      | "ptr" type
+   * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -428,6 +472,14 @@ public:
    *
    */
   ~Parser() = default;
+
+  Parser(const Parser &other) = delete;
+
+  Parser(Parser &&other) = delete;
+
+  auto operator=(const Parser &other) = delete;
+
+  auto operator=(Parser &&other) = delete;
 
   /**
    * @brief Test if the Parser is at the end of it's input

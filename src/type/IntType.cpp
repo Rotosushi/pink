@@ -5,11 +5,11 @@ namespace pink {
 IntType::IntType() : Type(Type::Kind::Int) {}
 
 auto IntType::classof(const Type *type) -> bool {
-  return type->getKind() == Type::Kind::Int;
+  return type->GetKind() == Type::Kind::Int;
 }
 
 auto IntType::EqualTo(Type *other) const -> bool {
-  return other->getKind() == Type::Kind::Int;
+  return other->GetKind() == Type::Kind::Int;
 }
 
 auto IntType::ToString() const -> std::string { return {"Int"}; }

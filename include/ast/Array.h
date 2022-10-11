@@ -103,6 +103,14 @@ public:
    */
   ~Array() override = default;
 
+  Array(const Array &other) = delete;
+
+  Array(Array &&other) = default;
+
+  auto operator=(const Array &other) -> Array & = delete;
+
+  auto operator=(Array &&other) -> Array & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

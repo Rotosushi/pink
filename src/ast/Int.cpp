@@ -8,7 +8,7 @@ Int::Int(const Location &location, const long long value)
     : Ast(Ast::Kind::Int, location), value(value) {}
 
 auto Int::classof(const Ast *a) -> bool {
-  return a->getKind() == Ast::Kind::Int;
+  return a->GetKind() == Ast::Kind::Int;
 }
 
 auto Int::ToString() const -> std::string { return std::to_string(value); }

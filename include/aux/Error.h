@@ -87,27 +87,18 @@ public:
    * @brief The error code of this particular error
    *
    */
-  Code code;
+  Code code = Error::Code::None;
 
   /**
    * @brief the syntactic location of this particular error
    *
    */
-  Location loc;
+  Location loc = Location();
 
   /**
    * @brief the text representing information about the error generated at the
    * time of the errors creation.
    *
-   * we hold a std::string to allow for customization of
-   * the error message at the point of creation, allowing for more
-   * contextual information to be returned about the error.
-   * this seems like a necessary feature for informative error
-   * messages. however, passing a std::string around through
-   * return values is more expensive than not passing a std string
-   * around. A pointer would be cheaper, but how could we store a
-   * pointer to memory that would live beyond the point of creation?
-   * it would have to be stored somewhere else.
    */
   std::string text;
 
@@ -126,21 +117,33 @@ public:
    * @param code the code to covert
    * @return const char* the message corresponding to the error code
    */
-  [[nodiscard]] static auto CodeToErrText(Code code) -> const char *;
+  [[nodiscard]] constexpr static auto CodeToErrText(Code code) -> const char *;
 
   /**
    * @brief Construct a new Error, with error code None, Location(0, 0, 0, 0),
    * and empty text
    *
    */
-  Error();
+  Error() = default;
 
   /**
-   * @brief Construct a new Error, as a copy of the passed error
+   * @brief Destroy the Error object
+   *
+   */
+  ~Error() = default;
+
+  /**
+   * @brief Copy Construct an Error, as a copy of the passed error
    *
    * @param other
    */
   Error(const Error &other) = default;
+
+  /**
+   * @brief Move Construct an Error
+   *
+   */
+  Error(Error &&other) = default;
 
   /**
    * @brief Construct a new Error.
@@ -149,7 +152,7 @@ public:
    * @param l the textual location of this error.
    * @param text contextual text relevant to this particular error.
    */
-  Error(Code code, const Location &location, std::string text = "");
+  Error(Code code, Location location, std::string text = "");
 
   /**
    * @brief Assigns this Error to the value of another Error.
@@ -158,6 +161,14 @@ public:
    * @return Error& this error.
    */
   auto operator=(const Error &other) -> Error & = default;
+
+  /**
+   * @brief Move Assignment
+   *
+   * @param other the other error to move from
+   * @return Error& this error
+   */
+  auto operator=(Error &&other) -> Error & = default;
 
   /**
    * @brief converts this particular error to a single string of text.

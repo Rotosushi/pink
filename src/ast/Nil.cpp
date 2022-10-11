@@ -6,7 +6,7 @@ namespace pink {
 Nil::Nil(const Location &location) : Ast(Ast::Kind::Nil, location) {}
 
 auto Nil::classof(const Ast *ast) -> bool {
-  return ast->getKind() == Ast::Kind::Nil;
+  return ast->GetKind() == Ast::Kind::Nil;
 }
 
 auto Nil::ToString() const -> std::string { return {"nil"}; }

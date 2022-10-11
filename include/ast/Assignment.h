@@ -52,6 +52,14 @@ public:
    */
   ~Assignment() override = default;
 
+  Assignment(const Assignment &other) = delete;
+
+  Assignment(Assignment &&other) = default;
+
+  auto operator=(const Assignment &other) -> Assignment & = delete;
+
+  auto operator=(Assignment &&other) -> Assignment & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

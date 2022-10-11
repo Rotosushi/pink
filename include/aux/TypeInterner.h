@@ -91,6 +91,12 @@ public:
    */
   TypeInterner(const TypeInterner &other) = delete;
 
+  TypeInterner(TypeInterner &&other) = default;
+
+  auto operator=(const TypeInterner &other) -> TypeInterner & = delete;
+
+  auto operator=(TypeInterner &&other) -> TypeInterner & = default;
+
   /**
    * @brief Destroy the Type Interner
    *

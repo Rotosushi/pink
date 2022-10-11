@@ -28,87 +28,45 @@ namespace pink {
  */
 class Location {
 public:
-  class FirstLine {
-  public:
-    size_t data;
-
-    FirstLine(int data) : data(data) {}
-
-    auto operator==(const FirstLine &other) const -> bool {
-      return data == other.data;
-    }
-  };
-
-  class FirstColumn {
-  public:
-    size_t data;
-
-    FirstColumn(int data) : data(data) {}
-
-    auto operator==(const FirstColumn &other) const -> bool {
-      return data == other.data;
-    }
-  };
-
-  class LastLine {
-  public:
-    size_t data;
-
-    LastLine(int data) : data(data) {}
-
-    auto operator==(const LastLine &other) const -> bool {
-      return data == other.data;
-    }
-  };
-
-  class LastColumn {
-  public:
-    size_t data;
-
-    LastColumn(int data) : data(data) {}
-
-    auto operator==(const LastColumn &other) const -> bool {
-      return data == other.data;
-    }
-  };
-
   /**
    * @brief holds the number of the first line that this Location appears on.
    *
    */
-  FirstLine firstLine;
+  size_t firstLine;
 
   /**
    * @brief holds the number of the first column that this Location appears on.
    *
    */
-  FirstColumn firstColumn;
+  size_t firstColumn;
 
   /**
    * @brief holds the number of the last line that this Location appears on
    *
    */
-  LastLine lastLine;
+  size_t lastLine;
 
   /**
    * @brief holds the number of the last column that this Location appears on
    *
    */
-  LastColumn lastColumn;
+  size_t lastColumn;
 
   /**
    * @brief Construct a new Location
    *
    * the default Location is (0, 0, 0, 0)
    */
-  Location() : firstLine(0), firstColumn(0), lastLine(0), lastColumn(0) {}
+  constexpr Location()
+      : firstLine(0), firstColumn(0), lastLine(0), lastColumn(0) {}
 
   /**
-   * @brief Construct a new Location from another Location
+   * @brief
+   *
    *
    * @param other the other Location to copy
    */
-  Location(const Location &other) = default;
+  constexpr Location(const Location &other) = default;
 
   /**
    * @brief Construct a new Location
@@ -118,16 +76,31 @@ public:
    * @param lastLine the lastLine
    * @param lastColumn the lastColumn
    */
-  Location(FirstLine firstLine, FirstColumn firstColumn, LastLine lastLine,
-           LastColumn lastColumn);
+  // NOLINTBEGIN(bugprone-easily-swappable-parameters)
+  // There is no better representation of a location than
+  // four integral types. We have to specify all of them.
+  // Unless we want four more trival classes within this
+  // already trivial class, which all provide overloads
+  // to be easily constructed from integer literals, which
+  // by having defeats the purpose of the lint in the first place.
+  constexpr inline Location(size_t firstLine, size_t firstColumn,
+                            size_t lastLine, size_t lastColumn)
+      : firstLine(firstLine), firstColumn(firstColumn), lastLine(lastLine),
+        lastColumn(lastColumn) {}
+  // NOLINTEND(bugprone-easily-swappable-parameters)
 
+  constexpr inline Location(Location &&other) noexcept = default;
+
+  ~Location() = default;
+
+  constexpr auto operator=(Location &&other) noexcept -> Location & = default;
   /**
    * @brief Assigns this Location to the value of another Location
    *
    * @param other
    * @return Location&
    */
-  auto operator=(const Location &other) -> Location & = default;
+  constexpr auto operator=(const Location &other) -> Location & = default;
 
   /**
    * @brief compares two locations for equality
@@ -139,7 +112,10 @@ public:
    * @return true iff this Location is equal to the other Location
    * @return false iff this Location is not equal to the other Location
    */
-  auto operator==(const Location &other) const -> bool;
+  constexpr inline auto operator==(const Location &other) const -> bool {
+    return (firstLine == other.firstLine) &&
+           (firstColumn == other.firstColumn) && (lastLine == other.lastLine) &&
+           (lastColumn == other.lastColumn);
+  }
 };
-
 } // namespace pink

@@ -6,7 +6,7 @@ Variable::Variable(const Location &location, InternedString symbol)
     : Ast(Ast::Kind::Variable, location), symbol(symbol) {}
 
 auto Variable::classof(const Ast *ast) -> bool {
-  return ast->getKind() == Ast::Kind::Variable;
+  return ast->GetKind() == Ast::Kind::Variable;
 }
 
 auto Variable::ToString() const -> std::string { return {symbol}; }
@@ -24,7 +24,7 @@ auto Variable::GetypeV(const Environment &env) const -> Outcome<Type *, Error> {
   }
 
   std::string errmsg = std::string("unknown symbol: ") + symbol;
-  return {Error(Error::Code::NameNotBoundInScope, loc, errmsg)};
+  return {Error(Error::Code::NameNotBoundInScope, GetLoc(), errmsg)};
 }
 
 auto Variable::Codegen(const Environment &env) const
@@ -184,6 +184,6 @@ auto Variable::Codegen(const Environment &env) const
   }
 
   std::string errmsg = std::string("unknown symbol: ") + symbol;
-  return {Error(Error::Code::NameNotBoundInScope, loc, errmsg)};
+  return {Error(Error::Code::NameNotBoundInScope, GetLoc(), errmsg)};
 }
 } // namespace pink

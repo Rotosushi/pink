@@ -51,6 +51,14 @@ public:
    */
   ~Nil() override = default;
 
+  Nil(const Nil &other) = delete;
+
+  Nil(Nil &&other) = default;
+
+  auto operator=(const Nil &other) -> Nil & = delete;
+
+  auto operator=(Nil &&other) -> Nil & = default;
+
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node
    * kind

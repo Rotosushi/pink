@@ -120,7 +120,7 @@ auto Parser::ExtractLine(const Location &loc) const -> std::string {
   size_t lines_seen = 1; // we start counting lines at 1
 
   // while we haven't reached the line we are looking for
-  while (lines_seen < loc.firstLine.data) {
+  while (lines_seen < loc.firstLine) {
 
     if (*cursor == '\n') {
       lines_seen++;
@@ -479,13 +479,12 @@ auto Parser::ParseFunction(const Environment &env)
 */
 auto Parser::ParseArgument(const Environment &env)
     -> Outcome<std::pair<InternedString, Type *>, Error> {
-  InternedString name;
 
   if (!Peek(Token::Id)) {
     return Error(Error::Code::MissingArgName, loc);
   }
 
-  name = env.symbols->Intern(txt);
+  const auto *name = env.symbols->Intern(txt);
 
   nexttok(); // eat 'Id'
 

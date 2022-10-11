@@ -1,12 +1,11 @@
-#include "Test.h"
 #include "ast/TestUnop.h"
-#include "ast/Unop.h"
+#include "Test.h"
 #include "ast/Int.h"
+#include "ast/Unop.h"
 
 #include "aux/Environment.h"
 
-bool TestUnop(std::ostream& out)
-{
+bool TestUnop(std::ostream &out) {
   bool result = true;
   result = true;
 
@@ -20,10 +19,11 @@ bool TestUnop(std::ostream& out)
   pink::Location l0(0, 0, 0, 1);
   pink::Location l1(0, 2, 0, 3);
   pink::Location l3(0, 0, 0, 3);
-  pink::Type* int_t = env->types->GetIntType();
+  pink::Type *int_t = env->types->GetIntType();
   std::unique_ptr<pink::Int> i0 = std::make_unique<pink::Int>(l1, 1);
-  pink::Ast* i0_p = i0.get();
-  std::unique_ptr<pink::Unop> u0 = std::make_unique<pink::Unop>(l3, minus, std::move(i0));
+  pink::Ast *i0_p = i0.get();
+  std::unique_ptr<pink::Unop> u0 =
+      std::make_unique<pink::Unop>(l3, minus, std::move(i0));
 
   /*
   The Ast class itself only provides a small
@@ -48,7 +48,8 @@ bool TestUnop(std::ostream& out)
   -) Unop::ToString() == std::string(op) + i0->ToString();
 
   */
-  result &= Test(out, "Unop::GetKind()", u0->getKind() == pink::Ast::Kind::Unop);
+  result &=
+      Test(out, "Unop::GetKind()", u0->GetKind() == pink::Ast::Kind::Unop);
 
   result &= Test(out, "Unop::classof()", u0->classof(u0.get()));
 
@@ -62,10 +63,11 @@ bool TestUnop(std::ostream& out)
   std::string unop_str = std::string(minus) + i0_p->ToString();
 
   result &= Test(out, "Unop::ToString()", u0->ToString() == unop_str);
-  
-  pink::Outcome<pink::Type*, pink::Error> unop_type = u0->Getype(*env);
-  
-  result &= Test(out, "Unop::Getype()", unop_type && unop_type.GetFirst() == int_t);
+
+  pink::Outcome<pink::Type *, pink::Error> unop_type = u0->Getype(*env);
+
+  result &=
+      Test(out, "Unop::Getype()", unop_type && unop_type.GetFirst() == int_t);
 
   result &= Test(out, "pink::Unop", result);
   out << "\n-----------------------\n";

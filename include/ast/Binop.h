@@ -64,6 +64,14 @@ public:
    */
   ~Binop() override = default;
 
+  Binop(const Binop &other) = delete;
+
+  Binop(Binop &&other) = default;
+
+  auto operator=(const Binop &other) -> Binop & = delete;
+
+  auto operator=(Binop &&other) -> Binop & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

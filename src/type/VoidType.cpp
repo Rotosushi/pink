@@ -6,11 +6,11 @@ namespace pink {
 VoidType::VoidType() : Type(Type::Kind::Void) {}
 
 auto VoidType::classof(const Type *type) -> bool {
-  return type->getKind() == Type::Kind::Void;
+  return type->GetKind() == Type::Kind::Void;
 }
 
 auto VoidType::EqualTo(Type *other) const -> bool {
-  return other->getKind() == Type::Kind::Void;
+  return other->GetKind() == Type::Kind::Void;
 }
 
 auto VoidType::ToString() const -> std::string { return {"Void"}; }

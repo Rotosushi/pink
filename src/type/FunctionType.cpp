@@ -9,7 +9,7 @@ FunctionType::FunctionType(Type *return_type,
     : Type(Type::Kind::Function), result(return_type), arguments(args_types) {}
 
 auto FunctionType::classof(const Type *type) -> bool {
-  return type->getKind() == Type::Kind::Function;
+  return type->GetKind() == Type::Kind::Function;
 }
 
 auto FunctionType::EqualTo(Type *other) const -> bool {

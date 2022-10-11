@@ -71,7 +71,6 @@ target_sources(pink-test PUBLIC
 	src/front/TestParser.cpp
 
 	src/support/Common.cpp
-	src/support/GenerateRandomAst.cpp
 
 	src/core/TestFirstPhase.cpp
 	src/core/TestBasics.cpp

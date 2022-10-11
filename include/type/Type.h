@@ -68,7 +68,7 @@ public:
    *
    * @return Kind the Type::Kind of this Type
    */
-  [[nodiscard]] auto getKind() const -> Kind;
+  [[nodiscard]] auto GetKind() const -> Kind;
 
   /*
 

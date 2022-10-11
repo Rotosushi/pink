@@ -53,6 +53,14 @@ public:
    */
   ~While() override = default;
 
+  While(const While &other) = delete;
+
+  While(While &&other) = default;
+
+  auto operator=(const While &other) -> While & = delete;
+
+  auto operator=(While &&other) -> While & = default;
+
   /**
    * @brief Compute the cannonical string representation of this While
    * expression

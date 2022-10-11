@@ -22,7 +22,7 @@ Function::Function(const Location &location, const InternedString name,
       bindings(std::make_shared<SymbolTable>(outer_scope)) {}
 
 auto Function::classof(const Ast *ast) -> bool {
-  return ast->getKind() == Ast::Kind::Function;
+  return ast->GetKind() == Ast::Kind::Function;
 }
 
 /*
@@ -161,15 +161,15 @@ auto Function::Codegen(const Environment &env) const
     is_main = true;
   }
 
-  assert(type != nullptr);
+  assert(GetType() != nullptr);
 
-  Outcome<llvm::Type *, Error> ty_codegen_result = type->Codegen(env);
+  Outcome<llvm::Type *, Error> ty_codegen_result = GetType()->Codegen(env);
 
   if (!ty_codegen_result) {
     return {ty_codegen_result.GetSecond()};
   }
 
-  auto *p_fn_ty = llvm::cast<pink::FunctionType>(type);
+  auto *p_fn_ty = llvm::cast<pink::FunctionType>(GetType());
 
   auto p_fn_ret_ty_result = p_fn_ty->result->Codegen(env);
 
@@ -248,7 +248,7 @@ auto Function::Codegen(const Environment &env) const
     FatalError(buffer, __FILE__, __LINE__);
   }
 
-  env.bindings->Bind(name, type, function);
+  env.bindings->Bind(name, GetType(), function);
 
   return {function};
 }
