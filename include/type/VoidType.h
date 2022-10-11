@@ -26,6 +26,14 @@ public:
    */
   ~VoidType() override = default;
 
+  VoidType(const VoidType &other) = default;
+
+  VoidType(VoidType &&other) = default;
+
+  auto operator=(const VoidType &other) -> VoidType & = default;
+
+  auto operator=(VoidType &&other) -> VoidType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

@@ -27,6 +27,14 @@ public:
    */
   ~IntType() override = default;
 
+  IntType(const IntType &other) = default;
+
+  IntType(IntType &&other) = default;
+
+  auto operator=(const IntType &other) -> IntType & = default;
+
+  auto operator=(IntType &&other) -> IntType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

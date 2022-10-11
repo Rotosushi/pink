@@ -31,6 +31,14 @@ public:
    */
   ~TupleType() override = default;
 
+  TupleType(const TupleType &other) = default;
+
+  TupleType(TupleType &&other) = default;
+
+  auto operator=(const TupleType &other) -> TupleType & = default;
+
+  auto operator=(TupleType &&other) -> TupleType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

@@ -42,7 +42,7 @@ public:
     Tuple,
   };
 
-protected:
+private:
   /**
    * @brief The kind of this particular Type
    *
@@ -63,16 +63,20 @@ public:
    */
   virtual ~Type() = default;
 
+  Type(const Type &other) = default;
+
+  Type(Type &&other) = default;
+
+  auto operator=(const Type &other) -> Type & = default;
+
+  auto operator=(Type &&other) -> Type & = default;
+
   /**
    * @brief Get the Kind of this Type
    *
    * @return Kind the Type::Kind of this Type
    */
   [[nodiscard]] auto GetKind() const -> Kind;
-
-  /*
-
-  */
 
   /**
    * @brief Computes Equality of this type and other type.

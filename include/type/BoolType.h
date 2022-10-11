@@ -27,6 +27,14 @@ public:
    */
   ~BoolType() override = default;
 
+  BoolType(const BoolType &other) = default;
+
+  BoolType(BoolType &&other) = default;
+
+  auto operator=(const BoolType &other) -> BoolType & = default;
+
+  auto operator=(BoolType &&other) -> BoolType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

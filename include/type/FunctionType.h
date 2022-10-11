@@ -41,6 +41,14 @@ public:
    */
   ~FunctionType() override = default;
 
+  FunctionType(const FunctionType &other) = default;
+
+  FunctionType(FunctionType &&other) = default;
+
+  auto operator=(const FunctionType &other) -> FunctionType & = default;
+
+  auto operator=(FunctionType &&other) -> FunctionType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this clas
    *

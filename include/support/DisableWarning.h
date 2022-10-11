@@ -22,6 +22,16 @@
 // Outline of this code retrieved from
 // https://stackoverflow.com/questions/48426484/concise-way-to-disable-specific-warning-instances-in-clang
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+// I agree with the sentiment that macros are to
+// be avoided if at all possible. given the semantics
+// that NOWARN is implementing, I am unsure how to
+// accomplish something similar using even variadic
+// constexpr templates. because the code being repeated
+// is not knowable at the time when the macro is defined.
+// instead, whatever code which we want to turn the warning
+// off for is spliced in. This is unfortunately macro
+// specific semantics as far as I am aware.
 /**
  * @brief helper macro for NOWARN
  *
@@ -29,41 +39,9 @@
 #define DO_PRAGMA(x) _Pragma(#x)
 
 /*
-NOTE 9/15/2022
-Turns out that this version of the macro is redundant as clang supports
-both clang diagnostic push
-and  GCC diagnostic push
-so when compiling with clang we get the
--Wmacro-redefined warning because clang defines
-both __clang__ and __GNUC__,
-
-and on that note, there is no __XXXX___ which is defined if
-and only if GCC is the compiler currently being used.
-see:
--> https://gcc.gnu.org/legacy-ml/gcc/2008-07/msg00025.html
--> https://github.com/cpredef/predef/blob/master/Compilers.md
-
-which is precisely what we are using __clang__ for in this
-case. so that is both fortunate, and unfortunate, because
-this version is more opaque than the first version imo.
-
-#if defined(__clang__)
-#define NOWARN(warnoption, ...)                     \
-    DO_PRAGMA(clang diagnostic push)                \
-    DO_PRAGMA(clang diagnostic ignored #warnoption) \
-    __VA_ARGS__                                     \
-    DO_PRAGMA(clang diagnostic pop)
-#endif
-*/
-
-/*
  *
  *
- * called like:
  *
- * NOWARN(-Wthe-warning,
- * whatever-code-you-want
- * )
  *
  * NOTE 9/15/2022
  * Turns out that this version of the macro is redundant as clang supports
@@ -97,6 +75,11 @@ this version is more opaque than the first version imo.
  * @brief Disables the given warning around the block of code passed to the
  * macro as it's __VA_ARGS__
  *
+ * called like:
+ *
+ * NOWARN(-Wthe-warning,
+ * valid_cpp_code;
+ * )
  */
 #if defined(__GNUC__)
 #define NOWARN(warnoption, ...)                                                \
@@ -105,3 +88,5 @@ this version is more opaque than the first version imo.
   __VA_ARGS__                                                                  \
   DO_PRAGMA(GCC diagnostic pop)
 #endif
+
+// NOLINTEND(cppcoreguidelines-macro-usage)

@@ -463,7 +463,7 @@ public:
   /**
    * @brief Construct a new Parser
    *
-   * @param input_stream the input stream to read from, *CANNOT* be nullptr.
+   * @param input_stream the input stream; *CANNOT* be nullptr.
    */
   Parser(std::istream *input_stream);
 

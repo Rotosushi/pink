@@ -78,6 +78,14 @@ public:
    */
   ~PointerType() override = default;
 
+  PointerType(const PointerType &other) = default;
+
+  PointerType(PointerType &&other) = default;
+
+  auto operator=(const PointerType &other) -> PointerType & = default;
+
+  auto operator=(PointerType &&other) -> PointerType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

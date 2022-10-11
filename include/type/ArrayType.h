@@ -39,6 +39,14 @@ public:
    */
   ~ArrayType() override = default;
 
+  ArrayType(const ArrayType &other) = default;
+
+  ArrayType(ArrayType &&other) = default;
+
+  auto operator=(const ArrayType &other) -> ArrayType & = default;
+
+  auto operator=(ArrayType &&other) -> ArrayType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

@@ -27,6 +27,14 @@ public:
    */
   ~NilType() override = default;
 
+  NilType(const NilType &other) = default;
+
+  NilType(NilType &&other) = default;
+
+  auto operator=(const NilType &other) -> NilType & = default;
+
+  auto operator=(NilType &&other) -> NilType & = default;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *
