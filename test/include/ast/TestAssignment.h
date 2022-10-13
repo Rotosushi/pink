@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include <iostream>
 
-bool TestAssignment(std::ostream& out);
+auto TestAssignment(std::ostream &out) -> bool;

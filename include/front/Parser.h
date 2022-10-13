@@ -28,7 +28,8 @@ class Environment;
  *
  * [descent]: https://en.wikipedia.org/wiki/Recursive_descent_parser "descent"
  * [precedence]: https://en.wikipedia.org/wiki/Operator-precedence_parser
- "precedence"
+"precedence"
+ *
  *
  * The EBNF grammar the parser accepts is:
  *

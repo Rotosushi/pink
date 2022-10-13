@@ -7,7 +7,7 @@
 #pragma once
 #include <bitset>
 
-constexpr auto bits_per_byte = 8;
+#include "support/Support.h"
 
 namespace pink {
 /**

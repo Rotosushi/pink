@@ -1,4 +1,4 @@
 #pragma once
 #include <iostream>
 
-bool TestApplication(std::ostream& out);
+auto TestApplication(std::ostream &out) -> bool;

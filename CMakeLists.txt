@@ -77,9 +77,9 @@ separate_arguments(llvm_syslibs)
 # use re2c to generate 'Lexer.cpp' from 'Lexer.re',
 # Lexer.cpp is then needed to build the static library
 add_custom_command(
-	COMMAND re2c src/front/Lexer.re -o src/front/Lexer.cpp
-	OUTPUT ${pink_SOURCE_DIR}/src/front/Lexer.cpp
-	DEPENDS ${pink_SOURCE_DIR}/src/front/Lexer.re
+	COMMAND re2c source/front/Lexer.re -o source/front/Lexer.cpp
+	OUTPUT ${pink_SOURCE_DIR}/source/front/Lexer.cpp
+	DEPENDS ${pink_SOURCE_DIR}/source/front/Lexer.re
 	WORKING_DIRECTORY ${pink_SOURCE_DIR}
 )
 
@@ -95,49 +95,49 @@ add_library(libpink STATIC
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
-	src/ast/Assignment.cpp
-	src/ast/Ast.cpp
-	src/ast/Bind.cpp
-	src/ast/Binop.cpp
-	src/ast/Block.cpp
-	src/ast/Function.cpp
-	src/ast/Bool.cpp
-	src/ast/Int.cpp
-	src/ast/Nil.cpp
-	src/ast/Unop.cpp
-	src/ast/Variable.cpp
-	src/ast/Application.cpp
-	src/ast/Array.cpp
-	src/ast/Tuple.cpp
-	src/ast/Conditional.cpp
-	src/ast/While.cpp
-	src/ast/Dot.cpp
+	source/ast/Assignment.cpp
+	source/ast/Ast.cpp
+	source/ast/Bind.cpp
+	source/ast/Binop.cpp
+	source/ast/Block.cpp
+	source/ast/Function.cpp
+	source/ast/Bool.cpp
+	source/ast/Int.cpp
+	source/ast/Nil.cpp
+	source/ast/Unop.cpp
+	source/ast/Variable.cpp
+	source/ast/Application.cpp
+	source/ast/Array.cpp
+	source/ast/Tuple.cpp
+	source/ast/Conditional.cpp
+	source/ast/While.cpp
+	source/ast/Dot.cpp
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
-	src/type/Type.cpp
-	src/type/BoolType.cpp
-	src/type/IntType.cpp
-	src/type/NilType.cpp
-	src/type/VoidType.cpp
-	src/type/FunctionType.cpp
-	src/type/PointerType.cpp
-	src/type/ArrayType.cpp
-	src/type/TupleType.cpp
+	source/type/Type.cpp
+	source/type/BoolType.cpp
+	source/type/IntType.cpp
+	source/type/NilType.cpp
+	source/type/VoidType.cpp
+	source/type/FunctionType.cpp
+	source/type/PointerType.cpp
+	source/type/ArrayType.cpp
+	source/type/TupleType.cpp
 
 
 	# the 'aux' directory is for the classes which are necessary or convenient
 	# for the functioning of the compiler, which are additionally small enough 
 	# to fit within a single source file.
-	src/aux/CLIOptions.cpp
-	src/aux/Environment.cpp
-	src/aux/Error.cpp
-	src/aux/Location.cpp
-	src/aux/Outcome.cpp
-	src/aux/StringInterner.cpp
-	src/aux/SymbolTable.cpp
-	src/aux/TypeInterner.cpp
-	src/aux/Flags.cpp
+	source/aux/CLIOptions.cpp
+	source/aux/Environment.cpp
+	source/aux/Error.cpp
+	source/aux/Location.cpp
+	source/aux/Outcome.cpp
+	source/aux/StringInterner.cpp
+	source/aux/SymbolTable.cpp
+	source/aux/TypeInterner.cpp
+	source/aux/Flags.cpp
 
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 
@@ -145,32 +145,32 @@ add_library(libpink STATIC
 	# (aside: all operator classes were once in 'aux' however that clutters up 
 	# 'aux' so any semantics which require multiple classes working in concert 
 	# to acheive a single purpose will be placed in their own directory)
-	src/ops/BinopCodegen.cpp
-	src/ops/BinopLiteral.cpp
-	src/ops/BinopTable.cpp
-	src/ops/UnopCodegen.cpp
-	src/ops/UnopLiteral.cpp
-	src/ops/UnopTable.cpp
+	source/ops/BinopCodegen.cpp
+	source/ops/BinopLiteral.cpp
+	source/ops/BinopTable.cpp
+	source/ops/UnopCodegen.cpp
+	source/ops/UnopLiteral.cpp
+	source/ops/UnopTable.cpp
 
 	# the 'front' directory is for the classes which comprise the frontend
 	# of the compiler itself.
-	src/front/Lexer.cpp 
-	src/front/Token.cpp
-	src/front/Parser.cpp
+	source/front/Lexer.cpp 
+	source/front/Token.cpp
+	source/front/Parser.cpp
 		
 	# the 'kernel' directory is for files which implement functionality 
 	# within the compiler which is made directly available to the programmer.
-	src/kernel/BinopPrimitives.cpp
-	src/kernel/UnopPrimitives.cpp
-	src/kernel/Cast.cpp
-	src/kernel/StoreAggregate.cpp
+	source/kernel/BinopPrimitives.cpp
+	source/kernel/UnopPrimitives.cpp
+	source/kernel/Cast.cpp
+	source/kernel/StoreAggregate.cpp
 
 	# the 'support' directory is for files which define necessary or convenient 
 	# subroutines, which are too small to justify their own class.
-	src/support/LLVMErrorToString.cpp
-	src/support/LLVMValueToString.cpp
-	src/support/LLVMTypeToString.cpp 
-	src/support/EmitFile.cpp
+	source/support/LLVMErrorToString.cpp
+	source/support/LLVMValueToString.cpp
+	source/support/LLVMTypeToString.cpp 
+	source/support/EmitFile.cpp
 
 )
 			   
@@ -185,7 +185,7 @@ set_target_properties(libpink PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
 set_property(
 	TARGET libpink 
 	APPEND
-	PROPERTY ADDITIONAL_CLEAN_FILES src/front/Lexer.cpp
+	PROPERTY ADDITIONAL_CLEAN_FILES source/front/Lexer.cpp
 )
 
 add_link_options(-gdwarf-4)
@@ -205,9 +205,9 @@ ${llvm_libs}
 add_executable(pink 
         # the 'core' directory is for the core files within the compiler,
         # that is, those functions which are central drivers of the program.
-        src/core/Compile.cpp
-        src/core/Link.cpp
-        src/core/Pink.cpp
+        source/core/Compile.cpp
+        source/core/Link.cpp
+        source/core/Pink.cpp
 )
 
 target_link_options(pink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)

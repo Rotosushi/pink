@@ -84,7 +84,7 @@ public:
   /**
    * @brief the [symbols](@ref InternedString) associated with
    * [bindings](#SymbolTable) constructed during [typechecking](@ref
-   * Ast::Getype)
+   * Ast::Typecheck)
    *
    * we must keep track of these, because they are not complete bindings yet.
    * (hense the name 'false' bindings) in that they do not contain an associated
@@ -158,7 +158,7 @@ public:
    * this structure ensures that we have one and only one copy of any
    * given [type](#Type) at any point within compilation. Thus we may
    * use pointer comparison instead of a deep tree comparison when performing
-   * type equality during [typechecking](#Ast::Getype).
+   * type equality during [typechecking](#Ast::Typecheck).
    *
    */
   std::shared_ptr<TypeInterner> types;
@@ -171,7 +171,7 @@ public:
    * [value]: https://llvm.org/doxygen/classllvm_1_1Value.html "llvm::Value*"
    *
    * This is to record that binding, such that a [variable](#Variable) reference
-   * can be [typed](#Ast::Getype) and associated with it's [value].
+   * can be [typed](#Ast::Typecheck) and associated with it's [value].
    *
    */
   std::shared_ptr<SymbolTable> bindings;

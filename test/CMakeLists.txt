@@ -28,52 +28,52 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 include_directories(include ../include)
 
-add_executable(pink-test src/TestMain.cpp)
+add_executable(pink-test source/TestMain.cpp)
 
 target_sources(pink-test PUBLIC 
-	src/Test.cpp
-	src/ast/TestAssignment.cpp
-	src/ast/TestAstAndNil.cpp
-	src/ast/TestBind.cpp
-	src/ast/TestBinop.cpp
-	src/ast/TestBool.cpp
-	src/ast/TestInt.cpp
-	src/ast/TestUnop.cpp
-	src/ast/TestVariable.cpp
-	src/ast/TestBlock.cpp
-	src/ast/TestFunction.cpp
-	src/ast/TestApplication.cpp
+	source/Test.cpp
+	source/ast/TestAssignment.cpp
+	source/ast/TestAstAndNil.cpp
+	source/ast/TestBind.cpp
+	source/ast/TestBinop.cpp
+	source/ast/TestBool.cpp
+	source/ast/TestInt.cpp
+	source/ast/TestUnop.cpp
+	source/ast/TestVariable.cpp
+	source/ast/TestBlock.cpp
+	source/ast/TestFunction.cpp
+	source/ast/TestApplication.cpp
 
-	src/aux/TestEnvironment.cpp
-	src/aux/TestError.cpp
-	src/aux/TestOutcome.cpp
-	src/aux/TestStringInterner.cpp
-	src/aux/TestSymbolTable.cpp
-	src/aux/TestTypeInterner.cpp
+	source/aux/TestEnvironment.cpp
+	source/aux/TestError.cpp
+	source/aux/TestOutcome.cpp
+	source/aux/TestStringInterner.cpp
+	source/aux/TestSymbolTable.cpp
+	source/aux/TestTypeInterner.cpp
 
-	src/ops/TestBinopCodegen.cpp
-	src/ops/TestBinopLiteral.cpp
-	src/ops/TestBinopTable.cpp
-	src/ops/TestUnopCodegen.cpp
-	src/ops/TestUnopLiteral.cpp
-	src/ops/TestUnopTable.cpp
+	source/ops/TestBinopCodegen.cpp
+	source/ops/TestBinopLiteral.cpp
+	source/ops/TestBinopTable.cpp
+	source/ops/TestUnopCodegen.cpp
+	source/ops/TestUnopLiteral.cpp
+	source/ops/TestUnopTable.cpp
 
-	src/type/TestTypeAndNilType.cpp
-	src/type/TestIntType.cpp
-	src/type/TestBoolType.cpp
-	src/type/TestFunctionType.cpp
+	source/type/TestTypeAndNilType.cpp
+	source/type/TestIntType.cpp
+	source/type/TestBoolType.cpp
+	source/type/TestFunctionType.cpp
 
-	src/kernel/TestBinopPrimitives.cpp
-	src/kernel/TestUnopPrimitives.cpp
+	source/kernel/TestBinopPrimitives.cpp
+	source/kernel/TestUnopPrimitives.cpp
 
-	src/front/TestToken.cpp
-	src/front/TestLexer.cpp
-	src/front/TestParser.cpp
+	source/front/TestToken.cpp
+	source/front/TestLexer.cpp
+	source/front/TestParser.cpp
 
-	src/support/Common.cpp
+	source/support/Common.cpp
 
-	src/core/TestFirstPhase.cpp
-	src/core/TestBasics.cpp
+	source/core/TestFirstPhase.cpp
+	source/core/TestBasics.cpp
 )
 
 

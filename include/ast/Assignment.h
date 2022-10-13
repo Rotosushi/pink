@@ -20,7 +20,7 @@ private:
    * @return Outcome<Type*, Error> if true the Type of the Assignment
    * expression, if false the Error encountered.
    */
-  [[nodiscard]] auto GetypeV(const Environment &env) const
+  [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
 public:

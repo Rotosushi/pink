@@ -9,7 +9,7 @@
  */
 
 // #QUESTION:
-// Should we refactor Getype, Codegen, and ToString to be visitors?
+// Should we refactor Typecheck, Codegen, and ToString to be visitors?
 // we have a few extra arguments compared to the basic visitor pattern
 // but this is in order to pass data to and from the visitor so it can actually
 // work. if we pass in a AstVisitor& to the accept function, then we
@@ -113,7 +113,9 @@ public:
    *
    *
    *  Ast::Kind is used as a tag to identify which node kind
-   *  is currently instanciated when inspecting a variable of type (Ast*)
+   *  is currently instanciated when inspecting a variable of type (Ast*),
+   * this can be accomplished by calling Ast::GetKind or by calling
+   * classof() on any derived type.
    *
    */
   enum class Kind {
@@ -142,7 +144,7 @@ public:
 private:
   Kind kind;
   Location loc;
-  Type *type;
+  mutable Type *type;
 
   /** @property kind
    * @brief holds the [kind](#Kind) of this Ast node
@@ -151,7 +153,7 @@ private:
    * @brief holds the textual [location](#Location) of this Ast node
    */
   /** @property type
-   * @brief initially nullptr; however after a call to Getype type caches the
+   * @brief initially nullptr; however after a call to Typecheck it caches the
    * [type](#Type) of this Ast node
    */
 
@@ -167,7 +169,7 @@ private:
    * checker, then the Outcome holds that type, otherwise the Outcome holds the
    * Error the type checker ran into during evaluation.
    */
-  [[nodiscard]] virtual auto GetypeV(const Environment &env) const
+  [[nodiscard]] virtual auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> = 0;
 
 public:
@@ -214,9 +216,10 @@ public:
   /**
    * @brief Get the Type
    *
-   * \note: the type is only filled in an Ast after Getype has been
+   * \note: the type is only filled in an Ast after Typecheck has been
    * called on this Ast. That is, immediately after construction of
-   * an Ast, GetType will return nullptr,
+   * an Ast, GetType will return nullptr, and only after the Ast passed
+   * Typechecking will this return a valid type pointer.
    *
    * @return const Type* the type of this ast, or nullptr
    */
@@ -244,21 +247,18 @@ public:
   /**
    * @brief Computes the [Type](#Type) of this [term](#Ast)
    *
-   * This function runs a fairly standard simple typing algorithm,
+   * This function runs the, as far as I know, standard simple typing algorithm,
    * eagerly evaluated, with no implicit casting. There are currently
    * no syntactic forms which allow for user types. (other than functions)
    *
-   * internally this function retreives all instances of a [Type](#Type)
-   * via the [TypeInterner](#TypeInterner) so all type comparison can be
-   * accomplished via pointer comparison.
-   *
    * \todo implement some form of user defined types
    *
-   * \note Getype itself only modifies the Ast in that if a type
+   * \note Typecheck itself only modifies the Ast in that if a type
    * was computed, then that type is cached within the Ast node,
-   * so subsequet calls to Getype are faster. This is because we
-   * also need the Type of any given term available within Codegeneration.
-   * and redoing all that work is slow.
+   * so we never need to run the whole algorithm a second time,
+   * This is because we also need the Type of any given term
+   * available within Codegen and redoing all that work is slow.
+   * otherwise this function could be const.
    *
    * @param env The Environment to typecheck against, an
    * [Environment](#Environment) set up as if by [NewGlobalEnv](#NewGlobalEnv)
@@ -267,7 +267,8 @@ public:
    * this term a [type](#Type) then the Outcome holds that type, otherwise the
    * Outcome holds the Error that the type checking algorithm constructed.
    */
-  [[nodiscard]] auto Getype(const Environment &env) -> Outcome<Type *, Error>;
+  [[nodiscard]] auto Typecheck(const Environment &env) const
+      -> Outcome<Type *, Error>;
 
   /**
    * @brief Computes the LLVM Intermediate Representation ([IR]) corresponding

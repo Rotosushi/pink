@@ -38,7 +38,7 @@ private:
    * @return Outcome<Type*, Error> if the types match, then the return type of
    * the function being called, if false the Error which was encountered.
    */
-  [[nodiscard]] auto GetypeV(const Environment &env) const
+  [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
 public:

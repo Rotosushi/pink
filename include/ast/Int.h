@@ -33,7 +33,7 @@ private:
    * from.
    * @return Outcome<Type*, Error> An pointer to an [IntType](#IntType)
    */
-  [[nodiscard]] auto GetypeV(const Environment &env) const
+  [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
 public:

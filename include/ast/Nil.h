@@ -30,7 +30,7 @@ private:
    * [NilType](#NilType) from
    * @return Outcome<Type*, Error> An instance of [NilType](#NilType)
    */
-  [[nodiscard]] auto GetypeV(const Environment &env) const
+  [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
 public:

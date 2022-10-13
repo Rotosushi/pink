@@ -27,7 +27,7 @@ private:
    * @return Outcome<Type*, Error> A [BoolType](#BoolType) from the
    * [TypeInterner](#TypeInterner) held in [env](#Environment)
    */
-  [[nodiscard]] auto GetypeV(const Environment &env) const
+  [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
 public:
