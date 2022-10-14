@@ -15,7 +15,8 @@ auto ArrayType::EqualTo(Type *other) const -> bool {
 
   auto *array_type = llvm::dyn_cast<ArrayType>(other);
   if (array_type != nullptr) {
-    if (array_type->size != size || array_type->member_type != member_type) {
+    if ((array_type->size != size) ||
+        (array_type->member_type != member_type)) {
       equal = false;
     }
   } else {

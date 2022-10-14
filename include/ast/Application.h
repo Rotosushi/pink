@@ -72,7 +72,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) override;
+  void Accept(AstVisitor *visitor) const override;
 
   /**
    * @brief Get the Callee

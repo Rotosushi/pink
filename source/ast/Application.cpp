@@ -13,7 +13,7 @@ Application::Application(const Location &location, std::unique_ptr<Ast> callee,
     : Ast(Ast::Kind::Application, location), callee(std::move(callee)),
       arguments(std::move(arguments)) {}
 
-void Application::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void Application::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Application::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Application;

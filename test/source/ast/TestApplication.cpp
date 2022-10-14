@@ -23,14 +23,14 @@ auto TestApplication(std::ostream &out) -> bool {
 
   auto fun = env->parser->Parse(*env);
 
-  // application -> "add(5, 7)"
+  // "add(5, 7)"
   // the only algorithmic way to count out the locations properly
   // is to actually lex the input string just for the locations.
   // given that we are only testing that we can retrieve the passed
   // in locations, it makes sense to use some admittedly magic numbers here.
   // (think about it, the only way to get the computer to really check that
   //  the locations emitted by the lexer are correct is to write another lexer,
-  //  and be sure of that lexer's ability to check the firsts. which begs
+  //  and be sure of that lexer's ability to check the first. which begs
   //  the question of how do we test that lexer, and so on. eventually there
   //  has to be a magic number somewhere when we stop, so it might as well be
   //  here.)

@@ -8,22 +8,22 @@ class AstToString
     : public AstVisitorResult<AstToString, const Ast *, std::string>,
       public AstVisitor {
 public:
-  void Visit(Application *application) override;
-  void Visit(Array *array) override;
-  void Visit(Assignment *assignment) override;
-  void Visit(Bind *bind) override;
-  void Visit(Binop *binop) override;
-  void Visit(Block *block) override;
-  void Visit(Bool *boolean) override;
-  void Visit(Conditional *conditional) override;
-  void Visit(Dot *dot) override;
-  void Visit(Function *function) override;
-  void Visit(Int *integer) override;
-  void Visit(Nil *nil) override;
-  void Visit(Tuple *tuple) override;
-  void Visit(Unop *unop) override;
-  void Visit(Variable *variable) override;
-  void Visit(While *loop) override;
+  void Visit(const Application *application) const override;
+  void Visit(const Array *array) const override;
+  void Visit(const Assignment *assignment) const override;
+  void Visit(const Bind *bind) const override;
+  void Visit(const Binop *binop) const override;
+  void Visit(const Block *block) const override;
+  void Visit(const Bool *boolean) const override;
+  void Visit(const Conditional *conditional) const override;
+  void Visit(const Dot *dot) const override;
+  void Visit(const Function *function) const override;
+  void Visit(const Int *integer) const override;
+  void Visit(const Nil *nil) const override;
+  void Visit(const Tuple *tuple) const override;
+  void Visit(const Unop *unop) const override;
+  void Visit(const Variable *variable) const override;
+  void Visit(const While *loop) const override;
 
   AstToString() = default;
   AstToString(const AstToString &other) = default;

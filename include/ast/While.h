@@ -70,7 +70,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) override;
+  void Accept(AstVisitor *visitor) const override;
 
   /**
    * @brief Compute the cannonical string representation of this While

@@ -64,7 +64,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) override;
+  void Accept(AstVisitor *visitor) const override;
 
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node

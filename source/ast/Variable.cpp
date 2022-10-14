@@ -1,9 +1,13 @@
 #include "ast/Variable.h"
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Variable::Variable(const Location &location, InternedString symbol)
     : Ast(Ast::Kind::Variable, location), symbol(symbol) {}
+
+void Variable::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Variable::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Variable;

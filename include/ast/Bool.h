@@ -41,8 +41,8 @@ public:
   /**
    * @brief Construct a new Bool
    *
-   * @param l The textual [location] of the bool
-   * @param b The value of the bool
+   * @param location The textual [location] of the bool
+   * @param value The value of the bool
    */
   Bool(const Location &location, const bool value);
 
@@ -64,7 +64,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) override;
+  void Accept(AstVisitor *visitor) const override;
 
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node

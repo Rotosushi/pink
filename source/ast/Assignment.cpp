@@ -14,7 +14,7 @@ Assignment::Assignment(const Location &location, std::unique_ptr<Ast> left,
     : Ast(Ast::Kind::Assignment, location), left(std::move(left)),
       right(std::move(right)) {}
 
-void Assignment::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void Assignment::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Assignment::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Assignment;

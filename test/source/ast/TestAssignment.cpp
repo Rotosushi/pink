@@ -44,10 +44,10 @@ auto TestAssignment(std::ostream &out) -> bool {
       Test(out, "Assignment::GetLoc()", assignment->GetLoc() == assign_loc);
 
   result &=
-      Test(out, "Assignment::left", assignment->left.get() == variable_pointer);
+      Test(out, "Assignment::left", assignment->GetLeft() == variable_pointer);
 
-  result &= Test(out, "Assignment::right",
-                 assignment->right.get() == boolean_pointer);
+  result &=
+      Test(out, "Assignment::right", assignment->GetRight() == boolean_pointer);
 
   std::string assignment_string =
       variable_pointer->ToString() + " = " + boolean_pointer->ToString();

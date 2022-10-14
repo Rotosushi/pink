@@ -60,16 +60,16 @@ public:
 
   auto operator=(Assignment &&other) -> Assignment & = default;
 
-  auto GetLeft() const -> Ast * { return left.get(); }
+  auto GetLeft() const -> const Ast * { return left.get(); }
 
-  auto GetRight() const -> Ast * { return right.get(); }
+  auto GetRight() const -> const Ast * { return right.get(); }
 
   /**
    * @brief part of the Visitor interface
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) override;
+  void Accept(AstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

@@ -12,7 +12,7 @@ Conditional::Conditional(const Location &location, std::unique_ptr<Ast> test,
     : Ast(Ast::Kind::Conditional, location), test(std::move(test)),
       first(std::move(first)), second(std::move(second)) {}
 
-void Conditional::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void Conditional::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Conditional::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Conditional;

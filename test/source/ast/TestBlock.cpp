@@ -10,7 +10,7 @@
 
 #include "aux/Environment.h"
 
-bool TestBlock(std::ostream &out) {
+auto TestBlock(std::ostream &out) -> bool {
   bool result = true;
 
   out << "\n-----------------------\n";
@@ -18,59 +18,51 @@ bool TestBlock(std::ostream &out) {
 
   auto options = std::make_shared<pink::CLIOptions>();
   auto env = pink::NewGlobalEnv(options);
-  // "x := true; 3 + 5"
+
+  // "var x := true; 3 + 5;"
   pink::InternedString plus = env->operators->Intern("+");
-  pink::InternedString var_x = env->symbols->Intern("x");
-  pink::Location l0(0, 0, 0, 1);
-  pink::Location l1(0, 5, 0, 9);
-  pink::Location l2(0, 0, 0, 6); // Location of the Bind
-  pink::Location l3(0, 11, 0, 12);
-  pink::Location l4(0, 15, 0, 16);
-  pink::Location l5(0, 11, 0, 16); // Location of the Binop
-  pink::Location l6(0, 0, 0, 16);  // Location of the Block
-  pink::Type *int_t = env->types->GetIntType();
-  // pink::Type*  bool_t = env.types.GetBoolType();
+  pink::InternedString variable = env->symbols->Intern("x");
+  // NOLINTBEGIN
+  pink::Location boolean_loc(1, 10, 1, 14);
+  pink::Location bind_loc(1, 0, 1, 14);
+  pink::Location integer_1_loc(1, 16, 1, 17);
+  pink::Location integer_2_loc(1, 20, 1, 21);
+  pink::Location binop_loc(1, 16, 1, 21);
+  pink::Location block_loc(1, 0, 1, 21);
+  // NOLINTEND
+  pink::Type *integer_type = env->types->GetIntType();
 
-  std::unique_ptr<pink::Bool> bool0 = std::make_unique<pink::Bool>(l1, true);
-  // pink::Ast* bool0_p = bool0.get();
+  auto boolean = std::make_unique<pink::Bool>(boolean_loc, true);
 
-  std::unique_ptr<pink::Bind> d0 =
-      std::make_unique<pink::Bind>(l2, var_x, std::move(bool0));
-  // pink::Ast* d0_p = d0.get();
+  auto bind =
+      std::make_unique<pink::Bind>(bind_loc, variable, std::move(boolean));
 
-  std::unique_ptr<pink::Int> i1 = std::make_unique<pink::Int>(l3, 3);
-  // pink::Ast* i1_p = i1.get();
+  auto integer_1 = std::make_unique<pink::Int>(integer_1_loc, 3); // NOLINT
 
-  std::unique_ptr<pink::Int> i2 = std::make_unique<pink::Int>(l4, 5);
-  // pink::Ast* i2_p = i2.get();
+  auto integer_2 = std::make_unique<pink::Int>(integer_2_loc, 5); // NOLINT
 
-  std::unique_ptr<pink::Binop> b0 =
-      std::make_unique<pink::Binop>(l5, plus, std::move(i1), std::move(i2));
-  // pink::Ast* b0_p = b0.get();
+  auto binop = std::make_unique<pink::Binop>(
+      binop_loc, plus, std::move(integer_1), std::move(integer_2));
 
   std::vector<std::unique_ptr<pink::Ast>> stmts;
-  stmts.emplace_back(std::move(d0));
-  stmts.emplace_back(std::move(b0));
+  stmts.emplace_back(std::move(bind));
+  stmts.emplace_back(std::move(binop));
 
-  std::unique_ptr<pink::Block> block = std::make_unique<pink::Block>(l6, stmts);
+  auto block = std::make_unique<pink::Block>(block_loc, stmts);
 
   result &=
       Test(out, "Block::getKind()", block->GetKind() == pink::Ast::Kind::Block);
-
-  result &= Test(out, "Block::GetLoc()", block->GetLoc() == l6);
-
+  result &= Test(out, "Block::GetLoc()", block->GetLoc() == block_loc);
   result &= Test(out, "Block::classof()", block->classof(block.get()));
 
   auto iter = block->begin();
-
   result &= Test(out, "Block::iterator", iter != block->end());
 
-  pink::Outcome<pink::Type *, pink::Error> getype_outcome(
-      pink::Error(pink::Error::Code::None, pink::Location()));
+  auto typecheck_result = block->Typecheck(*env);
 
-  result &= Test(out, "Block::Typecheck()",
-                 (getype_outcome = block->Typecheck(*env)) &&
-                     (getype_outcome.GetFirst() == int_t));
+  result &=
+      Test(out, "Block::Typecheck()",
+           (typecheck_result) && (typecheck_result.GetFirst() == integer_type));
 
   result &= Test(out, "pink::Block", result);
   out << "\n-----------------------\n";

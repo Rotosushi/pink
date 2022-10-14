@@ -3,7 +3,7 @@
 #include "support/DisableWarning.h"
 
 namespace pink {
-void AstToString::Visit(Application *application) {
+void AstToString::Visit(const Application *application) const {
   std::string result;
 
   result += Compute(application->GetCallee());
@@ -24,7 +24,7 @@ void AstToString::Visit(Application *application) {
   Return(result);
 }
 
-void AstToString::Visit(Array *array) {
+void AstToString::Visit(const Array *array) const {
   std::string result;
   result += "[";
 
@@ -44,17 +44,17 @@ void AstToString::Visit(Array *array) {
   Return(result);
 }
 
-void AstToString::Visit(Assignment *assignment) {
+void AstToString::Visit(const Assignment *assignment) const {
   std::string result =
       Compute(assignment->GetLeft()) + " = " + Compute(assignment->GetRight());
   Return(result);
 }
 
-void AstToString::Visit(Bind *bind) {
+void AstToString::Visit(const Bind *bind) const {
   Return(std::string(bind->GetSymbol()) += " := " + Compute(bind->GetAffix()));
 }
 
-void AstToString::Visit(Binop *binop) {
+void AstToString::Visit(const Binop *binop) const {
   std::string result;
   const auto *left = binop->GetLeft();
   const auto *right = binop->GetRight();
@@ -75,7 +75,7 @@ void AstToString::Visit(Binop *binop) {
   Return(result);
 }
 
-void AstToString::Visit(Block *block) {
+void AstToString::Visit(const Block *block) const {
   std::string result("{ ");
 
   for (const auto &stmt : *block) {
@@ -87,7 +87,7 @@ void AstToString::Visit(Block *block) {
   Return(result);
 }
 
-void AstToString::Visit(Bool *boolean) {
+void AstToString::Visit(const Bool *boolean) const {
   if (boolean->GetValue()) {
     Return("true");
   } else {
@@ -95,7 +95,7 @@ void AstToString::Visit(Bool *boolean) {
   }
 }
 
-void AstToString::Visit(Conditional *conditional) {
+void AstToString::Visit(const Conditional *conditional) const {
   const auto *test = conditional->GetTest();
   const auto *first = conditional->GetFirst();
   const auto *second = conditional->GetSecond();
@@ -108,11 +108,11 @@ void AstToString::Visit(Conditional *conditional) {
   Return(result);
 }
 
-void AstToString::Visit(Dot *dot) {
+void AstToString::Visit(const Dot *dot) const {
   Return(Compute(dot->GetLeft()) + "." + Compute(dot->GetRight()));
 }
 
-void AstToString::Visit(Function *function) {
+void AstToString::Visit(const Function *function) const {
   const auto *name = function->GetName();
   const auto &arguments = function->GetArguments();
   const auto *body = function->GetBody();
@@ -134,16 +134,16 @@ void AstToString::Visit(Function *function) {
   Return(result);
 }
 
-void AstToString::Visit(Int *integer) {
+void AstToString::Visit(const Int *integer) const {
   Return(std::to_string(integer->GetValue()));
 }
 
 NOWARN(
     "-Wunused-parameter",
-    void AstToString::Visit(Nil *nil) { Return("nil"); } // NOLINT
+    void AstToString::Visit(const Nil *nil) const { Return("nil"); } // NOLINT
 )
 
-void AstToString::Visit(Tuple *tuple) {
+void AstToString::Visit(const Tuple *tuple) const {
   std::string result("(");
   size_t idx = 0;
   size_t length = tuple->GetMembers().size();
@@ -161,13 +161,15 @@ void AstToString::Visit(Tuple *tuple) {
   Return(result);
 }
 
-void AstToString::Visit(Unop *unop) {
+void AstToString::Visit(const Unop *unop) const {
   Return(unop->GetOp() + Compute(unop->GetRight()));
 }
 
-void AstToString::Visit(Variable *variable) { Return({variable->GetSymbol()}); }
+void AstToString::Visit(const Variable *variable) const {
+  Return({variable->GetSymbol()});
+}
 
-void AstToString::Visit(While *loop) {
+void AstToString::Visit(const While *loop) const {
   std::string result("while ");
   result += Compute(loop->GetTest());
   result += " do ";

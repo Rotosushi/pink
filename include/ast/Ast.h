@@ -235,7 +235,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  virtual void Accept(AstVisitor *visitor) = 0;
+  virtual void Accept(AstVisitor *visitor) const = 0;
 
   /**
    * @brief Computes the canonical string representation of this Ast

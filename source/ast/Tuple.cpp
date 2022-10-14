@@ -10,7 +10,7 @@ Tuple::Tuple(const Location &location,
              std::vector<std::unique_ptr<Ast>> members)
     : Ast(Ast::Kind::Tuple, location), members(std::move(members)) {}
 
-void Tuple::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void Tuple::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Tuple::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Tuple;

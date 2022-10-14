@@ -198,10 +198,12 @@ auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
   // everything by reference (from the functions point of view), to support
   // the ability to make a lambda out of any defined function, this is available
   // in the ccc, it's just maybe not what the debugger expects. for instance,
-  // can it call a function taking a reference to an int? if it is JIT'ing the
-  // code snippets then the Language Rules of C/C++ are that int literals cannot
-  // be directly passed by reference, a local variable must be constructed, and
-  // then the reference can point to the local.
+  // can it call a function taking a reference to an int, when from the users
+  // point if view they pass an integer literal to the function? if it is
+  // JIT'ing the code snippets then the Language Rules of C/C++ are that int
+  // literals cannot be directly passed by reference, a local variable must be
+  // constructed, and then the reference can point to the local.
+
   // const llvm::DIBuilder temp_debug_builder(*module);
   // llvm::DICompileUnit* debug_compile_unit =
   // temp_debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C);

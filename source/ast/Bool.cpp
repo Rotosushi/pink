@@ -8,6 +8,8 @@ namespace pink {
 Bool::Bool(const Location &location, const bool value)
     : Ast(Ast::Kind::Bool, location), value(value) {}
 
+void Bool::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+
 auto Bool::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Bool;
 }

@@ -12,7 +12,7 @@ Dot::Dot(const Location &location, std::unique_ptr<Ast> left,
     : Ast(Ast::Kind::Dot, location), left(std::move(left)),
       right(std::move(right)) {}
 
-void Dot::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void Dot::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Dot::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Dot;

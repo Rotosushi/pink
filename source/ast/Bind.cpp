@@ -13,7 +13,7 @@ Bind::Bind(const Location &location, InternedString symbol,
            std::unique_ptr<Ast> affix)
     : Ast(Ast::Kind::Bind, location), symbol(symbol), affix(std::move(affix)) {}
 
-void Bind::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void Bind::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Bind::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Bind;

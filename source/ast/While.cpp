@@ -12,7 +12,7 @@ While::While(const Location &location, std::unique_ptr<Ast> test,
     : Ast(Ast::Kind::While, location), test(std::move(test)),
       body(std::move(body)) {}
 
-void While::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void While::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto While::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::While;

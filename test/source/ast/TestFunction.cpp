@@ -8,7 +8,7 @@
 
 #include "aux/Environment.h"
 
-bool TestFunction(std::ostream &out) {
+auto TestFunction(std::ostream &out) -> bool {
   bool result = true;
   out << "\n-----------------------\n";
   out << "Testing Pink::Function: \n";
@@ -17,7 +17,6 @@ bool TestFunction(std::ostream &out) {
   auto env = pink::NewGlobalEnv(options);
 
   /*
-
   fn first(x: Int, y: Bool)
   {
     x;
@@ -27,51 +26,53 @@ bool TestFunction(std::ostream &out) {
   {
     y;
   }
-
   */
 
-  pink::InternedString x = env->symbols->Intern("x"),
-                       y = env->symbols->Intern("y");
-  pink::InternedString fname = env->symbols->Intern("first"),
-                       sname = env->symbols->Intern("second");
-  pink::Type *int_t = env->types->GetIntType(),
-             *bool_t = env->types->GetBoolType();
-  pink::Location fl = {0, 0, 4, 34};
-  pink::Location xl = {3, 30, 3, 31};
-  pink::Location sl = {6, 36, 9, 70};
-  pink::Location yl = {8, 64, 8, 65};
+  pink::InternedString symbol_x = env->symbols->Intern("x");
+  pink::InternedString symbol_y = env->symbols->Intern("y");
+  pink::InternedString fname = env->symbols->Intern("first");
+  pink::InternedString sname = env->symbols->Intern("second");
+  pink::Type *integer_type = env->types->GetIntType();
+  pink::Type *boolean_type = env->types->GetBoolType();
+  // NOLINTBEGIN
+  pink::Location first_loc = {1, 0, 4, 1};
+  pink::Location variable_x_loc = {3, 3, 3, 4};
+  pink::Location second_loc = {6, 0, 9, 1};
+  pink::Location variable_y_loc = {8, 3, 8, 4};
+  // NOLINTEND
 
-  std::unique_ptr<pink::Ast> xv = std::make_unique<pink::Variable>(xl, x);
-  std::unique_ptr<pink::Ast> yv = std::make_unique<pink::Variable>(yl, y);
+  auto variable_x = std::make_unique<pink::Variable>(variable_x_loc, symbol_x);
+  auto variable_y = std::make_unique<pink::Variable>(variable_y_loc, symbol_y);
 
   std::vector<std::pair<pink::InternedString, pink::Type *>> fargs = {
-      {x, int_t}, {y, bool_t}};
+      {symbol_x, integer_type}, {symbol_y, boolean_type}};
   std::vector<std::pair<pink::InternedString, pink::Type *>> sargs = {
-      {x, int_t}, {y, bool_t}};
+      {symbol_x, integer_type}, {symbol_y, boolean_type}};
 
-  pink::Type *ftype = env->types->GetFunctionType(int_t, {int_t, bool_t});
-  pink::Type *stype = env->types->GetFunctionType(bool_t, {int_t, bool_t});
+  pink::Type *ftype =
+      env->types->GetFunctionType(integer_type, {integer_type, boolean_type});
+  pink::Type *stype =
+      env->types->GetFunctionType(boolean_type, {integer_type, boolean_type});
 
-  std::unique_ptr<pink::Function> first = std::make_unique<pink::Function>(
-      fl, fname, fargs, std::move(xv), env->bindings.get());
+  auto first = std::make_unique<pink::Function>(
+      first_loc, fname, fargs, std::move(variable_x), env->bindings.get());
 
-  std::unique_ptr<pink::Function> second = std::make_unique<pink::Function>(
-      sl, sname, sargs, std::move(yv), env->bindings.get());
+  auto second = std::make_unique<pink::Function>(
+      second_loc, sname, sargs, std::move(variable_y), env->bindings.get());
 
   result &= Test(out, "Function::getKind()",
                  first->GetKind() == pink::Ast::Kind::Function);
 
-  result &= Test(out, "Function::GetLoc()", first->GetLoc() == fl);
+  result &= Test(out, "Function::GetLoc()", first->GetLoc() == first_loc);
 
   result &= Test(out, "Function::classof()", first->classof(first.get()));
 
-  pink::Outcome<pink::Type *, pink::Error> fty_res = first->Typecheck(*env);
-  pink::Outcome<pink::Type *, pink::Error> sty_res = second->Typecheck(*env);
+  auto fty_res = first->Typecheck(*env);
+  auto sty_res = second->Typecheck(*env);
 
-  result &=
-      Test(out, "Function::Typecheck()",
-           (fty_res) && (sty_res) && (fty_res.GetFirst()->EqualTo(ftype)) &&
-               (sty_res.GetFirst()->EqualTo(stype)));
+  result &= Test(out, "Function::Typecheck()",
+                 (fty_res) && (sty_res) && (fty_res.GetFirst() == ftype) &&
+                     (sty_res.GetFirst() == stype));
 
   result &= Test(out, "pink::Function", result);
   out << "\n-----------------------\n";

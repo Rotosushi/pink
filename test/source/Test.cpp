@@ -195,7 +195,7 @@ void Testbench::PrintPassedTests(std::ostream &out) const {
   PrintFrontendPassedTests(out);
   PrintCorePassedTests(out);
 
-  // synopsis
+  out << "\nsynopsis:\n";
   Test(out, "auxilliary tests", GetTestResult(Testbench::aux));
   Test(out, "abstract syntax tree tests", GetTestResult(Testbench::ast));
   Test(out, "type tests", GetTestResult(Testbench::type));

@@ -15,7 +15,7 @@ Array::Array(const Location &location,
              std::vector<std::unique_ptr<Ast>> members)
     : Ast(Ast::Kind::Array, location), members(std::move(members)) {}
 
-void Array::Accept(AstVisitor *visitor) { visitor->Visit(this); }
+void Array::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Array::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Array;

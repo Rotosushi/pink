@@ -32,14 +32,16 @@ template <class Visitor, class Ptr, class ResultType> class AstVisitorResult {
 public:
   /**
    * @brief Calls Accept just like in the normal visitor pattern,
-   *  except it can return a result value
+   *  except it can return a result value with templated type.
+   *  thus, different visitors can compute different result types.
    *
    * @param ptr the pointer to call Accept on
    * @return ResultType the result of the call to Accept
    */
-  inline auto Compute(Ptr ptr) -> ResultType {
-    ptr->Accept(this);
-    return this->result;
+  inline auto Compute(Ptr ptr) const -> ResultType {
+    Visitor visitor;
+    ptr->Accept(&visitor);
+    return visitor.result;
   }
 
   /**
@@ -47,10 +49,10 @@ public:
    *
    * @param result the result value to return.
    */
-  inline void Return(ResultType result) { this->result = result; }
+  inline void Return(ResultType result) const { this->result = result; }
 
 private:
-  ResultType result;
+  mutable ResultType result;
 };
 
 /**
@@ -87,25 +89,31 @@ private:
  * modifying the abstract class every time we want to add a new algorithm.
  * or make our members public, or we could write const getters for all members.
  *
+ * \note we cannot implement any form of tree mutation via a visitor
+ * unless we allow the visitor to mutate the members of any given node
+ * within the tree. This means A) friend classes or
+ * B) non const setter/getters. either way we are breaking the concept
+ * of a private data member, just to allow another class to implement
+ * behavior over the tree.
  */
 class AstVisitor {
 public:
-  virtual void Visit(Application *application) = 0;
-  virtual void Visit(Array *array) = 0;
-  virtual void Visit(Assignment *assignment) = 0;
-  virtual void Visit(Bind *bind) = 0;
-  virtual void Visit(Binop *binop) = 0;
-  virtual void Visit(Block *block) = 0;
-  virtual void Visit(Bool *boolean) = 0;
-  virtual void Visit(Conditional *conditional) = 0;
-  virtual void Visit(Dot *dot) = 0;
-  virtual void Visit(Function *function) = 0;
-  virtual void Visit(Int *integer) = 0;
-  virtual void Visit(Nil *nil) = 0;
-  virtual void Visit(Tuple *tuple) = 0;
-  virtual void Visit(Unop *unop) = 0;
-  virtual void Visit(Variable *variable) = 0;
-  virtual void Visit(While *loop) = 0;
+  virtual void Visit(const Application *application) const = 0;
+  virtual void Visit(const Array *array) const = 0;
+  virtual void Visit(const Assignment *assignment) const = 0;
+  virtual void Visit(const Bind *bind) const = 0;
+  virtual void Visit(const Binop *binop) const = 0;
+  virtual void Visit(const Block *block) const = 0;
+  virtual void Visit(const Bool *boolean) const = 0;
+  virtual void Visit(const Conditional *conditional) const = 0;
+  virtual void Visit(const Dot *dot) const = 0;
+  virtual void Visit(const Function *function) const = 0;
+  virtual void Visit(const Int *integer) const = 0;
+  virtual void Visit(const Nil *nil) const = 0;
+  virtual void Visit(const Tuple *tuple) const = 0;
+  virtual void Visit(const Unop *unop) const = 0;
+  virtual void Visit(const Variable *variable) const = 0;
+  virtual void Visit(const While *loop) const = 0;
 
   AstVisitor() = default;
   AstVisitor(const AstVisitor &other) = default;

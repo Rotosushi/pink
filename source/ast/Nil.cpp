@@ -7,6 +7,8 @@
 namespace pink {
 Nil::Nil(const Location &location) : Ast(Ast::Kind::Nil, location) {}
 
+void Nil::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+
 auto Nil::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Nil;
 }
