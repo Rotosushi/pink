@@ -3,6 +3,8 @@
 
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 #include "support/LLVMValueToString.h"
 
 namespace pink {
@@ -10,6 +12,8 @@ Application::Application(const Location &location, std::unique_ptr<Ast> callee,
                          std::vector<std::unique_ptr<Ast>> arguments)
     : Ast(Ast::Kind::Application, location), callee(std::move(callee)),
       arguments(std::move(arguments)) {}
+
+void Application::Accept(AstVisitor *visitor) { visitor->Visit(this); }
 
 auto Application::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Application;

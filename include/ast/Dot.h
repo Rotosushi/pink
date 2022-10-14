@@ -25,7 +25,6 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief the left hand side expression
    *
@@ -40,6 +39,7 @@ public:
    */
   std::unique_ptr<Ast> right;
 
+public:
   /**
    * @brief Construct a new Dot
    *
@@ -63,6 +63,17 @@ public:
   auto operator=(const Dot &other) -> Dot & = delete;
 
   auto operator=(Dot &&other) -> Dot & = default;
+
+  auto GetLeft() const -> const Ast * { return left.get(); }
+
+  auto GetRight() const -> const Ast * { return right.get(); }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

@@ -28,7 +28,6 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief The binary operator of this expression
    *
@@ -47,6 +46,7 @@ public:
    */
   std::unique_ptr<Ast> right;
 
+public:
   /**
    * @brief Construct a new Binop
    *
@@ -71,6 +71,18 @@ public:
   auto operator=(const Binop &other) -> Binop & = delete;
 
   auto operator=(Binop &&other) -> Binop & = default;
+
+  auto GetOp() const -> InternedString { return op; }
+
+  auto GetLeft() const -> const Ast * { return left.get(); }
+
+  auto GetRight() const -> const Ast * { return right.get(); }
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

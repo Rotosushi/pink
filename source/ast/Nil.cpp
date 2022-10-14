@@ -2,6 +2,8 @@
 
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Nil::Nil(const Location &location) : Ast(Ast::Kind::Nil, location) {}
 

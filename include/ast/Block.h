@@ -30,13 +30,13 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief the sequence of statements composing the block
    *
    */
   std::vector<std::unique_ptr<Ast>> statements;
 
+public:
   /**
    * @brief an iterator over the statements within the block
    *
@@ -72,6 +72,14 @@ public:
   auto operator=(const Block &other) -> Block & = delete;
 
   auto operator=(Block &&other) -> Block & = default;
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
+
   /**
    * @brief Get the iterator to the beginning of the block
    *

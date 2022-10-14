@@ -2,6 +2,8 @@
 
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Bool::Bool(const Location &location, const bool value)
     : Ast(Ast::Kind::Bool, location), value(value) {}

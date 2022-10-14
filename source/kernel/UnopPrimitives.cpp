@@ -47,15 +47,15 @@ auto UnopBoolNegate(llvm::Value *term, const Environment &env)
 // fit the type of a UnopCodegenFn function pointer.
 // clang-format off
 // NOLINTBEGIN
-NOWARN(-Wunused-parameter,
+NOWARN("-Wunused-parameter",
 auto UnopAddressOfValue(llvm::Value *term, const Environment &env)
   -> Outcome<llvm::Value *, Error> {
-  return Outcome<llvm::Value *, Error>(term);
+  return {term};
 }
 
 auto UnopValueOfAddress(llvm::Value *term, const Environment &env)
   -> Outcome<llvm::Value *, Error> {
-  return Outcome<llvm::Value *, Error>(term);
+  return {term};
 })
 // NOLINTEND
 // clang-format on

@@ -23,7 +23,6 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief the left hand side of the assignment, the destination
    *
@@ -36,6 +35,7 @@ public:
    */
   std::unique_ptr<Ast> right;
 
+public:
   /**
    * @brief Construct a new Assignment
    *
@@ -59,6 +59,17 @@ public:
   auto operator=(const Assignment &other) -> Assignment & = delete;
 
   auto operator=(Assignment &&other) -> Assignment & = default;
+
+  auto GetLeft() const -> Ast * { return left.get(); }
+
+  auto GetRight() const -> Ast * { return right.get(); }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

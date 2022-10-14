@@ -68,6 +68,44 @@ public:
   auto operator=(Application &&other) -> Application & = default;
 
   /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
+
+  /**
+   * @brief Get the Callee
+   *
+   * @return Ast* the callee ptr
+   */
+  auto GetCallee() const -> const Ast * { return callee.get(); }
+
+  auto GetArguments() const -> const std::vector<std::unique_ptr<Ast>> & {
+    return arguments;
+  }
+
+  /**
+   * @brief only support const_iterator usage
+   *
+   */
+  using iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+
+  /**
+   * @brief iterator to beginning of arguments
+   *
+   * @return iterator arguments.cbegin()
+   */
+  auto begin() const -> iterator { return arguments.cbegin(); }
+
+  /**
+   * @brief iterator to end of arguments
+   *
+   * @return iterator arguments.cend()
+   */
+  auto end() const -> iterator { return arguments.cend(); }
+
+  /**
    * @brief Implements LLVM style [RTTI] for this class
    *
    * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"

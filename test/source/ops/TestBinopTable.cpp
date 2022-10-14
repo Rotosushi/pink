@@ -2,37 +2,34 @@
 
 #include "ast/Binop.h"
 
-#include "ops/TestBinopTable.h"
 #include "ops/BinopTable.h"
+#include "ops/TestBinopTable.h"
 
 #include "aux/Environment.h"
 
 #include "support/DisableWarning.h"
 
 // NOTE: 9/15/2022
-// This function is a stub which is only defined for the sake of the 
+// This function is a stub which is only defined for the sake of the
 // test within this file, and is not expected to have -any- functionality.
 // as such we do not use all of the parameters. since this is expected,
 // we are choosing to disable this specific warning just for the function.
-NOWARN(-Wunused-parameter, 
-pink::Outcome<llvm::Value*, pink::Error> test_binop_table_fn(llvm::Type* lty, llvm::Value* left, llvm::Type* rty, llvm::Value* right, const pink::Environment& env)
-{
-  pink::Error err(pink::Error::Code::None, pink::Location());
-  return pink::Outcome<llvm::Value*, pink::Error>(err);
-}
-)
+NOWARN(
+    "-Wunused-parameter",
+    pink::Outcome<llvm::Value *, pink::Error> test_binop_table_fn(
+        llvm::Type *lty, llvm::Value *left, llvm::Type *rty, llvm::Value *right,
+        const pink::Environment &env) { return {pink::Error()}; })
 
-bool TestBinopTable(std::ostream& out)
-{
+bool TestBinopTable(std::ostream &out) {
   bool result = true;
   out << "\n-----------------------\n";
   out << "Testing pink::BinopTable: \n";
-  
+
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env     = pink::NewGlobalEnv(options);
+  auto env = pink::NewGlobalEnv(options);
 
   pink::InternedString plus = env->operators->Intern("+");
-  pink::Type* ty = env->types->GetIntType();
+  pink::Type *ty = env->types->GetIntType();
   pink::BinopTable binop_table;
   pink::Precedence p = 5;
   pink::Associativity a = pink::Associativity::Left;
@@ -43,7 +40,8 @@ bool TestBinopTable(std::ostream& out)
 
   auto opt = binop_table.Lookup(plus);
 
-  result &= Test(out, "BinopTable::Lookup", opt.has_value() && opt->first == plus);
+  result &=
+      Test(out, "BinopTable::Lookup", opt.has_value() && opt->first == plus);
 
   binop_table.Unregister(plus);
 

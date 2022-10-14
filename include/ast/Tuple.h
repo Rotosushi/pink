@@ -39,13 +39,13 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief The members of this Tuple
    *
    */
   std::vector<std::unique_ptr<Ast>> members;
 
+public:
   /**
    * @brief Construct a new Tuple
    *
@@ -67,6 +67,23 @@ public:
   auto operator=(const Tuple &other) -> Tuple & = delete;
 
   auto operator=(Tuple &&other) -> Tuple & = default;
+
+  auto GetMembers() const -> const std::vector<std::unique_ptr<Ast>> & {
+    return members;
+  }
+
+  using iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+
+  auto begin() const -> iterator { return members.cbegin(); }
+
+  auto end() const -> iterator { return members.cend(); }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

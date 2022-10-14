@@ -4,11 +4,15 @@
 
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 While::While(const Location &location, std::unique_ptr<Ast> test,
              std::unique_ptr<Ast> body)
     : Ast(Ast::Kind::While, location), test(std::move(test)),
       body(std::move(body)) {}
+
+void While::Accept(AstVisitor *visitor) { visitor->Visit(this); }
 
 auto While::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::While;

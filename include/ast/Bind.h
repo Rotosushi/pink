@@ -32,7 +32,6 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief the symbol being bound
    *
@@ -45,6 +44,7 @@ public:
    */
   std::unique_ptr<Ast> affix;
 
+public:
   /**
    * @brief Construct a new Bind
    *
@@ -68,6 +68,17 @@ public:
   auto operator=(const Bind &other) -> Bind & = delete;
 
   auto operator=(Bind &&other) -> Bind & = default;
+
+  auto GetSymbol() const -> InternedString { return symbol; }
+
+  auto GetAffix() const -> const Ast * { return affix.get(); }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

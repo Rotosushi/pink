@@ -39,9 +39,13 @@
 //    data structures. this is fundamentally because we must record symbols as
 //    they are defined such that we can access their values later to implement
 //    expressions referencing those symbols.
+
 // void Accept(const TypeChecker &tc, Outcome<Type*, Error>& result,
-// std::shared_ptr<Environment> env) = 0; void Accept(const CodeGenerator &cg,
+// std::shared_ptr<Environment> env) = 0;
+
+// void Accept(const CodeGenerator &cg,
 // Outcome<llvm::Value*, Error>& result, std::shared_ptr<Environment> env) = 0;
+
 // void Accept(const StringGenerator &sg, std::string& result,
 // std::shared_ptr<Environment> env) = 0;
 
@@ -95,6 +99,7 @@
 
 namespace pink {
 class Environment;
+class AstVisitor;
 
 /**
  * @brief Ast is the base class of all abstract syntax tree nodes
@@ -224,6 +229,13 @@ public:
    * @return const Type* the type of this ast, or nullptr
    */
   [[nodiscard]] auto GetType() const -> Type *;
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  virtual void Accept(AstVisitor *visitor) = 0;
 
   /**
    * @brief Computes the canonical string representation of this Ast

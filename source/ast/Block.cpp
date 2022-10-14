@@ -2,12 +2,16 @@
 #include "ast/Block.h"
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Block::Block(const Location &location) : Ast(Ast::Kind::Block, location) {}
 
 Block::Block(const Location &location,
              std::vector<std::unique_ptr<Ast>> &stmnts)
     : Ast(Ast::Kind::Block, location), statements(std::move(stmnts)) {}
+
+void Block::Accept(AstVisitor *visitor) { visitor->Visit(this); }
 
 auto Block::begin() const -> Block::const_iterator {
   return statements.begin();
@@ -22,9 +26,9 @@ auto Block::classof(const Ast *ast) -> bool {
 auto Block::ToString() const -> std::string {
   std::string result("{ ");
 
-  // #TODO: Make this prepend the correct number of
-  // 			tabs to properly indent the block at
-  //			the current level of nesting.
+  /// \todo Make this prepend the correct number of
+  /// 			tabs to properly indent the block at
+  ///			the current level of nesting.
   for (const auto &stmt : statements) {
     result += stmt->ToString() + ";\n";
   }

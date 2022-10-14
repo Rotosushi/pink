@@ -3,10 +3,14 @@
 
 #include "support/LLVMValueToString.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Tuple::Tuple(const Location &location,
              std::vector<std::unique_ptr<Ast>> members)
     : Ast(Ast::Kind::Tuple, location), members(std::move(members)) {}
+
+void Tuple::Accept(AstVisitor *visitor) { visitor->Visit(this); }
 
 auto Tuple::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Tuple;

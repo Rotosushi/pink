@@ -60,6 +60,13 @@ public:
   auto operator=(Nil &&other) -> Nil & = default;
 
   /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
+
+  /**
    * @brief This function is used to implement llvm style [RTTI] for this node
    * kind
    *

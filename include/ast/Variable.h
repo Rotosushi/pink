@@ -26,13 +26,13 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief The symbol which this Variable expression represents
    *
    */
   InternedString symbol;
 
+public:
   /**
    * @brief Construct a new Variable
    *
@@ -54,6 +54,15 @@ public:
   auto operator=(const Variable &other) -> Variable & = delete;
 
   auto operator=(Variable &&other) -> Variable & = default;
+
+  auto GetSymbol() const -> InternedString { return symbol; }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

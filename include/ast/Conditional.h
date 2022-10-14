@@ -24,7 +24,6 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief The test statement of the conditional
    *
@@ -43,6 +42,7 @@ public:
    */
   std::unique_ptr<Ast> second;
 
+public:
   /**
    * @brief Construct a new Conditional
    *
@@ -67,6 +67,19 @@ public:
   auto operator=(const Conditional &other) -> Conditional & = delete;
 
   auto operator=(Conditional &&other) -> Conditional & = default;
+
+  auto GetTest() const -> const Ast * { return test.get(); }
+
+  auto GetFirst() const -> const Ast * { return first.get(); }
+
+  auto GetSecond() const -> const Ast * { return second.get(); }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

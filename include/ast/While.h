@@ -24,7 +24,6 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief The test expression of the While
    *
@@ -37,6 +36,7 @@ public:
    */
   std::unique_ptr<Ast> body;
 
+public:
   /**
    * @brief Construct a new While
    *
@@ -60,6 +60,17 @@ public:
   auto operator=(const While &other) -> While & = delete;
 
   auto operator=(While &&other) -> While & = default;
+
+  auto GetTest() const -> const Ast * { return test.get(); }
+
+  auto GetBody() const -> const Ast * { return body.get(); }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief Compute the cannonical string representation of this While

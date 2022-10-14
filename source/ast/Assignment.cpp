@@ -6,11 +6,15 @@
 #include "support/LLVMTypeToString.h"
 #include "support/LLVMValueToString.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Assignment::Assignment(const Location &location, std::unique_ptr<Ast> left,
                        std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Assignment, location), left(std::move(left)),
       right(std::move(right)) {}
+
+void Assignment::Accept(AstVisitor *visitor) { visitor->Visit(this); }
 
 auto Assignment::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Assignment;

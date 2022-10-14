@@ -30,7 +30,6 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief represents the state of this boolean value
    *
@@ -38,6 +37,7 @@ public:
    */
   bool value;
 
+public:
   /**
    * @brief Construct a new Bool
    *
@@ -60,6 +60,13 @@ public:
   auto operator=(Bool &&other) -> Bool & = default;
 
   /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
+
+  /**
    * @brief This function is used to implement llvm style [RTTI] for this node
    * kind
    *
@@ -70,6 +77,13 @@ public:
    * @return false if a *is not* an instance of [Bool](#Bool)
    */
   static auto classof(const Ast *ast) -> bool;
+
+  /**
+   * @brief Get the Value
+   *
+   * @return bool the value
+   */
+  auto GetValue() const -> bool { return value; }
 
   /**
    * @brief This function converts the boolean value held into it's textual

@@ -36,7 +36,7 @@
  * @brief helper macro for NOWARN
  *
  */
-#define DO_PRAGMA(x) _Pragma(#x)
+#define PRAGMA(x) _Pragma(#x)
 
 /*
  *
@@ -83,10 +83,10 @@
  */
 #if defined(__GNUC__)
 #define NOWARN(warnoption, ...)                                                \
-  DO_PRAGMA(GCC diagnostic push)                                               \
-  DO_PRAGMA(GCC diagnostic ignored #warnoption)                                \
+  PRAGMA(GCC diagnostic push)                                                  \
+  PRAGMA(GCC diagnostic ignored warnoption)                                    \
   __VA_ARGS__                                                                  \
-  DO_PRAGMA(GCC diagnostic pop)
+  PRAGMA(GCC diagnostic pop)
 #endif
 
 // NOLINTEND(cppcoreguidelines-macro-usage)

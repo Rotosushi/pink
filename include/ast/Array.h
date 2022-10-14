@@ -111,6 +111,37 @@ public:
 
   auto operator=(Array &&other) -> Array & = default;
 
+  auto GetMembers() const -> const std::vector<std::unique_ptr<Ast>> & {
+    return members;
+  }
+
+  /**
+   * @brief only support const_iterator usage
+   *
+   */
+  using iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+
+  /**
+   * @brief iterator to beginning of array members
+   *
+   * @return iterator to beginning of array members
+   */
+  auto begin() const -> iterator { return members.cbegin(); }
+
+  /**
+   * @brief iterator to end of array members
+   *
+   * @return iterator to end of array members
+   */
+  auto end() const -> iterator { return members.cend(); }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
+
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *

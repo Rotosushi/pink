@@ -36,12 +36,12 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
-public:
   /**
    * @brief holds the integer being represented.
    */
   long long value;
 
+public:
   /**
    * @brief Construct a new Int
    *
@@ -63,6 +63,20 @@ public:
   auto operator=(const Int &other) -> Int & = delete;
 
   auto operator=(Int &&other) -> Int & = default;
+
+  /**
+   * @brief Get the Value
+   *
+   * @return long long the value
+   */
+  auto GetValue() const -> long long { return value; }
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  void Accept(AstVisitor *visitor) override;
 
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node

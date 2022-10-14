@@ -3,6 +3,8 @@
 
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Int::Int(const Location &location, const long long value)
     : Ast(Ast::Kind::Int, location), value(value) {}

@@ -4,11 +4,15 @@
 
 #include "aux/Environment.h"
 
+#include "visitor/AstVisitor.h"
+
 namespace pink {
 Dot::Dot(const Location &location, std::unique_ptr<Ast> left,
          std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Dot, location), left(std::move(left)),
       right(std::move(right)) {}
+
+void Dot::Accept(AstVisitor *visitor) { visitor->Visit(this); }
 
 auto Dot::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Dot;
@@ -52,23 +56,23 @@ auto Dot::ToString() const -> std::string {
  *
  */
 auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
-  Outcome<Type *, Error> left_getype_result = left->Typecheck(env);
+  Outcome<Type *, Error> left_typecheck_result = left->Typecheck(env);
 
-  if (!left_getype_result) {
-    return left_getype_result;
+  if (!left_typecheck_result) {
+    return left_typecheck_result;
   }
 
-  Outcome<Type *, Error> right_getype_result = right->Typecheck(env);
+  Outcome<Type *, Error> right_typecheck_result = right->Typecheck(env);
 
-  if (!right_getype_result) {
-    return right_getype_result;
+  if (!right_typecheck_result) {
+    return right_typecheck_result;
   }
 
-  auto *left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
+  auto *left_type = llvm::dyn_cast<TupleType>(left_typecheck_result.GetFirst());
 
   if (left_type == nullptr) {
     std::string errmsg = std::string("left has type: ") +
-                         left_getype_result.GetFirst()->ToString();
+                         left_typecheck_result.GetFirst()->ToString();
     return {Error(Error::Code::DotLeftIsNotAStruct, GetLoc(), errmsg)};
   }
 
@@ -76,19 +80,20 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
   if (index == nullptr) {
     std::string errmsg = std::string("right has type: ") +
-                         right_getype_result.GetFirst()->ToString();
+                         right_typecheck_result.GetFirst()->ToString();
 
     return {Error(Error::Code::DotRightIsNotAnInt, GetLoc(), errmsg)};
   }
 
-  if (static_cast<size_t>(index->value) > left_type->member_types.size()) {
+  auto index_value = static_cast<size_t>(index->GetValue());
+  if (index_value > left_type->member_types.size()) {
     std::string errmsg = std::string("tuple has ") +
                          std::to_string(left_type->member_types.size()) +
-                         " elements, index is: " + std::to_string(index->value);
+                         " elements, index is: " + std::to_string(index_value);
     return {Error(Error::Code::DotIndexOutOfRange, GetLoc(), errmsg)};
   }
 
-  return {left_type->member_types[index->value]};
+  return {left_type->member_types[index_value]};
 }
 
 /*
@@ -106,23 +111,23 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
  */
 auto Dot::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
-  Outcome<Type *, Error> left_getype_result = left->Typecheck(env);
+  Outcome<Type *, Error> left_typecheck_result = left->Typecheck(env);
 
-  if (!left_getype_result) {
-    return {left_getype_result.GetSecond()};
+  if (!left_typecheck_result) {
+    return {left_typecheck_result.GetSecond()};
   }
 
-  Outcome<Type *, Error> right_getype_result = right->Typecheck(env);
+  Outcome<Type *, Error> right_typecheck_result = right->Typecheck(env);
 
-  if (!right_getype_result) {
-    return {right_getype_result.GetSecond()};
+  if (!right_typecheck_result) {
+    return {right_typecheck_result.GetSecond()};
   }
 
-  auto *left_type = llvm::dyn_cast<TupleType>(left_getype_result.GetFirst());
+  auto *left_type = llvm::dyn_cast<TupleType>(left_typecheck_result.GetFirst());
 
   if (left_type == nullptr) {
     std::string errmsg = std::string("left has type: ") +
-                         left_getype_result.GetFirst()->ToString();
+                         left_typecheck_result.GetFirst()->ToString();
     return {Error(Error::Code::DotLeftIsNotAStruct, GetLoc(), errmsg)};
   }
 
@@ -132,9 +137,6 @@ auto Dot::Codegen(const Environment &env) const
   if (!left_type_codegen_result) {
     return {left_type_codegen_result.GetSecond()};
   }
-
-  auto *struct_t =
-      llvm::cast<llvm::StructType>(left_type_codegen_result.GetFirst());
 
   Outcome<llvm::Value *, Error> left_codegen_result = left->Codegen(env);
 
@@ -148,22 +150,31 @@ auto Dot::Codegen(const Environment &env) const
 
   if (index == nullptr) {
     std::string errmsg = std::string("right has type: ") +
-                         right_getype_result.GetFirst()->ToString();
+                         right_typecheck_result.GetFirst()->ToString();
     return {Error(Error::Code::DotRightIsNotAnInt, GetLoc(), errmsg)};
   }
 
-  if (static_cast<size_t>(index->value) > left_type->member_types.size()) {
+  auto index_value = static_cast<size_t>(index->GetValue());
+  if (index_value > left_type->member_types.size()) {
     std::string errmsg = std::string("tuple has ") +
                          std::to_string(left_type->member_types.size()) +
-                         " elements, index is: " + std::to_string(index->value);
+                         " elements, index is: " + std::to_string(index_value);
     return {Error(Error::Code::DotIndexOutOfRange, GetLoc(), errmsg)};
   }
 
-  llvm::Value *result = nullptr;
-  llvm::Value *gep = env.instruction_builder->CreateConstGEP2_32(
-      struct_t, left_value, 0, index->value);
-  llvm::Type *member_type = struct_t->getTypeAtIndex(index->value);
+  auto *struct_t =
+      llvm::cast<llvm::StructType>(left_type_codegen_result.GetFirst());
 
+  llvm::Value *gep = env.instruction_builder->CreateConstGEP2_32(
+      struct_t, left_value, 0, index_value);
+
+  llvm::Type *member_type = struct_t->getTypeAtIndex(index_value);
+  llvm::Value *result = nullptr;
+
+  // what I am realizing, is that this check right here is exactly why
+  // c/cpp has value categories. that is glvalue, prvalue, xvalue, lvalue, and
+  // rvalue. As in, this check could be replaced with value_type->is_lvalue
+  // or something like that.
   if (!env.flags->WithinAddressOf() && !env.flags->OnTheLHSOfAssignment() &&
       member_type->isSingleValueType()) {
     result = env.instruction_builder->CreateLoad(member_type, gep);

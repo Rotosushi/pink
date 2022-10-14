@@ -8,6 +8,8 @@
 
 #include "support/LLVMErrorToString.h"
 
+#include "visitor/AstVisitor.h"
+
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "llvm/IR/InlineAsm.h"
@@ -20,6 +22,8 @@ Function::Function(const Location &location, const InternedString name,
     : Ast(Ast::Kind::Function, location), name(name),
       arguments(std::move(arguments)), body(std::move(body)),
       bindings(std::make_shared<SymbolTable>(outer_scope)) {}
+
+void Function::Accept(AstVisitor *visitor) { visitor->Visit(this); }
 
 auto Function::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Function;

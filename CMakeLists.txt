@@ -172,6 +172,8 @@ add_library(libpink STATIC
 	source/support/LLVMTypeToString.cpp 
 	source/support/EmitFile.cpp
 
+	source/visitor/AstVisitor.cpp
+	source/visitor/AstToString.cpp
 )
 			   
 
