@@ -1,6 +1,6 @@
 /**
- * @file Flags.h
- * @brief Header for class Flags
+ * @file TypecheckFlags.h
+ * @brief Header for class TypecheckFlags
  * @version 0.1
  *
  */
@@ -10,6 +10,7 @@
 #include "support/Support.h"
 
 namespace pink {
+
 /**
  * @brief Holds the state of flags relevant to the inner workings of the
  * compiler, which are *not* dials to be tuned by the user.
@@ -18,17 +19,17 @@ namespace pink {
  * the particular bit of information the flags encodes by any other means
  * available to a typechecking or codegeneration routine.
  */
-class Flags {
+class TypecheckFlags {
 private:
   /**
    * @brief records the kind and position of each available flag within the
-   * [flags](#Flags::flags) member.
+   * [flags](#TypecheckFlags::flags) member.
    *
    * we use the (enum -> unsigned int) implicit conversion to encode the
    * position of each flag. that is, the first enum member defined gets position
    * 0, the next position 1, and so on.
    */
-  enum Kind : uint8_t {
+  enum Kind : size_t {
     LHSOfAssignment,
     inAddressOf,
     inDereferencePtr,
@@ -46,24 +47,24 @@ private:
 
 public:
   /**
-   * @brief Construct a new Flags object
+   * @brief Construct a new TypecheckFlags object
    *
    */
-  Flags() = default;
+  TypecheckFlags() = default;
 
   /**
-   * @brief Destroy the Flags object
+   * @brief Destroy the TypecheckFlags object
    *
    */
-  ~Flags() = default;
+  ~TypecheckFlags() = default;
 
-  Flags(Flags &other) = default;
+  TypecheckFlags(TypecheckFlags &other) = default;
 
-  Flags(Flags &&other) = default;
+  TypecheckFlags(TypecheckFlags &&other) = default;
 
-  auto operator=(Flags const &other) -> Flags & = default;
+  auto operator=(TypecheckFlags const &other) -> TypecheckFlags & = default;
 
-  auto operator=(Flags &&other) -> Flags & = default;
+  auto operator=(TypecheckFlags &&other) -> TypecheckFlags & = default;
 
   /**
    * @brief the state of the LHSOfAssignment flag
@@ -113,4 +114,5 @@ public:
    */
   auto WithinDereferencePtr(bool state) -> bool;
 };
+
 } // namespace pink

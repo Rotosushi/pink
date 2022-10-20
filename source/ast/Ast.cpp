@@ -1,5 +1,7 @@
 #include "ast/Ast.h"
 
+#include <algorithm>
+
 namespace pink {
 Ast::Ast(const Ast::Kind kind, Location location)
     : kind(kind), loc(location), type(nullptr) {}

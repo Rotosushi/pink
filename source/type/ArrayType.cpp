@@ -1,5 +1,7 @@
 #include "type/ArrayType.h"
 
+#include "aux/Environment.h"
+
 #include "llvm/IR/DerivedTypes.h"
 
 namespace pink {
@@ -40,12 +42,21 @@ auto ArrayType::ToString() const -> std::string {
 
 auto ArrayType::Codegen(const Environment &env) const
     -> Outcome<llvm::Type *, Error> {
-  Outcome<llvm::Type *, Error> member_result = member_type->Codegen(env);
-
+  auto member_result = member_type->Codegen(env);
   if (!member_result) {
     return member_result;
   }
+  auto *member_type = member_result.GetFirst();
+  auto *llvm_array_type = llvm::ArrayType::get(member_type, size);
 
-  return {llvm::ArrayType::get(member_result.GetFirst(), size)};
+  auto *integer_type = env.types->GetIntType();
+  auto integer_type_result = integer_type->Codegen(env);
+  if (!integer_type_result) {
+    return integer_type_result;
+  }
+  auto *llvm_integer_type = integer_type_result.GetFirst();
+
+  return {llvm::StructType::get(*env.context,
+                                {llvm_integer_type, llvm_array_type})};
 }
 } // namespace pink

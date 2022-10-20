@@ -15,6 +15,7 @@
 #include "type/IntType.h"
 #include "type/NilType.h"
 #include "type/PointerType.h"
+#include "type/SliceType.h"
 #include "type/TupleType.h"
 #include "type/Type.h"
 #include "type/VoidType.h"
@@ -71,6 +72,12 @@ private:
   std::vector<std::unique_ptr<ArrayType>> array_types;
 
   /**
+   * @brief A vector of all the unique SliceTypes
+   *
+   */
+  std::vector<std::unique_ptr<SliceType>> slice_types;
+
+  /**
    * @brief A vector of all the unique TupleTypes
    *
    */
@@ -81,7 +88,7 @@ public:
    * @brief Construct a new Type Interner
    *
    */
-  TypeInterner();
+  TypeInterner() = default;
 
   /**
    * @brief We disallow a TypeInterner to be constructed from an existing
@@ -157,6 +164,13 @@ public:
    * @return ArrayType* the ArrayType
    */
   auto GetArrayType(size_t size, Type *member_type) -> ArrayType *;
+
+  /**
+   * @brief Get the instance of a SliceType
+   * @param pointee_type the type of the pointee
+   * @return SliceType*
+   */
+  auto GetSliceType(Type *pointee_type) -> SliceType *;
 
   /**
    * @brief Get the instance of a TupleType

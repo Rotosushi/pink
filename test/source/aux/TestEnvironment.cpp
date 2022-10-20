@@ -1,49 +1,48 @@
-#include "Test.h"
 #include "aux/TestEnvironment.h"
+#include "Test.h"
 #include "aux/Environment.h"
 #include "aux/Error.h"
 
 #include "ast/Nil.h"
 
-bool TestEnvironment(std::ostream& out)
-{
-    bool result = true;
-    out << "\n-----------------------\n";
-    out << "Testing Pink::Environment: \n";
+auto TestEnvironment(std::ostream &out) -> bool {
+  bool result = true;
+  out << "\n-----------------------\n";
+  out << "Testing Pink::Environment: \n";
 
-    auto options = std::make_shared<pink::CLIOptions>();
-    auto env = pink::NewGlobalEnv(options);
+  auto options = std::make_shared<pink::CLIOptions>();
+  auto env = pink::NewGlobalEnv(options);
 
-    pink::InternedString symb = env->symbols->Intern("x");
+  pink::InternedString symb = env->symbols->Intern("x");
 
-    result &= Test(out, "Environment::symbols", symb == std::string("x"));
+  result &= Test(out, "Environment::symbols", symb == std::string("x"));
 
+  pink::InternedString opr = env->operators->Intern("+");
 
-    pink::InternedString op = env->operators->Intern("+");
+  result &= Test(out, "Environment::operators", opr == std::string("+"));
 
-    result &= Test(out, "Environment::operators", op == std::string("+"));
+  pink::Type *type = env->types->GetNilType();
 
+  result &=
+      Test(out, "Environment::types", type->ToString() == std::string("Nil"));
 
-    pink::Type* type = env->types->GetNilType();
+  llvm::Value *nil = env->instruction_builder->getFalse();
 
-    result &= Test(out, "Environment::types", type->ToString() == std::string("Nil"));
+  env->bindings->Bind(symb, type, nil);
 
-    pink::Location l(0, 7, 0, 10);
-    llvm::Value* nil = env->instruction_builder->getFalse();
+  llvm::Optional<std::pair<pink::Type *, llvm::Value *>> term =
+      env->bindings->Lookup(symb);
 
-    env->bindings->Bind(symb, type, nil);
+  // since they point to the same memory, nil, and the bound
+  // term's pointer values compare equal if everything works.
+  result &=
+      Test(out, "Environment::bindings",
+           term.has_value() && (*term).first == type && (*term).second == nil);
 
-    llvm::Optional<std::pair<pink::Type*, llvm::Value*>> term = env->bindings->Lookup(symb);
+  // #TODO: write more env tests.
 
-    // since they point to the same memory, nil, and the bound
-    // term's pointer values compare equal if everything works.
-    result &= Test(out, "Environment::bindings", term.has_value() && (*term).first == type && (*term).second == nil);
+  result &= Test(out, "pink::Environment", result);
 
-    // #TODO: write more env tests. 
-
-
-    result &= Test(out, "pink::Environment", result);
-
-    out << "\n-----------------------\n";
-    return result;
+  out << "\n-----------------------\n";
+  return result;
 }

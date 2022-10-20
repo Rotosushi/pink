@@ -6,27 +6,29 @@
 #include "type/IntType.h"
 #include "type/TestFunctionType.h"
 
-bool TestFunctionType(std::ostream &out) {
+auto TestFunctionType(std::ostream &out) -> bool {
   bool result = true;
   out << "\n-----------------------\n";
-  out << "Testing Pink::FunctionType: \n";
+  out << "Testing pink::FunctionType: \n";
 
-  std::unique_ptr<pink::IntType> it = std::make_unique<pink::IntType>();
-  std::unique_ptr<pink::BoolType> bt = std::make_unique<pink::BoolType>();
+  auto integer_type = std::make_unique<pink::IntType>();
+  auto boolean_type = std::make_unique<pink::BoolType>();
 
-  std::vector<pink::Type *> arg_tys0({it.get(), it.get()});
+  std::vector<pink::Type *> arg_tys0({integer_type.get(), integer_type.get()});
 
-  std::unique_ptr<pink::FunctionType> ft0 =
-      std::make_unique<pink::FunctionType>(bt.get(), arg_tys0);
+  auto function_type =
+      std::make_unique<pink::FunctionType>(boolean_type.get(), arg_tys0);
 
   result &= Test(out, "FunctionType::GetKind",
-                 ft0->GetKind() == pink::Type::Kind::Function);
+                 function_type->GetKind() == pink::Type::Kind::Function);
 
-  result &= Test(out, "FunctionType::classof", ft0->classof(ft0.get()));
+  result &= Test(out, "FunctionType::classof",
+                 function_type->classof(function_type.get()));
 
   std::string ft_str = std::string("Int -> Int -> Bool");
 
-  result &= Test(out, "FunctionType::ToString", ft0->ToString() == ft_str);
+  result &=
+      Test(out, "FunctionType::ToString", function_type->ToString() == ft_str);
 
   result &= Test(out, "pink::FunctionType", result);
 

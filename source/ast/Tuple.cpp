@@ -35,7 +35,7 @@ auto Tuple::ToString() const -> std::string {
 }
 
 auto Tuple::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
-  std::vector<Type *> member_types(members.size());
+  std::vector<Type *> member_types;
 
   for (const auto &member : members) {
     Outcome<Type *, Error> member_getype_result = member->Typecheck(env);

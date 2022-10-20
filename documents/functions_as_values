@@ -237,3 +237,62 @@
 
 
 */
+
+
+okay, strictly by definition these structures must be allocated on the heap.
+
+however if we know the lifetime at compile time, then we can allocate them as 
+local variables within the scope they are destroyed within. That is, unless 
+the lambda's closure object is being stored within dynamically allocated 
+memory, the lifetime of the lambda must be tied to the scope it's binding 
+resides within, per the rules of the language. 
+
+however, since there is no dynamic memory allocator available to the programmer 
+yet, there is *no* way a user can even define a dynamically allocated lambda.
+thus, we either have the function type sitting in a parameter to a function (2),
+or we have the function type sitting in the return type of a function (3),
+or we have the function type sitting in a local variable (1).
+
+since the closure is always local to some scope, (A global lambda is 
+a function definition) we can allocate it's memory as a local member 
+of that scope. (when that is the use case.)
+
+if we declare a lambda as a local variable and use it locally (1) 
+then we can allocate that lambda as a local variable.
+
+if we declare a lambda as a local variable and pass it (2) into 
+a function call, then we can allocate the lambda as a local variable 
+of the declaring scope.
+
+if we allocate the lambda as a local, then return the lambda from the 
+function (3), then this is the difficult part. one issue is that 
+the scope we are returning to is the 'natural' place to allocate the 
+lambda's closure. the second issue is that the defining scope could 
+declare a lambda which takes more arguments than the return type,
+and bind values to that closure before returning the closure. 
+in this way, we would not be safe to simply let the calling scope allocate 
+the return value of the type of the return value, because the actual 
+closure type would be larger. (even though it is still able to be applied 
+using the return type) 
+the simplest solution is to make the return type a type-erased pointer 
+to a closure, then the calling code can accept any closure object the 
+pointer references. However, then we are forced into allocaing the closure 
+on the heap.
+
+note that cases 1 and 2 can be handled by allocating on the heap as well.
+
+this however, requires that we have a heap already. additionally, it is 
+required that we clean up the allocation of a closure object.
+this means to properly support lambdas we want to rely on a few things,
+the heap, and owning pointers. Now, classes could subsume the owning 
+pointer concept if the class representing the closure simply owns the 
+closure object it points too. however this requires that we have classes 
+defined already.
+
+interesting to note, 
+is that the 'degenerate' case of this defining a function which returns 
+a function which returns a function and so on, would be an actual 
+classic lambda calculus definition of a function. we would be making an 
+expensive linked list for the parameters. 
+(we might be able to detect that from the parse tree of the function,
+and special case it.)

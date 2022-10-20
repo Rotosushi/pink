@@ -124,6 +124,7 @@ add_library(libpink STATIC
 	source/type/PointerType.cpp
 	source/type/ArrayType.cpp
 	source/type/TupleType.cpp
+	source/type/SliceType.cpp
 
 
 	# the 'aux' directory is for the classes which are necessary or convenient
@@ -164,6 +165,13 @@ add_library(libpink STATIC
 	source/kernel/UnopPrimitives.cpp
 	source/kernel/Cast.cpp
 	source/kernel/StoreAggregate.cpp
+	source/kernel/Gensym.cpp
+	source/kernel/AllocateVariable.cpp 
+	source/kernel/AllocateString.cpp
+	source/kernel/RuntimeError.cpp
+	source/kernel/SliceSubscript.cpp 
+	source/kernel/SysExit.cpp
+	source/kernel/SysWrite.cpp
 
 	# the 'support' directory is for files which define necessary or convenient 
 	# subroutines, which are too small to justify their own class.

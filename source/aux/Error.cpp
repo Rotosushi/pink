@@ -132,6 +132,8 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Type Error: Index into tuple is larger than the tuple itself";
 
   // semantic errors
+  case Error::Code::OutOfBounds:
+    return "Semantic Error: Index out of bounds";
   case Error::Code::ValueCannotBeAssigned:
     return "Semantic Error: Left side cannot be assigned";
   case Error::Code::NonConstGlobalInit:

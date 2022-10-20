@@ -21,7 +21,6 @@ auto Application::classof(const Ast *ast) -> bool {
 
 auto Application::ToString() const -> std::string {
   std::string result;
-
   result += callee->ToString();
   result += "(";
 

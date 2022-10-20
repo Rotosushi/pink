@@ -36,7 +36,7 @@ auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   Type *bool_t = env.types->GetBoolType();
 
   if (bool_t != test_getype_result.GetFirst()) {
-    std::string errmsg = std::string("conditional has type: ") +
+    std::string errmsg = std::string("test expression has type: ") +
                          test_getype_result.GetFirst()->ToString();
     return {Error(Error::Code::WhileTestTypeMismatch, test->GetLoc(), errmsg)};
   }
@@ -44,7 +44,7 @@ auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   Outcome<Type *, Error> body_getype_result = body->Typecheck(env);
 
   if (body_getype_result) {
-    return {env.types->GetNilType()};
+    return {env.types->GetVoidType()};
   }
   return body_getype_result;
 }

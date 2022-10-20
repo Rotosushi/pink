@@ -1,0 +1,27 @@
+by value is the default. by reference is accomplished by passing a pointer.
+
+these parameter attributes are meant to express the intent of each parameter to 
+a given function. 
+
+in 
+out 
+inout 
+
+an in parameter would presumably be constant, meant as a read-only parameter.
+initialized by the caller and then used by the callee.
+this is a safe default kind of parameter.
+
+and out parameter would presumably be variable, and passed by reference, thus 
+the calling scope would own the out parameter, such that the callee could write 
+to the parameter as it's output.
+
+an inout parameter would be a variable, and passed by reference, with essentially 
+the same semantics of an out parameter, except that it is assumed to already be 
+initialized with relevant data. 
+
+move 
+
+a move parameter only makes sense in a language that has owning pointers, and then 
+a move parameter means that the callee assumes ownership of the passed pointer.
+owning pointers seems like a way of approaching dynamic memory safely (compared to C).
+

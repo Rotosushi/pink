@@ -1,69 +1,58 @@
-#include "Test.h"
 #include "aux/TestSymbolTable.h"
+#include "Test.h"
 #include "aux/SymbolTable.h"
 
 #include "aux/Environment.h"
 
 #include "ast/Nil.h"
 
+auto TestSymbolTable(std::ostream &out) -> bool {
+  bool result = true;
+  out << "\n-----------------------\n";
+  out << "Testing pink::SymbolTable: \n";
 
-bool TestSymbolTable(std::ostream& out)
-{
-    /*
-        Testing the various functions of the symbol table entails:
+  auto options = std::make_shared<pink::CLIOptions>();
+  auto env = pink::NewGlobalEnv(options);
 
-        -) SymbolTable's constructed against no outer scope have
-            a nullptr for their OuterScope
+  pink::SymbolTable symbol_table(env->bindings.get());
 
-        -) SymbolTable's Constructed 'inside' of another symbol table
-            have a valid pointer to that symbol table
+  result &= Test(out, "SymbolTable::OuterScope(), global scope",
+                 env->bindings->OuterScope() == nullptr);
 
-        -) Bind validly binds a symbol to a particular term because
-            -) Lookup of an existing symbol returns that symbols binding
-            
-        #TODO
-        -) Lookup finds symbols bound in the scope above, a property of
-        	Lexical scoping.
-        #TODO
-        -) A local lookup will pnly search for names bound within the 
-        	current scope, so we can tell the difference between 
-        	free and bound names within scopes.
+  result &= Test(out, "SymbolTable::OuterScope(), inner scope",
+                 symbol_table.OuterScope() == env->bindings.get());
 
-        -) Unbind successfully removes a particular binding because
-            -) Lookup of a nonexisting symbol returns the empty optional
+  llvm::Value *nil = env->instruction_builder->getFalse();
+  pink::Type *nil_t = env->types->GetNilType();
+  pink::InternedString symbol_x = env->symbols->Intern("x");
 
-    */
+  env->bindings->Bind(symbol_x, nil_t, nil);
+  auto binding_0 = env->bindings->Lookup(symbol_x);
 
-    bool result = true;
-    out << "\n-----------------------\n";
-    out << "Testing pink::SymbolTable: \n";
+  result &= Test(out, "SymbolTable::Bind()", binding_0.has_value());
+  result &= Test(out, "SymbolTable::Lookup(), symbol bound in local scope",
+                 (*binding_0).first == nil_t && (*binding_0).second == nil);
 
-    auto options = std::make_shared<pink::CLIOptions>();
-    auto env = pink::NewGlobalEnv(options);
+  auto binding_1 = symbol_table.Lookup(symbol_x);
+  result &= Test(out, "SymbolTable::Lookup(), symbol bound in outer scope",
+                 binding_1.has_value() && binding_1->first == nil_t &&
+                     binding_1->second == nil);
 
-    pink::SymbolTable t1(env->bindings.get());
+  auto local_binding = symbol_table.LookupLocal(symbol_x);
+  result &= Test(out, "SymbolTable::LookupLocal(), variable not in local scope",
+                 !local_binding.has_value());
 
-    result &= Test(out, "SymbolTable::OuterScope(), global scope", env->bindings->OuterScope() == nullptr);
+  local_binding = env->bindings->LookupLocal(symbol_x);
+  result &= Test(out, "SymbolTable::LookupLocal(), variable in local scope",
+                 local_binding.has_value() && local_binding->first == nil_t &&
+                     local_binding->second == nil);
 
-    result &= Test(out, "SymbolTable::OuterScope(), inner scope", t1.OuterScope() == env->bindings.get());
+  env->bindings->Unbind(symbol_x);
+  auto unbound_symbol = env->bindings->Lookup(symbol_x);
 
-    pink::Location l(0, 5, 0, 7);
-    llvm::Value* nil = env->instruction_builder->getFalse();
-    pink::Type*  nil_t = env->types->GetNilType();
-    pink::InternedString x = env->symbols->Intern("x");
+  result &= Test(out, "SymbolTable::Unbind()", !unbound_symbol.has_value());
 
-    env->bindings->Bind(x, nil_t, nil);
-    llvm::Optional<std::pair<pink::Type*, llvm::Value*>> s0 = env->bindings->Lookup(x);
-
-    result &= Test(out, "SymbolTable::Bind()", s0.has_value());
-    result &= Test(out, "SymbolTable::Lookup()", (*s0).first == nil_t && (*s0).second == nil);
-
-    env->bindings->Unbind(x);
-    llvm::Optional<std::pair<pink::Type*, llvm::Value*>> s1 = env->bindings->Lookup(x);
-
-    result &= Test(out, "SymbolTable::Unbind()", !s1.has_value());
-
-    result &= Test(out, "pink::SymbolTable", result);
-    out << "\n-----------------------\n";
-    return result;
+  result &= Test(out, "pink::SymbolTable", result);
+  out << "\n-----------------------\n";
+  return result;
 }

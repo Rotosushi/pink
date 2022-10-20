@@ -247,7 +247,11 @@ public:
    *
    * \todo ToString ends up doing a lot of intermediate allocations
    * and concatenations as it builds up it's result, this seems like
-   * a good place to consider optimizing.
+   * a good place to consider optimizing. To accomplish this it might
+   * work to buffer all of the strings into a list, and then perform
+   * a single concatenation at the end. This might speed up the algorithm
+   * overall. as there may be less total allocations, and there will be
+   * no repeated copying of the intermediate strings.
    *
    * \todo This function does not currently indent blocks of code
    * according to their nested depth. and I feel that it should.
@@ -265,12 +269,6 @@ public:
    *
    * \todo implement some form of user defined types
    *
-   * \note Typecheck itself only modifies the Ast in that if a type
-   * was computed, then that type is cached within the Ast node,
-   * so we never need to run the whole algorithm a second time,
-   * This is because we also need the Type of any given term
-   * available within Codegen and redoing all that work is slow.
-   * otherwise this function could be const.
    *
    * @param env The Environment to typecheck against, an
    * [Environment](#Environment) set up as if by [NewGlobalEnv](#NewGlobalEnv)
@@ -290,15 +288,15 @@ public:
    *
    * Internally this function uses the [instruction_builder] to construct the
    * [IR]. and does so with respect to the [symbol_table], [binop_table],
-   * [unop_table], and [module], held within the environment parameter. (this is
-   * not intended as a complete list)
+   * [unop_table], and [llvm_module], held within the environment parameter.
+   * (this is not intended as a complete list)
    *
    * [symbol_table]: @ref SymbolTable "symbol table"
    * [binop_table]: @ref BinopTable "binop table"
    * [unop_table]: @ref UnopTable "unop table"
    * [instruction_builder]: https://llvm.org/doxygen/classllvm_1_1IRBuilder.html
-   * "instruction builder" [module]:
-   * https://llvm.org/doxygen/classllvm_1_1Module.html "module"
+   * "instruction builder" [llvm_module]:
+   * https://llvm.org/doxygen/classllvm_1_1Module.html "llvm_module"
    *
    * @param env The Environment to generate code against, an
    * [Environment](#Environment) set up as if by [NewGlobalEnv](#NewGlobalEnv)

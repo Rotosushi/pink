@@ -139,12 +139,12 @@ public:
    * @brief set the optimization level of emitted code.
    *
    * setting this to anything other than O0 causes the compiler
-   * to run an [optimization] [pipeline] upon the [module] before emitting
+   * to run an [optimization] [pipeline] upon the [llvm_module] before emitting
    * the output file.
    *
    * [optimization]: https://llvm.org/docs/Passes.html
    * [pipeline]: https://llvm.org/docs/NewPassManager.html
-   * [module]: https://llvm.org/docs/classllvm_1_1Module.html
+   * [llvm_module]: https://llvm.org/docs/classllvm_1_1Module.html
    */
   llvm::OptimizationLevel optimization_level;
   // std::string linker-name;

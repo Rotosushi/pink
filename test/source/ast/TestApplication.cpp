@@ -34,9 +34,9 @@ auto TestApplication(std::ostream &out) -> bool {
   //  the question of how do we test that lexer, and so on. eventually there
   //  has to be a magic number somewhere when we stop, so it might as well be
   //  here.)
-  pink::Location idloc(1, 0, 1, 3);   // NOLINT
-  pink::Location arg0loc(1, 5, 1, 6); // NOLINT
-  pink::Location arg1loc(1, 8, 1, 9); // NOLINT
+  pink::Location idloc(2, 0, 2, 3);   // NOLINT
+  pink::Location arg0loc(2, 5, 2, 6); // NOLINT
+  pink::Location arg1loc(2, 8, 2, 9); // NOLINT
   auto fnname =
       std::make_unique<pink::Variable>(idloc, env->symbols->Intern("add"));
 
@@ -79,9 +79,9 @@ auto TestApplication(std::ostream &out) -> bool {
   env->bindings->Bind(env->symbols->Intern("add"), fn_type,
                       /* llvm::Value* term = */ nullptr);
 
-  pink::Outcome<pink::Type *, pink::Error> app_type = app->Typecheck(*env);
+  auto typecheck_result = app->Typecheck(*env);
   result &= Test(out, "Application::Typecheck()",
-                 app_type && app_type.GetFirst() == int_type);
+                 typecheck_result && typecheck_result.GetFirst() == int_type);
 
   // given an application of not a function,
   // do we get an error?
@@ -94,6 +94,5 @@ auto TestApplication(std::ostream &out) -> bool {
   // wrong type of arguments,
   // do we get an error?
 
-  result &= Test(out, "pink::Application", result);
-  return result;
+  return Test(out, "pink::Application", result);
 }

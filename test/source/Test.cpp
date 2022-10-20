@@ -3,6 +3,8 @@
 
 #include "aux/TestEnvironment.h"
 #include "aux/TestError.h"
+#include "aux/TestFlags.h"
+#include "aux/TestLocation.h"
 #include "aux/TestOutcome.h"
 #include "aux/TestStringInterner.h"
 #include "aux/TestSymbolTable.h"
@@ -16,21 +18,30 @@
 #include "ops/TestUnopTable.h"
 
 #include "ast/TestApplication.h"
+#include "ast/TestArray.h"
 #include "ast/TestAssignment.h"
 #include "ast/TestAstAndNil.h"
 #include "ast/TestBind.h"
 #include "ast/TestBinop.h"
 #include "ast/TestBlock.h"
 #include "ast/TestBool.h"
+#include "ast/TestConditional.h"
+#include "ast/TestDot.h"
 #include "ast/TestFunction.h"
 #include "ast/TestInt.h"
+#include "ast/TestTuple.h"
 #include "ast/TestUnop.h"
 #include "ast/TestVariable.h"
+#include "ast/TestWhile.h"
 
+#include "type/TestArrayType.h"
 #include "type/TestBoolType.h"
 #include "type/TestFunctionType.h"
 #include "type/TestIntType.h"
+#include "type/TestPointerType.h"
+#include "type/TestTupleType.h"
 #include "type/TestTypeAndNilType.h"
+#include "type/TestVoidType.h"
 
 #include "front/TestLexer.h"
 #include "front/TestParser.h"
@@ -74,7 +85,10 @@ auto Testbench::SetTestsRun(Testbench::Which which, bool state) -> bool {
     } else {
       tests_run.reset();
     }
-  } else if (which == Testbench::aux) {
+    return state;
+  }
+
+  if (which == Testbench::aux) {
     tests_run[Testbench::error] = state;
     tests_run[Testbench::outcome] = state;
     tests_run[Testbench::string_interner] = state;
@@ -87,7 +101,12 @@ auto Testbench::SetTestsRun(Testbench::Which which, bool state) -> bool {
     tests_run[Testbench::binop_codegen] = state;
     tests_run[Testbench::binop_literal] = state;
     tests_run[Testbench::binop_table] = state;
-  } else if (which == Testbench::ast) {
+    tests_run[Testbench::flags] = state;
+    tests_run[Testbench::location] = state;
+    return state;
+  }
+
+  if (which == Testbench::ast) {
     tests_run[Testbench::nil] = state;
     tests_run[Testbench::boolean] = state;
     tests_run[Testbench::integer] = state;
@@ -99,21 +118,43 @@ auto Testbench::SetTestsRun(Testbench::Which which, bool state) -> bool {
     tests_run[Testbench::block] = state;
     tests_run[Testbench::function] = state;
     tests_run[Testbench::application] = state;
-  } else if (which == Testbench::type) {
+    tests_run[Testbench::array] = state;
+    tests_run[Testbench::tuple] = state;
+    tests_run[Testbench::conditional] = state;
+    tests_run[Testbench::dot] = state;
+    tests_run[Testbench::loop] = state;
+    return state;
+  }
+
+  if (which == Testbench::type) {
     tests_run[Testbench::nil_type] = state;
     tests_run[Testbench::boolean_type] = state;
     tests_run[Testbench::integer_type] = state;
     tests_run[Testbench::function_type] = state;
-  } else if (which == Testbench::kernel) {
+    tests_run[Testbench::array_type] = state;
+    tests_run[Testbench::pointer_type] = state;
+    tests_run[Testbench::void_type] = state;
+    tests_run[Testbench::tuple_type] = state;
+    return state;
+  }
+
+  if (which == Testbench::kernel) {
     tests_run[Testbench::unop_primitives] = state;
     tests_run[Testbench::binop_primitives] = state;
-  } else if (which == Testbench::front) {
+    return state;
+  }
+
+  if (which == Testbench::front) {
     tests_run[Testbench::token] = state;
     tests_run[Testbench::lexer] = state;
     tests_run[Testbench::parser] = state;
-  } else if (which == Testbench::core) {
+    return state;
+  }
+
+  if (which == Testbench::core) {
     tests_run[Testbench::typecheck] = state;
     tests_run[Testbench::codegen] = state;
+    return state;
   }
 
   return tests_run[which] = state;
@@ -130,7 +171,10 @@ auto Testbench::SetTestsResult(Testbench::Which which, bool state) -> bool {
     } else {
       test_results.reset();
     }
-  } else if (which == Testbench::aux) {
+    return state;
+  }
+
+  if (which == Testbench::aux) {
     test_results[Testbench::error] = state;
     test_results[Testbench::outcome] = state;
     test_results[Testbench::string_interner] = state;
@@ -143,7 +187,12 @@ auto Testbench::SetTestsResult(Testbench::Which which, bool state) -> bool {
     test_results[Testbench::binop_codegen] = state;
     test_results[Testbench::binop_literal] = state;
     test_results[Testbench::binop_table] = state;
-  } else if (which == Testbench::ast) {
+    test_results[Testbench::flags] = state;
+    test_results[Testbench::location] = state;
+    return state;
+  }
+
+  if (which == Testbench::ast) {
     test_results[Testbench::nil] = state;
     test_results[Testbench::boolean] = state;
     test_results[Testbench::integer] = state;
@@ -155,21 +204,43 @@ auto Testbench::SetTestsResult(Testbench::Which which, bool state) -> bool {
     test_results[Testbench::block] = state;
     test_results[Testbench::function] = state;
     test_results[Testbench::application] = state;
-  } else if (which == Testbench::type) {
+    test_results[Testbench::array] = state;
+    test_results[Testbench::tuple] = state;
+    test_results[Testbench::conditional] = state;
+    test_results[Testbench::dot] = state;
+    test_results[Testbench::loop] = state;
+    return state;
+  }
+
+  if (which == Testbench::type) {
     test_results[Testbench::nil_type] = state;
     test_results[Testbench::boolean_type] = state;
     test_results[Testbench::integer_type] = state;
     test_results[Testbench::function_type] = state;
-  } else if (which == Testbench::kernel) {
+    test_results[Testbench::array_type] = state;
+    test_results[Testbench::pointer_type] = state;
+    test_results[Testbench::void_type] = state;
+    test_results[Testbench::tuple_type] = state;
+    return state;
+  }
+
+  if (which == Testbench::kernel) {
     test_results[Testbench::unop_primitives] = state;
     test_results[Testbench::binop_primitives] = state;
-  } else if (which == Testbench::front) {
+    return state;
+  }
+
+  if (which == Testbench::front) {
     test_results[Testbench::token] = state;
     test_results[Testbench::lexer] = state;
     test_results[Testbench::parser] = state;
-  } else if (which == Testbench::core) {
+    return state;
+  }
+
+  if (which == Testbench::core) {
     test_results[Testbench::typecheck] = state;
     test_results[Testbench::codegen] = state;
+    return state;
   }
 
   return test_results[which] = state;
@@ -196,16 +267,37 @@ void Testbench::PrintPassedTests(std::ostream &out) const {
   PrintCorePassedTests(out);
 
   out << "\nsynopsis:\n";
-  Test(out, "auxilliary tests", GetTestResult(Testbench::aux));
-  Test(out, "abstract syntax tree tests", GetTestResult(Testbench::ast));
-  Test(out, "type tests", GetTestResult(Testbench::type));
-  Test(out, "kernel tests", GetTestResult(Testbench::kernel));
-  Test(out, "front tests", GetTestResult(Testbench::front));
-  Test(out, "core tests", GetTestResult(Testbench::core));
+  if (RanTest(Testbench::aux)) {
+    Test(out, "auxilliary tests", GetTestResult(Testbench::aux));
+  }
+
+  if (RanTest(Testbench::ast)) {
+    Test(out, "abstract syntax tree tests", GetTestResult(Testbench::ast));
+  }
+
+  if (RanTest(Testbench::type)) {
+    Test(out, "type tests", GetTestResult(Testbench::type));
+  }
+
+  if (RanTest(Testbench::kernel)) {
+    Test(out, "kernel tests", GetTestResult(Testbench::kernel));
+  }
+
+  if (RanTest(Testbench::front)) {
+    Test(out, "front tests", GetTestResult(Testbench::front));
+  }
+
+  if (RanTest(Testbench::core)) {
+    Test(out, "core tests", GetTestResult(Testbench::core));
+  }
 }
 
 void Testbench::PrintAuxPassedTests(std::ostream &out) const {
   bool result = true;
+  if (RanTest(Testbench::aux)) {
+    out << "auxilliary tests: \n";
+  }
+
   if (RanTest(Testbench::error)) {
     result &= Test(out, "pink::Error", GetTestResult(Testbench::error));
   }
@@ -252,12 +344,22 @@ void Testbench::PrintAuxPassedTests(std::ostream &out) const {
     result &=
         Test(out, "pink::BinopTable", GetTestResult(Testbench::binop_table));
   }
+  if (RanTest(Testbench::flags)) {
+    result &=
+        Test(out, "pink::TypecheckFlags", GetTestResult(Testbench::flags));
+  }
+  if (RanTest(Testbench::location)) {
+    result &= Test(out, "pink::Location", GetTestResult(Testbench::location));
+  }
 
   Test(out, "auxilliary tests", result);
 }
 
 void Testbench::PrintAstPassedTests(std::ostream &out) const {
   bool result = true;
+  if (RanTest(Testbench::ast)) {
+    out << "abstract syntax tree tests: \n";
+  }
 
   if (RanTest(Testbench::nil)) {
     result &= Test(out, "pink::Ast, pink::Nil", GetTestResult(Testbench::nil));
@@ -294,12 +396,32 @@ void Testbench::PrintAstPassedTests(std::ostream &out) const {
     result &=
         Test(out, "pink::Application", GetTestResult(Testbench::application));
   }
+  if (RanTest(Testbench::array)) {
+    result &= Test(out, "pink::Array", GetTestResult(Testbench::array));
+  }
+  if (RanTest(Testbench::tuple)) {
+    result &= Test(out, "pink::Tuple", GetTestResult(Testbench::tuple));
+  }
+  if (RanTest(Testbench::conditional)) {
+    result &=
+        Test(out, "pink::Conditional", GetTestResult(Testbench::conditional));
+  }
+  if (RanTest(Testbench::dot)) {
+    result &= Test(out, "pink::Dot", GetTestResult(Testbench::dot));
+  }
+  if (RanTest(Testbench::loop)) {
+    result &= Test(out, "pink::While", GetTestResult(Testbench::loop));
+  }
 
   Test(out, "abstract syntax tree tests", result);
 }
 
 void Testbench::PrintTypePassedTests(std::ostream &out) const {
   bool result = true;
+  if (RanTest(Testbench::type)) {
+    out << "type tests: \n";
+  }
+
   if (RanTest(Testbench::nil_type)) {
     result &= Test(out, "pink::Type, pink::NilType",
                    GetTestResult(Testbench::nil_type));
@@ -316,12 +438,35 @@ void Testbench::PrintTypePassedTests(std::ostream &out) const {
     result &= Test(out, "pink::FunctionType",
                    GetTestResult(Testbench::function_type));
   }
+  if (RanTest(Testbench::array_type)) {
+    result &=
+        Test(out, "pink::ArrayType", GetTestResult(Testbench::array_type));
+  }
+
+  if (RanTest(Testbench::pointer_type)) {
+    result &=
+        Test(out, "pink::PointerType", GetTestResult(Testbench::pointer_type));
+  }
+
+  if (RanTest(Testbench::void_type)) {
+    result &= Test(out, "pink::VoidType", GetTestResult(Testbench::void_type));
+  }
+
+  if (RanTest(Testbench::tuple_type)) {
+    result &=
+        Test(out, "pink::TupleType", GetTestResult(Testbench::tuple_type));
+  }
 
   Test(out, "type tests", result);
 }
 
 void Testbench::PrintKernelPassedTests(std::ostream &out) const {
   bool result = true;
+
+  if (RanTest(Testbench::kernel)) {
+    out << "kernel tests: \n";
+  }
+
   if (RanTest(Testbench::unop_primitives)) {
     result &= Test(out, "pink::UnopPrimitives",
                    GetTestResult(Testbench::unop_primitives));
@@ -335,6 +480,10 @@ void Testbench::PrintKernelPassedTests(std::ostream &out) const {
 
 void Testbench::PrintFrontendPassedTests(std::ostream &out) const {
   bool result = true;
+  if (RanTest(Testbench::front)) {
+    out << "frontend tests: \n";
+  }
+
   if (RanTest(Testbench::token)) {
     result &= Test(out, "pink::Token", GetTestResult(Testbench::token));
   }
@@ -350,13 +499,17 @@ void Testbench::PrintFrontendPassedTests(std::ostream &out) const {
 
 void Testbench::PrintCorePassedTests(std::ostream &out) const {
   bool result = true;
+  if (RanTest(Testbench::core)) {
+    out << "core tests: \n";
+  }
+
   if (RanTest(Testbench::typecheck)) {
     result &=
-        Test(out, "pink First Phase", GetTestResult(Testbench::typecheck));
+        Test(out, "pink::Ast::Typecheck", GetTestResult(Testbench::typecheck));
   }
   if (RanTest(Testbench::codegen)) {
-    result &= Test(out, "pink Basic core Functionality",
-                   GetTestResult(Testbench::codegen));
+    result &=
+        Test(out, "pink::Ast::Codegen", GetTestResult(Testbench::codegen));
   }
 
   Test(out, "core tests", result);
@@ -424,6 +577,14 @@ auto Testbench::RunAuxTests(std::ostream &out) -> bool {
     result &= SetTestResult(Testbench::binop_table, TestBinopTable(out));
   }
 
+  if (RanTest(Testbench::flags)) {
+    result &= SetTestResult(Testbench::flags, TestFlags(out));
+  }
+
+  if (RanTest(Testbench::location)) {
+    result &= SetTestResult(Testbench::location, TestLocation(out));
+  }
+
   SetTestResult(Testbench::aux, result);
   return result;
 }
@@ -474,6 +635,26 @@ auto Testbench::RunAstTests(std::ostream &out) -> bool {
     result &= SetTestResult(Testbench::application, TestApplication(out));
   }
 
+  if (RanTest(Testbench::array)) {
+    result &= SetTestResult(Testbench::array, TestArray(out));
+  }
+
+  if (RanTest(Testbench::tuple)) {
+    result &= SetTestResult(Testbench::tuple, TestTuple(out));
+  }
+
+  if (RanTest(Testbench::conditional)) {
+    result &= SetTestResult(Testbench::conditional, TestConditional(out));
+  }
+
+  if (RanTest(Testbench::dot)) {
+    result &= SetTestResult(Testbench::dot, TestDot(out));
+  }
+
+  if (RanTest(Testbench::loop)) {
+    result &= SetTestResult(Testbench::loop, TestWhile(out));
+  }
+
   SetTestResult(Testbench::ast, result);
   return result;
 }
@@ -494,6 +675,22 @@ auto Testbench::RunTypeTests(std::ostream &out) -> bool {
 
   if (RanTest(Testbench::function_type)) {
     result &= SetTestResult(Testbench::function_type, TestFunctionType(out));
+  }
+
+  if (RanTest(Testbench::array_type)) {
+    result &= SetTestResult(Testbench::array_type, TestArrayType(out));
+  }
+
+  if (RanTest(Testbench::pointer_type)) {
+    result &= SetTestResult(Testbench::pointer_type, TestPointerType(out));
+  }
+
+  if (RanTest(Testbench::void_type)) {
+    result &= SetTestResult(Testbench::void_type, TestVoidType(out));
+  }
+
+  if (RanTest(Testbench::tuple_type)) {
+    result &= SetTestResult(Testbench::tuple_type, TestTupleType(out));
   }
 
   SetTestResult(Testbench::type, result);

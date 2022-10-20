@@ -37,9 +37,12 @@ public:
     Int,
 
     Function,
-    Pointer,
+
     Array,
     Tuple,
+
+    Pointer,
+    Slice,
   };
 
 private:

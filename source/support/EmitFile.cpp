@@ -32,7 +32,7 @@ void EmitObjectFile(const Environment &env, const std::string &filename) {
                __FILE__, __LINE__);
   }
 
-  objPrintPass.run(*env.module);
+  objPrintPass.run(*env.llvm_module);
 
   outfile.close();
 }
@@ -67,9 +67,9 @@ void EmitAssemblyFile(const Environment &env, const std::string &filename) {
                __FILE__, __LINE__);
   }
 
-  // this step fills 'outstream' with the contents of the module,
-  // that is, it writes the contents of the module to the file.
-  asmPrintPass.run(*env.module);
+  // this step fills 'outstream' with the contents of the llvm_module,
+  // that is, it writes the contents of the llvm_module to the file.
+  asmPrintPass.run(*env.llvm_module);
 
   if (outfile.has_error()) {
     std::stringstream errmsg;
@@ -98,7 +98,7 @@ void EmitLLVMFile(const Environment &env, const std::string &filename) {
 
   // simply print to the output file the
   // code generated, as it is already in llvm IR
-  env.module->print(outfile, nullptr);
+  env.llvm_module->print(outfile, nullptr);
 
   outfile.close();
 }

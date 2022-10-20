@@ -43,6 +43,11 @@ target_sources(pink-test PUBLIC
 	source/ast/TestBlock.cpp
 	source/ast/TestFunction.cpp
 	source/ast/TestApplication.cpp
+	source/ast/TestArray.cpp
+	source/ast/TestTuple.cpp
+	source/ast/TestConditional.cpp
+	source/ast/TestDot.cpp
+	source/ast/TestWhile.cpp
 
 	source/aux/TestEnvironment.cpp
 	source/aux/TestError.cpp
@@ -50,6 +55,8 @@ target_sources(pink-test PUBLIC
 	source/aux/TestStringInterner.cpp
 	source/aux/TestSymbolTable.cpp
 	source/aux/TestTypeInterner.cpp
+	source/aux/TestFlags.cpp
+	source/aux/TestLocation.cpp
 
 	source/ops/TestBinopCodegen.cpp
 	source/ops/TestBinopLiteral.cpp
@@ -62,6 +69,10 @@ target_sources(pink-test PUBLIC
 	source/type/TestIntType.cpp
 	source/type/TestBoolType.cpp
 	source/type/TestFunctionType.cpp
+	source/type/TestArrayType.cpp
+	source/type/TestPointerType.cpp
+	source/type/TestVoidType.cpp
+	source/type/TestTupleType.cpp
 
 	source/kernel/TestBinopPrimitives.cpp
 	source/kernel/TestUnopPrimitives.cpp

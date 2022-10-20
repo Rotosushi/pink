@@ -1,9 +1,8 @@
+#include <algorithm>
 
 #include "aux/TypeInterner.h"
 
 namespace pink {
-TypeInterner::TypeInterner()
-    : nil_type(nullptr), bool_type(nullptr), int_type(nullptr) {}
 
 auto TypeInterner::GetNilType() -> NilType * {
   if (nil_type == nullptr) {
@@ -41,17 +40,19 @@ auto TypeInterner::GetFunctionType(Type *return_type,
                                    const std::vector<Type *> &arg_types)
     -> FunctionType * {
   auto possible = std::make_unique<FunctionType>(return_type, arg_types);
+  FunctionType *possible_result = possible.get();
 
-  for (auto &function_type : function_types) {
-    if (possible->EqualTo(function_type.get())) {
-      return function_type.get();
-    }
+  auto types_equal = [possible_result](std::unique_ptr<FunctionType> &type) {
+    return possible_result->EqualTo(type.get());
+  };
+  auto found =
+      std::find_if(function_types.begin(), function_types.end(), types_equal);
+
+  if (found == function_types.end()) {
+    function_types.emplace_back(std::move(possible));
+    return possible_result;
   }
-
-  FunctionType *result = possible.get();
-  function_types.emplace_back(std::move(possible));
-
-  return result;
+  return found->get();
 }
 
 auto TypeInterner::GetPointerType(Type *pointee_type) -> PointerType * {
@@ -82,6 +83,23 @@ auto TypeInterner::GetArrayType(size_t size, Type *member_type) -> ArrayType * {
   array_types.emplace_back(std::move(possible));
 
   return result;
+}
+
+auto TypeInterner::GetSliceType(Type *pointee_type) -> SliceType * {
+  auto possible = std::make_unique<SliceType>(pointee_type);
+  auto *possible_result = possible.get();
+
+  auto types_equal = [possible_result](std::unique_ptr<SliceType> &type) {
+    return possible_result->EqualTo(type.get());
+  };
+  auto found =
+      std::find_if(slice_types.begin(), slice_types.end(), types_equal);
+
+  if (found == slice_types.end()) {
+    slice_types.emplace_back(std::move(possible));
+    return possible_result;
+  }
+  return found->get();
 }
 
 auto TypeInterner::GetTupleType(const std::vector<Type *> &member_types)

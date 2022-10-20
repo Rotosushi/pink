@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 #include <iostream>
 
-bool TestFunctionType(std::ostream& out);
+auto TestFunctionType(std::ostream &out) -> bool;

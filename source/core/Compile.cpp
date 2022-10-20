@@ -85,7 +85,7 @@ void Compile(const Environment &env) {
   // if there are no invalid terms when we get here.
   // that is, if every bit of source we parsed typechecks
   // then we simply have to emit all of their definitions into
-  // the module. (perhaps this too will require a
+  // the llvm_module. (perhaps this too will require a
   // use-before-definition buffer?)
   // however, we have one thing to take care of, after typing all
   // expressions, the Bind form will have constructed false bindings
@@ -100,7 +100,7 @@ void Compile(const Environment &env) {
 
   for (std::unique_ptr<pink::Ast> &term : valid_terms) {
     // as a side effect Codegen builds all of the llvm assembly within the
-    // module using the llvm::IRBuilder<>
+    // llvm_module using the llvm::IRBuilder<>
     pink::Outcome<llvm::Value *, pink::Error> value = term->Codegen(env);
 
     if (!value) {
@@ -144,7 +144,7 @@ void Compile(const Environment &env) {
         env.options->optimization_level);
 
     // Run the optimizer agains the IR
-    MPM.run(*env.module, MAM);
+    MPM.run(*env.llvm_module, MAM);
   }
 }
 } // namespace pink

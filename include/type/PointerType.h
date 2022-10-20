@@ -54,7 +54,15 @@
 
 namespace pink {
 /**
- * @brief Represents the Type of a Pointer
+ * @brief Represents the Type of a Pointer to a single value.
+ *
+ *
+ * pointers only support indirection. that is unop *
+ * a pointer can be constructed from any variable with
+ * address of, that is unop &
+ *
+ * a pointer to a slice may be coerced to a slice safely.
+ *
  *
  */
 class PointerType : public Type {
@@ -88,6 +96,8 @@ public:
 
   /**
    * @brief Implements LLVM style [RTTI] for this class
+   *
+   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
    *
    * @param type the type being tested
    * @return true if type *is* an instance of PointerType

@@ -1,4 +1,4 @@
 #pragma once
 #include <iostream>
 
-bool TestBind(std::ostream& out);
+auto TestBind(std::ostream &out) -> bool;

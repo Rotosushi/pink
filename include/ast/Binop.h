@@ -7,7 +7,17 @@
 #include <string>
 
 #include "ast/Ast.h"
+
+#include "ops/BinopTable.h"
+
 #include "aux/StringInterner.h"
+
+#include "type/ArrayType.h"
+#include "type/IntType.h"
+#include "type/SliceType.h"
+
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
 
 namespace pink {
 /**
@@ -16,6 +26,45 @@ namespace pink {
  */
 class Binop : public Ast {
 private:
+  auto TypecheckLHSArrayAdd(ArrayType *splice_type, Type *rhs_type,
+                            const Environment &env) const
+      -> Outcome<Type *, Error>;
+
+  auto TypecheckRHSArrayAdd(ArrayType *array_type, Type *lhs_type,
+                            const Environment &env) const
+      -> Outcome<Type *, Error>;
+
+  /**
+   * @brief Emits the Instructions which perform array as pointer access
+   *
+   * @param array_splice_type The type of the array allocation
+   * @param array_splice_ptr A pointer to an array allocation
+   * @param index_ptr A pointer to the index in the array
+   * @param result_splice_type The type of the resulting splice into the array
+   * @param result_splice_ptr The allocation containing space for the resulting
+   * splice into the array, can be nullptr if and only if the index passed was a
+   * llvm::ConstantInt
+   * @param env the environment of this compilation unit
+   * @return Outcome<llvm::Value *, Error> if false the error encountered,
+   * if true then result_splice_ptr
+   */
+  auto CodegenGlobalArrayAdd(llvm::StructType *array_splice_type,
+                             llvm::Value *array_splice_ptr,
+                             llvm::ConstantInt *index_ptr,
+                             const Environment &env) const
+      -> Outcome<llvm::Value *, Error>;
+
+  auto CodegenLocalArrayAdd(llvm::StructType *array_splice_type,
+                            llvm::Value *array_splice_ptr,
+                            llvm::ConstantInt *index_ptr,
+                            const Environment &env) const
+      -> Outcome<llvm::Value *, Error>;
+
+  auto CodegenLocalSliceAdd(SliceType *slice_type, llvm::Value *slice_ptr,
+                            llvm::ConstantInt *index_ptr,
+                            const Environment &env) const
+      -> Outcome<llvm::Value *, Error>;
+
   /**
    * @brief Compute the Type of this Binop expression
    *

@@ -67,7 +67,24 @@
 namespace pink {
 
 /**
- * @brief Array represents a c-style array expression
+ * @brief Array represents a c-style array expression,
+ *
+ *
+ *
+ * \todo Define the array itself to be a struct with the array inside
+ * it. then add an integer member which holds the size. then remove
+ * pointer arithmetic, and add an indirection operator "array[number]"
+ * which is bounds checked.
+ * Any time we want to rely on pointer arithmetic by the user, we should
+ * design a new or find an existing solution.
+ *
+ * \todo add string literals, as arrays.
+ *
+ * \todo differentiating pointers to single types and pointers to arrays
+ * with a type, would be useful for safety of written code. and makes
+ * it so every bit of pointer arithmetic can be bounds checked at runtime.
+ * having this makes me feel better about allowing pointer arithmetic at all.
+ * because of what a pain they are to get wrong.
  *
  */
 class Array : public Ast {

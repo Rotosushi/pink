@@ -16,13 +16,13 @@
 
 namespace pink {
 Environment::Environment(
-    std::shared_ptr<Flags> flags, std::shared_ptr<CLIOptions> options,
+    std::shared_ptr<TypecheckFlags> flags, std::shared_ptr<CLIOptions> options,
     std::shared_ptr<Parser> parser, std::shared_ptr<StringInterner> symbols,
     std::shared_ptr<StringInterner> operators,
     std::shared_ptr<TypeInterner> types, std::shared_ptr<SymbolTable> bindings,
     std::shared_ptr<BinopTable> binops, std::shared_ptr<UnopTable> unops,
     std::shared_ptr<llvm::LLVMContext> context,
-    std::shared_ptr<llvm::Module> module,
+    std::shared_ptr<llvm::Module> llvm_module,
     std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
     // std::shared_ptr<llvm::DIBuilder>             debug_builder,
     const llvm::Target *target, llvm::TargetMachine *target_machine,
@@ -33,7 +33,7 @@ Environment::Environment(
       operators(std::move(operators)), types(std::move(types)),
       bindings(std::move(bindings)), binops(std::move(binops)),
       unops(std::move(unops)), context(std::move(context)),
-      module(std::move(module)),
+      llvm_module(std::move(llvm_module)),
       instruction_builder(std::move(instruction_builder)),
       // debug_builder(debug_builder),
       target(target), target_machine(target_machine), data_layout(data_layout),
@@ -45,7 +45,7 @@ Environment::Environment(const Environment &env,
       flags(env.flags), options(env.options), parser(env.parser),
       symbols(env.symbols), operators(env.operators), types(env.types),
       bindings(std::move(bindings)), binops(env.binops), unops(env.unops),
-      context(env.context), module(env.module),
+      context(env.context), llvm_module(env.llvm_module),
       instruction_builder(env.instruction_builder),
       // debug_builder(env.debug_builder),
       target(env.target), target_machine(env.target_machine),
@@ -59,11 +59,22 @@ Environment::Environment(const Environment &env,
       flags(env.flags), options(env.options), parser(env.parser),
       symbols(env.symbols), operators(env.operators), types(env.types),
       bindings(std::move(bindings)), binops(env.binops), unops(env.unops),
-      context(env.context), module(env.module),
+      context(env.context), llvm_module(env.llvm_module),
       instruction_builder(std::move(instruction_builder)),
       // debug_builder(env.debug_builder),
       target(env.target), target_machine(env.target_machine),
       data_layout(env.data_layout), current_function(current_function) {}
+
+Environment::Environment(const Environment &env,
+                         std::shared_ptr<llvm::IRBuilder<>> builder)
+    : false_bindings(std::make_shared<std::vector<InternedString>>()),
+      flags(env.flags), options(env.options), parser(env.parser),
+      symbols(env.symbols), operators(env.operators), types(env.types),
+      bindings(env.bindings), binops(env.binops), unops(env.unops),
+      context(env.context), llvm_module(env.llvm_module),
+      instruction_builder(std::move(builder)), target(env.target),
+      target_machine(env.target_machine), data_layout(env.data_layout),
+      current_function(env.current_function) {}
 
 auto NewGlobalEnv(std::shared_ptr<CLIOptions> options)
     -> std::unique_ptr<Environment> {
@@ -72,7 +83,7 @@ auto NewGlobalEnv(std::shared_ptr<CLIOptions> options)
 
 auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
     -> std::unique_ptr<Environment> {
-  auto flags = std::make_shared<Flags>();
+  auto flags = std::make_shared<TypecheckFlags>();
   auto parser = std::make_shared<Parser>(instream);
   auto symbols = std::make_shared<StringInterner>();
   auto operators = std::make_shared<StringInterner>();
@@ -167,11 +178,12 @@ auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
   llvm::DataLayout data_layout = target_machine->createDataLayout();
 
   auto instruction_builder = std::make_shared<llvm::IRBuilder<>>(*context);
-  auto module = std::make_shared<llvm::Module>(options->input_file, *context);
+  auto llvm_module =
+      std::make_shared<llvm::Module>(options->input_file, *context);
 
-  module->setSourceFileName(options->input_file);
-  module->setDataLayout(data_layout);
-  module->setTargetTriple(target_triple);
+  llvm_module->setSourceFileName(options->input_file);
+  llvm_module->setDataLayout(data_layout);
+  llvm_module->setTargetTriple(target_triple);
 
   // construct classes which are used to generate debugging information
   // within the program.
@@ -204,17 +216,17 @@ auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
   // literals cannot be directly passed by reference, a local variable must be
   // constructed, and then the reference can point to the local.
 
-  // const llvm::DIBuilder temp_debug_builder(*module);
+  // const llvm::DIBuilder temp_debug_builder(*llvm_module);
   // llvm::DICompileUnit* debug_compile_unit =
   // temp_debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C);
 
   // std::shared_ptr<llvm::DIBuilder> debug_builder =
-  // std::make_shared<llvm::DIBuilder>(*module, /* allowUnresolved = */ true,
-  // debug_compile_unit);
+  // std::make_shared<llvm::DIBuilder>(*llvm_module, /* allowUnresolved = */
+  // true, debug_compile_unit);
 
   auto env = std::make_unique<Environment>(
       flags, std::move(options), parser, symbols, operators, types, bindings,
-      binops, unops, context, module, instruction_builder, target,
+      binops, unops, context, llvm_module, instruction_builder, target,
       target_machine, data_layout);
 
   InitializeBinopPrimitives(*env);

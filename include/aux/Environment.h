@@ -102,6 +102,18 @@ public:
   std::shared_ptr<std::vector<InternedString>> false_bindings;
 
   /**
+   * @brief Buffers Error messages when recoverable errors are encountered.
+   *
+   * this is simply to make passing Error's a bit more efficient.
+   * we only support one error at a time right now, so we only
+   * need to buffer a single error. All this really saves is having to
+   * potentially copy error messages around when we return Error's
+   * from functions which can produce errors.
+   *
+   */
+  // std::shared_ptr<std::string> error_message;
+
+  /**
    * @brief Internal flags concerning the current state of compilation.
    *
    * These flags are distinct from the flags controlling compilation held
@@ -109,7 +121,7 @@ public:
    * controllable by the user on the command line, and instead are exclusively
    * set/reset during compilation of specific terms within a given [Ast](#Ast).
    */
-  std::shared_ptr<Flags> flags;
+  std::shared_ptr<TypecheckFlags> flags;
 
   /**
    * @brief The options associated with the current compilation task.
@@ -213,14 +225,14 @@ public:
   std::shared_ptr<llvm::LLVMContext> context;
 
   /**
-   * @brief This is the [module] associated with this unit of compilation
+   * @brief This is the [llvm_module] associated with this unit of compilation
    *
-   * [module]: https://llvm.org/doxygen/classllvm_1_1Module.html "Module"
+   * [llvm_module]: https://llvm.org/doxygen/classllvm_1_1Module.html "Module"
    *
    * This class essentially represents a single file of source code.
    *
    */
-  std::shared_ptr<llvm::Module> module;
+  std::shared_ptr<llvm::Module> llvm_module;
 
   /**
    * @brief this is the [IRBuilder] which is used by [codegen] to construct the
@@ -321,11 +333,11 @@ public:
   /**
    * @brief Construct a new Environment
    *
-   * it is safe to pass in default initialized values for the [flags](#Flags),
-   * [options](#CLIOptions), [parser](#Parser), [symbols](#StringInterner),
-   * [operators](#StringInterner), [types](#TypeInterner),
-   * [bindings](#SymbolTable), [binops](#BinopTable), [unops](#UnopTable), and
-   * [llvmContext].
+   * it is safe to pass in default initialized values for the
+   * [flags](#TypecheckFlags), [options](#CLIOptions), [parser](#Parser),
+   * [symbols](#StringInterner), [operators](#StringInterner),
+   * [types](#TypeInterner), [bindings](#SymbolTable), [binops](#BinopTable),
+   * [unops](#UnopTable), and [llvmContext].
    *
    * [llvmContext]: https://llvm.org/doxygen/classllvm_1_1LLVMContext.html
    * "llvm::LLVMContext"
@@ -359,13 +371,14 @@ public:
    * @param binops
    * @param unops
    * @param context
-   * @param module
+   * @param llvm_module
    * @param instruction_builder
    * @param target
    * @param target_machine
    * @param data_layout
    */
-  Environment(std::shared_ptr<Flags> flags, std::shared_ptr<CLIOptions> options,
+  Environment(std::shared_ptr<TypecheckFlags> flags,
+              std::shared_ptr<CLIOptions> options,
               std::shared_ptr<Parser> parser,
               std::shared_ptr<StringInterner> symbols,
               std::shared_ptr<StringInterner> operators,
@@ -374,7 +387,7 @@ public:
               std::shared_ptr<BinopTable> binops,
               std::shared_ptr<UnopTable> unops,
               std::shared_ptr<llvm::LLVMContext> context,
-              std::shared_ptr<llvm::Module> module,
+              std::shared_ptr<llvm::Module> llvm_module,
               std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
               //      std::shared_ptr<llvm::DIBuilder> debug_builder,
               const llvm::Target *target, llvm::TargetMachine *target_machine,
@@ -409,6 +422,9 @@ public:
   Environment(const Environment &env, std::shared_ptr<SymbolTable> symbols,
               std::shared_ptr<llvm::IRBuilder<>> builder,
               llvm::Function *current_function);
+
+  Environment(const Environment &env,
+              std::shared_ptr<llvm::IRBuilder<>> builder);
 };
 
 /**

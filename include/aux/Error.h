@@ -73,6 +73,7 @@ public:
     DotIndexOutOfRange,
 
     // semantic errors
+    OutOfBounds,
     ValueCannotBeAssigned,
     NonConstGlobalInit,
     NonConstArrayInit,
