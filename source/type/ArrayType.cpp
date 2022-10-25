@@ -40,23 +40,10 @@ auto ArrayType::ToString() const -> std::string {
   return result;
 }
 
-auto ArrayType::Codegen(const Environment &env) const
-    -> Outcome<llvm::Type *, Error> {
-  auto member_result = member_type->Codegen(env);
-  if (!member_result) {
-    return member_result;
-  }
-  auto *member_type = member_result.GetFirst();
-  auto *llvm_array_type = llvm::ArrayType::get(member_type, size);
-
-  auto *integer_type = env.types->GetIntType();
-  auto integer_type_result = integer_type->Codegen(env);
-  if (!integer_type_result) {
-    return integer_type_result;
-  }
-  auto *llvm_integer_type = integer_type_result.GetFirst();
-
-  return {llvm::StructType::get(*env.context,
-                                {llvm_integer_type, llvm_array_type})};
+auto ArrayType::Codegen(const Environment &env) const -> llvm::Type * {
+  auto *llvm_array_type = llvm::ArrayType::get(member_type->Codegen(env), size);
+  auto *llvm_integer_type = env.types->GetIntType()->Codegen(env);
+  return llvm::StructType::get(*env.context,
+                               {llvm_integer_type, llvm_array_type});
 }
 } // namespace pink

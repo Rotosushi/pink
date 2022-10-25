@@ -95,36 +95,39 @@ add_library(libpink STATIC
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
+	source/ast/Application.cpp
+	source/ast/Array.cpp
 	source/ast/Assignment.cpp
 	source/ast/Ast.cpp
 	source/ast/Bind.cpp
 	source/ast/Binop.cpp
 	source/ast/Block.cpp
-	source/ast/Function.cpp
 	source/ast/Bool.cpp
+	source/ast/Conditional.cpp
+	source/ast/Dot.cpp
+	source/ast/Function.cpp
 	source/ast/Int.cpp
 	source/ast/Nil.cpp
+	source/ast/Subscript.cpp
+	source/ast/Tuple.cpp
 	source/ast/Unop.cpp
 	source/ast/Variable.cpp
-	source/ast/Application.cpp
-	source/ast/Array.cpp
-	source/ast/Tuple.cpp
-	source/ast/Conditional.cpp
 	source/ast/While.cpp
-	source/ast/Dot.cpp
+	
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
-	source/type/Type.cpp
+	source/type/ArrayType.cpp
 	source/type/BoolType.cpp
+	source/type/CharacterType.cpp
+	source/type/FunctionType.cpp
 	source/type/IntType.cpp
 	source/type/NilType.cpp
-	source/type/VoidType.cpp
-	source/type/FunctionType.cpp
 	source/type/PointerType.cpp
-	source/type/ArrayType.cpp
-	source/type/TupleType.cpp
 	source/type/SliceType.cpp
+	source/type/TupleType.cpp
+	source/type/Type.cpp
+	source/type/VoidType.cpp
 
 
 	# the 'aux' directory is for the classes which are necessary or convenient
@@ -166,10 +169,12 @@ add_library(libpink STATIC
 	source/kernel/Cast.cpp
 	source/kernel/StoreAggregate.cpp
 	source/kernel/Gensym.cpp
+	source/kernel/LoadValue.cpp
 	source/kernel/AllocateVariable.cpp 
-	source/kernel/AllocateString.cpp
+	source/kernel/AllocateText.cpp
 	source/kernel/RuntimeError.cpp
-	source/kernel/SliceSubscript.cpp 
+	source/kernel/SliceSubscript.cpp
+	source/kernel/ArraySubscript.cpp
 	source/kernel/SysExit.cpp
 	source/kernel/SysWrite.cpp
 

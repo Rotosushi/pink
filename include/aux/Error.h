@@ -71,6 +71,8 @@ public:
     DotLeftIsNotAStruct,
     DotRightIsNotAnInt,
     DotIndexOutOfRange,
+    SubscriptLeftIsNotSubscriptable,
+    SubscriptRightIsNotAnIndex,
 
     // semantic errors
     OutOfBounds,

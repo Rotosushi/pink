@@ -69,22 +69,18 @@ auto Bind::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   auto bound = env.bindings->LookupLocal(symbol);
 
-  if (!bound.has_value()) {
-    // retrieve the type of the term
-    auto *term_type = affix->GetType();
+  auto *term_type = affix->GetType();
+  assert(term_type != nullptr);
 
-    // get the llvm representation of the type
-    auto term_type_result = term_type->Codegen(env);
-    if (!term_type_result) {
-      return {term_type_result.GetSecond()};
-    }
-    llvm::Type *llvm_term_type = term_type_result.GetFirst();
+  if (!bound.has_value()) {
+    llvm::Type *llvm_term_type = term_type->Codegen(env);
 
     auto term_value_result = affix->Codegen(env);
     if (!term_value_result) {
       return term_value_result;
     }
     llvm::Value *term_value = term_value_result.GetFirst();
+    assert(term_value != nullptr);
 
     llvm::Value *ptr = nullptr;
     // this is the global scope, construct a global

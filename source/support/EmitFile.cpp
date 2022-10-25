@@ -70,15 +70,6 @@ void EmitAssemblyFile(const Environment &env, const std::string &filename) {
   // this step fills 'outstream' with the contents of the llvm_module,
   // that is, it writes the contents of the llvm_module to the file.
   asmPrintPass.run(*env.llvm_module);
-
-  if (outfile.has_error()) {
-    std::stringstream errmsg;
-    errmsg << outfile.error();
-    pink::FatalError("The output stream encountered an error: " + errmsg.str(),
-                     __FILE__, __LINE__);
-  } else {
-    outfile.close();
-  }
 }
 
 void EmitLLVMFile(const Environment &env, const std::string &filename) {

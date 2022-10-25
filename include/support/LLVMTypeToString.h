@@ -8,6 +8,8 @@
 
 #include "llvm/IR/Type.h"
 
+#include "llvm/Support/raw_ostream.h"
+
 namespace pink {
 /**
  * @brief Print the given llvm::Type to a string
@@ -15,5 +17,10 @@ namespace pink {
  * @param type the type to print
  * @return std::string the string that was printed
  */
-auto LLVMTypeToString(const llvm::Type *type) -> std::string;
+inline auto LLVMTypeToString(const llvm::Type *type) -> std::string {
+  std::string buffer;
+  llvm::raw_string_ostream stream(buffer);
+  type->print(stream);
+  return buffer;
+}
 } // namespace pink

@@ -96,12 +96,8 @@ void Lexer::UpdateLoc() {
       to the current position of the lexer,
       after a token has been lexed from the buffer,
       it sits between [cursor, token], and the
-      string iterator operator -() lets us compute
+      string iterator operator- lets us compute
       that distance in chars directly.
-
-      theoretically we could swap string for wstring
-      to support unicode. I think this would still
-      work, but i'm not 100% sure about that.
   */
   auto length = cursor - token;
 

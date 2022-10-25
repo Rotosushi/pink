@@ -14,8 +14,7 @@ auto BoolType::EqualTo(Type *other) const -> bool {
 
 auto BoolType::ToString() const -> std::string { return {"Bool"}; }
 
-auto BoolType::Codegen(const Environment &env) const
-    -> Outcome<llvm::Type *, Error> {
-  return {env.instruction_builder->getInt1Ty()};
+auto BoolType::Codegen(const Environment &env) const -> llvm::Type * {
+  return env.instruction_builder->getInt1Ty();
 }
 } // namespace pink

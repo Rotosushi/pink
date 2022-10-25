@@ -27,7 +27,7 @@ auto Int::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
 /*
    ----------------------
-    env |- [0-9]+ : i64 (value)
+    env |- [0-9]+ : i64
 */
 auto Int::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {

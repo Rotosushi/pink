@@ -40,25 +40,15 @@ auto UnopBoolNegate(llvm::Value *term, const Environment &env)
 
 */
 
-// note: turn off formatting here because clag-format interprets
-// -Wunused-parameter as -Wunused - parameter which breaks
-// this macro. also turn off linting, because we know the env
-// parameter is unused. It must be there for this function to
-// fit the type of a UnopCodegenFn function pointer.
-// clang-format off
 // NOLINTBEGIN
-NOWARN("-Wunused-parameter",
-auto UnopAddressOfValue(llvm::Value *term, const Environment &env)
-  -> Outcome<llvm::Value *, Error> {
-  return {term};
-}
+NOWARN(
+    "-Wunused-parameter",
+    auto UnopAddressOfValue(llvm::Value *term, const Environment &env)
+        ->Outcome<llvm::Value *, Error> { return {term}; }
 
-auto UnopValueOfAddress(llvm::Value *term, const Environment &env)
-  -> Outcome<llvm::Value *, Error> {
-  return {term};
-})
+    auto UnopValueOfAddress(llvm::Value *term, const Environment &env)
+        ->Outcome<llvm::Value *, Error> { return {term}; })
 // NOLINTEND
-// clang-format on
 
 void InitializeUnopPrimitives(const Environment &env) {
   Type *int_ty = env.types->GetIntType();

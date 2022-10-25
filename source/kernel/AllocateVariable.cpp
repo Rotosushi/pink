@@ -1,6 +1,14 @@
 #include "kernel/AllocateVariable.h"
 
 namespace pink {
+auto AllocateVariable(const std::string &name, llvm::Type *type,
+                      const Environment &env) -> llvm::Value * {
+  if (env.current_function == nullptr) {
+    return AllocateGlobal(name, type, env);
+  }
+  return AllocateLocal(name, type, env);
+}
+
 auto AllocateGlobal(const std::string &name, llvm::Type *type,
                     const Environment &env) -> llvm::GlobalVariable * {
   return llvm::cast<llvm::GlobalVariable>(

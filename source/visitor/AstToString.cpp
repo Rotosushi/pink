@@ -143,6 +143,11 @@ NOWARN(
     void AstToString::Visit(const Nil *nil) const { Return("nil"); } // NOLINT
 )
 
+void AstToString::Visit(const Subscript *subscript) const {
+  Return(subscript->GetLeft()->ToString() + "[" +
+         subscript->GetRight()->ToString() + "]");
+}
+
 void AstToString::Visit(const Tuple *tuple) const {
   std::string result("(");
   size_t idx = 0;

@@ -20,6 +20,7 @@ public:
   void Visit(const Function *function) const override;
   void Visit(const Int *integer) const override;
   void Visit(const Nil *nil) const override;
+  void Visit(const Subscript *subscript) const override;
   void Visit(const Tuple *tuple) const override;
   void Visit(const Unop *unop) const override;
   void Visit(const Variable *variable) const override;

@@ -78,10 +78,9 @@ public:
    * @brief Compute the llvm equivalent of this ArrayType
    *
    * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Type*, Error> if true then the llvm::Type of this
-   * ArrayType, if false then the Error encountered
+   * @return llvm::Type* the llvm::Type equivalent of this ArrayType
    */
   [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Type *, Error> override;
+      -> llvm::Type * override;
 };
 } // namespace pink

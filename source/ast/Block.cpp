@@ -23,15 +23,18 @@ auto Block::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Block;
 }
 
+/// \todo Make Block::ToString prepend the
+/// correct number of tabs to properly
+/// indent the block at the current level
+/// of nesting.
 auto Block::ToString() const -> std::string {
-  std::string result("{ ");
+  std::string result = "{ ";
 
-  /// \todo Make this prepend the correct number of
-  /// 			tabs to properly indent the block at
-  ///			the current level of nesting.
-  for (const auto &stmt : statements) {
-    result += stmt->ToString() + ";\n";
-  }
+  auto convert = [&result](const std::unique_ptr<Ast> &statement) {
+    result += statement->ToString() + ";\n";
+  };
+
+  std::for_each(statements.begin(), statements.end(), convert);
 
   result += " }";
 
@@ -39,15 +42,15 @@ auto Block::ToString() const -> std::string {
 }
 
 /*
-        The type of a block is the type of it's last statement.
+  The type of a block is the type of it's last statement.
 
-        env |- s0 : T0, s1 : T1, ..., sn : Tn
-----------------------------------------------
-                env |- s0; s1; ...; sn; : Tn
+  env |- {s0;s1;...;sn;}, s0 : T0, s1 : T1, ..., sn : Tn
+     ----------------------------------------------
+            env |- {s0;s1;...;sn;} : Tn
 
 */
 auto Block::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
-  Outcome<Type *, Error> result(Error(Error::Code::None, GetLoc()));
+  Outcome<Type *, Error> result = Error();
 
   for (const auto &stmt : statements) {
     result = stmt->Typecheck(env);
@@ -61,11 +64,11 @@ auto Block::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 }
 
 /*
-        The value of a block is the value of it's last statement.
+  The value of a block is the value of it's last statement.
 */
 auto Block::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
-  Outcome<llvm::Value *, Error> result(Error(Error::Code::None, GetLoc()));
+  Outcome<llvm::Value *, Error> result = Error();
 
   for (const auto &stmt : statements) {
     result = stmt->Codegen(env);

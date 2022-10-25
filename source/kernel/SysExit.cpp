@@ -55,21 +55,21 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
   std::vector<llvm::Type *> intArgsTy = {int64Ty};
   std::vector<llvm::Type *> noArgsTy = {};
 
-  auto *iasm0Ty = llvm::FunctionType::get(int64Ty, noArgsTy, false);
-  auto *iasm1Ty = llvm::FunctionType::get(int64Ty, intArgsTy, false);
-  auto *iasm2Ty = llvm::FunctionType::get(voidTy, noArgsTy, false);
+  auto *mov_rax_type = llvm::FunctionType::get(int64Ty, noArgsTy, false);
+  auto *mov_rdi_type = llvm::FunctionType::get(int64Ty, intArgsTy, false);
+  auto *syscall_type = llvm::FunctionType::get(voidTy, noArgsTy, false);
 
-  llvm::InlineAsm *iasm1 = nullptr;
+  llvm::InlineAsm *mov_rdi = nullptr;
 
   if (llvm::isa<llvm::ConstantInt>(exit_code)) {
-    if (auto error = llvm::InlineAsm::verify(iasm1Ty, "={rdi},i")) {
-      std::string errstr =
-          "constraint code for iasm1Ty not valid: " + LLVMErrorToString(error);
+    if (auto error = llvm::InlineAsm::verify(mov_rdi_type, "={rdi},i")) {
+      std::string errstr = "constraint code for mov_rdi_type not valid: " +
+                           LLVMErrorToString(error);
       FatalError(errstr.data(), __FILE__, __LINE__);
     }
 
-    iasm1 = llvm::InlineAsm::get(
-        iasm1Ty, "mov rdi, $1",
+    mov_rdi = llvm::InlineAsm::get(
+        mov_rdi_type, "mov rdi, $1",
         "={rdi},i", // this says the instruction writes an argument,
                     // which is an immediate integer, to rdi
         true,       // hasSideEffects
@@ -78,14 +78,14 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
         false); // canThrow
 
   } else {
-    if (auto error = llvm::InlineAsm::verify(iasm1Ty, "={rdi},r")) {
-      std::string errstr =
-          "constraint code for iasm1Ty not valid" + LLVMErrorToString(error);
+    if (auto error = llvm::InlineAsm::verify(mov_rdi_type, "={rdi},r")) {
+      std::string errstr = "constraint code for mov_rdi_type not valid " +
+                           LLVMErrorToString(error);
       FatalError(errstr.data(), __FILE__, __LINE__);
     }
 
-    iasm1 = llvm::InlineAsm::get(
-        iasm1Ty, "mov rdi, $1",
+    mov_rdi = llvm::InlineAsm::get(
+        mov_rdi_type, "mov rdi, $1",
         "={rdi},r", // this says the instruction writes an argument,
                     // which is a register, to rdi
         true,       // hasSideEffects
@@ -94,28 +94,28 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
         false); // canThrow
   }
 
-  if (auto error = llvm::InlineAsm::verify(iasm0Ty, "={rax}")) {
-    std::string errstr =
-        "constraint code for iasm0Ty not valid" + LLVMErrorToString(error);
+  if (auto error = llvm::InlineAsm::verify(mov_rax_type, "={rax}")) {
+    std::string errstr = "constraint code for mov_rax_type not valid " +
+                         LLVMErrorToString(error);
     FatalError(errstr.data(), __FILE__, __LINE__);
   }
 
-  if (auto error = llvm::InlineAsm::verify(iasm2Ty, "")) {
-    std::string errstr =
-        "constraint code for iasm2Ty not valid" + LLVMErrorToString(error);
+  if (auto error = llvm::InlineAsm::verify(syscall_type, "")) {
+    std::string errstr = "constraint code for syscall_type not valid " +
+                         LLVMErrorToString(error);
     FatalError(errstr.data(), __FILE__, __LINE__);
   }
 
-  llvm::InlineAsm *iasm0 = llvm::InlineAsm::get(
-      iasm0Ty, "mov rax, 60",
+  llvm::InlineAsm *mov_rax = llvm::InlineAsm::get(
+      mov_rax_type, "mov rax, 60",
       "={rax}", // this says the instruction writes an immediate int to rax
       true,     // hasSideEffects
       false,    // isAlignStack
       llvm::InlineAsm::AsmDialect::AD_Intel,
       false); // canThrow
 
-  llvm::InlineAsm *iasm2 = llvm::InlineAsm::get(
-      iasm2Ty, "syscall",
+  llvm::InlineAsm *syscall = llvm::InlineAsm::get(
+      syscall_type, "syscall",
       "",    // syscall uses no data, and does not return in this case,
              // other times it's return value is within rax.
       true,  // hasSideEffect
@@ -126,7 +126,7 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
   Outcome<llvm::Value *, Error> cast_result = Cast(exit_code, int64Ty, env);
   assert(cast_result);
 
-  std::vector<llvm::Value *> iasm1Args = {cast_result.GetFirst()};
+  std::vector<llvm::Value *> mov_rdi_arg = {cast_result.GetFirst()};
 
   // \note: initally the numbering of the inline assembly statements
   // followed the order in which we emitted them, however
@@ -135,11 +135,10 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
   // of common expressions, if llvm uses rax as the result of an expression
   // which computes the exit code this causes the following inline assembly
   // to overwrite the return code when we load the rax register with the exit
-  // code if we emit
-  // "mov rax 60" before we emit "mov rdi, $1"
-  env.instruction_builder->CreateCall(iasm1Ty, iasm1, iasm1Args);
-  env.instruction_builder->CreateCall(iasm0Ty, iasm0);
-  env.instruction_builder->CreateCall(iasm2Ty, iasm2);
+  // code if we emit "mov rax 60" before we emit "mov rdi, $1"
+  env.instruction_builder->CreateCall(mov_rdi_type, mov_rdi, mov_rdi_arg);
+  env.instruction_builder->CreateCall(mov_rax_type, mov_rax);
+  env.instruction_builder->CreateCall(syscall_type, syscall);
 }
 
 } // namespace pink

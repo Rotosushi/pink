@@ -28,6 +28,14 @@ auto TypeInterner::GetIntType() -> IntType * {
   return int_type.get();
 }
 
+auto TypeInterner::GetCharacterType() -> CharacterType * {
+  if (character_type == nullptr) {
+    character_type = std::make_unique<CharacterType>();
+  }
+
+  return character_type.get();
+}
+
 auto TypeInterner::GetVoidType() -> VoidType * {
   if (void_type == nullptr) {
     void_type = std::make_unique<VoidType>();

@@ -31,18 +31,16 @@ public:
    *
    */
   enum class Kind {
-    Void,
-    Nil,
-    Bool,
-    Int,
-
-    Function,
-
     Array,
-    Tuple,
-
+    Bool,
+    Character,
+    Function,
+    Int,
+    Nil,
     Pointer,
     Slice,
+    Tuple,
+    Void,
   };
 
 private:
@@ -107,10 +105,9 @@ public:
    * @brief Computes the llvm::Type equivalent to this Type
    *
    * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Type*, Error> if true then the llvm::Type equivalent
-   * to this Type, if false then the Error encountered
+   * @return llvm::Type* the llvm::Type equivalent of this type
    */
   [[nodiscard]] virtual auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Type *, Error> = 0;
+      -> llvm::Type * = 0;
 };
 } // namespace pink

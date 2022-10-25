@@ -40,7 +40,7 @@ auto Binop::ToString() const -> std::string {
 
   return result;
 }
-
+/*
 auto Binop::TypecheckLHSArrayAdd(ArrayType *array_type, Type *rhs_type,
                                  const Environment &env) const
     -> Outcome<Type *, Error> {
@@ -86,10 +86,11 @@ auto Binop::CodegenGlobalArrayAdd(llvm::StructType *array_slice_type,
   assert(llvm::cast<llvm::GlobalVariable>(array_slice_ptr) != nullptr);
 
   auto *slice_size_type = env.instruction_builder->getInt64Ty();
+  auto *slice_offset_type = env.instruction_builder->getInt64Ty();
   auto *slice_ptr_type = llvm::PointerType::get(
       *env.context, env.data_layout.getDefaultGlobalsAddressSpace());
-  auto *slice_type =
-      llvm::StructType::get(*env.context, {slice_size_type, slice_ptr_type});
+  auto *slice_type = llvm::StructType::get(
+      *env.context, {slice_size_type, slice_offset_type, slice_ptr_type});
 
   auto *slice_index_one_type = array_slice_type->getTypeAtIndex(1);
   auto *array_type = llvm::cast<llvm::ArrayType>(slice_index_one_type);
@@ -99,7 +100,7 @@ auto Binop::CodegenGlobalArrayAdd(llvm::StructType *array_slice_type,
   size_t idx = index_ptr->getLimitedValue();
   size_t size = array_type->getNumElements();
   if (idx >= size) {
-    std::string errmsg = "index was " + std::to_string(idx) +
+    std::string errmsg = "index is " + std::to_string(idx) +
                          " array only has " + std::to_string(size) +
                          " elements.";
     return {Error(Error::Code::OutOfBounds, GetLoc(), errmsg)};
@@ -111,7 +112,7 @@ auto Binop::CodegenGlobalArrayAdd(llvm::StructType *array_slice_type,
   auto *element_ptr = env.instruction_builder->CreateConstInBoundsGEP1_32(
       array_type, array_ptr, idx);
 
-  size_t slice_size = size - idx;
+  size_t slice_size = size;
   auto *llvm_slice_size = env.instruction_builder->getInt64(slice_size);
 
   auto *slice_ptr = AllocateGlobal(Gensym(), slice_type, env);
@@ -211,7 +212,7 @@ auto Binop::CodegenLocalSliceAdd(SliceType *slice_type, llvm::Value *slice_ptr,
   auto *slice_size =
       env.instruction_builder->CreateLoad(slice_size_type, slice_size_ptr);
 }
-
+*/
 /*
     env |- lhs : Tl, rhs : Tr, op : Tl -> Tr -> T
   --------------------------------------------------
@@ -235,18 +236,6 @@ auto Binop::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   if (!binop || binop->second->NumOverloads() == 0) {
     std::string errmsg = std::string("unknown op: ") + op;
     return {Error(Error::Code::UnknownBinop, GetLoc(), errmsg)};
-  }
-
-  // #RULE Array types support pointer arithmetic by being 'cast'
-  // as slices.
-  auto *array_type = llvm::dyn_cast<ArrayType>(lhs_result.GetFirst());
-  if ((array_type != nullptr) && (strcmp(op, "+") == 0)) {
-    return TypecheckLHSArrayAdd(array_type, rhs_result.GetFirst(), env);
-  }
-
-  array_type = llvm::dyn_cast<ArrayType>(rhs_result.GetFirst());
-  if ((array_type != nullptr) && (strcmp(op, "+") == 0)) {
-    return TypecheckRHSArrayAdd(array_type, lhs_result.GetFirst(), env);
   }
 
   // #RULE Binops are overloaded on their argument types
@@ -318,57 +307,9 @@ auto Binop::Codegen(const Environment &env) const
     return {Error(Error::Code::UnknownBinop, GetLoc(), errmsg)};
   }
 
-  llvm::Optional<std::pair<std::pair<Type *, Type *>, BinopCodegen *>> literal;
-  auto *pointer_type = llvm::dyn_cast<PointerType>(lhs_type_result.GetFirst());
-  // if this is a pointer addition operation, we must pass the pointee_type
-  // into the binop code generation function for the GEP instruction within.
-  // we can also safely add a new implementation of pointer addition no
-  // matter what the underlying type is, because the GEP instruction
-  // handles the offset computation based upon the pointee_type itself.
-  // it is only the structure of the BinopLiteral itself that is going to
-  // fail to find an implementation for any arbitrary array type we can
-  // define.
-  if ((pointer_type != nullptr) && (strcmp(op, "+") == 0)) {
-    Outcome<llvm::Type *, Error> pointee_type_result =
-        pointer_type->pointee_type->Codegen(env);
-
-    if (!pointee_type_result) {
-      return {pointee_type_result.GetSecond()};
-    }
-
-    lhs_type = pointee_type_result.GetFirst();
-
-    auto *int_type = llvm::dyn_cast<IntType>(rhs_type_result.GetFirst());
-    if (int_type == nullptr) {
-      std::string errmsg = std::string("lhs has pointer type: ") +
-                           pointer_type->ToString() +
-                           " however rhs is not an Int, rhs has type: " +
-                           rhs_type_result.GetFirst()->ToString();
-      return {Error(Error::Code::ArgTypeMismatch, GetLoc(), errmsg)};
-    }
-
-    literal = binop->second->Lookup(lhs_type_result.GetFirst(), int_type);
-
-    if (!literal) {
-      Type *int_ptr_type = env.types->GetPointerType(env.types->GetIntType());
-      llvm::Optional<std::pair<std::pair<Type *, Type *>, BinopCodegen *>>
-          ptr_add_binop = binop->second->Lookup(int_ptr_type, int_type);
-
-      if (!ptr_add_binop) {
-        FatalError("Couldn't find int ptr arithmetic binop!", __FILE__,
-                   __LINE__);
-      }
-
-      BinopCodegenFn ptr_arith_fn = ptr_add_binop->second->generate;
-      literal =
-          binop->second->Register(lhs_type_result.GetFirst(), int_type,
-                                  lhs_type_result.GetFirst(), ptr_arith_fn);
-    }
-  } else {
-    // find the instance of the operator given the type of both sides
-    literal = binop->second->Lookup(lhs_type_result.GetFirst(),
-                                    rhs_type_result.GetFirst());
-  }
+  // find the instance of the operator given the type of both sides
+  auto literal = binop->second->Lookup(lhs_type_result.GetFirst(),
+                                       rhs_type_result.GetFirst());
 
   if (!literal) {
     std::string errmsg = std::string("could not find an implementation of ") +

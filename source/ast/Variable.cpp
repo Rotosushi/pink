@@ -3,6 +3,8 @@
 
 #include "visitor/AstVisitor.h"
 
+#include "kernel/LoadValue.h"
+
 namespace pink {
 Variable::Variable(const Location &location, InternedString symbol)
     : Ast(Ast::Kind::Variable, location), symbol(symbol) {}
@@ -38,24 +40,9 @@ auto Variable::Codegen(const Environment &env) const
 
   if (bound.has_value()) {
     assert(bound->second != nullptr);
+    auto *bound_type = bound->first->Codegen(env);
 
-    auto type_result = bound->first->Codegen(env);
-
-    if (!type_result) {
-      return {type_result.GetSecond()};
-    }
-
-    auto *bound_type = type_result.GetFirst();
-
-    if (llvm::isa<llvm::FunctionType>(bound_type) ||
-        (llvm::isa<llvm::ArrayType>(bound_type)) ||
-        (llvm::isa<llvm::StructType>(bound_type)) ||
-        env.flags->OnTheLHSOfAssignment() || env.flags->WithinAddressOf()) {
-      return {bound->second};
-    }
-
-    return {
-        env.instruction_builder->CreateLoad(bound_type, bound->second, symbol)};
+    return LoadValue(bound_type, bound->second, env);
   }
 
   std::string errmsg = std::string("unknown symbol: ") + symbol;

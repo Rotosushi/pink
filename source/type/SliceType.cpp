@@ -29,11 +29,10 @@ auto SliceType::ToString() const -> std::string {
   return result;
 }
 
-auto SliceType::Codegen(const Environment &env) const
-    -> Outcome<llvm::Type *, Error> {
+auto SliceType::Codegen(const Environment &env) const -> llvm::Type * {
   llvm::Type *integer_type = env.instruction_builder->getInt64Ty();
   auto *pointer_type = llvm::PointerType::getUnqual(*env.context);
-  return {llvm::StructType::get(
-      *env.context, {integer_type, integer_type, pointer_type}, false)};
+  return llvm::StructType::get(
+      *env.context, {integer_type, integer_type, pointer_type}, false);
 }
 } // namespace pink

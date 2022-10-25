@@ -17,6 +17,10 @@ namespace pink {
  * it's value is equivalent to 'false.'
  * it's useful for many of the same reasons the
  * type 'void' is useful in C/C++.
+ *
+ * \todo since we had to add the void type in order
+ * to implement while loops, maybe we should remove
+ * nil from the language.
  */
 class Nil : public Ast {
 private:

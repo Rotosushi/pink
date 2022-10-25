@@ -6,7 +6,7 @@
 #include "llvm/IR/Value.h"
 
 namespace pink {
-auto SliceSubscript(llvm::Type *slice_element_type, llvm::Value *slice,
-                    llvm::Value *index, const Environment &env)
-    -> llvm::Value *;
+auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
+                    llvm::Value *slice, llvm::Value *index,
+                    const Environment &env) -> llvm::Value *;
 } // namespace pink

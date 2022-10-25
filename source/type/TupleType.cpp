@@ -45,21 +45,14 @@ auto TupleType::ToString() const -> std::string {
   return result;
 }
 
-auto TupleType::Codegen(const Environment &env) const
-    -> Outcome<llvm::Type *, Error> {
-  std::vector<llvm::Type *> member_llvm_types(member_types.size());
+auto TupleType::Codegen(const Environment &env) const -> llvm::Type * {
+  std::vector<llvm::Type *> llvm_member_types;
 
-  for (Type *member_type : member_types) {
-    Outcome<llvm::Type *, Error> member_type_codegen_result =
-        member_type->Codegen(env);
+  auto transform_member = [&env](Type *type) { return type->Codegen(env); };
 
-    if (!member_type_codegen_result) {
-      return member_type_codegen_result;
-    }
+  std::transform(member_types.begin(), member_types.end(),
+                 llvm_member_types.begin(), transform_member);
 
-    member_llvm_types.push_back(member_type_codegen_result.GetFirst());
-  }
-
-  return llvm::StructType::get(*env.context, member_llvm_types);
+  return llvm::StructType::get(*env.context, llvm_member_types);
 }
 } // namespace pink

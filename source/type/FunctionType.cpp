@@ -87,68 +87,38 @@ auto FunctionType::ToString() const -> std::string {
  *  to answer that question.
  *
  */
-auto FunctionType::Codegen(const Environment &env) const
-    -> Outcome<llvm::Type *, Error> {
-  std::vector<llvm::Type *> llvm_args(arguments.size());
+auto FunctionType::Codegen(const Environment &env) const -> llvm::Type * {
+  std::vector<llvm::Type *> llvm_args;
 
-  for (auto *type : arguments) {
-    Outcome<llvm::Type *, Error> arg_res = type->Codegen(env);
-
-    if (!arg_res) {
-      return arg_res;
+  auto transform_argument = [&env](Type *type) -> llvm::Type * {
+    llvm::Type *llvm_type = type->Codegen(env);
+    if (llvm_type->isSingleValueType()) {
+      return llvm_type;
     }
 
-    // if the llvm::Type is not a single value type,
-    // promote the type to a pointer type
-    if (arg_res.GetFirst()->isSingleValueType()) {
-      llvm_args.emplace_back(arg_res.GetFirst());
-    } else {
-      // #NOTE: We know that this argument is going to be passed
-      // byvalue to the function, and that llvm is going to
-      // perform the copy of the parameters memory. presumably
-      // that allocation and subsequent copy must happen in local
-      // memory, So i think the address space for this pointer
-      // is the Alloca address space.
-      llvm_args.emplace_back(env.instruction_builder->getPtrTy(
-          env.data_layout.getAllocaAddrSpace()));
-    }
+    return env.instruction_builder->getPtrTy();
+  };
+
+  std::transform(arguments.begin(), arguments.end(), llvm_args.begin(),
+                 transform_argument);
+
+  /*
+    \note if the result type of a function cannot fit within
+    a register we must pass it through a hidden first
+    parameter on the stack.
+  */
+  llvm::Type *result_type = result->Codegen(env);
+  if (result_type->isSingleValueType() || result_type->isVoidTy()) {
+    llvm::Type *fn_ty = llvm::FunctionType::get(result_type, llvm_args,
+                                                /* isVarArg */ false);
+    return fn_ty;
   }
-
-  Outcome<llvm::Type *, Error> res_res = result->Codegen(env);
-
-  if (!res_res) {
-    return res_res;
-  }
-
-  if (!llvm_args.empty()) {
-    if (res_res.GetFirst()->isSingleValueType() ||
-        res_res.GetFirst()->isVoidTy()) {
-      llvm::Type *fn_ty = llvm::FunctionType::get(res_res.GetFirst(), llvm_args,
-                                                  /* isVarArg */ false);
-      return {fn_ty};
-    }
-    // promote return value to an argument as a pointer
-    llvm_args.insert(llvm_args.begin(),
-                     env.instruction_builder->getPtrTy(
-                         env.data_layout.getAllocaAddrSpace()));
-    llvm::Type *fn_ty = llvm::FunctionType::get(
-        env.instruction_builder->getVoidTy(), llvm_args, /* isVararg */ false);
-    return {fn_ty};
-  }
-
-  llvm::Type *res_ty = res_res.GetFirst();
-  if (res_ty->isSingleValueType() || res_ty->isVoidTy()) {
-    llvm::Type *fn_ty =
-        llvm::FunctionType::get(res_res.GetFirst(), /* isVararg */ false);
-    return {fn_ty};
-  }
-
-  // promote the return value to an argument as a pointer
+  // promote return value to an argument as a pointer
   llvm_args.insert(
       llvm_args.begin(),
       env.instruction_builder->getPtrTy(env.data_layout.getAllocaAddrSpace()));
   llvm::Type *fn_ty = llvm::FunctionType::get(
-      env.instruction_builder->getVoidTy(), llvm_args, /* isVarArg */ false);
-  return {fn_ty};
+      env.instruction_builder->getVoidTy(), llvm_args, /* isVararg */ false);
+  return fn_ty;
 }
 } // namespace pink

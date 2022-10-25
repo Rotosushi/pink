@@ -7,6 +7,8 @@
 
 #include "llvm/Support/Error.h"
 
+#include "llvm/Support/raw_ostream.h"
+
 namespace pink {
 /**
  * @brief Prints the given llvm::Error to a string
@@ -14,5 +16,10 @@ namespace pink {
  * @param error the error to print
  * @return std::string the string that was printed
  */
-auto LLVMErrorToString(const llvm::Error &error) -> std::string;
+inline auto LLVMErrorToString(const llvm::Error &error) -> std::string {
+  std::string buffer;
+  llvm::raw_string_ostream stream(buffer);
+  stream << error;
+  return buffer;
+}
 } // namespace pink

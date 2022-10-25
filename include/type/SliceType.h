@@ -76,10 +76,9 @@ public:
    * @brief Compute the llvm::Type equivalent to this SliceType
    *
    * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Type *, Error> if true the llvm::Type, if false the
-   * Error encountered
+   * @return Outcome<llvm::Type *, Error> if true the llvm::Type
    */
   [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Type *, Error> override;
+      -> llvm::Type * override;
 };
 } // namespace pink

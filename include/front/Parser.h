@@ -47,9 +47,9 @@ arg = id ":" type
 block = "{" {term} "}"
 
 term = conditional
-        | while
-        | bind
-        | affix ";"
+     | while
+     | bind
+     | affix ";"
 
 
 conditional = "if" "(" affix ")" block "else" block
@@ -57,27 +57,29 @@ conditional = "if" "(" affix ")" block "else" block
 while = "while" "(" affix ")" block
 
 affix = composite "=" affix
-        | composite "(" [affix {"," affix}] ")"
-        | composite
+      | composite "(" [affix {"," affix}] ")"
+      | composite
 
-composite = dot operator infix-parser
-            | dot
+composite = accessor operator infix-parser
+          | accessor
 
-dot = basic {"." basic} // (1) (2)
+accessor = basic {"." basic}
+         | basic {"[" basic "]"}
+         | basic
 
 basic = id
-        | integer
-        | operator dot
-        | "true"
-        | "false"
-        | "(" affix {"," affix} ")"
-        | "[" affix {"," affix} "]"
+      | integer
+      | operator accessor
+      | "true"
+      | "false"
+      | "(" affix {"," affix} ")"
+      | "[" affix {"," affix} "]"
 
 type = "Int"
-        | "Bool"
-        | "(" type {"," type} ")"
-        | "[" type "x" integer "]"
-        | "ptr" type
+     | "Bool"
+     | "(" type {"," type} ")"
+     | "[" type "x" integer "]"
+     | "ptr" type
 
 // these are the regular expressions used by re2c
 id = [a-zA-Z_][a-zA-Z0-9_]*
@@ -337,8 +339,8 @@ private:
    * @brief Parses Composite expressions
    *
    * \verbatim
-   * composite = dot operator infix-parser
-   *           | dot
+   * composite = accessor operator infix-parser
+   *           | accessor
    * \endverbatim
    *
    * \note infix-parser is actually the call into the operator precedence
@@ -352,20 +354,54 @@ private:
       -> Outcome<std::unique_ptr<Ast>, Error>;
 
   /**
-   * @brief Parses Dot expressions
+   * @brief Parses accessor expressions
    *
    * \verbatim
-   * dot = basic {"." basic}
+   * accessor = basic {"." basic}
+   *          | basic {"[" basic "]"}
+   *          | basic
    * \endverbatim
    *
-   * this function is here to give "." a higher
+   * this function is here to give accessor operators a higher
    * operator precedence than any possible operator.
+   * so that any actual binary operations can use the
+   * values which were accessed, instead of operating on the
+   * composite structures themselves.
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseDot(const Environment &env) -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseAccessor(const Environment &env)
+      -> Outcome<std::unique_ptr<Ast>, Error>;
+
+  /**
+   * @brief Parses member access expressions
+   *
+   * \verbatim
+   * dot = basic {"." basic}
+   * \endverbatim
+   *
+   * @param env The environment associated with this compilation unit
+   * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
+   * which was parsed. if false, then the Error which was encountered.
+   */
+  auto ParseDot(const Environment &env, std::unique_ptr<Ast> left)
+      -> Outcome<std::unique_ptr<Ast>, Error>;
+
+  /**
+   * @brief Parses subscript access expressions
+   *
+   * \verbatim
+   * subscript = basic {"[" basic "]"}
+   * \endverbatim
+   *
+   * @param env The environment associated with this compilation unit
+   * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
+   * which was parsed. if false, then the Error which was encountered.
+   */
+  auto ParseSubscript(const Environment &env, std::unique_ptr<Ast> left)
+      -> Outcome<std::unique_ptr<Ast>, Error>;
 
   /**
    * @brief Parses Infix expressions
@@ -391,7 +427,7 @@ private:
    * \verbatim
    * basic = id
    *       | integer
-   *       | operator dot
+   *       | operator accessor
    *       | "true"
    *       | "false"
    *       | "(" affix {"," affix} ")"

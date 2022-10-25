@@ -70,6 +70,6 @@ public:
    * BoolType, if false the Error encountered.
    */
   [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Type *, Error> override;
+      -> llvm::Type * override;
 };
 } // namespace pink

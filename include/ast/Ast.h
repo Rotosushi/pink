@@ -8,80 +8,6 @@
  *
  */
 
-// #QUESTION:
-// Should we refactor Typecheck, Codegen, and ToString to be visitors?
-// we have a few extra arguments compared to the basic visitor pattern
-// but this is in order to pass data to and from the visitor so it can actually
-// work. if we pass in a AstVisitor& to the accept function, then we
-// are forced to simply trust the programmer to provide the correct
-// visitor for the Outcome<T, U>& result they pass in, and the
-// result must be an argument because we cannot overload a function
-// on it's return type, and we cannot define a single accept method for
-// any given Visitor implementation because we cannot template a virtual method!
-// the only way to handle this is to reimplement the Outcome class
-// to use inheritance to handle the difference between a codegen outcome or
-// a typecheck outcome or so on. however, then we are trusting that the
-// outcome that we receive as an argument is the correct derived Outcome,
-// which means that is still not as type safe as the current way of implementing
-// the 'visitors'. (meaning we have to add code to check that things are okay to
-// access) as far as i can tell right now, this is about how we have to
-// implement the visitor pattern from the perspective of the Ast. because of: 1)
-// we need some way of communicating the resulting error or type of a typecheck,
-//    the resulting error or value of a codegen, OR the resulting string of a
-//    ToString, and it needs to work such that the
-//    Typechecking/Codegeneration/ToString routines can use the results from
-//    calling the same routine on the child nodes of the current ast node. this
-//    is the basic way the algorithm builds up the type of expressions.
-// 2) we need to do the work with respect to the Environment data structure,
-//    because that is where the SymbolTable, BinopTable, UnopTable,
-//    llvm::IRBuilder, and other important data structures are grouped, such
-//    that codegeneration and typechecking can be done with respect to those
-//    data structures. this is fundamentally because we must record symbols as
-//    they are defined such that we can access their values later to implement
-//    expressions referencing those symbols.
-
-// void Accept(const TypeChecker &tc, Outcome<Type*, Error>& result,
-// std::shared_ptr<Environment> env) = 0;
-
-// void Accept(const CodeGenerator &cg,
-// Outcome<llvm::Value*, Error>& result, std::shared_ptr<Environment> env) = 0;
-
-// void Accept(const StringGenerator &sg, std::string& result,
-// std::shared_ptr<Environment> env) = 0;
-
-// the visitor pattern increases code size and mental complexity, because
-// we add a new class definition to the program per kind of walk we want
-// to do. I guess if we had numerous kinds of walks then each Ast node's
-// file would have to contain snippets of several algorithms in the same source
-// file, so we gain the ease of declaring the entire algorithm in a single
-// source file, implementing the visitor for each ast node kind. so in that
-// sense the algorithm is easier to see all at once. however each class kind
-// takes similar steps within it's peice of each algorithm. so that becomes
-// harder to see if the whole algorithm is within the visitor file.
-// also, the whole typechecking algorithm is about as big (maybe even bigger
-// now?) as the parser, so the size of the typechecking file would be big
-// (around 1000 - 1500 lines), and get bigger as we added new node kinds. so we
-// aren't really reducing the number of massive files in the project, so much as
-// we are removing a large amount of implementation from the individual files of
-// the Ast. the Ast code as it stands now gets bigger each time we add a new
-// kind of walk to the tree. just as the typecheckvisitor file gets larger as we
-// add more kinds of node.
-// it seems to me that debugging and profiling code would be emitted alonside
-// the code that is already emitted, and they don't need to be their own
-// walks of the tree. just have flags set that control the emission.
-// so what kind of walks do we need to add to the AST now or in the future?
-// -) ah, each optimization that we would want to add would need to walk the
-// tree, and it would be easier to build and maintain separate classes for
-// each optimization kind, rather than increase the code size of the Ast,
-// per optimization supported.
-// this might be a consideration if the code we emit to llvm cannot be
-// optimized by llvm well, due to the way we are emitting the llvm
-// representation. so we could employ optimization walks to
-// modify such code. so adding the visitor pattern can be safely put off
-// until we have a need to add another kind of walk.
-// -) any code sanatizer or formatting function could make use of the visitor
-// pattern as well.
-
 #pragma once
 #include <iostream>
 #include <memory>
@@ -124,26 +50,23 @@ public:
    *
    */
   enum class Kind {
-    Block,
-    Variable,
-    VarRef,
-    Bind,
+    Application,
     Assignment,
+    Bind,
+    Binop,
+    Block,
+    Bool,
+    Array,
+    Conditional,
     Dot,
     Function,
-    Application,
-    Conditional,
-    While,
-
-    Tuple,
-    Array,
-
-    Binop,
-    Unop,
-
-    Nil,
-    Bool,
     Int,
+    Nil,
+    Subscript,
+    Tuple,
+    Unop,
+    Variable,
+    While,
   };
 
 private:

@@ -64,19 +64,7 @@ auto Assignment::TypecheckV(const Environment &env) const
 
 auto Assignment::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
-  // get the type and value of both sides
-  Outcome<Type *, Error> lhs_type_result(left->Typecheck(env));
-
-  if (!lhs_type_result) {
-    return {lhs_type_result.GetSecond()};
-  }
-
-  Outcome<llvm::Type *, Error> lhs_type =
-      lhs_type_result.GetFirst()->Codegen(env);
-
-  if (!lhs_type) {
-    return {lhs_type.GetSecond()};
-  }
+  llvm::Type *lhs_type = left->GetType()->Codegen(env);
 
   env.flags->OnTheLHSOfAssignment(true);
 
@@ -88,29 +76,18 @@ auto Assignment::Codegen(const Environment &env) const
     return lhs_value;
   }
 
-  Outcome<Type *, Error> rhs_type_result(right->Typecheck(env));
+  llvm::Type *rhs_type = right->GetType()->Codegen(env);
 
-  if (!rhs_type_result) {
-    return {rhs_type_result.GetSecond()};
-  }
-
-  Outcome<llvm::Type *, Error> rhs_type =
-      rhs_type_result.GetFirst()->Codegen(env);
-
-  if (!rhs_type) {
-    return {rhs_type.GetSecond()};
-  }
   Outcome<llvm::Value *, Error> rhs_value(right->Codegen(env));
 
   if (!rhs_value) {
     return rhs_value;
   }
 
-  // make sure the left and right hand sides are the same type
-  if (lhs_type.GetFirst() != rhs_type.GetFirst()) {
-    std::string errmsg =
-        std::string("storage type: ") + LLVMTypeToString(lhs_type.GetFirst()) +
-        ", value type: " + LLVMTypeToString(rhs_type.GetFirst());
+  if (lhs_type != rhs_type) {
+    std::string errmsg = std::string("storage type: ") +
+                         LLVMTypeToString(lhs_type) +
+                         ", value type: " + LLVMTypeToString(rhs_type);
     Error error(Error::Code::AssigneeTypeMismatch, GetLoc(), errmsg);
     return {error};
   }
@@ -176,11 +153,10 @@ auto Assignment::Codegen(const Environment &env) const
   // here, only to a pointer, pointing to a valid memory location in the modules
   // global space or the local stack frame, so we check that the bound value is
   // able to be assigned to.
-  if (llvm::isa<llvm::StructType>(lhs_type.GetFirst())) {
+  if (llvm::isa<llvm::StructType>(lhs_type)) {
     llvm::Value *right_value = rhs_value.GetFirst();
 
-    StoreAggregate(lhs_type.GetFirst(), lhs_value.GetFirst(),
-                   rhs_value.GetFirst(), env);
+    StoreAggregate(lhs_type, lhs_value.GetFirst(), rhs_value.GetFirst(), env);
 
     return {right_value};
   }

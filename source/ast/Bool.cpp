@@ -18,7 +18,6 @@ auto Bool::ToString() const -> std::string {
   if (value) {
     return "true";
   }
-
   return "false";
 }
 

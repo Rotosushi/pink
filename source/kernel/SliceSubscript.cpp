@@ -1,11 +1,11 @@
 #include "kernel/SliceSubscript.h"
-
+#include "kernel/LoadValue.h"
 #include "kernel/RuntimeError.h"
 
 namespace pink {
-auto SliceSubscript(llvm::Type *slice_element_type, llvm::Value *slice,
-                    llvm::Value *index, const Environment &env)
-    -> llvm::Value * {
+auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
+                    llvm::Value *slice, llvm::Value *index,
+                    const Environment &env) -> llvm::Value * {
   // in order to properly check array access through a slice,
   // from the perspective of forwards iteration, all we need
   // to know is the size of the rest of the array which the
@@ -26,14 +26,14 @@ auto SliceSubscript(llvm::Type *slice_element_type, llvm::Value *slice,
   // if (bounds <= (index + offset) || (index + offset) < 0)
   //    RuntimeError("index out of bounds");
   //
-  // auto *element_ptr = GEP(slice_element_type, slice_ptr, index);
-  // if (isSingleValueTy(slice_element_type))
+  // auto *element_ptr = GEP(element_type, slice_ptr, index);
+  // if (isSingleValueTy(element_type))
   //   return load(elice_element_type, element_ptr);
   // else
   //   return element_ptr;
   auto *integer_type = env.instruction_builder->getInt64Ty();
   auto *pointer_type = env.instruction_builder->getPtrTy();
-  auto *slice_type = slice->getType();
+
   auto *slice_size_ptr = env.instruction_builder->CreateConstInBoundsGEP2_32(
       slice_type, slice, 0, 0);
   auto *slice_offset_ptr = env.instruction_builder->CreateConstInBoundsGEP2_32(
@@ -47,11 +47,12 @@ auto SliceSubscript(llvm::Type *slice_element_type, llvm::Value *slice,
       env.instruction_builder->CreateLoad(integer_type, slice_size_ptr);
   auto *slice_offset =
       env.instruction_builder->CreateLoad(integer_type, slice_offset_ptr);
+  // offset = slice.offset + index
   auto *offset = env.instruction_builder->CreateAdd(slice_offset, index);
   auto *zero = env.instruction_builder->getInt64(0);
 
   auto *greater_than_bounds =
-      env.instruction_builder->CreateICmpSGE(slice_size, offset);
+      env.instruction_builder->CreateICmpSLE(slice_size, offset);
   auto *less_than_zero = env.instruction_builder->CreateICmpSLT(offset, zero);
   auto *bounds_check = env.instruction_builder->CreateLogicalOr(
       greater_than_bounds, less_than_zero);
@@ -78,17 +79,12 @@ auto SliceSubscript(llvm::Type *slice_element_type, llvm::Value *slice,
 
   // emit the array subscript into the false branch
   env.current_function->getBasicBlockList().push_back(after_BB);
-  // this sets up code which is emitted after the subscript to
-  // be emitted into the after block
+  // ensure the rest of the code is generated after the subscript operation
   env.instruction_builder->SetInsertPoint(after_BB);
 
-  auto *subscript = env.instruction_builder->CreateGEP(
-      slice_element_type, slice_ptr, {offset}, "subscript", true);
+  auto *element = env.instruction_builder->CreateGEP(
+      element_type, slice_ptr, {offset}, "subscript", true);
 
-  if (slice_element_type->isSingleValueType()) {
-    return env.instruction_builder->CreateLoad(slice_element_type, subscript);
-  }
-
-  return subscript;
+  return LoadValue(element_type, element, env);
 }
 } // namespace pink

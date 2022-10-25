@@ -1,7 +1,7 @@
 #include "kernel/Gensym.h"
 
 namespace pink {
-// this is a somewhat naieve implementation.
+// this is a naieve implementation.
 // a stronger garuntee would be to check that
 // the symbol generated is unique within the
 // local environment. as it stands now it is simply

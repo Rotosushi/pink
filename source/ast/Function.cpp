@@ -176,13 +176,7 @@ auto Function::Codegen(const Environment &env) const
 
   auto *p_fn_ty = llvm::cast<pink::FunctionType>(GetType());
 
-  auto p_fn_ret_ty_result = p_fn_ty->result->Codegen(env);
-
-  if (!p_fn_ret_ty_result) {
-    return {p_fn_ret_ty_result.GetSecond()};
-  }
-
-  auto *fn_ret_ty = p_fn_ret_ty_result.GetFirst();
+  auto *fn_ret_ty = p_fn_ty->result->Codegen(env);
 
   llvm::FunctionType *function_ty = nullptr;
   llvm::Function *function = nullptr;
@@ -190,13 +184,7 @@ auto Function::Codegen(const Environment &env) const
     auto *main_fn_ty = env.types->GetFunctionType(env.types->GetVoidType(),
                                                   p_fn_ty->arguments);
 
-    auto main_fn_ty_result = main_fn_ty->Codegen(env);
-
-    if (!main_fn_ty_result) {
-      return {main_fn_ty_result.GetSecond()};
-    }
-
-    function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty_result.GetFirst());
+    function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty->Codegen(env));
 
     function = llvm::Function::Create(
         function_ty, llvm::Function::ExternalLinkage, name, *env.llvm_module);
@@ -279,13 +267,7 @@ auto Function::CodegenParameterAttributes(
     const pink::FunctionType *p_function_type)
     -> Outcome<llvm::Value *, Error> {
 
-  auto p_fn_ret_ty_result = p_function_type->result->Codegen(env);
-
-  if (!p_fn_ret_ty_result) {
-    return {p_fn_ret_ty_result.GetSecond()};
-  }
-
-  auto *fn_ret_ty = p_fn_ret_ty_result.GetFirst();
+  auto *fn_ret_ty = p_function_type->result->Codegen(env);
   /* find out if we need to
    * add the sret parameter attribute to a parameter
    * of the function.
@@ -318,14 +300,7 @@ auto Function::CodegenParameterAttributes(
     for (size_t i = 1; i < function_type->getNumParams(); i++) {
       llvm::AttrBuilder param_attr_builder(*env.context);
 
-      auto param_ty_codegen_result =
-          p_function_type->arguments[i]->Codegen(env);
-
-      if (!param_ty_codegen_result) {
-        return {param_ty_codegen_result.GetSecond()};
-      }
-
-      llvm::Type *param_ty = param_ty_codegen_result.GetFirst();
+      llvm::Type *param_ty = p_function_type->arguments[i]->Codegen(env);
 
       // since this type is not a single value type, this parameter needs
       // the byval(<ty>) parameter attribute
@@ -341,15 +316,7 @@ auto Function::CodegenParameterAttributes(
      */
     for (size_t i = 0; i < function_type->getNumParams(); i++) {
       llvm::AttrBuilder param_attr_builder(*env.context);
-
-      Outcome<llvm::Type *, Error> param_ty_codegen_result =
-          p_function_type->arguments[i]->Codegen(env);
-
-      if (!param_ty_codegen_result) {
-        return {param_ty_codegen_result.GetSecond()};
-      }
-
-      llvm::Type *param_ty = param_ty_codegen_result.GetFirst();
+      llvm::Type *param_ty = p_function_type->arguments[i]->Codegen(env);
 
       if ((!param_ty->isVoidTy()) && !param_ty->isSingleValueType()) {
         param_attr_builder.addByValAttr(param_ty);

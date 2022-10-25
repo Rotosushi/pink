@@ -11,6 +11,7 @@
 
 #include "type/ArrayType.h"
 #include "type/BoolType.h"
+#include "type/CharacterType.h"
 #include "type/FunctionType.h"
 #include "type/IntType.h"
 #include "type/NilType.h"
@@ -46,6 +47,12 @@ private:
    *
    */
   std::unique_ptr<IntType> int_type;
+
+  /**
+   * @brief The one instance of a CharacterType
+   *
+   */
+  std::unique_ptr<CharacterType> character_type;
 
   /**
    * @brief The one instance of a VoidType
@@ -130,6 +137,13 @@ public:
    * @return IntType* the IntType
    */
   auto GetIntType() -> IntType *;
+
+  /**
+   * @brief Get the instance of a Character Type
+   *
+   * @return CharacterType* the CharacterType
+   */
+  auto GetCharacterType() -> CharacterType *;
 
   /**
    * @brief Get the instance of a VoidType

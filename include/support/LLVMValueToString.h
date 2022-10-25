@@ -8,6 +8,8 @@
 
 #include "llvm/IR/Value.h"
 
+#include "llvm/Support/raw_ostream.h"
+
 namespace pink {
 /**
  * @brief Print the given llvm::Value to a string
@@ -15,5 +17,10 @@ namespace pink {
  * @param value the value to print
  * @return std::string the string which was printed
  */
-auto LLVMValueToString(const llvm::Value *value) -> std::string;
+inline auto LLVMValueToString(const llvm::Value *value) -> std::string {
+  std::string buffer;
+  llvm::raw_string_ostream stream(buffer);
+  value->print(stream);
+  return buffer;
+}
 } // namespace pink

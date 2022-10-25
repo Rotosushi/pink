@@ -8,6 +8,9 @@
 
 namespace pink {
 
+auto AllocateVariable(const std::string &name, llvm::Type *type,
+                      const Environment &env) -> llvm::Value *;
+
 auto AllocateGlobal(const std::string &name, llvm::Type *type,
                     const Environment &env) -> llvm::GlobalVariable *;
 

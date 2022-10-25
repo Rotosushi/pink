@@ -13,6 +13,7 @@
 #include "ast/Function.h"
 #include "ast/Int.h"
 #include "ast/Nil.h"
+#include "ast/Subscript.h"
 #include "ast/Tuple.h"
 #include "ast/Unop.h"
 #include "ast/Variable.h"
@@ -110,6 +111,7 @@ public:
   virtual void Visit(const Function *function) const = 0;
   virtual void Visit(const Int *integer) const = 0;
   virtual void Visit(const Nil *nil) const = 0;
+  virtual void Visit(const Subscript *subscript) const = 0;
   virtual void Visit(const Tuple *tuple) const = 0;
   virtual void Visit(const Unop *unop) const = 0;
   virtual void Visit(const Variable *variable) const = 0;

@@ -34,9 +34,9 @@ auto PointerType::ToString() const -> std::string {
   return result;
 }
 
-auto PointerType::Codegen(const Environment &env) const
-    -> Outcome<llvm::Type *, Error> {
-  return {llvm::PointerType::getUnqual(*env.context)};
+auto PointerType::Codegen(const Environment &env) const -> llvm::Type * {
+  // \note llvm uses opaque pointers
+  return env.instruction_builder->getPtrTy();
 }
 
 } // namespace pink

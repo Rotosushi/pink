@@ -126,10 +126,15 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
   case Error::Code::DotLeftIsNotAStruct:
     return "Type Error: Dot operator's right hand side must be a tuple";
   case Error::Code::DotRightIsNotAnInt:
-    return "Type Error: Dot operator's left hand side must be an integer, when "
+    return "Type Error: Dot operator's left hand side must be an integer when "
            "right is a tuple";
   case Error::Code::DotIndexOutOfRange:
     return "Type Error: Index into tuple is larger than the tuple itself";
+  case Error::Code::SubscriptLeftIsNotSubscriptable:
+    return "Type Error: Cannot apply Subscript operation to given left hand "
+           "side";
+  case Error::Code::SubscriptRightIsNotAnIndex:
+    return "Type Error: Cannot use argument to Subscript operation as an Index";
 
   // semantic errors
   case Error::Code::OutOfBounds:

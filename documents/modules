@@ -1,0 +1,18 @@
+
+broadly; modules can be implemented by noting the
+export and import lists of libraries/executables
+within the object files being created/linked
+together. As long as the library exports all
+types and functions which it exposes outside of
+itself; any code which needs to be linked
+against said library could read that manifest and
+know how to interface with that library. Thus,
+object files can be linked together either statically
+or dynamically.
+
+this doesn't solve the problem of how we can know the
+layout of said exported types, the obvious solution is
+to somehow include that in the modules export list.
+in a way that can be known by the compiler during creation
+of a library/executable which is linking against that object
+file.
