@@ -14,7 +14,7 @@ auto IntType::EqualTo(Type *other) const -> bool {
 
 auto IntType::ToString() const -> std::string { return {"Int"}; }
 
-auto IntType::Codegen(const Environment &env) const -> llvm::Type * {
+auto IntType::ToLLVM(const Environment &env) const -> llvm::Type * {
   return env.instruction_builder->getInt64Ty();
 }
 } // namespace pink

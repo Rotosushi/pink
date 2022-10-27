@@ -78,7 +78,7 @@ public:
    * @param env the environment of this compilation unit
    * @return Outcome<llvm::Type *, Error> if true the llvm::Type
    */
-  [[nodiscard]] auto Codegen(const Environment &env) const
+  [[nodiscard]] auto ToLLVM(const Environment &env) const
       -> llvm::Type * override;
 };
 } // namespace pink

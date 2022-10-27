@@ -4,6 +4,8 @@
 
 #include "aux/Environment.h"
 
+#include "kernel/LoadValue.h"
+
 #include "visitor/AstVisitor.h"
 
 namespace pink {
@@ -96,19 +98,6 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   return {left_type->member_types[index_value]};
 }
 
-/*
- *  The actual instructions associated with the dot operator are
- *  a GEP, plus a Load, (though only if the type is loadable/storable)
- *
- *  in this case we need to only emit the load if we are NOT within an
- *  address of expression OR if the element type is not loadable.
- *
- *  if we have a pointer to a structure, and not a struct itself then
- *  it is convenient if we simply emit a load instruction to get to
- *  the struct iself BEFORE we compute the regular dot operator semantics.
- *
- *
- */
 auto Dot::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   Outcome<Type *, Error> left_typecheck_result = left->Typecheck(env);
@@ -132,7 +121,7 @@ auto Dot::Codegen(const Environment &env) const
   }
 
   Outcome<llvm::Type *, Error> left_type_codegen_result =
-      left_type->Codegen(env);
+      left_type->ToLLVM(env);
 
   if (!left_type_codegen_result) {
     return {left_type_codegen_result.GetSecond()};
@@ -169,19 +158,6 @@ auto Dot::Codegen(const Environment &env) const
       struct_t, left_value, 0, index_value);
 
   llvm::Type *member_type = struct_t->getTypeAtIndex(index_value);
-  llvm::Value *result = nullptr;
-
-  // what I am realizing, is that this check right here is exactly why
-  // c/cpp has value categories. that is glvalue, prvalue, xvalue, lvalue, and
-  // rvalue. As in, this check could be replaced with value_type->is_lvalue
-  // or something like that.
-  if (!env.flags->WithinAddressOf() && !env.flags->OnTheLHSOfAssignment() &&
-      member_type->isSingleValueType()) {
-    result = env.instruction_builder->CreateLoad(member_type, gep);
-  } else {
-    result = gep;
-  }
-
-  return {result};
+  return LoadValue(member_type, gep, env);
 }
 } // namespace pink

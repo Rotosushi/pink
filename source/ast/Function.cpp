@@ -168,7 +168,7 @@ auto Function::Codegen(const Environment &env) const
 
   assert(GetType() != nullptr);
 
-  Outcome<llvm::Type *, Error> ty_codegen_result = GetType()->Codegen(env);
+  Outcome<llvm::Type *, Error> ty_codegen_result = GetType()->ToLLVM(env);
 
   if (!ty_codegen_result) {
     return {ty_codegen_result.GetSecond()};
@@ -176,7 +176,7 @@ auto Function::Codegen(const Environment &env) const
 
   auto *p_fn_ty = llvm::cast<pink::FunctionType>(GetType());
 
-  auto *fn_ret_ty = p_fn_ty->result->Codegen(env);
+  auto *fn_ret_ty = p_fn_ty->result->ToLLVM(env);
 
   llvm::FunctionType *function_ty = nullptr;
   llvm::Function *function = nullptr;
@@ -184,7 +184,7 @@ auto Function::Codegen(const Environment &env) const
     auto *main_fn_ty = env.types->GetFunctionType(env.types->GetVoidType(),
                                                   p_fn_ty->arguments);
 
-    function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty->Codegen(env));
+    function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty->ToLLVM(env));
 
     function = llvm::Function::Create(
         function_ty, llvm::Function::ExternalLinkage, name, *env.llvm_module);
@@ -250,13 +250,10 @@ auto Function::CodegenMainReturn(const Environment &env,
                                  llvm::Value *body_value)
     -> Outcome<llvm::Value *, Error> {
   SysExit(body_value, env);
-  // #NOTE: #TODO:
-  // if this line is not here, the program segfaults when
-  // we try and print the program to a file. I am really unsure
-  // why this is, and the segfault happens deep in llvm.
-  // so, figure out why this happens and what we can do to
-  // remove this line. this is in fact always dead code,
-  // so i am initailly unsure why this is even necessary.
+  // #RULE every function has to have a return statement.
+  // \note even though we call sysexit to return from our
+  // program, llvm considers the main function
+  // ill-formed without this return statement.
   env.instruction_builder->CreateRetVoid();
   return {nullptr};
 }
@@ -267,7 +264,7 @@ auto Function::CodegenParameterAttributes(
     const pink::FunctionType *p_function_type)
     -> Outcome<llvm::Value *, Error> {
 
-  auto *fn_ret_ty = p_function_type->result->Codegen(env);
+  auto *fn_ret_ty = p_function_type->result->ToLLVM(env);
   /* find out if we need to
    * add the sret parameter attribute to a parameter
    * of the function.
@@ -300,7 +297,7 @@ auto Function::CodegenParameterAttributes(
     for (size_t i = 1; i < function_type->getNumParams(); i++) {
       llvm::AttrBuilder param_attr_builder(*env.context);
 
-      llvm::Type *param_ty = p_function_type->arguments[i]->Codegen(env);
+      llvm::Type *param_ty = p_function_type->arguments[i]->ToLLVM(env);
 
       // since this type is not a single value type, this parameter needs
       // the byval(<ty>) parameter attribute
@@ -316,7 +313,7 @@ auto Function::CodegenParameterAttributes(
      */
     for (size_t i = 0; i < function_type->getNumParams(); i++) {
       llvm::AttrBuilder param_attr_builder(*env.context);
-      llvm::Type *param_ty = p_function_type->arguments[i]->Codegen(env);
+      llvm::Type *param_ty = p_function_type->arguments[i]->ToLLVM(env);
 
       if ((!param_ty->isVoidTy()) && !param_ty->isSingleValueType()) {
         param_attr_builder.addByValAttr(param_ty);

@@ -34,7 +34,7 @@ auto PointerType::ToString() const -> std::string {
   return result;
 }
 
-auto PointerType::Codegen(const Environment &env) const -> llvm::Type * {
+auto PointerType::ToLLVM(const Environment &env) const -> llvm::Type * {
   // \note llvm uses opaque pointers
   return env.instruction_builder->getPtrTy();
 }

@@ -5,6 +5,7 @@
 
 #include "visitor/AstVisitor.h"
 
+#include "support/Find.h"
 #include "support/LLVMValueToString.h"
 
 namespace pink {
@@ -56,15 +57,13 @@ auto Application::ToString() const -> std::string {
  */
 auto Application::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
-  Outcome<Type *, Error> calleeTy = callee->Typecheck(env);
-
+  auto calleeTy = callee->Typecheck(env);
   if (!calleeTy) {
     return calleeTy;
   }
 
-  // check that we have something we can call
+  // #RULE we can only call objects with function type
   auto *calleeFnTy = llvm::dyn_cast<FunctionType>(calleeTy.GetFirst());
-
   if (calleeFnTy == nullptr) {
     Error error(Error::Code::TypeCannotBeCalled, GetLoc(),
                 calleeTy.GetFirst()->ToString());
@@ -73,11 +72,11 @@ auto Application::TypecheckV(const Environment &env) const
 
   // check that the number of arguments matches
   if (arguments.size() != calleeFnTy->arguments.size()) {
-    std::string errmsg = std::string("expected args: ") +
+    std::string errmsg = std::string("Function takes ") +
                          std::to_string(calleeFnTy->arguments.size()) +
-                         ", actual args: " + std::to_string(arguments.size());
-    Error error(Error::Code::ArgNumMismatch, GetLoc(), errmsg);
-    return {error};
+                         " arguments, " + std::to_string(arguments.size()) +
+                         " arguments were provided";
+    return {Error(Error::Code::ArgNumMismatch, GetLoc(), errmsg)};
   }
 
   std::vector<Type *> argTys;
@@ -93,14 +92,16 @@ auto Application::TypecheckV(const Environment &env) const
   }
 
   // chech that each arguments type matches
-  for (size_t idx = 0; idx < arguments.size(); idx++) {
-    if (argTys[idx] != calleeFnTy->arguments[idx]) {
-      std::string errmsg = std::string("expected arg type: ") +
-                           calleeFnTy->arguments[idx]->ToString() +
-                           ", actual arg type: " + argTys[idx]->ToString();
-      Error error(Error::Code::ArgTypeMismatch, GetLoc(), errmsg);
-      return {error};
-    }
+  auto cmp = [](Type *left, Type *right) { return left != right; };
+
+  auto mismatch = FindPair(argTys.begin(), argTys.end(),
+                           calleeFnTy->arguments.begin(), cmp);
+
+  if (mismatch.first != argTys.end()) {
+    std::string errmsg = std::string("expected arg type: ") +
+                         (*mismatch.first)->ToString() +
+                         ", actual arg type: " + (*mismatch.second)->ToString();
+    return {Error(Error::Code::ArgTypeMismatch, GetLoc(), errmsg)};
   }
 
   // return the functions result type as the type of the application term.
@@ -113,6 +114,7 @@ auto Application::TypecheckV(const Environment &env) const
 // code.
 auto Application::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
+  assert(GetType() != nullptr);
   // 1: codegen callee to retrieve the function pointer
   Outcome<llvm::Value *, Error> callee_result = callee->Codegen(env);
 
@@ -127,8 +129,8 @@ auto Application::Codegen(const Environment &env) const
   auto *function = llvm::dyn_cast<llvm::Function>(callee_result.GetFirst());
 
   if (function == nullptr) {
-    std::string errmsg = std::string(", type was: ") +
-                         LLVMValueToString(callee_result.GetFirst());
+    std::string errmsg =
+        std::string("type was: ") + LLVMValueToString(callee_result.GetFirst());
     Error error(Error::Code::TypeCannotBeCalled, GetLoc(), errmsg);
     return {error};
   }

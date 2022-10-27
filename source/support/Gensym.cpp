@@ -1,8 +1,8 @@
-#include "kernel/Gensym.h"
+#include "support/Gensym.h"
 
 namespace pink {
 // this is a naieve implementation.
-// a stronger garuntee would be to check that
+// a stronger garuntee would be to ensure that
 // the symbol generated is unique within the
 // local environment. as it stands now it is simply
 // unlikely that the symbol would be taken.

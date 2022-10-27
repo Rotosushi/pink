@@ -53,7 +53,7 @@ auto While::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
 
-  Outcome<llvm::Type *, Error> test_type_result = GetType()->Codegen(env);
+  Outcome<llvm::Type *, Error> test_type_result = GetType()->ToLLVM(env);
 
   if (!test_type_result) {
     return {test_type_result.GetSecond()};
@@ -66,7 +66,7 @@ auto While::Codegen(const Environment &env) const
   }
 
   Outcome<llvm::Type *, Error> body_type_result =
-      body_getype_result.GetFirst()->Codegen(env);
+      body_getype_result.GetFirst()->ToLLVM(env);
 
   if (!body_type_result) {
     return {body_type_result.GetSecond()};

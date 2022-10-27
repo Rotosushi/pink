@@ -15,7 +15,7 @@ auto CharacterType::EqualTo(Type *other) const -> bool {
 
 auto CharacterType::ToString() const -> std::string { return "Character"; }
 
-auto CharacterType::Codegen(const Environment &env) const -> llvm::Type * {
+auto CharacterType::ToLLVM(const Environment &env) const -> llvm::Type * {
   return env.instruction_builder->getInt8Ty();
 }
 

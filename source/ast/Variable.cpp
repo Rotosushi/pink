@@ -40,7 +40,7 @@ auto Variable::Codegen(const Environment &env) const
 
   if (bound.has_value()) {
     assert(bound->second != nullptr);
-    auto *bound_type = bound->first->Codegen(env);
+    auto *bound_type = bound->first->ToLLVM(env);
 
     return LoadValue(bound_type, bound->second, env);
   }

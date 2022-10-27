@@ -14,7 +14,7 @@ auto NilType::EqualTo(Type *other) const -> bool {
 
 auto NilType::ToString() const -> std::string { return {"Nil"}; }
 
-auto NilType::Codegen(const Environment &env) const -> llvm::Type * {
+auto NilType::ToLLVM(const Environment &env) const -> llvm::Type * {
   return env.instruction_builder->getInt1Ty();
 }
 } // namespace pink

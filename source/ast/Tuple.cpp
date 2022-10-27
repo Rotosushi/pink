@@ -83,7 +83,7 @@ auto Tuple::Codegen(const Environment &env) const
   assert(GetType() != nullptr);
 
   Outcome<llvm::Type *, Error> tuple_type_codegen_result =
-      GetType()->Codegen(env);
+      GetType()->ToLLVM(env);
 
   if (!tuple_type_codegen_result) {
     return {tuple_type_codegen_result.GetSecond()};

@@ -45,10 +45,10 @@ auto TupleType::ToString() const -> std::string {
   return result;
 }
 
-auto TupleType::Codegen(const Environment &env) const -> llvm::Type * {
+auto TupleType::ToLLVM(const Environment &env) const -> llvm::Type * {
   std::vector<llvm::Type *> llvm_member_types;
 
-  auto transform_member = [&env](Type *type) { return type->Codegen(env); };
+  auto transform_member = [&env](Type *type) { return type->ToLLVM(env); };
 
   std::transform(member_types.begin(), member_types.end(),
                  llvm_member_types.begin(), transform_member);

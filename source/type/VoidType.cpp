@@ -15,7 +15,7 @@ auto VoidType::EqualTo(Type *other) const -> bool {
 
 auto VoidType::ToString() const -> std::string { return {"Void"}; }
 
-auto VoidType::Codegen(const Environment &env) const -> llvm::Type * {
+auto VoidType::ToLLVM(const Environment &env) const -> llvm::Type * {
   return env.instruction_builder->getVoidTy();
 }
 } // namespace pink

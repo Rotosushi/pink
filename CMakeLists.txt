@@ -168,7 +168,7 @@ add_library(libpink STATIC
 	source/kernel/UnopPrimitives.cpp
 	source/kernel/Cast.cpp
 	source/kernel/StoreAggregate.cpp
-	source/kernel/Gensym.cpp
+	source/kernel/StoreValue.cpp
 	source/kernel/LoadValue.cpp
 	source/kernel/AllocateVariable.cpp 
 	source/kernel/AllocateText.cpp
@@ -184,6 +184,7 @@ add_library(libpink STATIC
 	source/support/LLVMValueToString.cpp
 	source/support/LLVMTypeToString.cpp 
 	source/support/EmitFile.cpp
+	source/support/Gensym.cpp
 
 	source/visitor/AstVisitor.cpp
 	source/visitor/AstToString.cpp

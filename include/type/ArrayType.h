@@ -80,7 +80,7 @@ public:
    * @param env the environment of this compilation unit
    * @return llvm::Type* the llvm::Type equivalent of this ArrayType
    */
-  [[nodiscard]] auto Codegen(const Environment &env) const
+  [[nodiscard]] auto ToLLVM(const Environment &env) const
       -> llvm::Type * override;
 };
 } // namespace pink

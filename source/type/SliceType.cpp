@@ -29,7 +29,13 @@ auto SliceType::ToString() const -> std::string {
   return result;
 }
 
-auto SliceType::Codegen(const Environment &env) const -> llvm::Type * {
+// A slice is stored as a Tuple of (size, offset, pointer)
+/// \todo slices don't need to be stored as {i64, i64, void*}
+/// we could save space on slice allocation if we used smaller
+/// integer types for the size and offset. The only issue is
+/// handling the integer size discrepency between slices within
+/// the runtime of the program itself
+auto SliceType::ToLLVM(const Environment &env) const -> llvm::Type * {
   llvm::Type *integer_type = env.instruction_builder->getInt64Ty();
   auto *pointer_type = llvm::PointerType::getUnqual(*env.context);
   return llvm::StructType::get(

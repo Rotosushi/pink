@@ -137,7 +137,7 @@ auto Array::Codegen(const Environment &env) const
     cmembers.push_back(cmember);
   }
 
-  auto *splice_type = llvm::cast<llvm::StructType>(array_type->Codegen(env));
+  auto *splice_type = llvm::cast<llvm::StructType>(array_type->ToLLVM(env));
 
   auto *first_type = splice_type->getTypeAtIndex((unsigned)0);
   auto *second_type = splice_type->getTypeAtIndex((unsigned)1);

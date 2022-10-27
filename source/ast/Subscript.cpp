@@ -103,8 +103,8 @@ auto Subscript::Codegen(const Environment &env) const
   if (auto *array_type = llvm::dyn_cast<ArrayType>(lhs_type);
       array_type != nullptr) {
     auto *llvm_array_type =
-        llvm::cast<llvm::StructType>(array_type->Codegen(env));
-    auto *llvm_element_type = array_type->member_type->Codegen(env);
+        llvm::cast<llvm::StructType>(array_type->ToLLVM(env));
+    auto *llvm_element_type = array_type->member_type->ToLLVM(env);
     return {ArraySubscript(llvm_array_type, llvm_element_type, lhs_value,
                            rhs_value, env)};
   }
@@ -112,8 +112,8 @@ auto Subscript::Codegen(const Environment &env) const
   if (auto *slice_type = llvm::dyn_cast<SliceType>(lhs_type);
       slice_type != nullptr) {
     auto *llvm_slice_type =
-        llvm::cast<llvm::StructType>(slice_type->Codegen(env));
-    auto *element_type = slice_type->pointee_type->Codegen(env);
+        llvm::cast<llvm::StructType>(slice_type->ToLLVM(env));
+    auto *element_type = slice_type->pointee_type->ToLLVM(env);
     return {SliceSubscript(llvm_slice_type, element_type, lhs_value, rhs_value,
                            env)};
   }

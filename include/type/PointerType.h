@@ -132,7 +132,7 @@ public:
    * @return Outcome<llvm::Type*, Error> if true, the llvm::Type equivalent to
    * this PointerType, if false then the Error encountered
    */
-  [[nodiscard]] auto Codegen(const Environment &env) const
+  [[nodiscard]] auto ToLLVM(const Environment &env) const
       -> llvm::Type * override;
 };
 } // namespace pink

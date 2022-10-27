@@ -87,11 +87,11 @@ auto FunctionType::ToString() const -> std::string {
  *  to answer that question.
  *
  */
-auto FunctionType::Codegen(const Environment &env) const -> llvm::Type * {
+auto FunctionType::ToLLVM(const Environment &env) const -> llvm::Type * {
   std::vector<llvm::Type *> llvm_args;
 
   auto transform_argument = [&env](Type *type) -> llvm::Type * {
-    llvm::Type *llvm_type = type->Codegen(env);
+    llvm::Type *llvm_type = type->ToLLVM(env);
     if (llvm_type->isSingleValueType()) {
       return llvm_type;
     }
@@ -107,7 +107,7 @@ auto FunctionType::Codegen(const Environment &env) const -> llvm::Type * {
     a register we must pass it through a hidden first
     parameter on the stack.
   */
-  llvm::Type *result_type = result->Codegen(env);
+  llvm::Type *result_type = result->ToLLVM(env);
   if (result_type->isSingleValueType() || result_type->isVoidTy()) {
     llvm::Type *fn_ty = llvm::FunctionType::get(result_type, llvm_args,
                                                 /* isVarArg */ false);

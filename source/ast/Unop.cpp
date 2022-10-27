@@ -168,7 +168,7 @@ auto Unop::Codegen(const Environment &env) const
       auto *ptr_type = llvm::cast<pink::PointerType>(rhs_type.GetFirst());
 
       Outcome<llvm::Type *, Error> llvm_pointee_type =
-          ptr_type->pointee_type->Codegen(env);
+          ptr_type->pointee_type->ToLLVM(env);
 
       if (!llvm_pointee_type) {
         return {llvm_pointee_type.GetSecond()};

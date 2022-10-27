@@ -1,8 +1,9 @@
 #include "kernel/RuntimeError.h"
 #include "kernel/AllocateText.h"
-#include "kernel/Gensym.h"
 #include "kernel/SysExit.h"
 #include "kernel/SysWrite.h"
+
+#include "support/Gensym.h"
 
 namespace pink {
 // write the given error description to stderr and then exit the process.
@@ -23,7 +24,7 @@ void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
   auto size = error_description.size() + 1;
   auto *character_type = env.types->GetCharacterType();
   auto *string_type = llvm::cast<llvm::StructType>(
-      env.types->GetArrayType(size, character_type)->Codegen(env));
+      env.types->GetArrayType(size, character_type)->ToLLVM(env));
   auto *stderr_fd = env.instruction_builder->getInt64(2);
   SysWriteText(stderr_fd, string_type, error_string, env);
   SysExit(exit_code, env);

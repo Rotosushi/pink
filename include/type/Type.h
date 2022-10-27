@@ -26,8 +26,8 @@ public:
    *
    * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
    *
-   * Type::Kind is used as a tag to identify which kind of type is currently
-   * constructed that a given Type* points to.
+   * Type::Kind is used as a tag to identify which kind of type that a given
+   * Type* points to.
    *
    */
   enum class Kind {
@@ -84,7 +84,7 @@ public:
    *
    * \note since types are interned, we can use pointer
    *  comparison as a replacement for simple equality.
-   *  However, types still need to sometimes be compared
+   *  However, types still need to be compared
    *  structurally, for instance within the type interner
    *  itself. This is what is accomplished with EqualTo
    *
@@ -107,7 +107,7 @@ public:
    * @param env the environment of this compilation unit
    * @return llvm::Type* the llvm::Type equivalent of this type
    */
-  [[nodiscard]] virtual auto Codegen(const Environment &env) const
+  [[nodiscard]] virtual auto ToLLVM(const Environment &env) const
       -> llvm::Type * = 0;
 };
 } // namespace pink

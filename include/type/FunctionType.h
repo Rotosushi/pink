@@ -83,7 +83,7 @@ public:
    * @return Outcome<llvm::Type*, Error> if true the llvm::Type equal to the
    * FunctionType, if false then the Error encountered
    */
-  [[nodiscard]] auto Codegen(const Environment &env) const
+  [[nodiscard]] auto ToLLVM(const Environment &env) const
       -> llvm::Type * override;
 };
 } // namespace pink

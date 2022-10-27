@@ -40,9 +40,9 @@ auto ArrayType::ToString() const -> std::string {
   return result;
 }
 
-auto ArrayType::Codegen(const Environment &env) const -> llvm::Type * {
-  auto *llvm_array_type = llvm::ArrayType::get(member_type->Codegen(env), size);
-  auto *llvm_integer_type = env.types->GetIntType()->Codegen(env);
+auto ArrayType::ToLLVM(const Environment &env) const -> llvm::Type * {
+  auto *llvm_array_type = llvm::ArrayType::get(member_type->ToLLVM(env), size);
+  auto *llvm_integer_type = env.types->GetIntType()->ToLLVM(env);
   return llvm::StructType::get(*env.context,
                                {llvm_integer_type, llvm_array_type});
 }

@@ -9,12 +9,15 @@
 namespace pink {
 
 auto AllocateVariable(const std::string &name, llvm::Type *type,
-                      const Environment &env) -> llvm::Value *;
+                      const Environment &env,
+                      llvm::Value *initializer = nullptr) -> llvm::Value *;
 
 auto AllocateGlobal(const std::string &name, llvm::Type *type,
-                    const Environment &env) -> llvm::GlobalVariable *;
+                    const Environment &env, llvm::Value *initializer = nullptr)
+    -> llvm::GlobalVariable *;
 
 auto AllocateLocal(const std::string &name, llvm::Type *type,
-                   const Environment &env) -> llvm::AllocaInst *;
+                   const Environment &env, llvm::Value *initializer = nullptr)
+    -> llvm::AllocaInst *;
 
 } // namespace pink

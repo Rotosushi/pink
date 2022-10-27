@@ -30,11 +30,9 @@ auto Block::classof(const Ast *ast) -> bool {
 auto Block::ToString() const -> std::string {
   std::string result = "{ ";
 
-  auto convert = [&result](const std::unique_ptr<Ast> &statement) {
+  for (const auto &statement : statements) {
     result += statement->ToString() + ";\n";
-  };
-
-  std::for_each(statements.begin(), statements.end(), convert);
+  }
 
   result += " }";
 
@@ -68,6 +66,7 @@ auto Block::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 */
 auto Block::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
+  assert(GetType() != nullptr);
   Outcome<llvm::Value *, Error> result = Error();
 
   for (const auto &stmt : statements) {
