@@ -52,11 +52,10 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
   llvm::Type *int64Ty = env.instruction_builder->getInt64Ty();
   llvm::Type *voidTy = env.instruction_builder->getVoidTy();
 
-  std::vector<llvm::Type *> intArgsTy = {int64Ty};
   std::vector<llvm::Type *> noArgsTy = {};
 
   auto *mov_rax_type = llvm::FunctionType::get(int64Ty, noArgsTy, false);
-  auto *mov_rdi_type = llvm::FunctionType::get(int64Ty, intArgsTy, false);
+  auto *mov_rdi_type = llvm::FunctionType::get(int64Ty, {int64Ty}, false);
   auto *syscall_type = llvm::FunctionType::get(voidTy, noArgsTy, false);
 
   llvm::InlineAsm *mov_rdi = nullptr;
@@ -126,17 +125,8 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
   Outcome<llvm::Value *, Error> cast_result = Cast(exit_code, int64Ty, env);
   assert(cast_result);
 
-  std::vector<llvm::Value *> mov_rdi_arg = {cast_result.GetFirst()};
-
-  // \note: initally the numbering of the inline assembly statements
-  // followed the order in which we emitted them, however
-  // rax is a commonly selected register for use by llvm,
-  // and as such llvm selects rax as the place to store the results
-  // of common expressions, if llvm uses rax as the result of an expression
-  // which computes the exit code this causes the following inline assembly
-  // to overwrite the return code when we load the rax register with the exit
-  // code if we emit "mov rax 60" before we emit "mov rdi, $1"
-  env.instruction_builder->CreateCall(mov_rdi_type, mov_rdi, mov_rdi_arg);
+  env.instruction_builder->CreateCall(mov_rdi_type, mov_rdi,
+                                      {cast_result.GetFirst()});
   env.instruction_builder->CreateCall(mov_rax_type, mov_rax);
   env.instruction_builder->CreateCall(syscall_type, syscall);
 }

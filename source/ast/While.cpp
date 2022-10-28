@@ -27,13 +27,12 @@ auto While::ToString() const -> std::string {
 }
 
 auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
-  Outcome<Type *, Error> test_getype_result = test->Typecheck(env);
-
+  auto test_getype_result = test->Typecheck(env);
   if (!test_getype_result) {
     return test_getype_result;
   }
 
-  Type *bool_t = env.types->GetBoolType();
+  auto *bool_t = env.types->GetBoolType();
 
   if (bool_t != test_getype_result.GetFirst()) {
     std::string errmsg = std::string("test expression has type: ") +
@@ -41,10 +40,10 @@ auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
     return {Error(Error::Code::WhileTestTypeMismatch, test->GetLoc(), errmsg)};
   }
 
-  Outcome<Type *, Error> body_getype_result = body->Typecheck(env);
+  auto body_getype_result = body->Typecheck(env);
 
   if (body_getype_result) {
-    return {env.types->GetVoidType()};
+    return {env.types->GetNilType()};
   }
   return body_getype_result;
 }
@@ -52,25 +51,6 @@ auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 auto While::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
-
-  Outcome<llvm::Type *, Error> test_type_result = GetType()->ToLLVM(env);
-
-  if (!test_type_result) {
-    return {test_type_result.GetSecond()};
-  }
-
-  Outcome<Type *, Error> body_getype_result = body->Typecheck(env);
-
-  if (!body_getype_result) {
-    return {body_getype_result.GetSecond()};
-  }
-
-  Outcome<llvm::Type *, Error> body_type_result =
-      body_getype_result.GetFirst()->ToLLVM(env);
-
-  if (!body_type_result) {
-    return {body_type_result.GetSecond()};
-  }
 
   if (env.current_function == nullptr) {
     FatalError("Cannot emit a While loop without a basic block available to "

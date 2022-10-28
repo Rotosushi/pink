@@ -144,12 +144,12 @@ NOWARN(
 )
 
 void AstToString::Visit(const Subscript *subscript) const {
-  Return(subscript->GetLeft()->ToString() + "[" +
-         subscript->GetRight()->ToString() + "]");
+  Return(Compute(subscript->GetLeft()) + "[" + Compute(subscript->GetRight()) +
+         "]");
 }
 
 void AstToString::Visit(const Tuple *tuple) const {
-  std::string result("(");
+  std::string result = "(";
   size_t idx = 0;
   size_t length = tuple->GetMembers().size();
 

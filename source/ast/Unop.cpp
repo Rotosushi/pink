@@ -23,15 +23,13 @@ auto Unop::ToString() const -> std::string { return op + right->ToString(); }
 */
 auto Unop::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   // get the type of the rhs
-  Outcome<Type *, Error> rhs_result(right->Typecheck(env));
-
+  auto rhs_result = right->Typecheck(env);
   if (!rhs_result) {
     return rhs_result;
   }
 
   // find the operator used in the env
-  llvm::Optional<std::pair<InternedString, UnopLiteral *>> unop =
-      env.unops->Lookup(op);
+  auto unop = env.unops->Lookup(op);
 
   if (!unop) {
     std::string errmsg = std::string("unknown unop: ") + op;
@@ -46,8 +44,7 @@ auto Unop::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
     if (!literal) {
       Type *int_ptr_type = env.types->GetPointerType(env.types->GetIntType());
-      llvm::Optional<std::pair<Type *, UnopCodegen *>> ptr_indirection_unop =
-          unop->second->Lookup(int_ptr_type);
+      auto ptr_indirection_unop = unop->second->Lookup(int_ptr_type);
 
       if (!ptr_indirection_unop) {
         FatalError("Couldn't find int ptr indirection unop!", __FILE__,

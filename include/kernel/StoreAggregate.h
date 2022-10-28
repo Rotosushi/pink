@@ -43,8 +43,8 @@ void StoreValueAggregate(llvm::Type *type, llvm::Value *dest, llvm::Value *src,
 /**
  * @brief Store src into dest
  *
- * this function inserts any load/store instructions wherever the IRBuilder
- * member of the env is currently pointing.
+ * \note this function inserts any load/store instructions wherever the
+ * IRBuilder member of the env is currently pointing.
  *
  * @param type the type being stored
  * @param dest pointer to the destination. must be a valid pointer to memory

@@ -53,10 +53,10 @@ auto TestWhile(std::ostream &out) -> bool {
   std::string while_str = "while 1 == 0 do { true;\n }";
   result &= Test(out, "While::ToString()", loop->ToString() == while_str);
 
-  auto *void_type = env->types->GetVoidType();
+  auto *nil_type = env->types->GetNilType();
   auto typecheck_result = loop->Typecheck(*env);
   result &= Test(out, "While::Typecheck()",
-                 typecheck_result && typecheck_result.GetFirst() == void_type);
+                 typecheck_result && typecheck_result.GetFirst() == nil_type);
 
   return Test(out, "pink::While", result);
 }

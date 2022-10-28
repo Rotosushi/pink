@@ -40,8 +40,8 @@ private:
    * @return Outcome<llvm::Value *, Error> if true, nullptr, if false the error
    * encountered.
    */
-  static auto CodegenMainReturn(const Environment &env, llvm::Value *body_value)
-      -> Outcome<llvm::Value *, Error>;
+  static void CodegenMainReturn(const Environment &env,
+                                llvm::Value *body_value);
 
   /**
    * @brief Add the correct function parameter attributes given the defintion
@@ -54,11 +54,10 @@ private:
    * @return Outcome<llvm::Value *, Error> if true nullptr, if false the error
    * encountered
    */
-  static auto
+  static void
   CodegenParameterAttributes(const Environment &env, llvm::Function *function,
                              const llvm::FunctionType *function_type,
-                             const pink::FunctionType *p_function_type)
-      -> Outcome<llvm::Value *, Error>;
+                             const pink::FunctionType *p_function_type);
 
   /**
    * @brief Emit the instructions to create local variables for all arguments of

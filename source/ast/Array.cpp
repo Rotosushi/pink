@@ -43,10 +43,6 @@ auto Array::ToString() const -> std::string {
 /*  The type of an array is the type of one of it's members
  *  and the length of the array, as long as every one of
  *  it's members are the same type.
- *
- *
- *
- *
  */
 auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   size_t idx = 0;
@@ -77,9 +73,8 @@ auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
  *  and type. As long as the array can be typed.
  *
  * \todo okay, the plan for arrays is to store them as a tuple of
- * the length and the array itself. Then what we return will be a
- * slice into the array.
- * that is we are going to construct
+ * the length and the array itself.
+ * then to support pointer arithmetic we are going to construct
  * a new kind of pointer to an array, which is a 'slice'.
  * then any time we perform pointer arithmetic we can bounds
  * check the arithmetic. We will also add syntax to access the length
@@ -105,16 +100,7 @@ auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
  */
 auto Array::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
-  // this can only happen if we don't call Typecheck
-  // on an Ast before calling Codegen on it. So it's
-  // not impossible to have happen.
   assert(GetType() != nullptr);
-  // We are generating code for an Array Ast, thus we can
-  // observe Array::Typecheck an see that it returns an
-  // ArrayType. if this ever causes UB I am never using a
-  // static cast again, as this is the most amount of
-  // information I can even imagine having about what the
-  // Derived Type would be when given a Base Type Pointer.
   auto *array_type = llvm::cast<ArrayType>(GetType());
 
   std::vector<llvm::Constant *> cmembers;
@@ -137,22 +123,21 @@ auto Array::Codegen(const Environment &env) const
     cmembers.push_back(cmember);
   }
 
-  auto *splice_type = llvm::cast<llvm::StructType>(array_type->ToLLVM(env));
+  auto *struct_type = llvm::cast<llvm::StructType>(array_type->ToLLVM(env));
 
-  auto *first_type = splice_type->getTypeAtIndex((unsigned)0);
-  auto *second_type = splice_type->getTypeAtIndex((unsigned)1);
+  auto *first_type = struct_type->getTypeAtIndex((unsigned)0);
+  auto *second_type = struct_type->getTypeAtIndex((unsigned)1);
 
   auto *llvm_integer_type = llvm::cast<llvm::IntegerType>(first_type);
   auto *llvm_array_type = llvm::cast<llvm::ArrayType>(second_type);
 
   auto *constant_array = llvm::ConstantArray::get(llvm_array_type, cmembers);
-
   auto *size = llvm::ConstantInt::get(llvm_integer_type, array_type->size);
 
-  auto *struct_type = llvm::StructType::get(
+  auto *array_layout = llvm::StructType::get(
       *env.context, {llvm_integer_type, llvm_array_type}, false);
 
-  return {llvm::ConstantStruct::get(struct_type, {size, constant_array})};
+  return {llvm::ConstantStruct::get(array_layout, {size, constant_array})};
 }
 } // namespace pink
 

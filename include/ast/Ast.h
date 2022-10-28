@@ -166,7 +166,7 @@ public:
    * by canonical I simply mean that if the [parser](#Parser) were to read in
    * the string returned by ToString it would construct the exact same Ast as
    * generated the string. That is, Parser::Parse() and Ast::ToString() are
-   * inverse operations. (modulo unnecessary textual formatting)
+   * inverse operations. (modulo textual formatting)
    *
    * \todo ToString ends up doing a lot of intermediate allocations
    * and concatenations as it builds up it's result, this seems like

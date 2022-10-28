@@ -34,7 +34,7 @@ auto Subscript::TypecheckV(const Environment &env) const
     return rhs_type_result;
   }
   Type *rhs_type = rhs_type_result.GetFirst();
-
+  // #RULE we can only index using integer like types.
   if ((llvm::dyn_cast<IntType>(rhs_type)) == nullptr) {
     std::string errmsg =
         "cannot use type: " + rhs_type->ToString() + " as an index";
@@ -66,6 +66,7 @@ auto Subscript::TypecheckV(const Environment &env) const
 
 auto Subscript::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
+  assert(GetType() != nullptr);
   Type *lhs_type = left->GetType();
   assert(lhs_type != nullptr);
   Type *rhs_type = right->GetType();

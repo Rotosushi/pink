@@ -83,8 +83,8 @@ target_sources(pink-test PUBLIC
 
 	source/support/Common.cpp
 
-	source/core/TestFirstPhase.cpp
-	source/core/TestBasics.cpp
+	source/core/TestTypecheck.cpp
+	source/core/TestCodegen.cpp
 )
 
 

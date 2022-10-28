@@ -158,7 +158,7 @@ public:
   Error(Code code, Location location, std::string text = "");
 
   /**
-   * @brief Assigns this Error to the value of another Error.
+   * @brief Copy Assignment.
    *
    * @param other the other error to copy from.
    * @return Error& this error.
@@ -207,12 +207,6 @@ public:
  * useful when the error in question cannot be recovered from.
  * and it is better for the developer of the program to fix the
  * error, not a programmer writing in the langauge.
- *
- * \todo FatalError might be better replaced by assert statements.
- * as assert statements do not get compiled into release executables,
- * and presumably a release of the compiler would have most errors
- * relevant to the developer fixed, so the conditions would never be
- * met to exit the process in a release build.
  *
  * @param dsc a description of the fatal error
  * @param file the file this error occured within

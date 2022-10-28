@@ -55,7 +55,7 @@ auto Tuple::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   return {env.types->GetTupleType(member_types)};
 }
 
-/*
+/**
  * \todo make tuple return an already alocated tuple.
  * this way we can handle constructing a tuple out
  * of constants and variables. returning the pointer
@@ -65,36 +65,23 @@ auto Tuple::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
  * for locals, but it makes the llvm ir a bit more readable.)
  * So how do we transmit that information to the tuple allocator
  * when it is only known to the bind term within the Ast?
- *
  * the obvious solution is to just use a generated symbol.
  * but that reduces the legibility of the emitted llvm ir.
- *
  * the way we have been transmitting information down the tree
  * is by way of the environment, so if bind stores the name, then
  * any term which needs to allocate can grab that name.
- *
  * but then what about anonymous terms? (temporary values)
  */
 auto Tuple::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
+  assert(GetType() != nullptr);
 
   std::vector<llvm::Constant *> tuple_elements;
 
-  assert(GetType() != nullptr);
-
-  Outcome<llvm::Type *, Error> tuple_type_codegen_result =
-      GetType()->ToLLVM(env);
-
-  if (!tuple_type_codegen_result) {
-    return {tuple_type_codegen_result.GetSecond()};
-  }
-
-  auto *tuple_type =
-      llvm::cast<llvm::StructType>(tuple_type_codegen_result.GetFirst());
+  auto *tuple_type = llvm::cast<llvm::StructType>(GetType()->ToLLVM(env));
 
   for (const auto &member : members) {
     Outcome<llvm::Value *, Error> initializer_result = member->Codegen(env);
-
     if (!initializer_result) {
       return initializer_result;
     }

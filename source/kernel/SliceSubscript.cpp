@@ -57,9 +57,9 @@ auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
   auto *bounds_check = env.instruction_builder->CreateLogicalOr(
       greater_than_bounds, less_than_zero);
 
-  llvm::BasicBlock *then_BB =
-      llvm::BasicBlock::Create(*env.context, "then", env.current_function);
-  llvm::BasicBlock *after_BB = llvm::BasicBlock::Create(*env.context, "after");
+  auto *then_BB = llvm::BasicBlock::Create(*env.context, "runtime_error",
+                                           env.current_function);
+  auto *after_BB = llvm::BasicBlock::Create(*env.context, "subscript");
 
   env.instruction_builder->CreateCondBr(bounds_check, then_BB, after_BB);
 
@@ -67,19 +67,17 @@ auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
   auto then_insertion_point = then_BB->getFirstInsertionPt();
   auto then_builder =
       std::make_shared<llvm::IRBuilder<>>(then_BB, then_insertion_point);
-  Environment then_env(env, then_builder);
+  Environment runtime_error_env(env, then_builder);
   /// \todo add a location to the runtime error description
-  std::string errdsc = "index out of bounds";
+  std::string errdsc = "index out of bounds\n";
   auto *one = env.instruction_builder->getInt64(1);
-  RuntimeError(errdsc, one, then_env);
-  // this branch will not be reached, however it might need
+  RuntimeError(errdsc, one, runtime_error_env);
+  // this branch will not be reached, however it needs
   // to exist for the basic block to be considered complete
   // by llvm.
-  then_env.instruction_builder->CreateBr(after_BB);
+  runtime_error_env.instruction_builder->CreateBr(after_BB);
 
-  // emit the array subscript into the false branch
   env.current_function->getBasicBlockList().push_back(after_BB);
-  // ensure the rest of the code is generated after the subscript operation
   env.instruction_builder->SetInsertPoint(after_BB);
 
   auto *element = env.instruction_builder->CreateGEP(

@@ -4,7 +4,7 @@
 
 #include "support/Common.h"
 
-#include "core/TestFirstPhase.h"
+#include "core/TestTypecheck.h"
 
 #include "aux/Environment.h"
 
@@ -29,7 +29,7 @@
 // here, as we test the exact same things, plus the tests
 // for Typecheck
 
-bool TestFirstPhase(std::ostream &out) {
+auto TestTypecheck(std::ostream &out) -> bool {
   bool result = true;
   out << "\n-----------------------\n";
   out << "Testing Pink First Phase: \n";

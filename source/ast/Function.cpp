@@ -5,6 +5,7 @@
 
 #include "kernel/Cast.h"
 #include "kernel/StoreAggregate.h"
+#include "kernel/StoreValue.h"
 #include "kernel/SysExit.h"
 
 #include "support/LLVMErrorToString.h"
@@ -82,72 +83,36 @@ caller before we call the function.
 */
 auto Function::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
-  // first, construct a bunch of false bindings with the correct Types.
-  // such that we can properly Type the body, which presumably uses said
-  // bindings.
-
-  // next, construct a new environment, where the SymbolTable is now the
-  // SymbolTable of this function, such that Lookup will resolve the new
-  // bindings constructed
-
-  // then type the body of the function.
-
-  // even if the body returned an error, first, clean up the false bindings
-  // so that codegen can properly bind the arguments to their actual
-  // llvm::Value*s
-
-  // construct a Function Type* from the types of the
-  // arguments and the type we got from the body.
-
-  // construct the false bindings, with no real llvm::Value*
-  // note that we do not use the false_bindings structure
-  // within the ENV to record the names of the arguments
-  // being bound here. No sense duplicating the name when
-  // it is already stored in the arguments structure.
   for (const auto &pair : arguments) {
     bindings->Bind(pair.first, pair.second, nullptr);
   }
 
-  // build a new environment around the functions symboltable, such that we have
-  // syntactic scoping.
-  auto inner_env = std::make_unique<Environment>(env, bindings);
+  auto local_env = std::make_unique<Environment>(env, bindings);
 
-  // type the body with respect to the inner_env
-  Outcome<Type *, Error> body_result = body->Typecheck(*inner_env);
+  // type the body with respect to the local_env
+  auto body_result = body->Typecheck(*local_env);
 
   // remove the false bindings before returning;
   for (const auto &pair : arguments) {
     bindings->Unbind(pair.first);
   }
 
-  // also remove any false bindings that any bind
-  // instructions within this functions scope
-  // constructed to declare local variables.
-  for (InternedString fbnd : *inner_env->false_bindings) {
-    inner_env->bindings->Unbind(fbnd);
+  for (InternedString fbnd : *local_env->false_bindings) {
+    local_env->bindings->Unbind(fbnd);
   }
-
-  inner_env->false_bindings->clear();
+  local_env->false_bindings->clear();
 
   if (!body_result) {
     return body_result;
   }
 
-  // build the function type to return it.
-  // This is an interesting bug. since we do the performant
-  // thing here, and allocate space for all arguments within
-  // the newly constructed arg_types vector. the calls to
-  // push_back or emplace_back are pushing to the end, past
-  // where the preallocated space is. so I suppose we must use
-  // an index into the vector to get the assignment semantics
-  // we need.
   std::vector<Type *> arg_types(arguments.size());
-  size_t idx = 0;
 
-  for (const auto &pair : arguments) {
-    arg_types.at(idx) = pair.second;
-    idx++;
-  }
+  auto ToType = [](const std::pair<InternedString, Type *> &arg) -> Type * {
+    return arg.second;
+  };
+
+  std::transform(arguments.begin(), arguments.end(), arg_types.begin(), ToType);
 
   auto *func_ty = env.types->GetFunctionType(body_result.GetFirst(), arg_types);
 
@@ -160,50 +125,45 @@ auto Function::TypecheckV(const Environment &env) const
 
 auto Function::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
-
+  assert(GetType() != nullptr);
   bool is_main = false;
-  if (strcmp(name, "main") == 0) {
+  if (strcmp(name, "main") == 0) { // only run strcmp once
     is_main = true;
   }
 
-  assert(GetType() != nullptr);
+  auto *pink_function_type = llvm::cast<pink::FunctionType>(GetType());
 
-  Outcome<llvm::Type *, Error> ty_codegen_result = GetType()->ToLLVM(env);
+  auto *llvm_return_type = pink_function_type->result->ToLLVM(env);
 
-  if (!ty_codegen_result) {
-    return {ty_codegen_result.GetSecond()};
-  }
-
-  auto *p_fn_ty = llvm::cast<pink::FunctionType>(GetType());
-
-  auto *fn_ret_ty = p_fn_ty->result->ToLLVM(env);
-
-  llvm::FunctionType *function_ty = nullptr;
+  llvm::FunctionType *llvm_function_type = nullptr;
   llvm::Function *function = nullptr;
+  // #RULE main returns via a call to sys_exit.
+  // so the llvm function type returns void
   if (is_main) {
-    auto *main_fn_ty = env.types->GetFunctionType(env.types->GetVoidType(),
-                                                  p_fn_ty->arguments);
+    auto *main_function_type = env.types->GetFunctionType(
+        env.types->GetVoidType(), pink_function_type->arguments);
 
-    function_ty = llvm::cast<llvm::FunctionType>(main_fn_ty->ToLLVM(env));
+    llvm_function_type =
+        llvm::cast<llvm::FunctionType>(main_function_type->ToLLVM(env));
 
-    function = llvm::Function::Create(
-        function_ty, llvm::Function::ExternalLinkage, name, *env.llvm_module);
+    function = llvm::Function::Create(llvm_function_type,
+                                      llvm::Function::ExternalLinkage, name,
+                                      *env.llvm_module);
 
   } else {
-    function_ty = llvm::cast<llvm::FunctionType>(ty_codegen_result.GetFirst());
+    llvm_function_type =
+        llvm::cast<llvm::FunctionType>(pink_function_type->ToLLVM(env));
 
-    function = llvm::Function::Create(
-        function_ty, llvm::Function::ExternalLinkage, name, *env.llvm_module);
+    function = llvm::Function::Create(llvm_function_type,
+                                      llvm::Function::ExternalLinkage, name,
+                                      *env.llvm_module);
   }
 
-  auto attr_result =
-      CodegenParameterAttributes(env, function, function_ty, p_fn_ty);
+  CodegenParameterAttributes(env, function, llvm_function_type,
+                             pink_function_type);
 
-  if (!attr_result) {
-    return attr_result;
-  }
-
-  auto *entryblock = llvm::BasicBlock::Create(*env.context, "entry", function);
+  auto *entryblock = llvm::BasicBlock::Create(
+      *env.context, std::string(name) + "_entry", function);
   auto entrypoint = entryblock->getFirstInsertionPt();
 
   auto local_builder =
@@ -212,26 +172,21 @@ auto Function::Codegen(const Environment &env) const
   auto local_env =
       std::make_unique<Environment>(env, bindings, local_builder, function);
 
-  CodegenArgumentInit(*local_env, function, p_fn_ty);
+  CodegenArgumentInit(*local_env, function, pink_function_type);
 
   auto body_result = body->Codegen(*local_env);
-
   if (!body_result) {
     return body_result;
   }
 
   if (is_main) {
-    auto main_ret = CodegenMainReturn(*local_env, body_result.GetFirst());
-
-    if (!main_ret) {
-      return main_ret;
-    }
+    CodegenMainReturn(*local_env, body_result.GetFirst());
   } else {
-    if (fn_ret_ty->isSingleValueType()) {
+    if (llvm_return_type->isSingleValueType()) {
       local_builder->CreateRet(body_result.GetFirst());
     } else {
-      StoreAggregate(fn_ret_ty, function->getArg(0), body_result.GetFirst(),
-                     *local_env);
+      StoreAggregate(llvm_return_type, function->getArg(0),
+                     body_result.GetFirst(), *local_env);
     }
   }
 
@@ -246,25 +201,21 @@ auto Function::Codegen(const Environment &env) const
   return {function};
 }
 
-auto Function::CodegenMainReturn(const Environment &env,
-                                 llvm::Value *body_value)
-    -> Outcome<llvm::Value *, Error> {
+void Function::CodegenMainReturn(const Environment &env,
+                                 llvm::Value *body_value) {
   SysExit(body_value, env);
-  // #RULE every function has to have a return statement.
-  // \note even though we call sysexit to return from our
+  // even though we call sysexit to return from our
   // program, llvm considers the main function
   // ill-formed without this return statement.
   env.instruction_builder->CreateRetVoid();
-  return {nullptr};
 }
 
-auto Function::CodegenParameterAttributes(
+void Function::CodegenParameterAttributes(
     const Environment &env, llvm::Function *function,
-    const llvm::FunctionType *function_type,
-    const pink::FunctionType *p_function_type)
-    -> Outcome<llvm::Value *, Error> {
+    const llvm::FunctionType *llvm_function_type,
+    const pink::FunctionType *pink_function_type) {
 
-  auto *fn_ret_ty = p_function_type->result->ToLLVM(env);
+  auto *result_type = pink_function_type->result->ToLLVM(env);
   /* find out if we need to
    * add the sret parameter attribute to a parameter
    * of the function.
@@ -274,16 +225,17 @@ auto Function::CodegenParameterAttributes(
    * list is one element larger that the pink::FunctionType says.
    * so we have to use different offsets to get to each argument.
    */
-  if (!fn_ret_ty->isSingleValueType() &&
-      function_type->getReturnType()->isVoidTy()) {
-    llvm::AttrBuilder ret_attr_builder(*env.context);
+  if (!result_type->isSingleValueType()) {
+    assert(llvm_function_type->getReturnType()->isVoidTy());
+
+    llvm::AttrBuilder result_attribute_builder(*env.context);
     // since the return type is not a single value type, we know that
     // the function type associated with this function will have an
     // actual return type of void, and the first parameter will be the
     // return value of this function, knowing that, we then need to add
-    // the sret(<ty>) attribute to this parameter attribute
-    ret_attr_builder.addStructRetAttr(fn_ret_ty);
-    function->addParamAttrs(0, ret_attr_builder);
+    // the sret(<ty>) attribute to the first parameter attribute
+    result_attribute_builder.addStructRetAttr(result_type);
+    function->addParamAttrs(0, result_attribute_builder);
     /*
      *  Now all we need to do is add any byval(<ty>) attributes
      *  to any argument which needs it. We must be careful to
@@ -294,10 +246,10 @@ auto Function::CodegenParameterAttributes(
      *  difference between a pointer that needed the byval(<ty>) attribute,
      *  and a pointer that did not.
      */
-    for (size_t i = 1; i < function_type->getNumParams(); i++) {
+    for (size_t i = 1; i < llvm_function_type->getNumParams(); i++) {
       llvm::AttrBuilder param_attr_builder(*env.context);
 
-      llvm::Type *param_ty = p_function_type->arguments[i]->ToLLVM(env);
+      llvm::Type *param_ty = pink_function_type->arguments[i - 1]->ToLLVM(env);
 
       // since this type is not a single value type, this parameter needs
       // the byval(<ty>) parameter attribute
@@ -311,9 +263,9 @@ auto Function::CodegenParameterAttributes(
      *  all we need to do here is add any byval(<ty>) attributes
      *  to any argument which needs it.
      */
-    for (size_t i = 0; i < function_type->getNumParams(); i++) {
+    for (size_t i = 0; i < llvm_function_type->getNumParams(); i++) {
       llvm::AttrBuilder param_attr_builder(*env.context);
-      llvm::Type *param_ty = p_function_type->arguments[i]->ToLLVM(env);
+      llvm::Type *param_ty = pink_function_type->arguments[i]->ToLLVM(env);
 
       if ((!param_ty->isVoidTy()) && !param_ty->isSingleValueType()) {
         param_attr_builder.addByValAttr(param_ty);
@@ -321,23 +273,23 @@ auto Function::CodegenParameterAttributes(
       }
     }
   }
-  return {nullptr};
 }
 
 void Function::CodegenArgumentInit(
     const Environment &env, const llvm::Function *function,
-    const pink::FunctionType *p_function_type) const {
+    const pink::FunctionType *pink_function_type) const {
 
   // allocate space for each argument
-  std::vector<std::pair<llvm::Value *, llvm::Value *>> arg_ptrs;
-  for (size_t i = 0; i < function->arg_size(); i++) {
-    llvm::Argument *arg = function->getArg(i);
-    llvm::Value *arg_ptr = env.instruction_builder->CreateAlloca(
-        arg->getType(), env.data_layout.getAllocaAddrSpace(), nullptr,
-        arg->getName());
+  auto allocate = [&env](const llvm::Argument &arg) {
+    return env.instruction_builder->CreateAlloca(
+        arg.getType(), env.data_layout.getAllocaAddrSpace(), nullptr,
+        arg.getName());
+  };
 
-    arg_ptrs.emplace_back(arg, arg_ptr);
-  }
+  std::vector<llvm::AllocaInst *> arg_allocas(function->arg_size());
+
+  std::transform(function->arg_begin(), function->arg_end(),
+                 arg_allocas.begin(), allocate);
 
   // initialize each argument
   for (size_t i = 0; i < arguments.size(); i++) {
@@ -345,15 +297,10 @@ void Function::CodegenArgumentInit(
 
     llvm::Type *arg_ty = arg->getType();
 
-    if (arg_ty->isSingleValueType()) {
-      env.instruction_builder->CreateStore(arg_ptrs[i].first,
-                                           arg_ptrs[i].second, false);
-    } else {
-      StoreAggregate(arg_ty, arg_ptrs[i].second, arg_ptrs[i].first, env);
-    }
+    StoreValue(arg_ty, arg_allocas[i], arg, env);
 
-    env.bindings->Bind(this->arguments[i].first, p_function_type->arguments[i],
-                       arg_ptrs[i].second);
+    env.bindings->Bind(arguments[i].first, pink_function_type->arguments[i],
+                       arg_allocas[i]);
   }
 }
 

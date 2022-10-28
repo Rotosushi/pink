@@ -10,6 +10,7 @@ namespace pink {
  * sys_exit x86-64 linux system call.
  *
  * @param exit_code the exit code to pass to sys_exit
+ * @param env the environment of this compilation unit
  */
 void SysExit(llvm::Value *exit_code, const Environment &env);
 } // namespace pink

@@ -59,19 +59,16 @@ auto Dot::ToString() const -> std::string {
  */
 auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   Outcome<Type *, Error> left_typecheck_result = left->Typecheck(env);
-
   if (!left_typecheck_result) {
     return left_typecheck_result;
   }
 
   Outcome<Type *, Error> right_typecheck_result = right->Typecheck(env);
-
   if (!right_typecheck_result) {
     return right_typecheck_result;
   }
 
   auto *left_type = llvm::dyn_cast<TupleType>(left_typecheck_result.GetFirst());
-
   if (left_type == nullptr) {
     std::string errmsg = std::string("left has type: ") +
                          left_typecheck_result.GetFirst()->ToString();
@@ -79,7 +76,6 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   }
 
   auto *index = llvm::dyn_cast<Int>(right.get());
-
   if (index == nullptr) {
     std::string errmsg = std::string("right has type: ") +
                          right_typecheck_result.GetFirst()->ToString();
@@ -100,64 +96,39 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
 auto Dot::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
-  Outcome<Type *, Error> left_typecheck_result = left->Typecheck(env);
-
-  if (!left_typecheck_result) {
-    return {left_typecheck_result.GetSecond()};
-  }
-
-  Outcome<Type *, Error> right_typecheck_result = right->Typecheck(env);
-
-  if (!right_typecheck_result) {
-    return {right_typecheck_result.GetSecond()};
-  }
-
-  auto *left_type = llvm::dyn_cast<TupleType>(left_typecheck_result.GetFirst());
-
-  if (left_type == nullptr) {
-    std::string errmsg = std::string("left has type: ") +
-                         left_typecheck_result.GetFirst()->ToString();
-    return {Error(Error::Code::DotLeftIsNotAStruct, GetLoc(), errmsg)};
-  }
-
-  Outcome<llvm::Type *, Error> left_type_codegen_result =
-      left_type->ToLLVM(env);
-
-  if (!left_type_codegen_result) {
-    return {left_type_codegen_result.GetSecond()};
-  }
+  assert(GetType() != nullptr);
 
   Outcome<llvm::Value *, Error> left_codegen_result = left->Codegen(env);
-
   if (!left_codegen_result) {
     return left_codegen_result;
   }
-
   llvm::Value *left_value = left_codegen_result.GetFirst();
 
   auto *index = llvm::dyn_cast<Int>(right.get());
-
   if (index == nullptr) {
-    std::string errmsg = std::string("right has type: ") +
-                         right_typecheck_result.GetFirst()->ToString();
-    return {Error(Error::Code::DotRightIsNotAnInt, GetLoc(), errmsg)};
+    std::string errmsg =
+        std::string("right has type: ") + right->GetType()->ToString();
+    FatalError(errmsg, __FILE__, __LINE__);
   }
+
+  auto *left_type = llvm::dyn_cast<TupleType>(left->GetType());
+  assert(left_type != nullptr);
 
   auto index_value = static_cast<size_t>(index->GetValue());
   if (index_value > left_type->member_types.size()) {
     std::string errmsg = std::string("tuple has ") +
                          std::to_string(left_type->member_types.size()) +
                          " elements, index is: " + std::to_string(index_value);
-    return {Error(Error::Code::DotIndexOutOfRange, GetLoc(), errmsg)};
+    FatalError(errmsg, __FILE__, __LINE__);
   }
 
-  auto *struct_t =
-      llvm::cast<llvm::StructType>(left_type_codegen_result.GetFirst());
+  auto *struct_type = llvm::cast<llvm::StructType>(left_type->ToLLVM(env));
+  assert(struct_type != nullptr);
 
   llvm::Value *gep = env.instruction_builder->CreateConstGEP2_32(
-      struct_t, left_value, 0, index_value);
+      struct_type, left_value, 0, index_value);
 
-  llvm::Type *member_type = struct_t->getTypeAtIndex(index_value);
+  llvm::Type *member_type = struct_type->getTypeAtIndex(index_value);
   return LoadValue(member_type, gep, env);
 }
 } // namespace pink

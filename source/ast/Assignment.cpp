@@ -38,28 +38,26 @@ auto Assignment::ToString() const -> std::string {
 auto Assignment::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
   // make sure we can type both sides
-  Outcome<Type *, Error> lhs_type(left->Typecheck(env));
-
-  if (!lhs_type) {
-    return lhs_type;
+  auto lhs_type_result = left->Typecheck(env);
+  if (!lhs_type_result) {
+    return lhs_type_result;
   }
+  auto *lhs_type = lhs_type_result.GetFirst();
 
-  Outcome<Type *, Error> rhs_type(right->Typecheck(env));
-
-  if (!rhs_type) {
-    return rhs_type;
+  auto rhs_type_result = right->Typecheck(env);
+  if (!rhs_type_result) {
+    return rhs_type_result;
   }
+  auto *rhs_type = rhs_type_result.GetFirst();
 
   // make sure the left and right hand sides are the same type
-  if (lhs_type.GetFirst() != rhs_type.GetFirst()) {
-    std::string errmsg = std::string("storage type: ") +
-                         lhs_type.GetFirst()->ToString() +
-                         ", value type: " + rhs_type.GetFirst()->ToString();
+  if (lhs_type != rhs_type) {
+    std::string errmsg = std::string("storage type: ") + lhs_type->ToString() +
+                         ", value type: " + rhs_type->ToString();
     Error error(Error::Code::AssigneeTypeMismatch, GetLoc(), errmsg);
     return {error};
   }
-  // the types are equivalent, so it's immaterial which one we return.
-  return {lhs_type.GetFirst()};
+  return {lhs_type};
 }
 
 auto Assignment::Codegen(const Environment &env) const
@@ -68,18 +66,20 @@ auto Assignment::Codegen(const Environment &env) const
   llvm::Type *lhs_type = left->GetType()->ToLLVM(env);
 
   env.flags->OnTheLHSOfAssignment(true);
-  auto lhs_value = left->Codegen(env);
+  auto lhs_value_result = left->Codegen(env);
   env.flags->OnTheLHSOfAssignment(false);
-  if (!lhs_value) {
-    return lhs_value;
+  if (!lhs_value_result) {
+    return lhs_value_result;
   }
+  auto *lhs_value = lhs_value_result.GetFirst();
 
   llvm::Type *rhs_type = right->GetType()->ToLLVM(env);
 
-  auto rhs_value = right->Codegen(env);
-  if (!rhs_value) {
-    return rhs_value;
+  auto rhs_value_result = right->Codegen(env);
+  if (!rhs_value_result) {
+    return rhs_value_result;
   }
+  auto *rhs_value = rhs_value_result.GetFirst();
 
   if (lhs_type != rhs_type) {
     std::string errmsg = std::string("storage type: ") +
@@ -88,29 +88,26 @@ auto Assignment::Codegen(const Environment &env) const
     FatalError(errmsg, __FILE__, __LINE__);
   }
 
+  // since even the most basic array type is held within
+  // a structure type, there is only really structure types
+  // available within the langauge.
   if (llvm::isa<llvm::StructType>(lhs_type)) {
-    llvm::Value *right_value = rhs_value.GetFirst();
+    StoreAggregate(lhs_type, lhs_value, rhs_value, env);
 
-    StoreAggregate(lhs_type, lhs_value.GetFirst(), rhs_value.GetFirst(), env);
-
-    return {right_value};
+    return {rhs_value};
   }
 
-  if (llvm::isa<llvm::AllocaInst>(lhs_value.GetFirst()) ||
-      (llvm::isa<llvm::GlobalVariable>(lhs_value.GetFirst())) ||
-      (lhs_value.GetFirst()->getType()->isPointerTy())) {
-    llvm::Value *right_value = rhs_value.GetFirst();
+  if (llvm::isa<llvm::AllocaInst>(lhs_value) ||
+      (llvm::isa<llvm::GlobalVariable>(lhs_value)) ||
+      (lhs_value->getType()->isPointerTy())) {
+    env.instruction_builder->CreateStore(rhs_value, lhs_value);
 
-    env.instruction_builder->CreateStore(right_value, lhs_value.GetFirst());
-
-    // return the value of the right hand side as the result to support nesting
-    // assignment
-    return {right_value};
+    return {rhs_value};
   }
 
   std::string errmsg =
       std::string("llvm::Value* cannot be written: Value* is -> ") +
-      LLVMValueToString(lhs_value.GetFirst());
+      LLVMValueToString(lhs_value_result.GetFirst());
   Error error(Error::Code::ValueCannotBeAssigned, GetLoc(), errmsg);
   return {error};
 }

@@ -50,8 +50,8 @@
 #include "kernel/TestBinopPrimitives.h"
 #include "kernel/TestUnopPrimitives.h"
 
-#include "core/TestBasics.h"
-#include "core/TestFirstPhase.h"
+#include "core/TestCodegen.h"
+#include "core/TestTypecheck.h"
 
 /*
     This is a super basic funclet, which simply saves
@@ -734,11 +734,11 @@ auto Testbench::RunFrontTests(std::ostream &out) -> bool {
 auto Testbench::RunCoreTests(std::ostream &out) -> bool {
   bool result = true;
   if (RanTest(Testbench::typecheck)) {
-    result &= SetTestResult(Testbench::typecheck, TestFirstPhase(out));
+    result &= SetTestResult(Testbench::typecheck, TestTypecheck(out));
   }
 
   if (RanTest(Testbench::codegen)) {
-    result &= SetTestResult(Testbench::codegen, TestBasics(out));
+    result &= SetTestResult(Testbench::codegen, TestCodegen(out));
   }
 
   SetTestResult(Testbench::core, result);

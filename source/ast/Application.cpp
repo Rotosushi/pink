@@ -94,8 +94,8 @@ auto Application::TypecheckV(const Environment &env) const
   // chech that each arguments type matches
   auto cmp = [](Type *left, Type *right) { return left != right; };
 
-  auto mismatch = FindPair(argTys.begin(), argTys.end(),
-                           calleeFnTy->arguments.begin(), cmp);
+  auto mismatch = FindBetween(argTys.begin(), argTys.end(),
+                              calleeFnTy->arguments.begin(), cmp);
 
   if (mismatch.first != argTys.end()) {
     std::string errmsg = std::string("expected arg type: ") +
@@ -120,10 +120,6 @@ auto Application::Codegen(const Environment &env) const
 
   if (!callee_result) {
     return {callee_result.GetSecond()};
-  }
-
-  if (callee_result.GetFirst() == nullptr) {
-    FatalError("Function implementation was empty!", __FILE__, __LINE__);
   }
 
   auto *function = llvm::dyn_cast<llvm::Function>(callee_result.GetFirst());
@@ -161,6 +157,9 @@ auto Application::Codegen(const Environment &env) const
     call = env.instruction_builder->CreateCall(llvm::FunctionCallee(function),
                                                arg_values);
   }
+
+  call->setAttributes(function->getAttributes());
+
   // 4: return the result of the call instruction as the llvm::Value* of this
   //    procedure
   return {call};

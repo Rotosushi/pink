@@ -41,6 +41,7 @@ auto Bool::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 */
 auto Bool::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
+  assert(GetType() != nullptr);
   return {env.instruction_builder->getInt1(value)};
 }
 } // namespace pink
