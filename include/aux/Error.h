@@ -205,8 +205,18 @@ public:
  * @brief Writes dsc to stderr and then calls exit(1).
  *
  * useful when the error in question cannot be recovered from.
- * and it is better for the developer of the program to fix the
+ * or it is better for the developer of the program to fix the
  * error, not a programmer writing in the langauge.
+ *
+ * \todo it would be a performance win to enclose calls to
+ * FatalError with preprocessor guards so that they are not
+ * compiled into release builds. (This relys on the assumption
+ * that the FatalError call in question is never encountered
+ * during operation of the compiler, and is only there to dynamically
+ * assert some property) ((why not use assert? because sometimes it's
+ * nice to write out a bit of runtime information in the error message,
+ * which is not easy to do with an assert))
+ *
  *
  * @param dsc a description of the fatal error
  * @param file the file this error occured within

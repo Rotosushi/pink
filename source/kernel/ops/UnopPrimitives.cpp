@@ -1,5 +1,5 @@
 
-#include "kernel/UnopPrimitives.h"
+#include "kernel/ops/UnopPrimitives.h"
 
 #include "ops/UnopTable.h"
 

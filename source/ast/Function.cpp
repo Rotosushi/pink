@@ -6,7 +6,7 @@
 #include "kernel/Cast.h"
 #include "kernel/StoreAggregate.h"
 #include "kernel/StoreValue.h"
-#include "kernel/SysExit.h"
+#include "kernel/sys/SysExit.h"
 
 #include "support/LLVMErrorToString.h"
 

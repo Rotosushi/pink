@@ -1,4 +1,6 @@
 
+#include <sys/signal.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -43,21 +45,27 @@ auto Run(const char *file, char *const *argv) -> int {
   if (pid < 0) {
     pink::FatalError(std::string("A call to fork failed: ") + strerror(errno),
                      __FILE__, __LINE__);
-  } else if (pid == 0) // we are executing the child process
+  }
+
+  if (pid == 0) // we are executing the child process
   {
     execv(file, argv);
     exit(1); // execv never returns.
-  } else     // we are executing the parent process
-  {
-    int status = 0;
-    waitpid(pid, &status, 0);
-    result = WEXITSTATUS(status); // we can only retreive the least significant
-                                  // 8 bits of the exit status of the executed
-                                  // program. and there is no way to get a full
-                                  // integer without setting up a signal
-                                  // handler to catch the exit code when
-                                  // SIGCHLD is raised when the child process
-                                  // exits.
+  } else {   // we are executing the parent process
+    siginfo_t siginfo;
+    int wait_result = waitid(P_PID, pid, &siginfo, WEXITED);
+
+    if (wait_result < 0) {
+      pink::FatalError(std::string("A call to waitid failed: ") +
+                           strerror(errno),
+                       __FILE__, __LINE__);
+    }
+
+    if (siginfo.si_code == CLD_EXITED) {
+      result = siginfo.si_value.sival_int;
+    } else {
+      result = -1;
+    }
   }
 
   return result;
@@ -88,6 +96,9 @@ auto Run(const char *file, char *const *argv) -> int {
  * value we compute into a byte sized scalar, which would cut off the number in
  * the same way that getting the exit_code does. but that is very opaque.)
  */
+// NOLINTBEGIN
+// I would use modern cpp practices, but this is linux interop code,
+// so this code is in an old style.
 auto TestFile(std::string test_contents, int expected_value) -> bool {
   bool result = true;
 
@@ -259,10 +270,8 @@ auto TestBinopIntegerArithmetic(std::ostream &out, int numIter,
     case 2:
       op = "*";
       // ensure that multiplication doesn't produce values greater than one
-      // hundred note: we can construct values up to 255 without worry, but one
-      // hundred is an easy bounds to think about. it also makes this symmetric,
-      // as to bound at 200, the largest multiplication term we can test is (10
-      // * 20) we could also bound at 250 with (10 * 25)
+      // hundred, we can construct values up to 255 without worry, but one
+      // hundred is an easy bounds to think about.
       num1 = zero_to_ten(gen);
       num2 = zero_to_ten(gen);
       res = num1 * num2;
@@ -414,6 +423,50 @@ auto TestBinopBooleanArithmetic(std::ostream &out, int numIter,
   return result;
 }
 
+auto TestArrayCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
+    -> bool {
+  bool result = true;
+  for (int i = 0; i < numIter; i++) {
+    int array[5] = {rand() % 50, rand() % 50, rand() % 50, rand() % 50,
+                    rand() % 50};
+    int idx1 = rand() % 5, idx2 = rand() % 5;
+    std::string idx1str = std::to_string(idx1), idx2str = std::to_string(idx2);
+    std::string num1str = std::to_string(array[idx1]),
+                num2str = std::to_string(array[idx2]),
+                resstr = std::to_string(array[idx1] + array[idx2]);
+    std::string arr0str = std::to_string(array[0]),
+                arr1str = std::to_string(array[1]),
+                arr2str = std::to_string(array[2]),
+                arr3str = std::to_string(array[3]),
+                arr4str = std::to_string(array[4]);
+
+    std::string teststr = "fn main() { a := [";
+    teststr += arr0str + ",";
+    teststr += arr1str + ",";
+    teststr += arr2str + ",";
+    teststr += arr3str + ",";
+    teststr += arr4str + "];";
+    teststr += "b := a[" + idx1str + "];";
+    teststr += "c := a[" + idx2str + "];";
+    teststr += "b + c;};";
+    
+    std::string descstr = "Allocating an array, [";
+    descstr += arr0str + ",";
+    descstr += arr1str + ",";
+    descstr += arr2str + ",";
+    descstr += arr3str + ",";
+    descstr += arr4str;
+    descstr += "] and performing arithmetic on two ofit's elements: ";
+    descstr += num1str + " + ";
+    descstr += num2str + " = ";
+    descstr += resstr;
+    result &= Test(out, descstr, TestFile(teststr, array[idx1] + array[idx2]));
+  }
+  return result;
+}
+
+// NOLINTEND
+
 /*
  *  TestBasic tests that the compiler can emit a correct program,
  *    given the input file. this revolves around generating
@@ -449,22 +502,14 @@ auto TestCodegen(std::ostream &out) -> bool {
 
   // the tests are defined such that we can run them multiple
   // times with different random numbers, so we are not cherry
-  // picking behavior to test.
+  // picking behavior to test. This is good, because it means
+  // we cannot write the code to fit exactly to the tests. It
+  // is also bad, because it means we are not specifically testing
+  // every edge case.
   int numIter = 1;
 
   std::random_device rnd;
   std::mt19937_64 gen(rnd());
-
-  // various distributions which are used within the test cases.
-  std::uniform_int_distribution<> zero_to_one_hundred(0, 100);
-  std::uniform_int_distribution<> one_to_one_hundred(1, 100);
-  std::uniform_int_distribution<> zero_to_fifty(0, 50);
-  std::uniform_int_distribution<> one_to_fifty(1, 50);
-  std::uniform_int_distribution<> zero_to_ten(0, 10);
-  std::uniform_int_distribution<> one_to_ten(1, 10);
-  std::uniform_int_distribution<> zero_to_five(0, 5);
-  std::uniform_int_distribution<> zero_to_one(0, 1);
-  std::bernoulli_distribution true_or_false(0.5);
 
   result &= TestSimpleCodegen(out, numIter, gen);
   result &= TestBindCodegen(out, numIter, gen);
@@ -530,30 +575,7 @@ auto TestCodegen(std::ostream &out) -> bool {
       );
     }
 
-    for (int i = 0; i < numIter; i++)
-    {
-      int array[5] = {rand() % 50, rand() % 50, rand() % 50, rand() % 50, rand()
-    % 50}; int idx1 = rand() % 5, idx2 = rand() % 5; std::string idx1str =
-    std::to_string(idx1), idx2str = std::to_string(idx2); std::string num1str =
-    std::to_string(array[idx1]), num2str = std::to_string(array[idx2]), resstr
-    = std::to_string(array[idx1] + array[idx2]); std::string arr0str =
-    std::to_string(array[0]), arr1str = std::to_string(array[1]), arr2str =
-    std::to_string(array[2]), arr3str = std::to_string(array[3]), arr4str =
-    std::to_string(array[4]);
 
-      std::string teststr = "fn main() { a := [" + arr0str + "," + arr1str + ","
-    + arr2str + "," + arr3str + "," + arr4str + "];"
-                                      + "b := *(a + " + idx1str + ");"
-                                      + "c := *(a + " + idx2str + ");"
-                                      + "b + c;};";
-      result &= Test(out,
-              "Allocating an array, [" + arr0str + "," + arr1str + "," + arr2str
-    + "," + arr3str + "," + arr4str + "] and performing arithmetic on two of
-    it's elements: " + num1str + " + " + num2str + " = " + resstr,
-              TestFile(teststr, array[idx1] + array[idx2])
-              );
-
-    }
 
     for (int i = 0; i < numIter; i++)
     {

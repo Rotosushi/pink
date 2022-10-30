@@ -62,36 +62,42 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   if (!left_typecheck_result) {
     return left_typecheck_result;
   }
+  auto *left_type = left_typecheck_result.GetFirst();
 
   Outcome<Type *, Error> right_typecheck_result = right->Typecheck(env);
   if (!right_typecheck_result) {
     return right_typecheck_result;
   }
+  auto *right_type = right_typecheck_result.GetFirst();
 
-  auto *left_type = llvm::dyn_cast<TupleType>(left_typecheck_result.GetFirst());
+  auto *tuple_type = llvm::dyn_cast<TupleType>(left_type);
   if (left_type == nullptr) {
-    std::string errmsg = std::string("left has type: ") +
-                         left_typecheck_result.GetFirst()->ToString();
+    std::string errmsg = std::string("left has type: ") + left_type->ToString();
     return {Error(Error::Code::DotLeftIsNotAStruct, GetLoc(), errmsg)};
   }
+  assert(tuple_type != nullptr);
 
+  // #RULE We cannot typecheck a tuple index against a runtime value.
+  // As it violates static (compile time) typing. So we require the rhs of dot
+  // member access to be an integer literal. (integral literal eventually)
   auto *index = llvm::dyn_cast<Int>(right.get());
   if (index == nullptr) {
-    std::string errmsg = std::string("right has type: ") +
-                         right_typecheck_result.GetFirst()->ToString();
+    std::string errmsg =
+        std::string("right has type: ") + right_type->ToString();
 
     return {Error(Error::Code::DotRightIsNotAnInt, GetLoc(), errmsg)};
   }
+  assert(index != nullptr);
 
   auto index_value = static_cast<size_t>(index->GetValue());
-  if (index_value > left_type->member_types.size()) {
+  if (index_value > tuple_type->member_types.size()) {
     std::string errmsg = std::string("tuple has ") +
-                         std::to_string(left_type->member_types.size()) +
+                         std::to_string(tuple_type->member_types.size()) +
                          " elements, index is: " + std::to_string(index_value);
     return {Error(Error::Code::DotIndexOutOfRange, GetLoc(), errmsg)};
   }
 
-  return {left_type->member_types[index_value]};
+  return {tuple_type->member_types[index_value]};
 }
 
 auto Dot::Codegen(const Environment &env) const

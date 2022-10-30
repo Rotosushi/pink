@@ -43,6 +43,8 @@ void StoreValueAggregate(llvm::Type *type, llvm::Value *dest, llvm::Value *src,
 /**
  * @brief Store src into dest
  *
+ * This means copy if both source and destination are in memory.
+ *
  * \note this function inserts any load/store instructions wherever the
  * IRBuilder member of the env is currently pointing.
  *

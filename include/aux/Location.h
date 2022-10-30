@@ -79,10 +79,11 @@ public:
   // NOLINTBEGIN(bugprone-easily-swappable-parameters)
   // There is no better representation of a location than
   // four integral types. We have to specify all of them.
-  // Unless we want four more trival classes within this
+  // Unless we want four trival classes within this
   // already trivial class, which all provide overloads
   // to be easily constructed from integer literals, which
   // by having defeats the purpose of the lint in the first place.
+  // we are simply going to ignore this lint here.
   constexpr inline Location(size_t firstLine, size_t firstColumn,
                             size_t lastLine, size_t lastColumn)
       : firstLine(firstLine), firstColumn(firstColumn), lastLine(lastLine),

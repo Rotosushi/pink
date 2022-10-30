@@ -1,4 +1,4 @@
-#include "kernel/SysExit.h"
+#include "kernel/sys/SysExit.h"
 #include "kernel/Cast.h"
 
 #include "support/LLVMErrorToString.h"

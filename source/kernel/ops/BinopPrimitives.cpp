@@ -1,4 +1,4 @@
-#include "kernel/BinopPrimitives.h"
+#include "kernel/ops/BinopPrimitives.h"
 #include "ops/BinopTable.h"
 
 namespace pink {

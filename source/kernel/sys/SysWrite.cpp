@@ -1,4 +1,4 @@
-#include "kernel/SysWrite.h"
+#include "kernel/sys/SysWrite.h"
 
 #include "support/LLVMErrorToString.h"
 

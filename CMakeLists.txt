@@ -146,9 +146,6 @@ add_library(libpink STATIC
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 
 	# operators like assignment '=', pointer indirection '*', and address of '&')
-	# (aside: all operator classes were once in 'aux' however that clutters up 
-	# 'aux' so any semantics which require multiple classes working in concert 
-	# to acheive a single purpose will be placed in their own directory)
 	source/ops/BinopCodegen.cpp
 	source/ops/BinopLiteral.cpp
 	source/ops/BinopTable.cpp
@@ -164,8 +161,10 @@ add_library(libpink STATIC
 		
 	# the 'kernel' directory is for files which implement functionality 
 	# within the compiler which is made directly available to the programmer.
-	source/kernel/BinopPrimitives.cpp
-	source/kernel/UnopPrimitives.cpp
+	source/kernel/ops/BinopPrimitives.cpp
+	source/kernel/ops/UnopPrimitives.cpp
+	source/kernel/sys/SysExit.cpp
+	source/kernel/sys/SysWrite.cpp
 	source/kernel/Cast.cpp
 	source/kernel/StoreAggregate.cpp
 	source/kernel/StoreValue.cpp
@@ -175,8 +174,7 @@ add_library(libpink STATIC
 	source/kernel/RuntimeError.cpp
 	source/kernel/SliceSubscript.cpp
 	source/kernel/ArraySubscript.cpp
-	source/kernel/SysExit.cpp
-	source/kernel/SysWrite.cpp
+
 
 	# the 'support' directory is for files which define necessary or convenient 
 	# subroutines, which are too small to justify their own class.

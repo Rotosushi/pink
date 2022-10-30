@@ -2,8 +2,8 @@
 
 #include "aux/Environment.h"
 
-#include "kernel/BinopPrimitives.h"
-#include "kernel/UnopPrimitives.h"
+#include "kernel/ops/BinopPrimitives.h"
+#include "kernel/ops/UnopPrimitives.h"
 
 #include "llvm/Support/Host.h"
 #include "llvm/Support/TargetSelect.h"
@@ -95,8 +95,8 @@ auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
   std::shared_ptr<llvm::LLVMContext> context =
       std::make_shared<llvm::LLVMContext>();
 
-  // This to me would seem to work for native code generation.
-  // because the compiler is a process, and as such is running
+  // This works for native code generation.
+  // because the compiler is a process running
   // on the host machine. so the processTriple would be a
   // target triple suitable to generating code for the host machine.
   // that is, native code generation.

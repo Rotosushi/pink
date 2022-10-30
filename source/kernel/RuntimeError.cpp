@@ -1,7 +1,7 @@
 #include "kernel/RuntimeError.h"
 #include "kernel/AllocateText.h"
-#include "kernel/SysExit.h"
-#include "kernel/SysWrite.h"
+#include "kernel/sys/SysExit.h"
+#include "kernel/sys/SysWrite.h"
 
 #include "support/Gensym.h"
 

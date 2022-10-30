@@ -178,8 +178,8 @@ public:
   /**
    * @brief Remove trailing filename extensions
    *
-   * searches for the first '.' appearing in the
-   * given input string and returns the string containing
+   * searches for the first '.' appearing after the last '/' in
+   * the given input string and returns the string containing
    * everything up to that point. if there is no '.' in the
    * input string, then the entire string is returned.
    *
