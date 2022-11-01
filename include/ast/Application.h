@@ -12,6 +12,10 @@ namespace pink {
 /**
  * @brief Represents an expression applying a function.
  *
+ * \todo #CPP can be lowered to function application,
+ * or in the case of a function usage of the application
+ * must be lowered to std::bind and friends.
+ *
  */
 class Application : public Ast {
 private:

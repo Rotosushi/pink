@@ -10,12 +10,3 @@ the crux of our language rests on our ability to emit and manipulate cpp lambdas
 along with the usual suspects of programming language design, (parameters, tuples,
 templates, etc). 
 
-However, it does mean restarting the language again!
-
-additionally, why am I working on this at all?
-
-I have no buisness writing my own language, and nothing I produce will be better than 
-any other option of programming language already out there. I have no ideas that are 
-better than what c++ already offers, so why not work on helping those developers improve 
-the existing software? Because I don't feel like I know enough to help even there.
-Even small changes can be helpful though.
