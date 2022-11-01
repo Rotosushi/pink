@@ -14,7 +14,7 @@ auto TestTuple(std::ostream &out) -> bool {
   out << "Testing pink::Tuple:\n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "(0, true, 1, false)"
   // NOLINTBEGIN

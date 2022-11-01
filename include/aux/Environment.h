@@ -301,15 +301,7 @@ public:
    *
    *
    */
-  // NOLINTBEGIN(cppcoreguidelines-avoid-const-or-ref-data-members)
-  // conceptually the env is interchangeable with all of it's members as
-  // arguments to any function taking an env, but that is slow.
-  // That is why we use member
-  // access instead of get/set for each member, and that is why this
-  // member is const, because it will never be modified by the program
-  // after valid construction.
-  const llvm::DataLayout data_layout;
-  // NOLINTEND(cppcoreguidelines-avoid-const-or-ref-data-members)
+  llvm::DataLayout data_layout;
 
   /**
    * @brief This holds the current [llvmFunction] being compiled
@@ -330,6 +322,7 @@ public:
    */
   llvm::Function *current_function;
 
+private:
   /**
    * @brief Construct a new Environment
    *
@@ -425,26 +418,43 @@ public:
 
   Environment(const Environment &env,
               std::shared_ptr<llvm::IRBuilder<>> builder);
+
+public:
+  /**
+   * @brief Constructs a new global Environment. With all members initialized
+   * for native codegeneration.
+   *
+   * @param options The command line [options](#CLIOptions).
+   * @return std::unique_ptr<Environment> The new compilation environment.
+   */
+  static auto NewGlobalEnv(std::shared_ptr<CLIOptions> options)
+      -> std::unique_ptr<Environment>;
+
+  /**
+   * @brief Constructs a new global Environment. With all members initialized
+   * for native codegeneration.
+   *
+   * @param options The command line [options](#CLIOptions).
+   * @param instream The input stream to [parse](#Parser) terms from.
+   * @return std::unique_ptr<Environment> The new compilation environment.
+   */
+  static auto NewGlobalEnv(std::shared_ptr<CLIOptions> options,
+                           std::istream *instream)
+      -> std::unique_ptr<Environment>;
+
+  static auto NewLocalEnv(const Environment &outer,
+                          std::shared_ptr<SymbolTable> bindings)
+      -> std::unique_ptr<Environment>;
+
+  static auto NewLocalEnv(const Environment &outer,
+                          std::shared_ptr<SymbolTable> bindings,
+                          std::shared_ptr<llvm::IRBuilder<>> builder,
+                          llvm::Function *function)
+      -> std::unique_ptr<Environment>;
+
+  static auto NewLocalEnv(const Environment &outer,
+                          std::shared_ptr<llvm::IRBuilder<>> builder)
+      -> std::unique_ptr<Environment>;
 };
 
-/**
- * @brief Constructs a new global Environment. With all members initialized for
- * native codegeneration.
- *
- * @param options The command line [options](#CLIOptions).
- * @return std::unique_ptr<Environment> The new compilation environment.
- */
-auto NewGlobalEnv(std::shared_ptr<CLIOptions> options)
-    -> std::unique_ptr<Environment>;
-
-/**
- * @brief Constructs a new global Environment. With all members initialized for
- * native codegeneration.
- *
- * @param options The command line [options](#CLIOptions).
- * @param instream The input stream to [parse](#Parser) terms from.
- * @return std::unique_ptr<Environment> The new compilation environment.
- */
-auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
-    -> std::unique_ptr<Environment>;
 } // namespace pink

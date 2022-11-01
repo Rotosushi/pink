@@ -13,6 +13,8 @@ namespace pink {
 /**
  * @brief Represents a Variable expression
  *
+ * \todo #CPP can be lowered to a cpp variable reference
+ *
  */
 class Variable : public Ast {
 private:

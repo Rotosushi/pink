@@ -76,12 +76,13 @@ Environment::Environment(const Environment &env,
       target_machine(env.target_machine), data_layout(env.data_layout),
       current_function(env.current_function) {}
 
-auto NewGlobalEnv(std::shared_ptr<CLIOptions> options)
+auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options)
     -> std::unique_ptr<Environment> {
   return NewGlobalEnv(std::move(options), &std::cin);
 }
 
-auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
+auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
+                               std::istream *instream)
     -> std::unique_ptr<Environment> {
   auto flags = std::make_shared<TypecheckFlags>();
   auto parser = std::make_shared<Parser>(instream);
@@ -224,14 +225,35 @@ auto NewGlobalEnv(std::shared_ptr<CLIOptions> options, std::istream *instream)
   // std::make_shared<llvm::DIBuilder>(*llvm_module, /* allowUnresolved = */
   // true, debug_compile_unit);
 
-  auto env = std::make_unique<Environment>(
+  auto env = std::unique_ptr<Environment>(new Environment(
       flags, std::move(options), parser, symbols, operators, types, bindings,
       binops, unops, context, llvm_module, instruction_builder, target,
-      target_machine, data_layout);
+      target_machine, data_layout));
 
   InitializeBinopPrimitives(*env);
   InitializeUnopPrimitives(*env);
 
   return env;
+}
+
+auto Environment::NewLocalEnv(const Environment &outer,
+                              std::shared_ptr<SymbolTable> bindings)
+    -> std::unique_ptr<Environment> {
+  return std::unique_ptr<Environment>(new Environment(outer, bindings));
+}
+
+auto Environment::NewLocalEnv(const Environment &outer,
+                              std::shared_ptr<SymbolTable> bindings,
+                              std::shared_ptr<llvm::IRBuilder<>> builder,
+                              llvm::Function *function)
+    -> std::unique_ptr<Environment> {
+  return std::unique_ptr<Environment>(
+      new Environment(outer, bindings, builder, function));
+}
+
+auto Environment::NewLocalEnv(const Environment &outer,
+                              std::shared_ptr<llvm::IRBuilder<>> builder)
+    -> std::unique_ptr<Environment> {
+  return std::unique_ptr<Environment>(new Environment(outer, builder));
 }
 } // namespace pink

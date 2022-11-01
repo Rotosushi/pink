@@ -11,7 +11,7 @@ auto TestBinopPrimitives(std::ostream &out) -> bool {
   out << "Testing Pink::BinopPrimitives: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::InternedString minus = env->operators->Intern("-");
   pink::InternedString plus = env->operators->Intern("+");

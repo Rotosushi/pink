@@ -19,7 +19,7 @@ auto TestApplication(std::ostream &out) -> bool {
   std::stringstream stream;
   stream.str("fn add(x: Int, y: Int) { x + y }");
 
-  auto env = pink::NewGlobalEnv(options, &stream);
+  auto env = pink::Environment::NewGlobalEnv(options, &stream);
 
   auto fun = env->parser->Parse(*env);
 

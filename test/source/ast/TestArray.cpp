@@ -13,7 +13,7 @@ auto TestArray(std::ostream &out) -> bool {
   out << "Testing pink::Array:\n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "[0, 1, 2, 3, 4];"
   // NOLINTBEGIN

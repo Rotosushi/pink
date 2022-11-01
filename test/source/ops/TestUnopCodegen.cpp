@@ -26,7 +26,7 @@ bool TestUnopCodegen(std::ostream &out) {
   out << "Testing pink::UnopCodegen: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::Type *ty = env->types->GetIntType();
   pink::UnopCodegen unop_gen(ty, test_codegen_fn);

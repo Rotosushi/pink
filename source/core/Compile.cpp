@@ -20,12 +20,6 @@ void Compile(const Environment &env) {
                __LINE__);
   }
 
-  // it's wasteful to assign the parser when
-  // we already constructed it, but due to the reference
-  // that the parser holds to a std::istream we cannot
-  // modify what the parser is reading from after construction.
-  // so we must reconstruct here to only have the output file open
-  // during compilation.
   env.parser->SetIStream(&infile);
 
   std::vector<std::unique_ptr<pink::Ast>> valid_terms;
@@ -49,8 +43,6 @@ void Compile(const Environment &env) {
         break; // out of while loop
       }
       // #TODO: Handle more than the first error detected in the input code.
-      // #TODO: Extract the line that produced the error from the buffer and
-      // 			pass it as an argument here.
       std::string bad_source = env.parser->ExtractLine(error.loc);
       FatalError(error.ToString(bad_source), __FILE__, __LINE__);
     } else {
@@ -73,7 +65,7 @@ void Compile(const Environment &env) {
       //   //
       // }
       if (!type) {
-        pink::Error error(type.GetSecond());
+        pink::Error error = type.GetSecond();
         std::string bad_source = env.parser->ExtractLine(error.loc);
         FatalError(error.ToString(bad_source), __FILE__, __LINE__);
       } else {

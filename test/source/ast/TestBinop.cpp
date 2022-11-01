@@ -13,7 +13,7 @@ auto TestBinop(std::ostream &out) -> bool {
   out << "Testing pink::Binop: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "1 + 1\n"
   pink::InternedString plus = env->operators->Intern("+");

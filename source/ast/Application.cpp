@@ -115,7 +115,6 @@ auto Application::TypecheckV(const Environment &env) const
 auto Application::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
-  // 1: codegen callee to retrieve the function pointer
   Outcome<llvm::Value *, Error> callee_result = callee->Codegen(env);
 
   if (!callee_result) {
@@ -131,26 +130,19 @@ auto Application::Codegen(const Environment &env) const
     return {error};
   }
 
-  // 2: codegen each argument to retrieve each llvm::Value* being passed as
-  //    argument
   std::vector<llvm::Value *> arg_values;
 
-  for (const auto &arg : arguments) {
+  for (const auto &arg : *this) {
     Outcome<llvm::Value *, Error> arg_result = arg->Codegen(env);
 
     if (!arg_result) {
       return {arg_result.GetSecond()};
     }
-
-    if (arg_result.GetFirst() == nullptr) {
-      FatalError("The argument is nullptr!", __FILE__, __LINE__);
-    }
-
+    assert(arg_result.GetFirst() != nullptr);
     arg_values.push_back(arg_result.GetFirst());
   }
 
   llvm::CallInst *call = nullptr;
-  // 3: codegen a CallInstruction to the callee passing in each argument.
   if (arg_values.empty()) {
     call = env.instruction_builder->CreateCall(llvm::FunctionCallee(function));
   } else {
@@ -160,8 +152,6 @@ auto Application::Codegen(const Environment &env) const
 
   call->setAttributes(function->getAttributes());
 
-  // 4: return the result of the call instruction as the llvm::Value* of this
-  //    procedure
   return {call};
 }
 

@@ -13,7 +13,7 @@ auto TestAstAndNil(std::ostream &out) -> bool {
   out << "Testing pink::Ast and pink::Nil: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::Type *nil_t = env->types->GetNilType();
   pink::Location nil_loc(1, 14, 1, 15); // NOLINT

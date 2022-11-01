@@ -2,6 +2,11 @@
 #include "ast/Ast.h"
 
 namespace pink {
+/**
+ * @brief Implements array subscription
+ *
+ * \todo can be lowered to array subscription
+ */
 class Subscript : public Ast {
 private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const

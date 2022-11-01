@@ -82,71 +82,45 @@ auto Binop::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
   // Get the type and value of both sides
-  Outcome<Type *, Error> lhs_type_result(left->Typecheck(env));
+  assert(left->GetType() != nullptr);
+  auto *lhs_type = left->GetType();
 
-  if (!lhs_type_result) {
-    return {lhs_type_result.GetSecond()};
+  auto lhs_codegen_result = left->Codegen(env);
+  if (!lhs_codegen_result) {
+    return lhs_codegen_result;
   }
+  auto *lhs_value = lhs_codegen_result.GetFirst();
 
-  Outcome<llvm::Type *, Error> lhs_type_codegen =
-      lhs_type_result.GetFirst()->ToLLVM(env);
+  assert(right->GetType() != nullptr);
+  auto *rhs_type = right->GetType();
 
-  if (!lhs_type_codegen) {
-    return {lhs_type_codegen.GetSecond()};
+  auto rhs_codegen_result = right->Codegen(env);
+  if (!rhs_codegen_result) {
+    return rhs_codegen_result;
   }
-
-  llvm::Type *lhs_type = lhs_type_codegen.GetFirst();
-
-  Outcome<llvm::Value *, Error> lhs_value(left->Codegen(env));
-
-  if (!lhs_value) {
-    return lhs_value;
-  }
-
-  Outcome<Type *, Error> rhs_type_result(right->Typecheck(env));
-
-  if (!rhs_type_result) {
-    return {rhs_type_result.GetSecond()};
-  }
-
-  Outcome<llvm::Type *, Error> rhs_type_codegen =
-      rhs_type_result.GetFirst()->ToLLVM(env);
-
-  if (!rhs_type_codegen) {
-    return {rhs_type_codegen.GetSecond()};
-  }
-
-  llvm::Type *rhs_type = rhs_type_codegen.GetFirst();
-
-  Outcome<llvm::Value *, Error> rhs_value(right->Codegen(env));
-
-  if (!rhs_value) {
-    return rhs_value;
-  }
+  auto *rhs_value = rhs_codegen_result.GetFirst();
 
   // find the operator present between both sides in the env
-  llvm::Optional<std::pair<InternedString, BinopLiteral *>> binop =
-      env.binops->Lookup(op);
+  auto binop = env.binops->Lookup(op);
 
   if (!binop) {
     std::string errmsg = std::string("unknown op: ") + op;
-    return {Error(Error::Code::UnknownBinop, GetLoc(), errmsg)};
+    FatalError(errmsg, __FILE__, __LINE__);
   }
 
   // find the instance of the operator given the type of both sides
-  auto literal = binop->second->Lookup(lhs_type_result.GetFirst(),
-                                       rhs_type_result.GetFirst());
+  auto literal = binop->second->Lookup(lhs_type, rhs_type);
 
   if (!literal) {
     std::string errmsg = std::string("could not find an implementation of ") +
-                         std::string(op) + " for the given types, left: " +
-                         lhs_type_result.GetFirst()->ToString() +
-                         ", right: " + rhs_type_result.GetFirst()->ToString();
-    return {Error(Error::Code::ArgTypeMismatch, GetLoc(), errmsg)};
+                         std::string(op) +
+                         " for the given types, left: " + lhs_type->ToString() +
+                         ", right: " + rhs_type->ToString();
+    FatalError(errmsg, __FILE__, __LINE__);
   }
 
   // use the lhs and rhs values to generate the binop expression.
-  return {literal->second->generate(lhs_type, lhs_value.GetFirst(), rhs_type,
-                                    rhs_value.GetFirst(), env)};
+  return {literal->second->generate(lhs_type->ToLLVM(env), lhs_value,
+                                    rhs_type->ToLLVM(env), rhs_value, env)};
 }
 } // namespace pink

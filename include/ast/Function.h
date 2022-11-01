@@ -19,6 +19,9 @@ namespace pink {
 /**
  * @brief Represents an instance of a Function definition
  *
+ * \todo #CPP can be lowered to functions at global scope
+ * or lambdas in local scope
+ *
  */
 class Function : public Ast {
 private:

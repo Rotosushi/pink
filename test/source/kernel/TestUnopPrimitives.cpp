@@ -9,7 +9,7 @@ auto TestUnopPrimitives(std::ostream &out) -> bool {
   out << "Testing Pink::UnopPrimitives: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::InternedString minus_str = env->operators->Intern("-");
   pink::InternedString bang_str = env->operators->Intern("!");

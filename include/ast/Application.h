@@ -74,11 +74,6 @@ public:
    */
   void Accept(AstVisitor *visitor) const override;
 
-  /**
-   * @brief Get the Callee
-   *
-   * @return Ast* the callee ptr
-   */
   auto GetCallee() const -> const Ast * { return callee.get(); }
 
   auto GetArguments() const -> const std::vector<std::unique_ptr<Ast>> & {

@@ -14,7 +14,7 @@ auto TestAssignment(std::ostream &out) -> bool {
   out << "Testing pink::Assignment: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "z = true\n"
   pink::InternedString symb = env->symbols->Intern("z");

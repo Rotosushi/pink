@@ -9,6 +9,8 @@
 namespace pink {
 /**
  * @brief Represents an Assignment expression
+ * 
+ * \todo #CPP Assignment can be turned into c++ assignment
  *
  */
 class Assignment : public Ast {

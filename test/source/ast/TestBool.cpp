@@ -12,7 +12,7 @@ auto TestBool(std::ostream &out) -> bool {
   out << "Testing pink::Bool: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "true;"
   pink::Location boolean_loc(1, 0, 1, 4); // NOLINT

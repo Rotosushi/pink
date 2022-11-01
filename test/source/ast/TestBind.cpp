@@ -12,7 +12,7 @@ auto TestBind(std::ostream &out) -> bool {
   out << "Testing pink::Bind: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "var v := true;\n"
   pink::InternedString variable = env->symbols->Intern("v");

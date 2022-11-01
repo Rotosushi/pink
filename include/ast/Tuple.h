@@ -26,6 +26,9 @@ namespace pink {
  *  greater, and as such we must modify a Function
  *  when necessesary to support returning them by value
  *  from a Function or passing them by value to a Function.
+ *
+ * \todo #CPP can be lowered to structs, we must have some mechanism for foward
+ * declaring the type however
  */
 class Tuple : public Ast {
 private:

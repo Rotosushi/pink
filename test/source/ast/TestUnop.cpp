@@ -12,7 +12,7 @@ auto TestUnop(std::ostream &out) -> bool {
   out << "Testing pink::Unop: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "-1;"
   pink::InternedString minus = env->operators->Intern("-");

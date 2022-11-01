@@ -13,6 +13,8 @@ namespace pink {
 /**
  * @brief [Bool](#Bool) is an [Ast](#Ast) node which represents a boolean value
  *
+ * \todo #CPP lowered to bool
+ *
  * @headerfile Bool.h "ast/Bool.h"
  */
 class Bool : public Ast {

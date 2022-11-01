@@ -38,7 +38,7 @@ auto TestTypecheck(std::ostream &out) -> bool {
   ss.str(std::string("var x := 0;\n") + std::string("var y := true;\n") +
          std::string("var z := x;\n") + std::string("fn zero() { 0; }\n"));
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options, &ss);
+  auto env = pink::Environment::NewGlobalEnv(options, &ss);
 
   /*
           Parser emits correct Ast for each Ast node kind,

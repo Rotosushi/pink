@@ -26,7 +26,7 @@ bool TestBinopCodegen(std::ostream &out) {
   out << "Testing pink::BinopCodegen: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::Type *ty = env->types->GetIntType();
   pink::BinopCodegen binop_codegen(ty, test_binop_codegen_fn);

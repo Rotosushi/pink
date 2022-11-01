@@ -12,6 +12,8 @@ namespace pink {
  *
  * this expression represents extracting a value from an aggregate type
  *
+ * \todo #CPP lowered to the dot operator
+ *
  */
 class Dot : public Ast {
 private:

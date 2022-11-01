@@ -17,7 +17,7 @@ auto TestBlock(std::ostream &out) -> bool {
   out << "Testing pink::Block: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "var x := true; 3 + 5;"
   pink::InternedString plus = env->operators->Intern("+");

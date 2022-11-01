@@ -23,6 +23,7 @@ namespace pink {
 /**
  * @brief Represents an instance of a binary operator expression
  *
+ *  \todo #CPP binops can be lowered to cpp binops
  */
 class Binop : public Ast {
 private:

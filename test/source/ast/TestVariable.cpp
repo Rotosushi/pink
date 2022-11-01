@@ -13,7 +13,7 @@ auto TestVariable(std::ostream &out) -> bool {
   out << "Testing pink::Variable: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "v;"
   pink::InternedString symbol_v = env->symbols->Intern("v");

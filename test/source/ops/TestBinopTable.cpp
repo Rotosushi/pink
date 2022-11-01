@@ -26,7 +26,7 @@ bool TestBinopTable(std::ostream &out) {
   out << "Testing pink::BinopTable: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::InternedString plus = env->operators->Intern("+");
   pink::Type *ty = env->types->GetIntType();

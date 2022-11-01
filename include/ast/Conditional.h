@@ -11,6 +11,8 @@ namespace pink {
 /**
  * @brief Represents an instance of a conditional expression
  *
+ * \todo #CPP lowered to conditionals
+ * 
  */
 class Conditional : public Ast {
 private:

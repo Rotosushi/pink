@@ -11,7 +11,7 @@ auto TestEnvironment(std::ostream &out) -> bool {
   out << "Testing Pink::Environment: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::InternedString symb = env->symbols->Intern("x");
 

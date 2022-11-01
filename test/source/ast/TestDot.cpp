@@ -16,7 +16,7 @@ auto TestDot(std::ostream &out) -> bool {
   auto options = std::make_shared<pink::CLIOptions>();
   std::stringstream stream;
   stream.str("var tuple := (false, 12, true);\n");
-  auto env = pink::NewGlobalEnv(options, &stream);
+  auto env = pink::Environment::NewGlobalEnv(options, &stream);
 
   auto tuple = env->parser->Parse(*env);
 

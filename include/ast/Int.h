@@ -19,6 +19,8 @@ namespace pink {
  *
  * \todo The size of Int is not selected dynamically based upon the target
  * machine
+ * 
+ * \todo #CPP can be lowered to int
  *
  */
 class Int : public Ast {

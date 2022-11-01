@@ -40,60 +40,44 @@ auto Array::ToString() const -> std::string {
   return result;
 }
 
-/*  The type of an array is the type of one of it's members
+/*  The type of an array is the type of it's first member
  *  and the length of the array, as long as every one of
  *  it's members are the same type.
  */
 auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   size_t idx = 0;
-  std::vector<Type *> membTys;
+  std::vector<Type *> member_types;
+  
   for (const auto &memb : members) {
-    Outcome<Type *, Error> memb_result = memb->Typecheck(env);
-
-    if (!memb_result) {
-      return memb_result;
+    Outcome<Type *, Error> member_type_result = memb->Typecheck(env);
+    if (!member_type_result) {
+      return member_type_result;
     }
+    auto *member_type = member_type_result.GetFirst();
 
-    membTys.push_back(memb_result.GetFirst());
+    member_types.push_back(member_type);
 
-    if (memb_result.GetFirst() != membTys[0]) {
-      std::string errmsg =
-          std::string("at position: ") + std::to_string(idx) +
-          ", expected type: " + membTys[0]->ToString() +
-          ", actual type: " + memb_result.GetFirst()->ToString();
+    if (member_type != member_types[0]) {
+      std::string errmsg = std::string("at position: ") + std::to_string(idx) +
+                           ", expected type: " + member_types[0]->ToString() +
+                           ", actual type: " + member_type->ToString();
       return {Error(Error::Code::ArrayMemberTypeMismatch, GetLoc(), errmsg)};
     }
     idx += 1;
   }
 
-  return {env.types->GetArrayType(members.size(), membTys[0])};
+  return {env.types->GetArrayType(members.size(), member_types[0])};
 }
 
 /** the value of an array is a llvm::ConstantArray of the same length
  *  and type. As long as the array can be typed.
  *
- * \todo okay, the plan for arrays is to store them as a tuple of
- * the length and the array itself.
- * then to support pointer arithmetic we are going to construct
- * a new kind of pointer to an array, which is a 'slice'.
- * then any time we perform pointer arithmetic we can bounds
- * check the arithmetic. We will also add syntax to access the length
- * in user code, and this syntax will work on all slices as well.
- * we are also going to add a array indirection operator ([]) which will
- * perform the pointer arithmetic (now bounds checked) and the member
- * indirection operation as well. The bracket operator will only be available
- * to slices, where we can check the bounds. Then regular pointers
- * can still exist, they simply will not support
- * pointer arithmetic. thus regular pointers only support indirection,
- * and address of.
- * additionally, address of will always return a regular pointer.
- * the only way to construct a slice is by constructing an array.
- * the array name will be a slice. Passing an array name then
- * will result in passing a slice.
- * 1) add a slice type (or modify ArrayType to SliceType)
- * 2) store arrays as tuples of their length and the array itself
- * 3) add a bounds check to pointer arithmetic
- * 4) add the [] operator (probably in the same place as the . operator)
+ * \todo refactor array to return a reference to a new allocation of an
+ * array. this allows us to support constructing a local array out of
+ * local variables.
+ *
+ * \todo finish adding the construction of pointers into an array with
+ * slices.
  *
  *
  *

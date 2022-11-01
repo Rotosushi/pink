@@ -17,8 +17,7 @@ auto Ast::Typecheck(const Environment &env) const -> Outcome<Type *, Error> {
     return {type};
   }
 
-  Outcome<Type *, Error> result = this->TypecheckV(env);
-
+  auto result = this->TypecheckV(env);
   if (result) {
     type = result.GetFirst();
   }

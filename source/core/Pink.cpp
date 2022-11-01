@@ -25,7 +25,7 @@ auto main(int argc, char **argv) -> int {
   // llvm::InitializeNativeTargetDisassembler();
 
   auto options = pink::ParseCLIOptions(std::cout, argc, argv);
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // note: the general strategy for multiple source file compilation
   // is going to be one environment per source file. then we can choose

@@ -12,6 +12,8 @@ namespace pink {
 /**
  * @brief Represents a Bind expression
  *
+ * \todo #CPP bind can be implemented with cpp variable declarations
+ * 
  */
 class Bind : public Ast {
 private:

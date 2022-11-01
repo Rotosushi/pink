@@ -14,7 +14,7 @@ auto TestFunction(std::ostream &out) -> bool {
   out << "Testing Pink::Function: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   /*
   fn first(x: Int, y: Bool)

@@ -9,13 +9,14 @@
 
 namespace pink {
 /**
- * @brief Represents an instance of a While expression
+ * @brief Represents an instance of a While loop
  *
+ * \todo #CPP can be lowered to a cpp while statement
  */
 class While : public Ast {
 private:
   /**
-   * @brief Compute the Type of this While expression
+   * @brief Compute the Type of this While 
    *
    * @param env the environment of this compilation unit
    * @return Outcome<Type*, Error> if true the Type of this While expression,

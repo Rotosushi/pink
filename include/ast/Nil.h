@@ -21,6 +21,9 @@ namespace pink {
  * \todo since we had to add the void type in order
  * to implement while loops, maybe we should remove
  * nil from the language.
+ *
+ * \todo can be lowered to bool, but it might do to simply
+ * remove it.
  */
 class Nil : public Ast {
 private:

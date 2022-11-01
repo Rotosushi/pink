@@ -67,15 +67,15 @@ auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
   auto then_insertion_point = then_BB->getFirstInsertionPt();
   auto then_builder =
       std::make_shared<llvm::IRBuilder<>>(then_BB, then_insertion_point);
-  Environment runtime_error_env(env, then_builder);
+  auto runtime_error_env = Environment::NewLocalEnv(env, then_builder);
   /// \todo add a location to the runtime error description
   std::string errdsc = "index out of bounds\n";
   auto *one = env.instruction_builder->getInt64(1);
-  RuntimeError(errdsc, one, runtime_error_env);
+  RuntimeError(errdsc, one, *runtime_error_env);
   // this branch will not be reached, however it needs
   // to exist for the basic block to be considered complete
   // by llvm.
-  runtime_error_env.instruction_builder->CreateBr(after_BB);
+  runtime_error_env->instruction_builder->CreateBr(after_BB);
 
   env.current_function->getBasicBlockList().push_back(after_BB);
   env.instruction_builder->SetInsertPoint(after_BB);

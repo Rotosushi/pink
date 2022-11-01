@@ -14,6 +14,8 @@ namespace pink {
 /**
  * @brief Represents a Block of expressions
  *
+ * \todo #CPP blocks can be lowered to blocks
+ *
  */
 class Block : public Ast {
 private:

@@ -32,12 +32,12 @@ auto ArraySubscript(llvm::StructType *array_type, llvm::Type *element_type,
   auto then_insertion_point = then_BB->getFirstInsertionPt();
   auto then_builder =
       std::make_shared<llvm::IRBuilder<>>(then_BB, then_insertion_point);
-  Environment then_env(env, then_builder);
+  auto then_env = Environment::NewLocalEnv(env, then_builder);
 
   std::string errdsc = "index out of bounds\n";
   auto *one = env.instruction_builder->getInt64(1);
-  RuntimeError(errdsc, one, then_env);
-  then_env.instruction_builder->CreateBr(after_BB);
+  RuntimeError(errdsc, one, *then_env);
+  then_env->instruction_builder->CreateBr(after_BB);
 
   env.current_function->getBasicBlockList().push_back(after_BB);
 

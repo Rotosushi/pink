@@ -12,7 +12,7 @@ auto TestSymbolTable(std::ostream &out) -> bool {
   out << "Testing pink::SymbolTable: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   pink::SymbolTable symbol_table(env->bindings.get());
 

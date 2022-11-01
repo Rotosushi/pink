@@ -12,7 +12,7 @@ auto TestInt(std::ostream &out) -> bool {
   out << "Testing pink::Int: \n";
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::NewGlobalEnv(options);
+  auto env = pink::Environment::NewGlobalEnv(options);
 
   // "42;"
   pink::Type *integer_type = env->types->GetIntType();

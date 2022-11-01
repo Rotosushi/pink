@@ -87,7 +87,7 @@ auto Function::TypecheckV(const Environment &env) const
     bindings->Bind(pair.first, pair.second, nullptr);
   }
 
-  auto local_env = std::make_unique<Environment>(env, bindings);
+  auto local_env = Environment::NewLocalEnv(env, bindings);
 
   // type the body with respect to the local_env
   auto body_result = body->Typecheck(*local_env);
@@ -97,7 +97,7 @@ auto Function::TypecheckV(const Environment &env) const
     bindings->Unbind(pair.first);
   }
 
-  for (InternedString fbnd : *local_env->false_bindings) {
+  for (InternedString fbnd : *(local_env->false_bindings)) {
     local_env->bindings->Unbind(fbnd);
   }
   local_env->false_bindings->clear();
@@ -170,7 +170,7 @@ auto Function::Codegen(const Environment &env) const
       std::make_shared<llvm::IRBuilder<>>(entryblock, entrypoint);
 
   auto local_env =
-      std::make_unique<Environment>(env, bindings, local_builder, function);
+      Environment::NewLocalEnv(env, bindings, local_builder, function);
 
   CodegenArgumentInit(*local_env, function, pink_function_type);
 
