@@ -49,6 +49,8 @@ namespace pink {
 // not return into our program.
 //
 void SysExit(llvm::Value *exit_code, const Environment &env) {
+  assert(exit_code != nullptr);
+
   llvm::Type *int64Ty = env.instruction_builder->getInt64Ty();
   llvm::Type *voidTy = env.instruction_builder->getVoidTy();
 

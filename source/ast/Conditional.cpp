@@ -111,7 +111,7 @@ auto Conditional::Codegen(const Environment &env) const
   // branch to the actual last basic block.
   then_BB = env.instruction_builder->GetInsertBlock();
 
-  env.current_function->getBasicBlockList().push_back(else_BB);
+  env.current_function->insert(env.current_function->end(), else_BB);
   env.instruction_builder->SetInsertPoint(else_BB);
   // emit the false branch
   auto second_codegen_result = second->Codegen(env);
@@ -123,7 +123,7 @@ auto Conditional::Codegen(const Environment &env) const
 
   else_BB = env.instruction_builder->GetInsertBlock();
 
-  env.current_function->getBasicBlockList().push_back(merge_BB);
+  env.current_function->insert(env.current_function->end(), merge_BB);
   env.instruction_builder->SetInsertPoint(merge_BB);
 
   auto *phi_node = env.instruction_builder->CreatePHI(result_type, 2, "phi");

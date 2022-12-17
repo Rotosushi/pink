@@ -97,7 +97,8 @@ auto While::Codegen(const Environment &env) const
 
   // 6) set up for emitting the body code into the body basic block
   env.instruction_builder->SetInsertPoint(body_BB);
-  env.current_function->getBasicBlockList().push_back(body_BB);
+  env.current_function->insert(env.current_function->end(), body_BB);
+
   // 7) emit the body code
   Outcome<llvm::Value *, Error> body_codegen_result = body->Codegen(env);
 
@@ -111,7 +112,7 @@ auto While::Codegen(const Environment &env) const
 
   // 9) set up the ir builder to emit code after the while loop
   env.instruction_builder->SetInsertPoint(after_BB);
-  env.current_function->getBasicBlockList().push_back(after_BB);
+  env.current_function->insert(env.current_function->end(), after_BB);
 
   // 10) return the results of the while loop.
   // #NOTE: we could return the result of evaluating the body as the

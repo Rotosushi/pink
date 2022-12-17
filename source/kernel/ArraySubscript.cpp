@@ -6,6 +6,11 @@ namespace pink {
 auto ArraySubscript(llvm::StructType *array_type, llvm::Type *element_type,
                     llvm::Value *array, llvm::Value *index,
                     const Environment &env) -> llvm::Value * {
+  assert(array_type != nullptr);
+  assert(element_type != nullptr);
+  assert(array != nullptr);
+  assert(index != nullptr);
+
   auto *integer_type = env.instruction_builder->getInt64Ty();
 
   auto *array_size_ptr = env.instruction_builder->CreateConstInBoundsGEP2_32(
@@ -39,8 +44,7 @@ auto ArraySubscript(llvm::StructType *array_type, llvm::Type *element_type,
   RuntimeError(errdsc, one, *then_env);
   then_env->instruction_builder->CreateBr(after_BB);
 
-  env.current_function->getBasicBlockList().push_back(after_BB);
-
+  env.current_function->insert(env.current_function->end(), after_BB);
   env.instruction_builder->SetInsertPoint(after_BB);
 
   auto *element = env.instruction_builder->CreateGEP(

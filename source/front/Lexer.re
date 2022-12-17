@@ -136,9 +136,9 @@ auto Lexer::yyloc() -> Location { return loc; }
 
     # TODO: i think this regex will allow for identifiers
             like: this-is-an-ident, follow-with-hyphen
-            but dissallow idents like:
-                    -unop-application-not-an-ident,
-                    binop-application-not-an-ident- more-text
+            but parse identifierss like:
+                    -unop-application-of-an-identifier,
+                    binop-application-of-an-identifier- more-text
 
     hyphen-id = id ('-' id)+;
 */
@@ -189,9 +189,8 @@ auto Lexer::yylex() -> Token {
         "do"    { UpdateLoc(); return Token::Do; }
 
         "."     { UpdateLoc(); return Token::Dot; }
-                ","		{ UpdateLoc(); return Token::Comma; }
-                        ";"		{ UpdateLoc(); return Token::Semicolon;
-       }
+        ","		  { UpdateLoc(); return Token::Comma; }
+        ";"		  { UpdateLoc(); return Token::Semicolon;}
         ":"     { UpdateLoc(); return Token::Colon; }
         "="     { UpdateLoc(); return Token::Equals; }
         ":="    { UpdateLoc(); return Token::ColonEq; }

@@ -6,23 +6,11 @@ namespace pink {
 auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
                     llvm::Value *slice, llvm::Value *index,
                     const Environment &env) -> llvm::Value * {
-  // in order to properly check array access through a slice,
-  // from the perspective of forwards iteration, all we need
-  // to know is the size of the rest of the array which the
-  // slice points too. And that works if all we are expecting
-  // is positive indicies. However, if we are given a negative
-  // index (which is reasonable given the random access nature of
-  // array pointers) then we must know how far we can go in the
-  // reverse direction. This is fairly simple, however it requires
-  // a modification to the slice structure itself. We must store
-  // the size of the entire array and the offset which the slice
-  // points too. Then, bounds checking the first is a simple matter
-  // of seeing if the offset plus the index is greater than the
-  // bounds, or if the offset minus the index is greater than zero.
-  // which we can note is only possible if the index is a negative
-  // value. so, we must make a choice here, is the defualt integer
-  // type signed or unsigned? and how do we transmit that information
-  // to this method?
+  assert(slice_type != nullptr);
+  assert(element_type != nullptr);
+  assert(slice != nullptr);
+  assert(index != nullptr);
+
   // if (bounds <= (index + offset) || (index + offset) < 0)
   //    RuntimeError("index out of bounds");
   //
@@ -77,7 +65,8 @@ auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
   // by llvm.
   runtime_error_env->instruction_builder->CreateBr(after_BB);
 
-  env.current_function->getBasicBlockList().push_back(after_BB);
+  // nv.current_function->getBasicBlockList().push_back(after_BB);
+  env.current_function->insert(env.current_function->end(), after_BB);
   env.instruction_builder->SetInsertPoint(after_BB);
 
   auto *element = env.instruction_builder->CreateGEP(

@@ -425,10 +425,11 @@ auto TestBinopBooleanArithmetic(std::ostream &out, int numIter,
 
 auto TestArrayCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
     -> bool {
+  std::uniform_int_distribution<> zero_to_fifty(0, 50);
   bool result = true;
   for (int i = 0; i < numIter; i++) {
-    int array[5] = {rand() % 50, rand() % 50, rand() % 50, rand() % 50,
-                    rand() % 50};
+    int array[5] = {zero_to_fifty(gen), zero_to_fifty(gen), zero_to_fifty(gen),
+                    zero_to_fifty(gen), zero_to_fifty(gen)};
     int idx1 = rand() % 5, idx2 = rand() % 5;
     std::string idx1str = std::to_string(idx1), idx2str = std::to_string(idx2);
     std::string num1str = std::to_string(array[idx1]),
@@ -449,7 +450,7 @@ auto TestArrayCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
     teststr += "b := a[" + idx1str + "];";
     teststr += "c := a[" + idx2str + "];";
     teststr += "b + c;};";
-    
+
     std::string descstr = "Allocating an array, [";
     descstr += arr0str + ",";
     descstr += arr1str + ",";

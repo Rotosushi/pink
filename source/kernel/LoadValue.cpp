@@ -3,6 +3,9 @@
 namespace pink {
 auto LoadValue(llvm::Type *type, llvm::Value *value, const Environment &env)
     -> llvm::Value * {
+  assert(type != nullptr);
+  assert(value != nullptr);
+
   // #RULE we can only load single value types
   if (type->isSingleValueType()) {
     // #RULE assignment needs a pointer on the left to perform assignment

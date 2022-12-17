@@ -106,7 +106,7 @@ public:
   void SetBuf(std::string &buf);
 
   /**
-   * @brief Appends the buffer with the given input text
+   * @brief Appends the given text onto the buffer
    *
    * This routine handles the possibility of iterator invalidation.
    * The buffer is extended to hold the new contents in addition to

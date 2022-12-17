@@ -132,7 +132,7 @@ auto Application::Codegen(const Environment &env) const
 
   std::vector<llvm::Value *> arg_values;
 
-  for (const auto &arg : *this) {
+  for (const auto &arg : arguments) {
     Outcome<llvm::Value *, Error> arg_result = arg->Codegen(env);
 
     if (!arg_result) {

@@ -6,18 +6,13 @@
  */
 #pragma once
 #include "aux/Error.h"
-#include <utility> //
+#include <variant> // std::variant
 
 namespace pink {
 
 /**
  * @brief A container holding one of two alternatives, but not both.
  *
- * \warning this class cannot be typed (legally constructed) if both alternative
- * types are the same type. This is fine however, because if you want to
- * return the same type in two different states to represent the return
- * value of a given function, that can be accomplished by simply using that
- * type directly as the return value of that function.
  *
  * @tparam T the first alternative's type
  * @tparam U the second alternative's type
@@ -25,89 +20,64 @@ namespace pink {
 template <class T, class U> class Outcome {
 private:
   /**
-   * @brief which alternative is currently active
-   * true when the first alternative is active
-   * false when the second alternative is active
-   */
-  bool which;
-
-  /**
-   * @brief the first alternative
+   * @brief holds
    *
    */
-  T one;
-
-  /**
-   * @brief the second alternative
-   *
-   */
-  U two;
+  std::variant<std::monostate, T, U> member;
 
 public:
   /**
-   * @brief there is no way to construct an Outcome without providing one of the
-   * alternatives
+   * @brief constructs an empty variant
    *
+   * \warning a default constructed Outcome is not safe to access
    */
-  Outcome() = delete;
+  Outcome() noexcept = default;
 
   /**
    * @brief Destroy the Outcome
    *
    */
-  ~Outcome() = default;
+  ~Outcome() noexcept = default;
 
   /**
    * @brief Construct a new Outcome, holding a first alternative equal to t
    *
    * @param one the value of the first alternative
    */
-  Outcome(const T &one) : which(true), one(one), two() {}
+  Outcome(const T &one) noexcept : member(one) {}
 
   /**
    * @brief Construct a new Outcome, holding a first alternative equal to t
    *
    * @param one the value of the first alternative
    */
-  Outcome(T &&one) : which(true), one(std::forward<T>(one)), two() {}
+  Outcome(T &&one) noexcept : member(std::forward<T>(one)) {}
 
   /**
    * @brief Construct a new Outcome, holding a second alternative equal to u
    *
    * @param two the value of the second alternative
    */
-  Outcome(const U &two) : which(false), one(), two(two) {}
+  Outcome(const U &two) noexcept : member(two) {}
 
   /**
    * @brief Construct a new Outcome, holding a second alternative equal to u
    *
    * @param two the value of the second alternative
    */
-  Outcome(U &&two) : which(false), one(), two(std::forward<U>(two)) {}
+  Outcome(U &&two) noexcept : member(std::forward<U>(two)) {}
 
   /**
    * @brief Construct a new Outcome, equal to another outcome
    *
    * @param other the other Outcome to copy the contents of
    */
-  Outcome(const Outcome &other) : which(other.which) {
-    if (which) {
-      one = other.one;
-    } else {
-      two = other.two;
-    }
-  }
+  Outcome(const Outcome &other) noexcept : member(other.member) {}
 
   /**
    * @copydoc Outcome::Outcome(const Outcome& other)
    */
-  Outcome(Outcome &&other) noexcept : which(other.which) {
-    if (which) {
-      one = other.one;
-    } else {
-      two = other.two;
-    }
-  }
+  Outcome(Outcome &&other) noexcept : member(std::move(other.member)) {}
 
   /**
    * @brief Assign this Outcome to the value of the given first alternative t
@@ -115,9 +85,13 @@ public:
    * @param one the value of the first alternative
    * @return Outcome& this Outcome
    */
-  auto operator=(const T &elem) -> Outcome & {
-    which = true;
-    one = elem;
+  auto operator=(const T &element) noexcept -> Outcome & {
+    member = element;
+    return *this;
+  }
+
+  auto operator=(T &&element) noexcept -> Outcome & {
+    member = std::move(element);
     return *this;
   }
 
@@ -127,9 +101,13 @@ public:
    * @param two the value of the second alternative
    * @return Outcome& this Outcome
    */
-  auto operator=(const U &elem) -> Outcome & {
-    which = false;
-    two = elem;
+  auto operator=(const U &element) noexcept -> Outcome & {
+    member = element;
+    return *this;
+  }
+
+  auto operator=(U &&element) noexcept -> Outcome & {
+    member = std::move(element);
     return *this;
   }
 
@@ -139,15 +117,8 @@ public:
    * @param other the other Outcome to copy
    * @return Outcome& this Outcome
    */
-  auto operator=(const Outcome &other) -> Outcome & {
-    which = other.which;
-
-    if (which) {
-      one = other.one;
-    } else {
-      two = other.two;
-    }
-
+  auto operator=(const Outcome &other) noexcept -> Outcome & {
+    member = other.member;
     return *this;
   }
 
@@ -155,14 +126,7 @@ public:
    * @copydoc Outcome::operator=(const Outcome& other)
    */
   auto operator=(Outcome &&other) noexcept -> Outcome & {
-    which = other.which;
-
-    if (which) {
-      one = std::move(other.one);
-    } else {
-      two = std::move(other.two);
-    }
-
+    member = std::move(other.member);
     return *this;
   }
 
@@ -172,7 +136,7 @@ public:
    * @return true when the first alternative is held
    * @return false when the second alternative is held
    */
-  operator bool() { return which; }
+  operator bool() { return std::holds_alternative<T>(member); }
 
   /**
    * @brief Get which alternative is held
@@ -180,7 +144,7 @@ public:
    * @return true when the first alternative is held
    * @return false when the second alternative is held
    */
-  auto GetWhich() -> bool { return which; }
+  auto GetWhich() -> bool { return std::holds_alternative<T>(member); }
 
   /**
    * @brief Get the first alternative
@@ -188,12 +152,11 @@ public:
    * @return T& the member t
    */
   auto GetFirst() -> T & {
-    if (which) {
-      return one;
+    if (std::holds_alternative<T>(member)) {
+      return std::get<T>(member);
     }
 
     FatalError("Bad Outcome Access", __FILE__, __LINE__);
-    return one; // suppress warning
   }
 
   /**
@@ -202,11 +165,11 @@ public:
    * @return U& the member u
    */
   auto GetSecond() -> U & {
-    if (which) {
-      FatalError("Bad Outcome Access", __FILE__, __LINE__);
-      return two; // suppress warning
+    if (std::holds_alternative<U>(member)) {
+      return std::get<U>(member);
     }
-    return two;
+
+    FatalError("Bad Outcome Access", __FILE__, __LINE__);
   }
 };
 } // namespace pink

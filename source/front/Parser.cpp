@@ -342,7 +342,7 @@ auto Parser::ParseTop(const Environment &env)
   if (Peek(Token::Var)) {
     return ParseBind(env);
   }
-  /// \note  is is worth it to attempt to parse the bad expression
+  /// \note  is it worth it to attempt to parse the bad expression
   /// such that we don't leave the parser at the error we encountered?
   /// as it stands now we can only handle a single parse error before
   /// we bail. if we wanted to display more than the first error
@@ -853,7 +853,7 @@ auto Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence,
   BinopLiteral *peek_lit = nullptr;
 
   //
-  while (TokenToBool(tok) && (tok == Token::Op) &&
+  while ((tok == Token::Op) &&
          ((peek_str = env.operators->Intern(txt)) != nullptr) &&
          (peek_opt = env.binops->Lookup(peek_str)) && (peek_opt.has_value()) &&
          ((peek_lit = peek_opt->second) != nullptr) &&
@@ -869,7 +869,7 @@ auto Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence,
       return rhs.GetSecond();
     }
 
-    while (TokenToBool(tok) && (tok == Token::Op) &&
+    while ((tok == Token::Op) &&
            ((peek_str = env.operators->Intern(txt)) != nullptr) &&
            (peek_opt = env.binops->Lookup(peek_str)) &&
            (peek_opt.has_value()) &&
@@ -883,7 +883,8 @@ auto Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence,
         return temp.GetSecond();
       }
       // get overload resolution to select move assignment
-      rhs = Outcome<std::unique_ptr<Ast>, Error>(std::move(temp.GetFirst()));
+      // rhs = Outcome<std::unique_ptr<Ast>, Error>(std::move(temp.GetFirst()));
+      rhs = std::move(temp.GetFirst());
     }
 
     const Location &rhs_loc = rhs.GetFirst()->GetLoc();

@@ -20,6 +20,8 @@ namespace pink {
 // emit both strings. (similar to how we handle Syntax/Type/Semantic Errors.)
 void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
                   const Environment &env) {
+  assert(exit_code != nullptr);
+
   auto *error_string = AllocateGlobalText(Gensym(), error_description, env);
   auto size = error_description.size() + 1;
   auto *character_type = env.types->GetCharacterType();

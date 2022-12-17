@@ -7,6 +7,7 @@ namespace pink {
 auto AllocateVariable(const std::string &name, llvm::Type *type,
                       const Environment &env, llvm::Value *initializer)
     -> llvm::Value * {
+  assert(type != nullptr);
   if (env.current_function == nullptr) {
     return AllocateGlobal(name, type, env, initializer);
   }
@@ -35,6 +36,7 @@ auto AllocateGlobal(const std::string &name, llvm::Type *type,
 auto AllocateLocal(const std::string &name, llvm::Type *type,
                    const Environment &env, llvm::Value *initializer)
     -> llvm::AllocaInst * {
+  assert(env.current_function != nullptr);
   auto *insertion_block = &(env.current_function->getEntryBlock());
   auto insertion_point = insertion_block->getFirstInsertionPt();
   llvm::IRBuilder local_builder(insertion_block, insertion_point);

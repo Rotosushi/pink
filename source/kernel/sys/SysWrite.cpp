@@ -8,6 +8,10 @@ namespace pink {
 auto SysWriteSlice(llvm::Value *file_descriptor, llvm::StructType *slice_type,
                    llvm::Value *slice_ptr, const Environment &env)
     -> llvm::Value * {
+  assert(file_descriptor != nullptr);
+  assert(slice_type != nullptr);
+  assert(slice_ptr != nullptr);
+
   llvm::Type *pointer_type = env.instruction_builder->getPtrTy();
   llvm::Type *integer_type = env.instruction_builder->getInt64Ty();
   // before we can emit inline assembly, we first have to load
@@ -34,6 +38,10 @@ auto SysWriteSlice(llvm::Value *file_descriptor, llvm::StructType *slice_type,
 auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
                   llvm::Value *text_ptr, const Environment &env)
     -> llvm::Value * {
+  assert(file_descriptor != nullptr);
+  assert(text_type != nullptr);
+  assert(text_ptr != nullptr);
+
   llvm::Type *integer_type = env.instruction_builder->getInt64Ty();
 
   auto *text_size_ptr = env.instruction_builder->CreateConstInBoundsGEP2_32(
@@ -57,6 +65,9 @@ auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
 // ; then rax holds the result
 auto SysWrite(llvm::Value *file_descriptor, llvm::Value *size,
               llvm::Value *buffer, const Environment &env) -> llvm::Value * {
+  assert(file_descriptor != nullptr);
+  assert(size != nullptr);
+  assert(buffer != nullptr);
   assert(file_descriptor->getType()->isIntegerTy(64));
   assert(size->getType()->isIntegerTy(64));
   assert(buffer->getType()->isPointerTy());
@@ -76,8 +87,7 @@ auto SysWrite(llvm::Value *file_descriptor, llvm::Value *size,
       llvm::FunctionType::get(integer_type, {integer_type}, false);
   auto *mov_rax_type =
       llvm::FunctionType::get(integer_type, {integer_type}, false);
-  auto *syscall_asm_type =
-      llvm::FunctionType::get(integer_type, llvm::None, false);
+  auto *syscall_asm_type = llvm::FunctionType::get(integer_type, false);
 
   assert(syscall_asm_type->getNumParams() == 0);
 
@@ -153,24 +163,10 @@ auto SysWrite(llvm::Value *file_descriptor, llvm::Value *size,
       /* hasSideEffects = */ true, /* isAlignStack = */ false,
       llvm::InlineAsm::AD_Intel, /* canThrow = */ false);
 
-  // lets hope the order we emit these don't destroy the results
-  // of any instructions emitted earlier!
-
-  // this line is causing an assertion failure. the assertion seems to be
-  // checking both the param number and the type of the param.
-  // This is logical. But we are also asserting that size has integer_type
-  // this assertion is passing.
-  // and we declared the function type to pass a single argument, and
-  // we are only passing the single argument size, so what is causing the
-  // assertion failure? upon further testing it seems that the third
-  // inline asm statement we are emitting is causing the assertion
-  // failure. no matter which instruction it is. The assertion error
-  // moves when I change the constraint codes of the syscall instruction.
   env.instruction_builder->CreateCall(mov_rax_type, mov_rax, {sys_write});
   env.instruction_builder->CreateCall(mov_rdi_type, mov_rdi, {file_descriptor});
   env.instruction_builder->CreateCall(mov_rdx_type, mov_rdx, {size});
   env.instruction_builder->CreateCall(mov_rsi_type, mov_rsi, {buffer});
-  return env.instruction_builder->CreateCall(syscall_asm_type, syscall,
-                                             llvm::None);
+  return env.instruction_builder->CreateCall({syscall_asm_type, syscall});
 }
 } // namespace pink

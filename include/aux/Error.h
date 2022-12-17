@@ -222,11 +222,11 @@ public:
  * @param file the file this error occured within
  * @param line the line this error occured within
  */
-void FatalError(const char *dsc, const char *file, size_t line);
+[[noreturn]] void FatalError(const char *dsc, const char *file, size_t line);
 
 /**
  * @copydoc FatalError(const char* dsc, const char * file, size_t line)
  */
-void FatalError(const std::string &dsc, const char *file, size_t line);
+[[noreturn]] void FatalError(const std::string &dsc, const char *file, size_t line);
 
 } // namespace pink

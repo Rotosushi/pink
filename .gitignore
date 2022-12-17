@@ -14,6 +14,7 @@
 
 # Project specific ignores
 build/
+.cache
 test/CMakeFiles/
 test/Makefile
 test/pink-test
