@@ -12,7 +12,9 @@ Binop::Binop(const Location &location, InternedString opr,
     : Ast(Ast::Kind::Binop, location), op(opr), left(std::move(left)),
       right(std::move(right)) {}
 
-void Binop::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+void Binop::Accept(const ConstAstVisitor *visitor) const {
+  visitor->Visit(this);
+}
 
 auto Binop::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Binop;

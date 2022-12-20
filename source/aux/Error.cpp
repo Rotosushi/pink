@@ -123,7 +123,7 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
            "identical type";
   case Error::Code::WhileTestTypeMismatch:
     return "Type Error: While loop's test expression must have type Bool";
-  case Error::Code::DotLeftIsNotAStruct:
+  case Error::Code::DotLeftIsNotATuple:
     return "Type Error: Dot operator's right hand side must be a tuple";
   case Error::Code::DotRightIsNotAnInt:
     return "Type Error: Dot operator's left hand side must be an integer when "

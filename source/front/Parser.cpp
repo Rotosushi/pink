@@ -1087,15 +1087,15 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
     break;
   }
 
-  // #RULE Token::IntType is the type Int
-  case Token::IntType: {
+  // #RULE Token::IntegerType is the type Int
+  case Token::IntegerType: {
     nexttok(); // Eat "Int"
     return {env.types->GetIntType()};
     break;
   }
 
-  // #RULE Token::BoolType is the type Bool
-  case Token::BoolType: {
+  // #RULE Token::BooleanType is the type Bool
+  case Token::BooleanType: {
     nexttok(); // Eat "Bool"
     return {env.types->GetBoolType()};
     break;

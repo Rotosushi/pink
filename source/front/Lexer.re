@@ -174,10 +174,10 @@ auto Lexer::yylex() -> Token {
     /*!re2c
         "nil"   { UpdateLoc(); return Token::Nil; }
         "Nil"   { UpdateLoc(); return Token::NilType; }
-        "Int"   { UpdateLoc(); return Token::IntType; }
+        "Int"   { UpdateLoc(); return Token::IntegerType; }
         "true"  { UpdateLoc(); return Token::True; }
         "false" { UpdateLoc(); return Token::False; }
-        "Bool"  { UpdateLoc(); return Token::BoolType; }
+        "Bool"  { UpdateLoc(); return Token::BooleanType; }
         "ptr"   { UpdateLoc(); return Token::Ptr; }
 
         "fn"	{ UpdateLoc(); return Token::Fn; }

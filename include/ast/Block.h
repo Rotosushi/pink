@@ -14,8 +14,6 @@ namespace pink {
 /**
  * @brief Represents a Block of expressions
  *
- * \todo #CPP blocks can be lowered to blocks
- *
  */
 class Block : public Ast {
 private:
@@ -32,18 +30,12 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief the sequence of statements composing the block
    *
    */
   std::vector<std::unique_ptr<Ast>> statements;
-
-public:
-  /**
-   * @brief an iterator over the statements within the block
-   *
-   */
-  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
 
   /**
    * @brief Construct a new empty Block
@@ -80,21 +72,34 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
+
+  /**
+   * @brief an iterator over the statements within the block
+   *
+   */
+  using iterator = std::vector<std::unique_ptr<Ast>>::iterator;
+  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
 
   /**
    * @brief Get the iterator to the beginning of the block
    *
    * @return iterator the iterator to the beginning of the block
    */
-  [[nodiscard]] auto begin() const -> const_iterator;
+  [[nodiscard]] auto begin() -> iterator { return statements.begin(); }
+  [[nodiscard]] auto cbegin() const -> const_iterator {
+    return statements.cbegin();
+  }
 
   /**
    * @brief Get the iterator to the end of the block
    *
    * @return iterator the iterator to the end of the block
    */
-  [[nodiscard]] auto end() const -> const_iterator;
+  [[nodiscard]] auto end() -> iterator { return statements.end(); }
+  [[nodiscard]] auto cend() const -> const_iterator {
+    return statements.cend();
+  }
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

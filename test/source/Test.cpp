@@ -428,11 +428,11 @@ void Testbench::PrintTypePassedTests(std::ostream &out) const {
   }
   if (RanTest(Testbench::integer_type)) {
     result &=
-        Test(out, "pink::IntType", GetTestResult(Testbench::integer_type));
+        Test(out, "pink::IntegerType", GetTestResult(Testbench::integer_type));
   }
   if (RanTest(Testbench::boolean_type)) {
     result &=
-        Test(out, "pink::BoolType", GetTestResult(Testbench::boolean_type));
+        Test(out, "pink::BooleanType", GetTestResult(Testbench::boolean_type));
   }
   if (RanTest(Testbench::function_type)) {
     result &= Test(out, "pink::FunctionType",

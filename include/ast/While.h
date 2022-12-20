@@ -11,12 +11,11 @@ namespace pink {
 /**
  * @brief Represents an instance of a While loop
  *
- * \todo #CPP can be lowered to a cpp while statement
  */
 class While : public Ast {
 private:
   /**
-   * @brief Compute the Type of this While 
+   * @brief Compute the Type of this While
    *
    * @param env the environment of this compilation unit
    * @return Outcome<Type*, Error> if true the Type of this While expression,
@@ -25,6 +24,7 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief The test expression of the While
    *
@@ -37,7 +37,6 @@ private:
    */
   std::unique_ptr<Ast> body;
 
-public:
   /**
    * @brief Construct a new While
    *
@@ -71,7 +70,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Compute the cannonical string representation of this While

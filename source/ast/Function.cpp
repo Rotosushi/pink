@@ -24,7 +24,9 @@ Function::Function(const Location &location, const InternedString name,
       arguments(std::move(arguments)), body(std::move(body)),
       bindings(std::make_shared<SymbolTable>(outer_scope)) {}
 
-void Function::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+void Function::Accept(const ConstAstVisitor *visitor) const {
+  visitor->Visit(this);
+}
 
 auto Function::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Function;

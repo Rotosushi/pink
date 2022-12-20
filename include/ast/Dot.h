@@ -27,6 +27,7 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief the left hand side expression
    *
@@ -41,7 +42,6 @@ private:
    */
   std::unique_ptr<Ast> right;
 
-public:
   /**
    * @brief Construct a new Dot
    *
@@ -75,7 +75,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

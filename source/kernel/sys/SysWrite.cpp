@@ -92,7 +92,7 @@ auto SysWrite(llvm::Value *file_descriptor, llvm::Value *size,
   assert(syscall_asm_type->getNumParams() == 0);
 
   llvm::InlineAsm *mov_rdi = nullptr;
-  if (auto *constant_fd = llvm::dyn_cast<llvm::ConstantInt>(file_descriptor)) {
+  if (llvm::isa<llvm::ConstantInt>(file_descriptor)) {
     if (auto error = llvm::InlineAsm::verify(mov_rdi_type, "={rdi},i")) {
       std::string errstr =
           "constraint code [={rdi},i] for inline asm [mov rdi, "

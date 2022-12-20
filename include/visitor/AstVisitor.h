@@ -22,41 +22,6 @@
 namespace pink {
 
 /**
- * @brief Allows the visitor class to "return" a value, which can be
- * polymorphic per visitor class.
- *
- * @tparam Visitor the visitor inheriting from AstVisitorResult
- * @tparam Ptr the pointer type of this visitor
- * @tparam ResultType the result type of this visitor
- */
-template <class Visitor, class Ptr, class ResultType> class AstVisitorResult {
-public:
-  /**
-   * @brief Calls Accept just like in the normal visitor pattern,
-   *  except it can return a result value with templated type.
-   *  thus, different visitors can compute different result types.
-   *
-   * @param ptr the pointer to call Accept on
-   * @return ResultType the result of the call to Accept
-   */
-  inline auto Compute(Ptr ptr) const -> ResultType {
-    Visitor visitor;
-    ptr->Accept(&visitor);
-    return visitor.result;
-  }
-
-  /**
-   * @brief Mimics a polymorphic return type for "Accept"
-   *
-   * @param result the result value to return.
-   */
-  inline void Return(ResultType result) const { this->result = result; }
-
-private:
-  mutable ResultType result;
-};
-
-/**
  * @brief An AstVisitor implements this interface
  *
  * \note the visitor pattern is useful in the sense that
@@ -97,7 +62,7 @@ private:
  * of a private data member, just to allow another class to implement
  * behavior over the tree.
  */
-class AstVisitor {
+class ConstAstVisitor {
 public:
   virtual void Visit(const Application *application) const = 0;
   virtual void Visit(const Array *array) const = 0;
@@ -117,11 +82,11 @@ public:
   virtual void Visit(const Variable *variable) const = 0;
   virtual void Visit(const While *loop) const = 0;
 
-  AstVisitor() = default;
-  AstVisitor(const AstVisitor &other) = default;
-  AstVisitor(AstVisitor &&other) = default;
-  auto operator=(const AstVisitor &other) -> AstVisitor & = default;
-  auto operator=(AstVisitor &&other) -> AstVisitor & = default;
-  virtual ~AstVisitor() = default;
+  ConstAstVisitor() = default;
+  ConstAstVisitor(const ConstAstVisitor &other) = default;
+  ConstAstVisitor(ConstAstVisitor &&other) = default;
+  auto operator=(const ConstAstVisitor &other) -> ConstAstVisitor & = default;
+  auto operator=(ConstAstVisitor &&other) -> ConstAstVisitor & = default;
+  virtual ~ConstAstVisitor() = default;
 };
 } // namespace pink

@@ -15,7 +15,9 @@ Array::Array(const Location &location,
              std::vector<std::unique_ptr<Ast>> members)
     : Ast(Ast::Kind::Array, location), members(std::move(members)) {}
 
-void Array::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+void Array::Accept(const ConstAstVisitor *visitor) const {
+  visitor->Visit(this);
+}
 
 auto Array::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Array;
@@ -47,7 +49,7 @@ auto Array::ToString() const -> std::string {
 auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   size_t idx = 0;
   std::vector<Type *> member_types;
-  
+
   for (const auto &memb : members) {
     Outcome<Type *, Error> member_type_result = memb->Typecheck(env);
     if (!member_type_result) {

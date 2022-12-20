@@ -9,7 +9,7 @@ namespace pink {
 Int::Int(const Location &location, const long long value)
     : Ast(Ast::Kind::Int, location), value(value) {}
 
-void Int::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+void Int::Accept(const ConstAstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Int::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Int;

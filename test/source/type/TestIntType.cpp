@@ -29,7 +29,7 @@ bool TestIntType(std::ostream &out) {
 
   */
 
-  pink::IntType a;
+  pink::IntegerType a;
 
   result &=
       Test(out, "IntType::GetKind()", a.GetKind() == pink::Type::Kind::Int);

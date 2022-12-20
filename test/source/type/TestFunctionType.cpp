@@ -11,8 +11,8 @@ auto TestFunctionType(std::ostream &out) -> bool {
   out << "\n-----------------------\n";
   out << "Testing pink::FunctionType: \n";
 
-  auto integer_type = std::make_unique<pink::IntType>();
-  auto boolean_type = std::make_unique<pink::BoolType>();
+  auto integer_type = std::make_unique<pink::IntegerType>();
+  auto boolean_type = std::make_unique<pink::BooleanType>();
 
   std::vector<pink::Type *> arg_tys0({integer_type.get(), integer_type.get()});
 

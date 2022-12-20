@@ -29,7 +29,7 @@ private:
    * position of each flag. that is, the first enum member defined gets position
    * 0, the next position 1, and so on.
    */
-  enum Kind : size_t {
+  enum Kind : char {
     LHSOfAssignment,
     inAddressOf,
     inDereferencePtr,

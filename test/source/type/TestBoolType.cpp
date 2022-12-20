@@ -29,7 +29,7 @@ bool TestBoolType(std::ostream &out) {
 
   */
 
-  pink::BoolType a;
+  pink::BooleanType a;
 
   result &=
       Test(out, "BoolType::GetKind()", a.GetKind() == pink::Type::Kind::Bool);

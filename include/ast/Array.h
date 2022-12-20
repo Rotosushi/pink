@@ -82,12 +82,6 @@ namespace pink {
 class Array : public Ast {
 private:
   /**
-   * @brief The members of the array
-   *
-   */
-  std::vector<std::unique_ptr<Ast>> members;
-
-  /**
    * @brief Compute the Type of the Array expression.
    *
    * @param env the environment of this compilation unit
@@ -98,6 +92,12 @@ private:
       -> Outcome<Type *, Error> override;
 
 public:
+  /**
+   * @brief The members of the array
+   *
+   */
+  std::vector<std::unique_ptr<Ast>> members;
+
   /**
    * @brief Construct a new Array
    *
@@ -128,28 +128,31 @@ public:
    * @brief only support const_iterator usage
    *
    */
-  using iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+  using iterator = std::vector<std::unique_ptr<Ast>>::iterator;
+  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
 
   /**
    * @brief iterator to beginning of array members
    *
    * @return iterator to beginning of array members
    */
-  auto begin() const -> iterator { return members.cbegin(); }
+  auto begin() -> iterator { return members.begin(); }
+  auto cbegin() const -> const_iterator { return members.cbegin(); }
 
   /**
    * @brief iterator to end of array members
    *
    * @return iterator to end of array members
    */
-  auto end() const -> iterator { return members.cend(); }
+  auto end() -> iterator { return members.end(); }
+  auto cend() const -> const_iterator { return members.cend(); }
 
   /**
    * @brief part of the Visitor interface
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

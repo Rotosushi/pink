@@ -12,17 +12,17 @@ auto TypeInterner::GetNilType() -> NilType * {
   return nil_type.get();
 }
 
-auto TypeInterner::GetBoolType() -> BoolType * {
+auto TypeInterner::GetBoolType() -> BooleanType * {
   if (bool_type == nullptr) {
-    bool_type = std::make_unique<BoolType>();
+    bool_type = std::make_unique<BooleanType>();
   }
 
   return bool_type.get();
 }
 
-auto TypeInterner::GetIntType() -> IntType * {
+auto TypeInterner::GetIntType() -> IntegerType * {
   if (int_type == nullptr) {
-    int_type = std::make_unique<IntType>();
+    int_type = std::make_unique<IntegerType>();
   }
 
   return int_type.get();

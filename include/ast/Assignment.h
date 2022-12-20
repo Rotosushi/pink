@@ -9,8 +9,6 @@
 namespace pink {
 /**
  * @brief Represents an Assignment expression
- * 
- * \todo #CPP Assignment can be turned into c++ assignment
  *
  */
 class Assignment : public Ast {
@@ -25,6 +23,7 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief the left hand side of the assignment, the destination
    *
@@ -37,7 +36,6 @@ private:
    */
   std::unique_ptr<Ast> right;
 
-public:
   /**
    * @brief Construct a new Assignment
    *
@@ -71,7 +69,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

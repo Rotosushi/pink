@@ -13,25 +13,25 @@ namespace pink {
 /**
  * @brief [Bool](#Bool) is an [Ast](#Ast) node which represents a boolean value
  *
- * \todo #CPP lowered to bool
  *
  * @headerfile Bool.h "ast/Bool.h"
  */
 class Bool : public Ast {
 private:
   /**
-   * @brief returns [BoolType](#BoolType)
+   * @brief returns [BooleanType](#BooleanType)
    *
    * This function never constructs an [Error](#Error)
    *
    * @param env The [Environment](#Environment) which is used to get a
-   * [BoolType](#BoolType) from the [TypeInterner](#TypeInterner)
-   * @return Outcome<Type*, Error> A [BoolType](#BoolType) from the
+   * [BooleanType](#BooleanType) from the [TypeInterner](#TypeInterner)
+   * @return Outcome<Type*, Error> A [BooleanType](#BooleanType) from the
    * [TypeInterner](#TypeInterner) held in [env](#Environment)
    */
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief represents the state of this boolean value
    *
@@ -39,7 +39,6 @@ private:
    */
   bool value;
 
-public:
   /**
    * @brief Construct a new Bool
    *
@@ -66,7 +65,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node

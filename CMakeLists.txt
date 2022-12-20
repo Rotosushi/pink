@@ -10,8 +10,8 @@ cmake_minimum_required(VERSION 3.10)
 project(pink LANGUAGES C CXX VERSION 0.1 DESCRIPTION "A small Programming Language, Exploring Functions as Values")
 
 set(CMAKE_C_STANDARD 11)
-# since this project uses some c++17 features
-set(CMAKE_CXX_STANDARD 17)
+# since this project uses some c++20 features
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 message(STATUS "using c compiler: ${CMAKE_C_COMPILER}")
@@ -91,7 +91,7 @@ include_directories(include)
 configure_file(include/PinkConfig.h.in ../include/PinkConfig.h)
 
 
-add_library(libpink STATIC
+add_library(common STATIC
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
@@ -99,6 +99,7 @@ add_library(libpink STATIC
 	source/ast/Array.cpp
 	source/ast/Assignment.cpp
 	source/ast/Ast.cpp
+	source/ast/AstToString.cpp
 	source/ast/Bind.cpp
 	source/ast/Binop.cpp
 	source/ast/Block.cpp
@@ -110,6 +111,8 @@ add_library(libpink STATIC
 	source/ast/Nil.cpp
 	source/ast/Subscript.cpp
 	source/ast/Tuple.cpp
+  source/ast/Typecheck.cpp
+  source/ast/TypecheckVisitor.cpp
 	source/ast/Unop.cpp
 	source/ast/Variable.cpp
 	source/ast/While.cpp
@@ -185,32 +188,31 @@ add_library(libpink STATIC
 	source/support/Gensym.cpp
 
 	source/visitor/AstVisitor.cpp
-	source/visitor/AstToString.cpp
 )
 			   
 
-set_target_properties(libpink PROPERTIES SOVERSION ${PROJECT_VERSION})
+set_target_properties(common PROPERTIES SOVERSION ${PROJECT_VERSION})
 
-set_target_properties(libpink PROPERTIES PUBLIC_HEADER include/libpink.h)
+set_target_properties(common PROPERTIES PUBLIC_HEADER include/common.h)
 
-set_target_properties(libpink PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
+set_target_properties(common PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
 
 
 set_property(
-	TARGET libpink 
+	TARGET common 
 	APPEND
 	PROPERTY ADDITIONAL_CLEAN_FILES source/front/Lexer.cpp
 )
 
 add_link_options(-gdwarf-4)
 
-target_link_options(libpink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
+target_link_options(common PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
 
-target_include_directories(libpink PUBLIC include ${LLVM_LIBRARY_DIRS})
+target_include_directories(common PUBLIC include ${LLVM_LIBRARY_DIRS})
 
-target_link_directories(libpink PUBLIC ${LLVM_LIBRARY_DIRS})
+target_link_directories(common PUBLIC ${LLVM_LIBRARY_DIRS})
 
-target_link_libraries(libpink
+target_link_libraries(common
 #${LLVM_LIBRARY_DIRS}/liblldCommon.a
 #${LLVM_LIBRARY_DIRS}/liblldELF.a
 ${llvm_libs}
@@ -231,7 +233,7 @@ target_link_directories(pink PUBLIC ${LLVM_LIBRARY_DIRS})
 target_link_libraries(pink
 ${LLVM_LIBRARY_DIRS}/liblldCommon.a
 ${LLVM_LIBRARY_DIRS}/liblldELF.a
-libpink
+common
 )
 
 target_include_directories(pink PUBLIC

@@ -10,7 +10,7 @@ auto TestPointerType(std::ostream &out) -> bool {
   out << "\n--------------------------------\n";
   out << "Testing pink::PointerType:\n";
 
-  auto integer_type = std::make_unique<pink::IntType>();
+  auto integer_type = std::make_unique<pink::IntegerType>();
   auto pointer_type = std::make_unique<pink::PointerType>(integer_type.get());
 
   result &= Test(out, "PointerType::GetKind()",

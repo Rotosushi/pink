@@ -2,19 +2,19 @@
 #include "aux/Environment.h"
 
 namespace pink {
-BoolType::BoolType() : Type(Type::Kind::Bool) {}
+BooleanType::BooleanType() : Type(Type::Kind::Bool) {}
 
-auto BoolType::classof(const Type *type) -> bool {
+auto BooleanType::classof(const Type *type) -> bool {
   return type->GetKind() == Type::Kind::Bool;
 }
 
-auto BoolType::EqualTo(Type *other) const -> bool {
+auto BooleanType::EqualTo(Type *other) const -> bool {
   return other->GetKind() == Type::Kind::Bool;
 }
 
-auto BoolType::ToString() const -> std::string { return {"Bool"}; }
+auto BooleanType::ToString() const -> std::string { return {"Bool"}; }
 
-auto BoolType::ToLLVM(const Environment &env) const -> llvm::Type * {
+auto BooleanType::ToLLVM(const Environment &env) const -> llvm::Type * {
   return env.instruction_builder->getInt1Ty();
 }
 } // namespace pink

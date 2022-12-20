@@ -1,6 +1,6 @@
 /**
- * @file IntType.h
- * @brief Header for IntType
+ * @file IntegerType.h
+ * @brief Header for IntegerType
  * @version 0.1
  */
 #pragma once
@@ -13,59 +13,59 @@ namespace pink {
  * @brief Represents the Type of Int
  *
  */
-class IntType : public Type {
+class IntegerType : public Type {
 public:
   /**
-   * @brief Construct a new IntType
+   * @brief Construct a new IntegerType
    *
    */
-  IntType();
+  IntegerType();
 
   /**
-   * @brief Destroy the IntType
+   * @brief Destroy the IntegerType
    *
    */
-  ~IntType() override = default;
+  ~IntegerType() override = default;
 
-  IntType(const IntType &other) = default;
+  IntegerType(const IntegerType &other) = default;
 
-  IntType(IntType &&other) = default;
+  IntegerType(IntegerType &&other) = default;
 
-  auto operator=(const IntType &other) -> IntType & = default;
+  auto operator=(const IntegerType &other) -> IntegerType & = default;
 
-  auto operator=(IntType &&other) -> IntType & = default;
+  auto operator=(IntegerType &&other) -> IntegerType & = default;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class
    *
    * @param type the type to be tested
-   * @return true if type *is* an instance of IntType
-   * @return false if type *is not* an instance of IntType
+   * @return true if type *is* an instance of IntegerType
+   * @return false if type *is not* an instance of IntegerType
    */
   static auto classof(const Type *type) -> bool;
 
   /**
-   * @brief Computes if other is equivalent to this IntType
+   * @brief Computes if other is equivalent to this IntegerType
    *
    * @param other the other type
-   * @return true if other *is* equivalent to this IntType
-   * @return false if other *is not* equivalent to this IntType
+   * @return true if other *is* equivalent to this IntegerType
+   * @return false if other *is not* equivalent to this IntegerType
    */
   auto EqualTo(Type *other) const -> bool override;
 
   /**
-   * @brief Compute the cannonical string representation of this IntType
+   * @brief Compute the cannonical string representation of this IntegerType
    *
    * @return std::string the string representation
    */
   [[nodiscard]] auto ToString() const -> std::string override;
 
   /**
-   * @brief Compute the llvm::Type equivalent to IntType
+   * @brief Compute the llvm::Type equivalent to IntegerType
    *
    * @param env the environment of this compilation unit
    * @return Outcome<llvm::Type*, Error> if true the llvm::Type equivalent to
-   * IntType, if false then the Error encountered.
+   * IntegerType, if false then the Error encountered.
    */
   [[nodiscard]] auto ToLLVM(const Environment &env) const
       -> llvm::Type * override;

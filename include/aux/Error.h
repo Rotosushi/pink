@@ -68,7 +68,7 @@ public:
     CondTestExprTypeMismatch,
     CondBodyExprTypeMismatch,
     WhileTestTypeMismatch,
-    DotLeftIsNotAStruct,
+    DotLeftIsNotATuple,
     DotRightIsNotAnInt,
     DotIndexOutOfRange,
     SubscriptLeftIsNotSubscriptable,
@@ -227,6 +227,7 @@ public:
 /**
  * @copydoc FatalError(const char* dsc, const char * file, size_t line)
  */
-[[noreturn]] void FatalError(const std::string &dsc, const char *file, size_t line);
+[[noreturn]] void FatalError(const std::string &dsc, const char *file,
+                             size_t line);
 
 } // namespace pink

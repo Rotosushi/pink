@@ -70,8 +70,8 @@ auto TokenToString(const Token token) -> std::string {
   case Token::Int: {
     return {"Token::Int"};
   }
-  case Token::IntType: {
-    return {"Token::IntType"};
+  case Token::IntegerType: {
+    return {"Token::IntegerType"};
   }
   case Token::True: {
     return {"Token::True"};
@@ -79,8 +79,8 @@ auto TokenToString(const Token token) -> std::string {
   case Token::False: {
     return {"Token::False"};
   }
-  case Token::BoolType: {
-    return {"Token::BoolType"};
+  case Token::BooleanType: {
+    return {"Token::BooleanType"};
   }
   case Token::Ptr: {
     return {"Token::Ptr"};

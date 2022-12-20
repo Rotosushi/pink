@@ -4,18 +4,16 @@
 namespace pink {
 /**
  * @brief Implements array subscription
- *
- * \todo can be lowered to array subscription
  */
 class Subscript : public Ast {
 private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   std::unique_ptr<Ast> left;
   std::unique_ptr<Ast> right;
 
-public:
   Subscript(const Location &location, std::unique_ptr<Ast> left,
             std::unique_ptr<Ast> right);
 
@@ -30,7 +28,7 @@ public:
    *
    * @param visitor
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   inline auto GetLeft() const -> const Ast * { return left.get(); }
 

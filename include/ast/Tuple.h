@@ -26,9 +26,6 @@ namespace pink {
  *  greater, and as such we must modify a Function
  *  when necessesary to support returning them by value
  *  from a Function or passing them by value to a Function.
- *
- * \todo #CPP can be lowered to structs, we must have some mechanism for foward
- * declaring the type however
  */
 class Tuple : public Ast {
 private:
@@ -42,13 +39,13 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief The members of this Tuple
    *
    */
   std::vector<std::unique_ptr<Ast>> members;
 
-public:
   /**
    * @brief Construct a new Tuple
    *
@@ -75,18 +72,20 @@ public:
     return members;
   }
 
-  using iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+  using iterator = std::vector<std::unique_ptr<Ast>>::iterator;
+  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
 
-  auto begin() const -> iterator { return members.cbegin(); }
-
-  auto end() const -> iterator { return members.cend(); }
+  auto begin() -> iterator { return members.begin(); }
+  auto cbegin() const -> const_iterator { return members.cbegin(); }
+  auto end() -> iterator { return members.end(); }
+  auto cend() const -> const_iterator { return members.cend(); }
 
   /**
    * @brief part of the Visitor interface
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

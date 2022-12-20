@@ -12,7 +12,7 @@ namespace pink {
  * @brief Represents an instance of a conditional expression
  *
  * \todo #CPP lowered to conditionals
- * 
+ *
  */
 class Conditional : public Ast {
 private:
@@ -26,6 +26,7 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief The test statement of the conditional
    *
@@ -44,7 +45,6 @@ private:
    */
   std::unique_ptr<Ast> second;
 
-public:
   /**
    * @brief Construct a new Conditional
    *
@@ -81,7 +81,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

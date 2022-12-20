@@ -12,8 +12,6 @@ namespace pink {
 /**
  * @brief Represents a Bind expression
  *
- * \todo #CPP bind can be implemented with cpp variable declarations
- * 
  */
 class Bind : public Ast {
 private:
@@ -34,6 +32,7 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief the symbol being bound
    *
@@ -46,7 +45,6 @@ private:
    */
   std::unique_ptr<Ast> affix;
 
-public:
   /**
    * @brief Construct a new Bind
    *
@@ -80,7 +78,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

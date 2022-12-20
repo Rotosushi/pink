@@ -34,14 +34,14 @@ enum class Token {
   LBracket,  // '['
   RBracket,  // ']'
 
-  Nil,      // "nil"
-  NilType,  // "Nil"
-  Int,      // [0-9]+
-  IntType,  // "Int"
-  True,     // "true"
-  False,    // "false"
-  BoolType, // "Bool"
-  Ptr,      // "ptr"
+  Nil,         // "nil"
+  NilType,     // "Nil"
+  Int,         // [0-9]+
+  IntegerType, // "Int"
+  True,        // "true"
+  False,       // "false"
+  BooleanType, // "Bool"
+  Ptr,         // "ptr"
 
   Fn,    // 'fn'
   Var,   // 'var'

@@ -14,7 +14,7 @@ Dot::Dot(const Location &location, std::unique_ptr<Ast> left,
     : Ast(Ast::Kind::Dot, location), left(std::move(left)),
       right(std::move(right)) {}
 
-void Dot::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+void Dot::Accept(const ConstAstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Dot::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Dot;
@@ -73,7 +73,7 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   auto *tuple_type = llvm::dyn_cast<TupleType>(left_type);
   if (left_type == nullptr) {
     std::string errmsg = std::string("left has type: ") + left_type->ToString();
-    return {Error(Error::Code::DotLeftIsNotAStruct, GetLoc(), errmsg)};
+    return {Error(Error::Code::DotLeftIsNotATuple, GetLoc(), errmsg)};
   }
   assert(tuple_type != nullptr);
 
@@ -87,7 +87,6 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
     return {Error(Error::Code::DotRightIsNotAnInt, GetLoc(), errmsg)};
   }
-  assert(index != nullptr);
 
   auto index_value = static_cast<size_t>(index->GetValue());
   if (index_value > tuple_type->member_types.size()) {

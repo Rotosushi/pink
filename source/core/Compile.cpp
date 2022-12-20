@@ -6,6 +6,8 @@
 
 #include "aux/Error.h" // pink::FatalError
 
+#include "ast/Typecheck.h"
+
 #include "llvm/Analysis/AliasAnalysis.h" // llvm::AAManager
 #include "llvm/Passes/PassBuilder.h"     // llvm::PassBuilder
 
@@ -46,8 +48,7 @@ void Compile(const Environment &env) {
       std::string bad_source = env.parser->ExtractLine(error.loc);
       FatalError(error.ToString(bad_source), __FILE__, __LINE__);
     } else {
-      pink::Outcome<pink::Type *, pink::Error> type =
-          term.GetFirst()->Typecheck(env);
+      auto type = Typecheck(term.GetFirst().get(), env);
 
       // if not type and error == use-before-definition
       // {

@@ -11,7 +11,7 @@ Subscript::Subscript(const Location &location, std::unique_ptr<Ast> left,
     : Ast(Ast::Kind::Subscript, location), left(std::move(left)),
       right(std::move(right)) {}
 
-void Subscript::Accept(AstVisitor *visitor) const {
+void Subscript::Accept(const ConstAstVisitor *visitor) const {
   return visitor->Visit(this);
 }
 
@@ -25,7 +25,7 @@ auto Subscript::ToString() const -> std::string {
 
 /*
   lhs has to be an Array or a Slice
-  rhs has to be an Int (or an Int like)
+  rhs has to be an IntegerType
 */
 auto Subscript::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
@@ -35,7 +35,7 @@ auto Subscript::TypecheckV(const Environment &env) const
   }
   Type *rhs_type = rhs_type_result.GetFirst();
   // #RULE we can only index using integer like types.
-  if ((llvm::dyn_cast<IntType>(rhs_type)) == nullptr) {
+  if ((llvm::dyn_cast<IntegerType>(rhs_type)) == nullptr) {
     std::string errmsg =
         "cannot use type: " + rhs_type->ToString() + " as an index";
     return {Error(Error::Code::SubscriptRightIsNotAnIndex, GetLoc(), errmsg)};

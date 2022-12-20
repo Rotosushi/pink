@@ -37,16 +37,16 @@ private:
   std::unique_ptr<NilType> nil_type;
 
   /**
-   * @brief The one instance of a BoolType
+   * @brief The one instance of a BooleanType
    *
    */
-  std::unique_ptr<BoolType> bool_type;
+  std::unique_ptr<BooleanType> bool_type;
 
   /**
-   * @brief The one instance of an IntType
+   * @brief The one instance of an IntegerType
    *
    */
-  std::unique_ptr<IntType> int_type;
+  std::unique_ptr<IntegerType> int_type;
 
   /**
    * @brief The one instance of a CharacterType
@@ -125,18 +125,18 @@ public:
   auto GetNilType() -> NilType *;
 
   /**
-   * @brief Get the instance of a BoolType
+   * @brief Get the instance of a BooleanType
    *
-   * @return BoolType* the BoolType
+   * @return BooleanType* the BooleanType
    */
-  auto GetBoolType() -> BoolType *;
+  auto GetBoolType() -> BooleanType *;
 
   /**
-   * @brief Get the instance of an IntType
+   * @brief Get the instance of an IntegerType
    *
-   * @return IntType* the IntType
+   * @return IntegerType* the IntegerType
    */
-  auto GetIntType() -> IntType *;
+  auto GetIntType() -> IntegerType *;
 
   /**
    * @brief Get the instance of a Character Type

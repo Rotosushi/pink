@@ -11,8 +11,8 @@ auto TestTupleType(std::ostream &out) -> bool {
   out << "\n--------------------------------\n";
   out << "Testing pink::TupleType:\n";
 
-  auto integer_type = std::make_unique<pink::IntType>();
-  auto boolean_type = std::make_unique<pink::BoolType>();
+  auto integer_type = std::make_unique<pink::IntegerType>();
+  auto boolean_type = std::make_unique<pink::BooleanType>();
 
   std::vector<pink::Type *> tuple_elements = {integer_type.get(),
                                               boolean_type.get()};

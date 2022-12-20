@@ -8,7 +8,9 @@ Unop::Unop(const Location &location, InternedString opr,
            std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Unop, location), op(opr), right(std::move(right)) {}
 
-void Unop::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
+void Unop::Accept(const ConstAstVisitor *visitor) const {
+  visitor->Visit(this);
+}
 
 auto Unop::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Unop;

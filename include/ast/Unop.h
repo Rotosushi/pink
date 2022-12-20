@@ -27,6 +27,7 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief the Unary Operator this expression represents
    *
@@ -39,8 +40,8 @@ private:
    */
   std::unique_ptr<Ast> right;
 
-public:
   /**
+   *
    * @brief Construct a new Unop
    *
    * @param location the textual location of this Unop expression
@@ -72,7 +73,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

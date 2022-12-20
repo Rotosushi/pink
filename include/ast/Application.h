@@ -16,18 +16,6 @@ namespace pink {
 class Application : public Ast {
 private:
   /**
-   * @brief The function to call
-   *
-   */
-  std::unique_ptr<Ast> callee;
-
-  /**
-   * @brief The arguments to pass
-   *
-   */
-  std::vector<std::unique_ptr<Ast>> arguments;
-
-  /**
    * @brief Compute the Type of this Application expression
    *
    * If all the given argument types match the functions formal argument
@@ -42,6 +30,18 @@ private:
       -> Outcome<Type *, Error> override;
 
 public:
+  /**
+   * @brief The function to call
+   *
+   */
+  std::unique_ptr<Ast> callee;
+
+  /**
+   * @brief The arguments to pass
+   *
+   */
+  std::vector<std::unique_ptr<Ast>> arguments;
+
   /**
    * @brief Construct a new Application
    *
@@ -72,7 +72,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   auto GetCallee() const -> const Ast * { return callee.get(); }
 
@@ -80,25 +80,24 @@ public:
     return arguments;
   }
 
-  /**
-   * @brief only support const_iterator usage
-   *
-   */
-  using iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+  using iterator = std::vector<std::unique_ptr<Ast>>::iterator;
+  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
 
   /**
    * @brief iterator to beginning of arguments
    *
-   * @return iterator arguments.cbegin()
+   * @return iterator arguments.begin()
    */
-  auto begin() const -> iterator { return arguments.cbegin(); }
+  auto begin() -> iterator { return arguments.begin(); }
+  auto cbegin() const -> const_iterator { return arguments.cbegin(); }
 
   /**
    * @brief iterator to end of arguments
    *
-   * @return iterator arguments.cend()
+   * @return iterator arguments.end()
    */
-  auto end() const -> iterator { return arguments.cend(); }
+  auto end() -> iterator { return arguments.end(); }
+  auto cend() const -> const_iterator { return arguments.cend(); }
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

@@ -4,12 +4,14 @@
 namespace pink {
 
 /**
- * @brief Essentially std::find_if except that it compares two values
- * where each value is held in a separate range.
+ * @brief Essentially std::adjacent_find except it get pairs from
+ * two ranges, instead of two adjacent elements in the same range.
+ * given that this operation really only makes sense if the two
+ * ranges are the same size.
  *
  * @tparam InputIterator the iterator type
  * @tparam BinaryPredicate the comparison function type
- * @param begin iterator to beginning of first range
+ * @param cursor iterator to beginning of first range
  * @param end iterator to end of second range
  * @param other iterator to beginning of second range
  * @param predicate the comparison function
@@ -21,16 +23,16 @@ namespace pink {
  * end of both ranges)
  */
 template <class InputIterator, class BinaryPredicate>
-auto FindBetween(InputIterator begin, InputIterator end, InputIterator other,
+auto FindBetween(InputIterator cursor, InputIterator end, InputIterator other,
                  BinaryPredicate predicate)
     -> std::pair<InputIterator, InputIterator> {
-  while (begin != end) {
-    if (predicate(*begin, *other)) {
-      return {begin, other};
+  while (cursor != end) {
+    if (predicate(*cursor, *other)) {
+      return {cursor, other};
     }
-    begin++;
+    cursor++;
     other++;
   }
-  return {begin, other};
+  return {cursor, other};
 }
 } // namespace pink

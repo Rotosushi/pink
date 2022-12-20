@@ -13,7 +13,6 @@ namespace pink {
 /**
  * @brief Represents a Variable expression
  *
- * \todo #CPP can be lowered to a cpp variable reference
  *
  */
 class Variable : public Ast {
@@ -28,13 +27,13 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief The symbol which this Variable expression represents
    *
    */
   InternedString symbol;
 
-public:
   /**
    * @brief Construct a new Variable
    *
@@ -64,7 +63,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

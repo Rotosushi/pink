@@ -19,8 +19,6 @@ namespace pink {
 /**
  * @brief Represents an instance of a Function definition
  *
- * \todo #CPP can be lowered to functions at global scope
- * or lambdas in local scope
  *
  */
 class Function : public Ast {
@@ -74,6 +72,7 @@ private:
                            const llvm::Function *function,
                            const pink::FunctionType *p_function_type) const;
 
+public:
   /**
    * @brief The name of this Function
    *
@@ -98,7 +97,6 @@ private:
    */
   std::shared_ptr<SymbolTable> bindings;
 
-public:
   /**
    * @brief Construct a new Function
    *
@@ -133,12 +131,14 @@ public:
     return arguments;
   }
 
-  using iterator =
+  using iterator = std::vector<std::pair<InternedString, Type *>>::iterator;
+  using const_iterator =
       std::vector<std::pair<InternedString, Type *>>::const_iterator;
 
-  auto begin() const -> iterator { return arguments.cbegin(); }
-
-  auto end() const -> iterator { return arguments.cend(); }
+  auto begin() -> iterator { return arguments.begin(); }
+  auto cbegin() const -> const_iterator { return arguments.cbegin(); }
+  auto end() -> iterator { return arguments.end(); }
+  auto cend() const -> const_iterator { return arguments.cend(); }
 
   auto GetBody() const -> const Ast * { return body.get(); }
 
@@ -149,7 +149,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

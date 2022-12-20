@@ -26,6 +26,26 @@
 namespace pink {
 class Environment;
 class AstVisitor;
+class ConstAstVisitor;
+
+/*
+  Would it be faster to store the entire Ast into a vector?
+  to 'flatten' the tree, then would Typecheck and Compile 
+  run faster? 
+
+  a few problems: 
+    - Pointers become invalidated if the vector 
+    ever resizes, unfortunate when we are building up a tree
+    from source text and will be appending who knows how many 
+    nodes before the tree is complete.
+
+    if you ever want to modify the tree now you have to copy 
+    the entire thing to a new vector per modification.
+    and if you store a vector of unique_ptr, then how is 
+    that any different than having the nodes themselves store 
+    unique_ptr's?
+
+*/
 
 /**
  * @brief Ast is the base class of all abstract syntax tree nodes
@@ -158,7 +178,14 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  virtual void Accept(AstVisitor *visitor) const = 0;
+  // virtual void Accept(AstVisitor *visitor) = 0;
+
+  /**
+   * @brief part of the Visitor interface
+   *
+   * @param visitor the visitor to accept
+   */
+  virtual void Accept(const ConstAstVisitor *visitor) const = 0;
 
   /**
    * @brief Computes the canonical string representation of this Ast

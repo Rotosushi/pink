@@ -5,7 +5,7 @@
  *
  */
 #pragma once
-#include "aux/Error.h"
+#include <cassert> // assert
 #include <variant> // std::variant
 
 namespace pink {
@@ -152,11 +152,8 @@ public:
    * @return T& the member t
    */
   auto GetFirst() -> T & {
-    if (std::holds_alternative<T>(member)) {
-      return std::get<T>(member);
-    }
-
-    FatalError("Bad Outcome Access", __FILE__, __LINE__);
+    assert(std::holds_alternative<T>(member));
+    return std::get<T>(member);
   }
 
   /**
@@ -165,11 +162,8 @@ public:
    * @return U& the member u
    */
   auto GetSecond() -> U & {
-    if (std::holds_alternative<U>(member)) {
-      return std::get<U>(member);
-    }
-
-    FatalError("Bad Outcome Access", __FILE__, __LINE__);
+    assert(std::holds_alternative<U>(member));
+    return std::get<U>(member);
   }
 };
 } // namespace pink

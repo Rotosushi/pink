@@ -22,37 +22,9 @@
 namespace pink {
 /**
  * @brief Represents an instance of a binary operator expression
- *
- *  \todo #CPP binops can be lowered to cpp binops
  */
 class Binop : public Ast {
 private:
-  /*
-    auto TypecheckLHSArrayAdd(ArrayType *splice_type, Type *rhs_type,
-                              const Environment &env) const
-        -> Outcome<Type *, Error>;
-
-    auto TypecheckRHSArrayAdd(ArrayType *array_type, Type *lhs_type,
-                              const Environment &env) const
-        -> Outcome<Type *, Error>;
-
-    auto CodegenGlobalArrayAdd(llvm::StructType *array_splice_type,
-                               llvm::Value *array_splice_ptr,
-                               llvm::ConstantInt *index_ptr,
-                               const Environment &env) const
-        -> Outcome<llvm::Value *, Error>;
-
-    auto CodegenLocalArrayAdd(llvm::StructType *array_splice_type,
-                              llvm::Value *array_splice_ptr,
-                              llvm::ConstantInt *index_ptr,
-                              const Environment &env) const
-        -> Outcome<llvm::Value *, Error>;
-
-    auto CodegenLocalSliceAdd(SliceType *slice_type, llvm::Value *slice_ptr,
-                              llvm::ConstantInt *index_ptr,
-                              const Environment &env) const
-        -> Outcome<llvm::Value *, Error>;
-    */
   /**
    * @brief Compute the Type of this Binop expression
    *
@@ -65,6 +37,7 @@ private:
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief The binary operator of this expression
    *
@@ -83,7 +56,6 @@ private:
    */
   std::unique_ptr<Ast> right;
 
-public:
   /**
    * @brief Construct a new Binop
    *
@@ -119,7 +91,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

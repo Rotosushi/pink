@@ -19,31 +19,31 @@ namespace pink {
  *
  * \todo The size of Int is not selected dynamically based upon the target
  * machine
- * 
+ *
  * \todo #CPP can be lowered to int
  *
  */
 class Int : public Ast {
 private:
   /**
-   * @brief returns an [IntType](#IntType) from the
+   * @brief returns an [IntegerType](#IntegerType) from the
    * [TypeInterner](#TypeInterner)
    *
    *  This function never constructs an [Error](#Error)
    *
-   * @param env The [Environment](#Environment) to get the [IntType](#IntType)
-   * from.
-   * @return Outcome<Type*, Error> An pointer to an [IntType](#IntType)
+   * @param env The [Environment](#Environment) to get the
+   * [IntegerType](#IntegerType) from.
+   * @return Outcome<Type*, Error> An pointer to an [IntegerType](#IntegerType)
    */
   [[nodiscard]] auto TypecheckV(const Environment &env) const
       -> Outcome<Type *, Error> override;
 
+public:
   /**
    * @brief holds the integer being represented.
    */
   long long value;
 
-public:
   /**
    * @brief Construct a new Int
    *
@@ -78,7 +78,7 @@ public:
    *
    * @param visitor the visitor to accept
    */
-  void Accept(AstVisitor *visitor) const override;
+  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief This function is used to implement llvm style [RTTI] for this node

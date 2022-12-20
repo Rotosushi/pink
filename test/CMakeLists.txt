@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.10)
 project(pink-test VERSION 0.1)
 
 set (CMAKE_C_STANDARD 11)
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED True)
 
 cmake_policy(SET CMP0076 NEW)
@@ -88,7 +88,7 @@ target_sources(pink-test PUBLIC
 )
 
 
-target_link_libraries(pink-test libpink)
+target_link_libraries(pink-test common)
 
 add_link_options(-gdwarf-4)
 

@@ -10,7 +10,7 @@ auto TestArrayType(std::ostream &out) -> bool {
   out << "\n--------------------------------\n";
   out << "Testing pink::ArrayType:\n";
 
-  auto integer_type = std::make_unique<pink::IntType>();
+  auto integer_type = std::make_unique<pink::IntegerType>();
 
   auto array_type =
       std::make_unique<pink::ArrayType>(5, integer_type.get()); // NOLINT

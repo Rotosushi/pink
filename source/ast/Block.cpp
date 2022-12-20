@@ -11,13 +11,9 @@ Block::Block(const Location &location,
              std::vector<std::unique_ptr<Ast>> &stmnts)
     : Ast(Ast::Kind::Block, location), statements(std::move(stmnts)) {}
 
-void Block::Accept(AstVisitor *visitor) const { visitor->Visit(this); }
-
-auto Block::begin() const -> Block::const_iterator {
-  return statements.begin();
+void Block::Accept(const ConstAstVisitor *visitor) const {
+  visitor->Visit(this);
 }
-
-auto Block::end() const -> Block::const_iterator { return statements.end(); }
 
 auto Block::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Block;
