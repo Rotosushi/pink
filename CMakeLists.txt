@@ -7,21 +7,22 @@ cmake_minimum_required(VERSION 3.10)
 
 # we need to use LANGUAGES C CXX to get cmake to stop complaining 
 # about not finding the termInfo package. 
-project(pink LANGUAGES C CXX VERSION 0.1 DESCRIPTION "A small Programming Language, Exploring Functions as Values")
+project(pink LANGUAGES C CXX VERSION 0.1 DESCRIPTION "")
 
 set(CMAKE_C_STANDARD 11)
 # since this project uses some c++20 features
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+cmake_policy(SET CMP0076 NEW)
+
 message(STATUS "using c compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "using c++ compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "using c++ standard: ${CXX_STANDARD}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
 add_compile_options(-O0 -gdwarf-4 -Wall -Wextra)
-
-cmake_policy(SET CMP0076 NEW)
 
 # finding and setting up LLVM to be linked into this project
 find_package(LLVM 16 REQUIRED CONFIG)
@@ -32,7 +33,6 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include_directories(${LLVM_INCLUDE_DIRS})
 
 message(STATUS "llvm include directories ${LLVM_INCLUDE_DIRS}")
-
 message (STATUS "llvm library directories ${LLVM_LIBRARY_DIRS}")
 
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
@@ -47,13 +47,17 @@ execute_process(
 
 separate_arguments(llvm_libs)
 
-execute_process(
-	COMMAND llvm-config --cxxflags
-	OUTPUT_VARIABLE llvm_cxxflags
-	OUTPUT_STRIP_TRAILING_WHITESPACE
+# retrieved from llvm-config --cxxflags
+add_compile_options(
+  -I/usr/local/include 
+  -fno-exceptions
+  -fno-rtti 
+  -D_GNU_SOURCE
+  -D_DEBUG 
+  -D__STDC_CONSTANT_MACROS
+  -D__STDC_FORMAT_MACROS
+  -D__STDC_LIMIT_MACROS
 )
-
-add_compile_options(${llvm_cxxflags})
 
 execute_process(
 	COMMAND llvm-config --ldflags
@@ -103,11 +107,11 @@ add_library(common STATIC
 	source/ast/Bind.cpp
 	source/ast/Binop.cpp
 	source/ast/Block.cpp
-	source/ast/Bool.cpp
+	source/ast/Boolean.cpp
 	source/ast/Conditional.cpp
 	source/ast/Dot.cpp
 	source/ast/Function.cpp
-	source/ast/Int.cpp
+	source/ast/Integer.cpp
 	source/ast/Nil.cpp
 	source/ast/Subscript.cpp
 	source/ast/Tuple.cpp

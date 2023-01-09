@@ -6,6 +6,7 @@
  */
 #pragma once
 #include <cstddef> // size_t
+#include <ostream>
 
 namespace pink {
 /**
@@ -118,5 +119,11 @@ public:
            (firstColumn == other.firstColumn) && (lastLine == other.lastLine) &&
            (lastColumn == other.lastColumn);
   }
+
+  friend auto operator<<(std::ostream &out, const Location &location)
+      -> std::ostream &;
 };
+
+auto operator<<(std::ostream &out, const Location &location) -> std::ostream &;
+
 } // namespace pink

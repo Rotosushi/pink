@@ -21,59 +21,41 @@ void Lexer::SetBuf(std::string &buf) {
 }
 
 void Lexer::AppendBuf(const char *txt) {
-  // save the relative offsets of each iterator.
   auto cursor_dist = std::distance(buffer.begin(), cursor);
   auto marker_dist = std::distance(buffer.begin(), marker);
   auto token_dist = std::distance(buffer.begin(), token);
 
-  buffer +=
-      txt; // perform the append operation, which may invalidate the iterators
+  buffer += txt;
 
-  // construct new valid iterators, at their old relative offsets within the new
-  // string.
   end = buffer.end();
   cursor = buffer.begin() + cursor_dist;
   marker = buffer.begin() + marker_dist;
   token = buffer.begin() + token_dist;
 }
 
-void Lexer::AppendBuf(std::string &buf) {
-  // this procedure modifies the buffer we are currently parsing
-  // by appending the text passed onto it.
-  // normally this is inadvisable, because if the string being
-  // appened onto needs to reallocate its internal buffer to
-  // accomidate the new characters then any iterators into
-  // said buffer will be invalidated, and we will not keep our
-  // location within the buffer. this is a problem, because we
-  // only want to add new text to lex, we don't want to destroy
-  // our position within the array. so we can keep lexing where
-  // we left off.
-  // to solve this problem we are going to take advantage of the
-  // fact that when we perform the append operation, the original
-  // text, and position of said text within the new buffer will
-  // be identical to what it was before the append operation.
-  // this is because the append operation does not modify the
-  // existing text, or its relative position within the buffer,
-  // it only adds new text after the end.
-  // thus if we store the distance that each iterator is into the
-  // current buffer, after the append, we can 'restore' the position
-  // of the iterators within the new buffer containing the
-  // old text and the appended new text.
+void Lexer::AppendBuf(std::string &buf) { AppendBuf(buf.c_str()); }
 
-  // save the relative offsets of each iterator.
-  auto cursor_dist = std::distance(buffer.begin(), cursor);
-  auto marker_dist = std::distance(buffer.begin(), marker);
-  auto token_dist = std::distance(buffer.begin(), token);
+void Lexer::Getline(std::istream &input) {
+  auto cursor_distance = std::distance(buffer.begin(), cursor);
+  auto marker_distance = std::distance(buffer.begin(), marker);
+  auto token_distance = std::distance(buffer.begin(), token);
 
-  buffer +=
-      buf; // perform the append operation, which may invalidate the iterators
+  char character = '\0';
 
-  // construct new valid iterators, at their old relative offsets within the new
-  // string.
+  do {
+    character = static_cast<char>(input.get());
+
+    if (input.eof()) {
+      break;
+    }
+
+    buffer += character;
+  } while (character != '\n');
+
   end = buffer.end();
-  cursor = buffer.begin() + cursor_dist;
-  marker = buffer.begin() + marker_dist;
-  token = buffer.begin() + token_dist;
+  cursor = buffer.begin() + cursor_distance;
+  marker = buffer.begin() + marker_distance;
+  token = buffer.begin() + token_distance;
 }
 
 void Lexer::Reset() {
@@ -84,21 +66,7 @@ void Lexer::Reset() {
 
 auto Lexer::EndOfInput() const -> bool { return (end - cursor) == 0; }
 
-/*
-    This routine works great for single line
-    inputs, but should be tested against multi-line
-    inputs for a more rigourous compiler. #TODO
-*/
 void Lexer::UpdateLoc() {
-  /*
-      since token points to the beginning of the
-      current token being lexed, and cursor points
-      to the current position of the lexer,
-      after a token has been lexed from the buffer,
-      it sits between [cursor, token], and the
-      string iterator operator- lets us compute
-      that distance in chars directly.
-  */
   auto length = cursor - token;
 
   loc.firstLine = loc.lastLine;
@@ -134,13 +102,19 @@ auto Lexer::yyloc() -> Location { return loc; }
     primitives that re2c uses, such that we
     can interoperate between c++ and re2c
 
-    # TODO: i think this regex will allow for identifiers
+    #TODO: i think this regex will allow for identifiers
             like: this-is-an-ident, follow-with-hyphen
             but parse identifierss like:
                     -unop-application-of-an-identifier,
                     binop-application-of-an-identifier- more-text
 
     hyphen-id = id ('-' id)+;
+
+    #TODO and this regex will allow us to lex
+    fully qualified identifiers when we want to
+    add namespaces to the language.
+
+    full-id = id ("::" id)+;
 */
 /*!re2c
     re2c:api:style = free-form;
@@ -164,8 +138,8 @@ auto Lexer::yyloc() -> Location { return loc; }
 */
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-goto)
-// #REASON: re2c uses gotos to implement the lexer, as all of the
-// gotos are from generated code, we are trusting re2c to
+// #REASON: re2c uses gotos to implement the lexer and as all of the
+// gotos are from generated code we are trusting re2c to
 // use gotos in a safe and sane way here.
 auto Lexer::yylex() -> Token {
   while (true) {
@@ -174,11 +148,11 @@ auto Lexer::yylex() -> Token {
     /*!re2c
         "nil"   { UpdateLoc(); return Token::Nil; }
         "Nil"   { UpdateLoc(); return Token::NilType; }
-        "Int"   { UpdateLoc(); return Token::IntegerType; }
+        "Integer"   { UpdateLoc(); return Token::IntegerType; }
         "true"  { UpdateLoc(); return Token::True; }
         "false" { UpdateLoc(); return Token::False; }
-        "Bool"  { UpdateLoc(); return Token::BooleanType; }
-        "ptr"   { UpdateLoc(); return Token::Ptr; }
+        "Boolean"  { UpdateLoc(); return Token::BooleanType; }
+        "Ptr"   { UpdateLoc(); return Token::Ptr; }
 
         "fn"	{ UpdateLoc(); return Token::Fn; }
         "var"   { UpdateLoc(); return Token::Var; }
@@ -204,7 +178,7 @@ auto Lexer::yylex() -> Token {
         id      { UpdateLoc(); return Token::Id; }
         fullyQualifiedId { UpdateLoc(); return Token::FullyQualifiedId; }
         op      { UpdateLoc(); return Token::Op; }
-        int     { UpdateLoc(); return Token::Int; }
+        int     { UpdateLoc(); return Token::Integer; }
 
         [ \t\n]+ { UpdateLoc(); continue; } // Whitespace
         *        { UpdateLoc(); return Token::Error; } // Unknown Token

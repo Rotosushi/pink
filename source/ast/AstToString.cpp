@@ -94,7 +94,7 @@ public:
     buffer.emplace_back(" }\n");
   }
 
-  void Visit(const Bool *boolean) const override {
+  void Visit(const Boolean *boolean) const override {
     if (boolean->GetValue()) {
       buffer.emplace_back("true");
     } else {
@@ -140,7 +140,7 @@ public:
     buffer.emplace_back("\n}");
   }
 
-  void Visit(const Int *integer) const override {
+  void Visit(const Integer *integer) const override {
     buffer.emplace_back(std::to_string(integer->GetValue()));
   }
 

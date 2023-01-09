@@ -1,6 +1,6 @@
 /**
- * @file Int.h
- * @brief Header for class Int
+ * @file Integer.h
+ * @brief Header for class Integer
  * @version 0.1
  */
 #pragma once
@@ -14,16 +14,16 @@ namespace pink {
  *
  * can hold any integer from -2^64 to 2^(64) - 1
  *
- * because we choose to have Int's size be equivalent to the word size of the
- * machine. it's an 'i64' in llvm IR.
+ * because we choose to have Integer's size be equivalent to the word size of
+ * the machine. it's an 'i64' in llvm IR.
  *
- * \todo The size of Int is not selected dynamically based upon the target
+ * \todo The size of Integer is not selected dynamically based upon the target
  * machine
  *
  * \todo #CPP can be lowered to int
  *
  */
-class Int : public Ast {
+class Integer : public Ast {
 private:
   /**
    * @brief returns an [IntegerType](#IntegerType) from the
@@ -45,26 +45,26 @@ public:
   long long value;
 
   /**
-   * @brief Construct a new Int
+   * @brief Construct a new Integer
    *
    * @param l The textual [location](#Location) of the integer
    * @param i The value of the integer
    */
-  Int(const Location &location, const long long value);
+  Integer(const Location &location, const long long value);
 
   /**
-   * @brief Destroy the Int
+   * @brief Destroy the Integer
    *
    */
-  ~Int() override = default;
+  ~Integer() override = default;
 
-  Int(const Int &other) = delete;
+  Integer(const Integer &other) = delete;
 
-  Int(Int &&other) = default;
+  Integer(Integer &&other) = default;
 
-  auto operator=(const Int &other) -> Int & = delete;
+  auto operator=(const Integer &other) -> Integer & = delete;
 
-  auto operator=(Int &&other) -> Int & = default;
+  auto operator=(Integer &&other) -> Integer & = default;
 
   /**
    * @brief Get the Value
@@ -87,8 +87,8 @@ public:
    * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
    *
    * @param ast The Ast* being tested
-   * @return true if ast *is* an instance of an [Int](#Int)
-   * @return false if ast *is not* an instance of an [Int](#Int)
+   * @return true if ast *is* an instance of an [Integer](#Integer)
+   * @return false if ast *is not* an instance of an [Integer](#Integer)
    */
   static auto classof(const Ast *ast) -> bool;
 
@@ -110,7 +110,7 @@ public:
    * @param env The [Environment](#Environment) which is used to retrieve the
    * [ConstantInt]
    * @return Outcome<llvm::Value*, Error> The [ConstantInt] holding the
-   * [value](@ref Int::value)
+   * [value](@ref Integer::value)
    */
   [[nodiscard]] auto Codegen(const Environment &env) const
       -> Outcome<llvm::Value *, Error> override;

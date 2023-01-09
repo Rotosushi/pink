@@ -19,10 +19,6 @@ namespace pink {
  */
 template <class T, class U> class Outcome {
 private:
-  /**
-   * @brief holds
-   *
-   */
   std::variant<std::monostate, T, U> member;
 
 public:

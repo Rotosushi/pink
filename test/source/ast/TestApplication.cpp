@@ -2,9 +2,9 @@
 
 #include "Test.h"
 #include "ast/Application.h"
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 #include "ast/Function.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 #include "ast/TestApplication.h"
 #include "ast/Variable.h"
 
@@ -42,8 +42,8 @@ auto TestApplication(std::ostream &out) -> bool {
 
   std::vector<std::unique_ptr<pink::Ast>> args;
 
-  args.emplace_back(std::make_unique<pink::Int>(arg0loc, 5)); // NOLINT
-  args.emplace_back(std::make_unique<pink::Int>(arg1loc, 7)); // NOLINT
+  args.emplace_back(std::make_unique<pink::Integer>(arg0loc, 5)); // NOLINT
+  args.emplace_back(std::make_unique<pink::Integer>(arg1loc, 7)); // NOLINT
 
   pink::Location apploc(1, 0, 1, 7); // NOLINT
   auto app = std::make_unique<pink::Application>(apploc, std::move(fnname),

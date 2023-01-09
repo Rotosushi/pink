@@ -15,7 +15,7 @@
  *  an array
  *
  *  1) declaration and initialization
- *    a) x := [ Int x 5 ];
+ *    a) x := [ Integer x 5 ];
  *    b) x := [0, 1, 2, 3, 4, 5];
  *
  *  2) pointer access

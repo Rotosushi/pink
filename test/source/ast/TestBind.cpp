@@ -2,7 +2,7 @@
 #include "Test.h"
 
 #include "ast/Bind.h"
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 
 #include "aux/Environment.h"
 
@@ -18,7 +18,7 @@ auto TestBind(std::ostream &out) -> bool {
   pink::InternedString variable = env->symbols->Intern("v");
   pink::Location bind_loc(1, 0, 1, 15);     // NOLINT
   pink::Location boolean_loc(1, 10, 1, 14); // NOLINT
-  auto boolean = std::make_unique<pink::Bool>(boolean_loc, true);
+  auto boolean = std::make_unique<pink::Boolean>(boolean_loc, true);
   pink::Ast *boolean_pointer = boolean.get();
 
   auto bind =

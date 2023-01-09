@@ -1,7 +1,7 @@
 
 #include "ast/TestArray.h"
 #include "ast/Array.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 
 #include "Test.h"
 
@@ -23,11 +23,11 @@ auto TestArray(std::ostream &out) -> bool {
   pink::Location integer_three_loc(1, 11, 1, 12);
   pink::Location integer_four_loc(1, 14, 1, 15);
   pink::Location array_loc(1, 1, 1, 15);
-  auto integer_zero = std::make_unique<pink::Int>(integer_zero_loc, 0);
-  auto integer_one = std::make_unique<pink::Int>(integer_one_loc, 1);
-  auto integer_two = std::make_unique<pink::Int>(integer_two_loc, 2);
-  auto integer_three = std::make_unique<pink::Int>(integer_three_loc, 3);
-  auto integer_four = std::make_unique<pink::Int>(integer_four_loc, 4);
+  auto integer_zero = std::make_unique<pink::Integer>(integer_zero_loc, 0);
+  auto integer_one = std::make_unique<pink::Integer>(integer_one_loc, 1);
+  auto integer_two = std::make_unique<pink::Integer>(integer_two_loc, 2);
+  auto integer_three = std::make_unique<pink::Integer>(integer_three_loc, 3);
+  auto integer_four = std::make_unique<pink::Integer>(integer_four_loc, 4);
   // NOLINTEND
 
   std::vector<std::unique_ptr<pink::Ast>> array_elements;

@@ -167,8 +167,7 @@ auto TestBindCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
 
     result &= Test(
         out, "Bind: x := " + num1str,
-        TestFile(std::string("fn main() { var x := ") + num1str + "; x;}\n",
-                 num1));
+        TestFile(std::string("fn main() { x := ") + num1str + "; x;}\n", num1));
   }
   return result;
 }
@@ -182,10 +181,10 @@ auto TestAssignmentCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
     int num1 = zero_to_one_hundred(gen);
     std::string num1str = std::to_string(num1);
 
-    result &= Test(out, "Assignment: x = " + num1str,
-                   TestFile(std::string("fn main() { var x := 0; x =") +
-                                num1str + "; x;}\n",
-                            num1));
+    result &= Test(
+        out, "Assignment: x = " + num1str,
+        TestFile(std::string("fn main() { x := 0; x =") + num1str + "; x;}\n",
+                 num1));
   }
 
   // tests that compound assignment works
@@ -193,11 +192,10 @@ auto TestAssignmentCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
     int num1 = zero_to_one_hundred(gen);
     std::string num1str = std::to_string(num1);
 
-    result &= Test(
-        out, "Compound Assignment: x = y = " + num1str,
-        TestFile(std::string("fn main() { var x := 0; var y := 0; x = y = " +
-                             num1str + "; x == y;}\n"),
-                 1));
+    result &= Test(out, "Compound Assignment: x = y = " + num1str,
+                   TestFile(std::string("fn main() { x := 0; y := 0; x = y = " +
+                                        num1str + "; x == y;}\n"),
+                            1));
   }
 
   // tests that the lhs and rhs of an assignment expression treat
@@ -211,7 +209,7 @@ auto TestAssignmentCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
     result &= Test(out,
                    "Assignment to modified self: x = " + num1str +
                        ", x + x == " + resstr,
-                   TestFile(std::string("fn main () { var x := ") + num1str +
+                   TestFile(std::string("fn main () { x := ") + num1str +
                                 "; x = x + x; x;}\n",
                             res));
   }
@@ -304,10 +302,10 @@ auto TestBinopIntegerArithmetic(std::ostream &out, int numIter,
 
     result &=
         Test(out,
-             "Int Arithmetic Binop: x = " + num1str + "; y = " + num2str +
+             "Integer Arithmetic Binop: x = " + num1str + "; y = " + num2str +
                  "; x " + std::string(op) + " y == " + resstr,
-             TestFile(std::string("fn main () { var x := 0; var y := 0; x = ") +
-                          num1str + "; y = " + num2str + "; var c := x " +
+             TestFile(std::string("fn main () { x := 0; y := 0; x = ") +
+                          num1str + "; y = " + num2str + "; c := x " +
                           std::string(op) + " y; c;}\n",
                       res));
   }
@@ -372,10 +370,10 @@ auto TestBinopIntegerComparison(std::ostream &out, int numIter,
 
     result &=
         Test(out,
-             "Int Comparison Binop: x = " + num1str + "; y = " + num2str +
+             "Integer Comparison Binop: x = " + num1str + "; y = " + num2str +
                  "; x " + std::string(op) + " y == " + resstr,
-             TestFile(std::string("fn main () { var x := 0; var y := 0; x = ") +
-                          num1str + "; y = " + num2str + "; var c := x " +
+             TestFile(std::string("fn main () { x := 0; y := 0; x = ") +
+                          num1str + "; y = " + num2str + "; c := x " +
                           std::string(op) + " y; c;}\n",
                       res));
   }
@@ -412,13 +410,12 @@ auto TestBinopBooleanArithmetic(std::ostream &out, int numIter,
       break;
     }
 
-    result &=
-        Test(out,
-             "Boolean Arithmetic Binop: x = " + b1str + "; y = " + b2str +
-                 "; x " + op + " y == " + resstr,
-             TestFile("fn main () { var x := " + b1str + "; var y := " + b2str +
-                          "; var z := x " + op + " y; z; }",
-                      res));
+    result &= Test(out,
+                   "Boolean Arithmetic Binop: x = " + b1str + "; y = " + b2str +
+                       "; x " + op + " y == " + resstr,
+                   TestFile("fn main () { x := " + b1str + "; y := " + b2str +
+                                "; z := x " + op + " y; z; }",
+                            res));
   }
   return result;
 }
@@ -483,19 +480,9 @@ auto TestArrayCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
  *
  */
 auto TestCodegen(std::ostream &out) -> bool {
-  // So I can see two choices for testing the whole compiler:
-  // one, we copy the code from main and call Compile and Link
-  // on an input file.
-  // two, we call the built program 'pink' passing in the correct
-  // arguments to compile the file.
-  // (there may be more choices)
-  //
-  // i think option two is better because we are testing the compiler,
-  // and not it's components. This has the effect that we are testing
-  // the exact same thing that the user interacts with.
-  // additionally, if we ever make a change in main, we don't have to
-  // make the corresponding change here to reflect the difference,
-  // making development and upkeep easier.
+  // TestCodegen might as well be called TestCodegenSideeffects
+  // because all we can truly test is that the program returned the
+  // expected value.
 
   bool result = true;
   out << "\n----------------------------------\n";
@@ -855,7 +842,8 @@ auto TestCodegen(std::ostream &out) -> bool {
         out,
         "Application of an addition Function, (\\x,y => x + y). x (" + num1str +
     ") + y (" + num2str + ") = " + resstr, TestFile( std::string("fn
-    add(x:Int,y:Int){x+y;};\nfn main(){add(") + num1str + "," + num2str +
+    add(x:Integer,y:Integer){x+y;};\nfn main(){add(") + num1str + "," + num2str
+    +
     ");};\n", num1 + num2)
         );
     }
@@ -869,9 +857,10 @@ auto TestCodegen(std::ostream &out) -> bool {
       result &= Test(
         out,
         "Application of an addition function taking pointers to integers,
-    (\\x:Int*,y:Int* => *x + *y). x (" + num1str + ") + y (" + num2str + ") = "
-    + resstr, TestFile( std::string("fn add(x: Int*, y: Int*){ *x + *y;};\nfn
-    main(){ a := 0; b := 0; x := &a; y := &b; a = ")
+    (\\x:Integer*,y:Integer* => *x + *y). x (" + num1str + ") + y (" + num2str +
+    ") = "
+    + resstr, TestFile( std::string("fn add(x: Integer*, y: Integer*){ *x +
+    *y;};\nfn main(){ a := 0; b := 0; x := &a; y := &b; a = ")
             + num1str
             + "; b = "
             + num2str
@@ -890,7 +879,8 @@ auto TestCodegen(std::ostream &out) -> bool {
         out,
         "Application of a multiplication Function, (\\x,y => x * y). x (" +
     num1str + ") * y (" + num2str + ") = " + resstr, TestFile( std::string("fn
-    mult(x:Int,y:Int){x*y;};\nfn main(){mult(") + num1str + "," + num2str +
+    mult(x:Integer,y:Integer){x*y;};\nfn main(){mult(") + num1str + "," +
+    num2str +
     ");};\n", num1 * num2)
         );
     }
@@ -905,7 +895,8 @@ auto TestCodegen(std::ostream &out) -> bool {
         out,
         "Application of a Division Function, (\\x,y => x / y). x (" + num1str +
     ") / y (" + num2str + ") = " + resstr, TestFile( std::string("fn
-    Div(x:Int,y:Int){x/y;};\nfn main(){Div(") + num1str + "," + num2str +
+    Div(x:Integer,y:Integer){x/y;};\nfn main(){Div(") + num1str + "," + num2str
+    +
     ");};\n", num1 / num2)
         );
     }
@@ -920,7 +911,8 @@ auto TestCodegen(std::ostream &out) -> bool {
         out,
         "Application of a Modulus Function, (\\x,y => x % y). x (" + num1str +
     ") % y (" + num2str + ") = " + resstr, TestFile( std::string("fn
-    Mod(x:Int,y:Int){x%y;};\nfn main(){Mod(") + num1str + "," + num2str +
+    Mod(x:Integer,y:Integer){x%y;};\nfn main(){Mod(") + num1str + "," + num2str
+    +
     ");};\n", num1 % num2)
         );
     }

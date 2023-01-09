@@ -28,8 +28,10 @@ auto PointerType::EqualTo(Type *other) const -> bool {
 auto PointerType::ToString() const -> std::string {
   std::string result;
 
-  result += "ptr ";
+  result += "Ptr";
+  result += "<";
   result += pointee_type->ToString();
+  result += ">";
 
   return result;
 }

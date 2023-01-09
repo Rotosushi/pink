@@ -227,7 +227,7 @@ void TypecheckVisitor::Visit(const Block *block) const {
   Return(result);
 }
 
-void TypecheckVisitor::Visit(const Bool *boolean) const {
+void TypecheckVisitor::Visit(const Boolean *boolean) const {
   assert(boolean != nullptr);
   Return(env.types->GetBoolType());
 }
@@ -322,7 +322,7 @@ void TypecheckVisitor::Visit(const Dot *dot) const {
 
   // #RULE The right hand side of the dot expression must be
   // knowable at compile time.
-  const auto *index = llvm::dyn_cast<Int>(dot->GetRight());
+  const auto *index = llvm::dyn_cast<Integer>(dot->GetRight());
   if (index == nullptr) {
     std::string errmsg = "Right is a [";
     errmsg += AstToString(dot->GetRight());
@@ -383,7 +383,7 @@ void TypecheckVisitor::Visit(const Function *function) const {
   Return(function_type);
 }
 
-void TypecheckVisitor::Visit(const Int *integer) const {
+void TypecheckVisitor::Visit(const Integer *integer) const {
   assert(integer != nullptr);
   Return(env.types->GetIntType());
 }

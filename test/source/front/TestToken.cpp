@@ -50,7 +50,8 @@ bool TestToken(std::ostream &out) {
   result &= Test(out, "Token::Nil", Testlet("Token::Nil", pink::Token::Nil));
   result &= Test(out, "Token::NilType",
                  Testlet("Token::NilType", pink::Token::NilType));
-  result &= Test(out, "Token::Int", Testlet("Token::Int", pink::Token::Int));
+  result &= Test(out, "Token::Integer",
+                 Testlet("Token::Integer", pink::Token::Integer));
   result &= Test(out, "Token::IntegerType",
                  Testlet("Token::IntegerType", pink::Token::IntegerType));
   result &= Test(out, "Token::True", Testlet("Token::True", pink::Token::True));

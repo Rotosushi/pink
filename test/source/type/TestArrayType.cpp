@@ -21,7 +21,7 @@ auto TestArrayType(std::ostream &out) -> bool {
   result &=
       Test(out, "ArrayType::classof()", array_type->classof(array_type.get()));
 
-  std::string array_string = "[Int x 5]";
+  std::string array_string = "[Integer x 5]";
   result &= Test(out, "ArrayType::ToString()",
                  array_type->ToString() == array_string);
 

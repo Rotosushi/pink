@@ -1,0 +1,14 @@
+I like the idea of Compile Time Evaluation as a replacement for 
+many of the use cases of C's Text Macros. However, How could 
+compile time evaluation work in a C like language? my guess 
+is using a JIT and then somehow splicing the resulting 
+definitions into the emitted object file. because that is 
+generally speaking what you are doing at compile time, is
+construction objects which you want to use at runtime, but 
+are expensive to compute constantly because you know everything 
+at compile time.
+
+A cool use case is user defined literals, where you can construct 
+say an Abstract Syntax Tree from a String Literal, so that in your 
+test code, you can specify the string literal, and test Abstract 
+Syntax Trees.

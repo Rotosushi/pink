@@ -2,7 +2,7 @@
 
 #include "Test.h"
 #include "ast/Assignment.h"
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 #include "ast/TestAssignment.h"
 #include "ast/Variable.h"
 
@@ -23,7 +23,7 @@ auto TestAssignment(std::ostream &out) -> bool {
   pink::Location assign_loc(1, 0, 1, 8); // NOLINT
   auto variable = std::make_unique<pink::Variable>(left_loc, symb);
   pink::Ast *variable_pointer = variable.get();
-  auto boolean = std::make_unique<pink::Bool>(right_loc, false);
+  auto boolean = std::make_unique<pink::Boolean>(right_loc, false);
   pink::Ast *boolean_pointer = boolean.get();
 
   llvm::Value *boolean_value = env->instruction_builder->getFalse();

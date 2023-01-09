@@ -48,7 +48,7 @@ public:
    * we always know what it is in advance, and don't need to store
    * anything.
    *
-   * @param l The textual [location](#Location) of the nil
+   * @param location The textual [location](#Location) of the nil
    */
   Nil(const Location &location);
 

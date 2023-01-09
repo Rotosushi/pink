@@ -1,7 +1,7 @@
 #include "ast/TestTuple.h"
 
-#include "ast/Bool.h"
-#include "ast/Int.h"
+#include "ast/Boolean.h"
+#include "ast/Integer.h"
 #include "ast/Tuple.h"
 
 #include "Test.h"
@@ -23,10 +23,11 @@ auto TestTuple(std::ostream &out) -> bool {
   pink::Location integer_one_loc(1, 11, 1, 12);
   pink::Location boolean_false_loc(1, 14, 1, 19);
   pink::Location tuple_loc(1, 1, 1, 20);
-  auto integer_zero = std::make_unique<pink::Int>(integer_zero_loc, 0);
-  auto boolean_true = std::make_unique<pink::Bool>(boolean_true_loc, true);
-  auto integer_one = std::make_unique<pink::Int>(integer_one_loc, 1);
-  auto boolean_false = std::make_unique<pink::Bool>(boolean_false_loc, false);
+  auto integer_zero = std::make_unique<pink::Integer>(integer_zero_loc, 0);
+  auto boolean_true = std::make_unique<pink::Boolean>(boolean_true_loc, true);
+  auto integer_one = std::make_unique<pink::Integer>(integer_one_loc, 1);
+  auto boolean_false =
+      std::make_unique<pink::Boolean>(boolean_false_loc, false);
   // NOLINTEND
 
   std::vector<std::unique_ptr<pink::Ast>> tuple_elements;

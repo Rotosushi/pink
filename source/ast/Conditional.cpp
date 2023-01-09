@@ -32,7 +32,7 @@ auto Conditional::ToString() const -> std::string {
 
 /*
  *  The type of a conditional is based on two checks,
- *  1) the type of the test expression is Bool.
+ *  1) the type of the test expression is Boolean.
  *  2) the type of both alternative expressions must match.
  *
  */

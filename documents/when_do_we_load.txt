@@ -1,0 +1,158 @@
+/*
+ *
+ *  okay, i need to think about this, and I don't really know
+ *  where to put this comment, but where exactly do we place
+ *  calls to CreateLoad instructions?
+ *
+ *  we used to simply load the value of a variable when it was
+ *  referenced within the text. which was fine, because we didn't
+ *  have pointers before.
+ *  the reason adding pointers is problematic is because each
+ *  AllocaInst/GlobalVariable is already a pointer.
+ *  and since each value we needed to deal with was the value
+ *  the llvm::pointer pointed too, this was fine.
+ *
+ *  but the question becomes what about when the value we want
+ *  to retrieve is the llvm::pointer's value itself?
+ *  as in the case of a value representing a pointer to some
+ *  memory.
+ *
+ *  i suppose what we want is two implementations of
+ *  Variable::Codegen. one where we load before returning
+ *  the result of the load, which should happen if the type
+ *  of this variable is a pointer, or we should simply
+ *  return the llvm::Value* itself, in the case where
+ *  the variable is a pointer itself.
+ *
+ *  then, addition on pointers could be acheived
+ *  by the same instruction, except we pass in
+ *  the pointers themselves as values instead of a
+ *  loadInst. I guess that means this comment belongs in
+ *  pink::Variable.
+ *
+ *  okay, this solution works great for the times when we are
+ *  referencing the variable as it's value.
+ *  however, when we want to assign a new value into the
+ *  variable's location, we don't want to have already loaded it,
+ *  instead we simply want the ptr referencing the memory again,
+ *  like in the previous case.
+ *
+ *  however, how can we communicate that to Variable::Codegen?
+ *
+ *  well, the first thing i notice is that this is suspiciously
+ *  like c's lvalues and rvalues in their semantics.
+ *
+ *  the value on the left is being assigned, so we want the address,
+ *  the value on the right is being used and so we want to load
+ *  it's value into a register.
+ *
+ *  we might be able to store a bit in the environment? which is
+ *  kinda weird, however, we can set the bit only when we codegen
+ *  an assignment's lhs.
+ *  and due to the way the parser works, nested assignment terms
+ *  will construct tree's like:
+ *
+ *  a = b = c = ...;
+ *
+ *         =
+ *       /   \
+ *      a      =
+ *           /   \
+ *          b      =
+ *               /   \
+ *              c     ...;
+ *
+ * which means if we unset the bit after codegening the lhs we
+ * will not treat the rhs as a value being assigned, and within
+ * the rhs, we can have another assignment term with it's own lhs
+ *
+ * so, one thing that comes to mind is that we don't necessarily have
+ * only variable terms on the lhs of an assignment,
+ *
+ * we can imagine terms which look like
+ *
+ * x + y = ...;
+ *
+ * where x is a pointer into an array,
+ * and y is an offset.
+ *
+ * although, that would mean that x would have pointer type,
+ * and thus we could make pointers exempt from this rule.
+ * which would mean we didn't load x, however in this situation
+ * we want to load y. and since it appears on the left, this
+ * naive approach would cause us to not load it.
+ *
+ * since we don't allow assignment to literals,
+ * the only case where we would validly assign to a temporary
+ * value is if that value has pointer type.
+ *
+ * however, we wouldn't want to assign in the case of a term like:
+ *
+ * &var = ...;
+ *
+ * so, lets recap:
+ *
+ *  // "//+" means this syntax only makes sense if the temp value produced
+ *  //       makes sense to assign to, and otherwise is a semantic error
+ *
+ *  1) x = ...; // we don't have any concept of const yet
+ *  2) x op y = ...; //+
+ *  3) op x = ...;   //+
+ *  4) x(...) = ...; //+
+ *
+ *
+ *
+ *  okay, so what about following C a little bit again, with keeping track
+ *  of the assignable state of each value within the language?
+ *
+ *  pointers to memory are assignable, that is
+ *  llvm::AllocaInst/llvm::GlobalVariable
+ *
+ *  and regular values, that is any llvm::Value* that does not represent an
+ *  allocation of memory which can be assigned into is not assignable.
+ *
+ *  then, we can modify operators to also do work on this assignable state,
+ *  so, when an operation is performed, we can return either an assignable
+ *  or an unassignable.
+ *
+ *  well, all that is fine, but it still doesn't change the fact that we
+ *  have to load a value from a variable reference on the right side of
+ *  assignment, and not load a value from a variable reference on the left
+ *  side of assignment. if we had the variable marked as assignable, we
+ *  would still need different behavior on that assignable variable
+ *  depending on if it appeared on the left or the right hand side.
+ *
+ *  so i suppose we need a condition in Variable::Codegen which
+ *  has the behavior we want depending on if we were on the left
+ *  or the right hand side. but this solution needs to play nice
+ *  with each of the possibilities above. for instance, if we
+ *  were computing an offset into an array, by adding a pointer
+ *  variable together with a integer variable, we would need to not
+ *  load the pointer variable. (which we can handle by way of the fact
+ *  that we treat pointer variables differently to all other variables)
+ *  yet we would need to load the regular variable. even though it is on
+ *  the left. We could even imagine a complex arithmetic expression
+ *  including multiple values which computes the offset, and any variable
+ *  appearing within that expression would need to be handled as we would
+ *  with any arithmetic expression appearing on the right hand side.
+ *
+ *  similarly any arithmetic expression appearing within the argument
+ *  position of a function call would need to be treated normally.
+ *
+ *  if we had a pointer to a pointer to some value, we could have an expression
+ * like
+ *
+ *  *ptr = ...;
+ *
+ *  this would require the rhs to be of pointer type, obviously. but it
+ *  would also require that we perform a load from the first pointer to
+ *  get the second and then we would be modifying the second ptr.
+ *  inside llvm (ptr) would be a pointer to the memory where the
+ *  first pointer is stored, which would hold a value which is a pointer
+ *  to the second location which is itself another pointer to a third
+ *  location. the * operator should retreive the pointer type value
+ *
+ *  so i think this works naturally, iff the pointers themselves are
+ *  unassignable, and then the * operator changes their type such that
+ *  they become assignable.
+ */

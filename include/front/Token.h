@@ -36,11 +36,11 @@ enum class Token {
 
   Nil,         // "nil"
   NilType,     // "Nil"
-  Int,         // [0-9]+
-  IntegerType, // "Int"
+  Integer,     // [0-9]+
+  IntegerType, // "Integer"
   True,        // "true"
   False,       // "false"
-  BooleanType, // "Bool"
+  BooleanType, // "Boolean"
   Ptr,         // "ptr"
 
   Fn,    // 'fn'

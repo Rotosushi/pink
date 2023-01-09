@@ -5,8 +5,8 @@
 #include "ast/Bind.h"
 #include "ast/Binop.h"
 #include "ast/Block.h"
-#include "ast/Bool.h"
-#include "ast/Int.h"
+#include "ast/Boolean.h"
+#include "ast/Integer.h"
 
 #include "aux/Environment.h"
 
@@ -32,14 +32,14 @@ auto TestBlock(std::ostream &out) -> bool {
   // NOLINTEND
   pink::Type *integer_type = env->types->GetIntType();
 
-  auto boolean = std::make_unique<pink::Bool>(boolean_loc, true);
+  auto boolean = std::make_unique<pink::Boolean>(boolean_loc, true);
 
   auto bind =
       std::make_unique<pink::Bind>(bind_loc, variable, std::move(boolean));
 
-  auto integer_1 = std::make_unique<pink::Int>(integer_1_loc, 3); // NOLINT
+  auto integer_1 = std::make_unique<pink::Integer>(integer_1_loc, 3); // NOLINT
 
-  auto integer_2 = std::make_unique<pink::Int>(integer_2_loc, 5); // NOLINT
+  auto integer_2 = std::make_unique<pink::Integer>(integer_2_loc, 5); // NOLINT
 
   auto binop = std::make_unique<pink::Binop>(
       binop_loc, plus, std::move(integer_1), std::move(integer_2));

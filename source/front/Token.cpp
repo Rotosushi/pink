@@ -67,8 +67,8 @@ auto TokenToString(const Token token) -> std::string {
   case Token::NilType: {
     return {"Token::NilType"};
   }
-  case Token::Int: {
-    return {"Token::Int"};
+  case Token::Integer: {
+    return {"Token::Integer"};
   }
   case Token::IntegerType: {
     return {"Token::IntegerType"};

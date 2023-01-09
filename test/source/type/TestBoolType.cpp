@@ -25,18 +25,18 @@ bool TestBoolType(std::ostream &out) {
       -) An Type node constructed with a particular Location
           holds that particular Location.
 
-      -) BoolType::ToString() == "Bool"
+      -) BoolType::ToString() == "Boolean"
 
   */
 
   pink::BooleanType a;
 
-  result &=
-      Test(out, "BoolType::GetKind()", a.GetKind() == pink::Type::Kind::Bool);
+  result &= Test(out, "BoolType::GetKind()",
+                 a.GetKind() == pink::Type::Kind::Boolean);
 
   result &= Test(out, "BoolType::classf()", a.classof(&a));
 
-  std::string bool_type_str = "Bool";
+  std::string bool_type_str = "Boolean";
 
   result &= Test(out, "BoolType::ToString()", a.ToString() == bool_type_str);
 

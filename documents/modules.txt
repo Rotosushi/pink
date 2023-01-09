@@ -1,18 +1,87 @@
 
-broadly; modules can be implemented by noting the
-export and import lists of libraries/executables
-within the object files being created/linked
-together. As long as the library exports all
-types and functions which it exposes outside of
-itself; any code which needs to be linked
-against said library could read that manifest and
-know how to interface with that library. Thus,
-object files can be linked together either statically
-or dynamically.
+broadly speaking adding modules means adding forward declarations
+to the emitted llvm IR of a given Translation Unit (T.U.) such that the 
+llvm linker can merge all of the given T.U. into a single executable.
+this means getting the type of each public symbol of the module
+into each T.U. which imports it, in an environment where each T.U. is
+potentially being compiled separately from any other T.U.
+This poses a problem when T.U. A is importing T.U. B which is either: 
+1) being compiled on another thread in the same invokation of the compiler,
+2) or has not been seen by the compiler at all yet.
 
-this doesn't solve the problem of how we can know the
-layout of said exported types, the obvious solution is
-to somehow include that in the modules export list.
-in a way that can be known by the compiler during creation
-of a library/executable which is linking against that object
-file.
+in case 1 we can potentially have thread X compiling A wait 
+on thread Y compiling B, then X can read the manifest of B 
+once it has been created by thread Y.
+
+in case 2 we have to create the manifest of B before we can compile A.
+if we have the procedure construct another thread to wait on, to create 
+B's manifest, then the new thread looking at B might need the manifest 
+of C and so on. each thread can safely resume translation once it is 
+able to import the manifest of the given file.
+
+this raises another issue what if file A and file B depend upon file C,
+and both file A and B are specified on one call to the compiler 
+and file C is unspecified, and has not yet been compiled?
+the issue is that threads [X, Y] = compiling (A, B) are both going 
+to attempt to read and construct a manifest for file C at the same time.
+it's not a problem for two threads to open a file for reading 
+simultaneously, but there is an issue if both threads attempt to create 
+a manifest of file C (as a separate file with the same name) simultaneously.
+this could be solved if we could somehow pass the manifest back to 
+the calling thread directly instead of through an indermediary manifest 
+file. then thread X and Y would both create new threads which would construct 
+the same manifest of C (because it's the same function doing the processing
+I presume.) and then they could import the definitions into their
+respective module (T.U.). otherwise there is the potential for write 
+contentions. 
+
+to pass data back directly we can use a fresh std::string for each 
+manifest we want to create via a thread. when the thread finishes 
+constructing the manifest it can pass it back via the std::string,
+and since the code constructing any threads constructs a new std::string 
+for each manifest it needs to create none of the created manifests 
+ever needs to live in a separate file. (but it definitely could)
+thus we never need to lock any shared state, and we don't have the 
+potential for writer conflicts.
+
+(additionally, since these are all functions we can do all of this 
+single threaded as well.)
+
+(and on the performance note, this is a resource heavy threaded solution,
+it could definitely use optimization. one of which is to notice that 
+if you already have a valid manifest file then it is fastest to simply 
+import that directly, which also avoids any locking or write contentions.
+(and you could even check timestamps on the manifest
+and source files to double check validity.)
+also if you wanted to limit the number of threads which were created, 
+you could just interleve the single threaded version onto any thread 
+which needed to make a new thread but couldn't because there was no
+more available threads. but this introduces a new variable to sync
+across threads, the number of active threads.)
+
+(additionally none of this solves the problem of mutual recursion.
+I would love to have the top level scope allow out-of-order declarations.)
+
+
+llvm provides facilities to construct forward declarations, so
+that part simply needs encoded into the correct llvm function calls.
+the problem that needs to be solved is getting the type information
+from Module A into Module B when we are compiling A and B separately.
+(even on threads which are running in parallel)
+C's solution is header files, which are a pain.
+many languages have modules, which seem much better, and from the outside
+it looks like each file is preprocessed for it's type information, and 
+a module file which is essentially a manifest of the public type information
+is generated, this seems to be a serialization of the public type information.
+then when compiling a source file, the import mechanism deserializes the type 
+information and makes it available to the current translation unit.
+for pink serialization is lowered into serializing llvm IR (at the moment)
+and deserialization is handled by LLVM processing it's own IR. so we can 
+simply generate a llvm file (.ll) which contains all of the forward declarations,
+which handles the export case, but what about the import mechanism?
+well it would need to be something along the lines of picking up the .ll 
+file being imported, and deserializing the forward declarations into the current 
+translation unit. this has the effect of forward declaring all public names into 
+the current translation unit. this solves importing (essentially)
+then we just need to handle circular dependencies.
+this is going to involve reparsing expressions.

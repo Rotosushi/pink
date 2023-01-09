@@ -4,9 +4,9 @@
 
 #include <fstream> // std::fstream
 
-#include "aux/Error.h" // pink::FatalError
-
 #include "ast/Typecheck.h"
+
+#include "aux/Error.h" // pink::FatalError
 
 #include "llvm/Analysis/AliasAnalysis.h" // llvm::AAManager
 #include "llvm/Passes/PassBuilder.h"     // llvm::PassBuilder
@@ -24,6 +24,10 @@ void Compile(const Environment &env) {
 
   env.parser->SetIStream(&infile);
 
+  /*
+    #TODO: handle temporary values within statements.
+    
+  */
   std::vector<std::unique_ptr<pink::Ast>> valid_terms;
 
   while (!env.parser->EndOfInput()) {
@@ -48,7 +52,7 @@ void Compile(const Environment &env) {
       std::string bad_source = env.parser->ExtractLine(error.loc);
       FatalError(error.ToString(bad_source), __FILE__, __LINE__);
     } else {
-      auto type = Typecheck(term.GetFirst().get(), env);
+      auto type = term.GetFirst()->Typecheck(env);
 
       // if not type and error == use-before-definition
       // {
@@ -110,6 +114,11 @@ void Compile(const Environment &env) {
 
   // if the optimization level is greater than zero, optimize the code.
   // #TODO: look more into what would be good optimizations to run.
+  // #TODO: when we add modules, it is important that we think about
+  // when to run the optimizer, only at individual module translation time
+  // or during link time?
+  
+  // 
   if (env.options->optimization_level != llvm::OptimizationLevel::O0) {
     // These are the analysis pass managers that run the actual
     // analysis and optimization code against the IR.

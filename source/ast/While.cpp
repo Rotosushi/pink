@@ -53,12 +53,7 @@ auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 auto While::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
-
-  if (env.current_function == nullptr) {
-    FatalError("Cannot emit a While loop without a basic block available to "
-               "insert into!",
-               __FILE__, __LINE__);
-  }
+  assert(env.current_function != nullptr);
 
   // 1) construct all basic blocks
   // NOTE: we do not insert the 'body' or 'after' basic blocks to handle
@@ -80,8 +75,7 @@ auto While::Codegen(const Environment &env) const
   // 2) emit the fallthrough brach instruction
   // NOTE: it is -required- to emit a 'fallthrough' branch instruction
   // to connect these two basic blocks. otherwise llvm will not compile
-  // the code! because it does not assume adjacency within the list of
-  // basic blocks to imply adjacency of the code within those basic blocks.
+  // the IR.
   env.instruction_builder->CreateBr(test_BB);
 
   // 3) set up the ir builder to emit instructions into the test basic block
@@ -116,15 +110,14 @@ auto While::Codegen(const Environment &env) const
   env.instruction_builder->SetInsertPoint(after_BB);
   env.current_function->insert(env.current_function->end(), after_BB);
 
-  // 10) return the results of the while loop.
+  // 10) The type of While is Nil, because a While Expression always 
+  // returns nil.
   // #NOTE: we could return the result of evaluating the body as the
   //        result of a while expression, and that would be natural,
   //        except that the case where the loop never runs asks
   //        the question of what to return. to me the obvious answer
-  //        is the default construction of the value. However that means
-  //        that any value that the while loop returns must
-  //        be default constructable from then on. which may
-  //        or may not be weird for users.
+  //        is the default construction of the value. However that 
+  //        also seems like a bad idea.
   return {env.instruction_builder->getFalse()};
 }
 } // namespace pink

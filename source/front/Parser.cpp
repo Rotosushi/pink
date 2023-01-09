@@ -17,8 +17,8 @@
 #include "ast/While.h"
 
 // Values
-#include "ast/Bool.h"
-#include "ast/Int.h"
+#include "ast/Boolean.h"
+#include "ast/Integer.h"
 #include "ast/Nil.h"
 
 // Operators
@@ -38,22 +38,13 @@ Parser::Parser() : tok(Token::End), loc(1, 0, 1, 0), input_stream(&std::cin) {}
 
 Parser::Parser(std::istream *input_stream)
     : tok(Token::End), loc(1, 0, 1, 0), input_stream(input_stream) {
-  if (input_stream == nullptr) {
-    FatalError("istream cannot be nullptr when initializing the Parser. text "
-               "cannot be extracted from nowhere.",
-               __FILE__, __LINE__);
-  }
+  assert(input_stream != nullptr);
 }
 
 auto Parser::GetIStream() const -> std::istream * { return input_stream; }
 
 void Parser::SetIStream(std::istream *stream) {
-  if (stream == nullptr) {
-    FatalError("istream cannot be nullptr when setting the input stream of the "
-               "Parser.",
-               __FILE__, __LINE__);
-  }
-
+  assert(stream != nullptr);
   input_stream = stream;
 }
 
@@ -61,29 +52,7 @@ auto Parser::EndOfInput() const -> bool {
   return lexer.EndOfInput() && input_stream->eof();
 }
 
-auto Parser::Getline() const -> std::string {
-  std::string buf;
-  char cursor = '\0';
-
-  do {
-    cursor = static_cast<char>(input_stream->get());
-
-    if (input_stream->eof()) // don't append the EOF character
-    {
-      break;
-    }
-
-    buf += cursor; // append the character even when it's '\n'
-
-  } while (cursor != '\n');
-
-  return buf;
-}
-
-void Parser::yyfill() {
-  std::string buf = Getline();
-  lexer.AppendBuf(buf);
-}
+void Parser::yyfill() { lexer.Getline(*input_stream); }
 
 void Parser::nexttok() {
   tok = lexer.yylex(); // this statement advances the lexer's internal state.
@@ -118,220 +87,51 @@ auto Parser::ExtractLine(const Location &loc) const -> std::string {
   auto cursor = buf.begin();
   auto end = buf.end();
 
-  size_t lines_seen = 1; // we start counting lines at 1
+  size_t lines_seen = 1;
 
-  // while we haven't reached the line we are looking for
   while (lines_seen < loc.firstLine) {
-
     if (*cursor == '\n') {
       lines_seen++;
     }
 
-    cursor++; // keep looking
+    cursor++;
   }
 
-  // if we didn't reach the end of the buffer
   if (cursor != end) {
-    // find the end of the line cursor points to
     auto eol = cursor;
 
     while (eol != end && *eol != '\n') {
       eol++;
     }
 
-    // eol points to end or to a newline char
+    // #NOTE eol points to end or to a newline char
     // either way the constructor we are using
     // uses to range [first, last), so we will
     // not copy the newline into the new string.
-
-    // return the string between cursor and eol
     return {cursor, eol};
   }
-  // else we could not find the requested line
-  // so we return the empty string.
   return {};
 }
 
-/*
- *
- *  okay, i need to think about this, and I don't really know
- *  where to put this comment, but where exactly do we place
- *  calls to CreateLoad instructions?
- *
- *  we used to simply load the value of a variable when it was
- *  referenced within the text. which was fine, because we didn't
- *  have pointers before.
- *  the reason adding pointers is problematic is because each
- *  AllocaInst/GlobalVariable is already a pointer.
- *  and since each value we needed to deal with was the value
- *  the llvm::pointer pointed too, this was fine.
- *
- *  but the question becomes what about when the value we want
- *  to retrieve is the llvm::pointer's value itself?
- *  as in the case of a value representing a pointer to some
- *  memory.
- *
- *  i suppose what we want is two implementations of
- *  Variable::Codegen. one where we load before returning
- *  the result of the load, which should happen if the type
- *  of this variable is a pointer, or we should simply
- *  return the llvm::Value* itself, in the case where
- *  the variable is a pointer itself.
- *
- *  then, addition on pointers could be acheived
- *  by the same instruction, except we pass in
- *  the pointers themselves as values instead of a
- *  loadInst. I guess that means this comment belongs in
- *  pink::Variable.
- *
- *  okay, this solution works great for the times when we are
- *  referencing the variable as it's value.
- *  however, when we want to assign a new value into the
- *  variable's location, we don't want to have already loaded it,
- *  instead we simply want the ptr referencing the memory again,
- *  like in the previous case.
- *
- *  however, how can we communicate that to Variable::Codegen?
- *
- *  well, the first thing i notice is that this is suspiciously
- *  like c's lvalues and rvalues in their semantics.
- *
- *  the value on the left is being assigned, so we want the address,
- *  the value on the right is being used and so we want to load
- *  it's value into a register.
- *
- *  we might be able to store a bit in the environment? which is
- *  kinda weird, however, we can set the bit only when we codegen
- *  an assignment's lhs.
- *  and due to the way the parser works, nested assignment terms
- *  will construct tree's like:
- *
- *  a = b = c = ...;
- *
- *         =
- *       /   \
- *      a      =
- *           /   \
- *          b      =
- *               /   \
- *              c     ...;
- *
- * which means if we unset the bit after codegening the lhs we
- * will not treat the rhs as a value being assigned, and within
- * the rhs, we can have another assignment term with it's own lhs
- *
- * so, one thing that comes to mind is that we don't necessarily have
- * only variable terms on the lhs of an assignment,
- *
- * we can imagine terms which look like
- *
- * x + y = ...;
- *
- * where x is a pointer into an array,
- * and y is an offset.
- *
- * although, that would mean that x would have pointer type,
- * and thus we could make pointers exempt from this rule.
- * which would mean we didn't load x, however in this situation
- * we want to load y. and since it appears on the left, this
- * naive approach would cause us to not load it.
- *
- * since we don't allow assignment to literals,
- * the only case where we would validly assign to a temporary
- * value is if that value has pointer type.
- *
- * however, we wouldn't want to assign in the case of a term like:
- *
- * &var = ...;
- *
- * so, lets recap:
- *
- *  // "//+" means this syntax only makes sense if the temp value produced
- *  //       makes sense to assign to, and otherwise is a semantic error
- *
- *  1) x = ...; // we don't have any concept of const yet
- *  2) x op y = ...; //+
- *  3) op x = ...;   //+
- *  4) x(...) = ...; //+
- *
- *
- *
- *  okay, so what about following C a little bit again, with keeping track
- *  of the assignable state of each value within the language?
- *
- *  pointers to memory are assignable, that is
- *  llvm::AllocaInst/llvm::GlobalVariable
- *
- *  and regular values, that is any llvm::Value* that does not represent an
- *  allocation of memory which can be assigned into is not assignable.
- *
- *  then, we can modify operators to also do work on this assignable state,
- *  so, when an operation is performed, we can return either an assignable
- *  or an unassignable.
- *
- *  well, all that is fine, but it still doesn't change the fact that we
- *  have to load a value from a variable reference on the right side of
- *  assignment, and not load a value from a variable reference on the left
- *  side of assignment. if we had the variable marked as assignable, we
- *  would still need different behavior on that assignable variable
- *  depending on if it appeared on the left or the right hand side.
- *
- *  so i suppose we need a condition in Variable::Codegen which
- *  has the behavior we want depending on if we were on the left
- *  or the right hand side. but this solution needs to play nice
- *  with each of the possibilities above. for instance, if we
- *  were computing an offset into an array, by adding a pointer
- *  variable together with a integer variable, we would need to not
- *  load the pointer variable. (which we can handle by way of the fact
- *  that we treat pointer variables differently to all other variables)
- *  yet we would need to load the regular variable. even though it is on
- *  the left. We could even imagine a complex arithmetic expression
- *  including multiple values which computes the offset, and any variable
- *  appearing within that expression would need to be handled as we would
- *  with any arithmetic expression appearing on the right hand side.
- *
- *  similarly any arithmetic expression appearing within the argument
- *  position of a function call would need to be treated normally.
- *
- *  if we had a pointer to a pointer to some value, we could have an expression
- * like
- *
- *  *ptr = ...;
- *
- *  this would require the rhs to be of pointer type, obviously. but it
- *  would also require that we perform a load from the first pointer to
- *  get the second and then we would be modifying the second ptr.
- *  inside llvm (ptr) would be a pointer to the memory where the
- *  first pointer is stored, which would hold a value which is a pointer
- *  to the second location which is itself another pointer to a third
- *  location. the * operator should retreive the pointer type value
- *
- *  so i think this works naturally, iff the pointers themselves are
- *  unassignable, and then the * operator changes their type such that
- *  they become assignable.
- */
-
 auto Parser::Parse(const Environment &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
-  // prime the lexer with the first token from the input stream
+  // prime the lexer with the first token from the input stream;
+  // only if we are not already parsing an input stream.
   if (Peek(Token::End) && lexer.EndOfInput() && !input_stream->eof()) {
     nexttok();
   }
 
-  // if tok == Token::End even after we tried to get more input from the given
-  // file it means we read to the EOF, so we return the end of file error, to
-  // signal to the caller that the end of the associated input has been reached.
-  if (Peek(Token::End)) {
+  // if there is no more source return EndOfFile.
+  if (Peek(Token::End) && input_stream->eof()) {
     return {Error(Error::Code::EndOfFile, loc)};
   }
 
-  // Parse a single expression from the source file.
   return ParseTop(env);
 }
 
 /*
   top = function
-      | variable
+      | bind ';'
 */
 auto Parser::ParseTop(const Environment &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
@@ -339,8 +139,18 @@ auto Parser::ParseTop(const Environment &env)
     return ParseFunction(env);
   }
 
-  if (Peek(Token::Var)) {
-    return ParseBind(env);
+  if (Peek(Token::Id) || Peek(Token::Var)) {
+    auto outcome = ParseBind(env);
+    if (!outcome) {
+      return {outcome.GetSecond()};
+    }
+
+    if (!Expect(Token::Semicolon)) {
+      std::string errtxt = "instead saw: " + txt;
+      return {Error(Error::MissingSemicolon, loc, errtxt)};
+    }
+
+    return {std::move(outcome.GetFirst())};
   }
   /// \note  is it worth it to attempt to parse the bad expression
   /// such that we don't leave the parser at the error we encountered?
@@ -355,23 +165,30 @@ auto Parser::ParseTop(const Environment &env)
 }
 
 /*
-  variable = "var" id ":=" affix ";"
+  bind = ("var")? id ":=" affix ";"
 */
 auto Parser::ParseBind(const Environment &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
   Location lhs_loc = loc;
-  InternedString symbol = nullptr;
 
-  nexttok(); // eat "var"
+  if (Peek(Token::Var)) {
+    nexttok(); // eat 'var'
+  }
 
   if (!Peek(Token::Id)) {
     return Error(Error::Code::MissingBindId, loc, "parsed: " + txt);
   }
 
-  symbol = env.symbols->Intern(txt);
+  const auto *name = env.symbols->Intern(txt);
 
   nexttok(); // eat id
 
+  return ParseBind(name, lhs_loc, env);
+}
+
+auto Parser::ParseBind(InternedString name, Location lhs_location,
+                       const Environment &env)
+    -> Outcome<std::unique_ptr<Ast>, Error> {
   if (!Expect(Token::ColonEq)) {
     return Error(Error::Code::MissingBindColonEq, loc, "parsed: " + txt);
   }
@@ -381,18 +198,9 @@ auto Parser::ParseBind(const Environment &env)
     return {affix.GetSecond()};
   }
 
-  if (!Peek(Token::Semicolon)) {
-    return Error(Error::Code::MissingSemicolon, loc, "parsed: " + txt);
-  }
-  // the semicolon is what we consider to be the end of the bind term
-  Location rhs_loc = loc;
-
-  nexttok(); // eat ';'
-
-  Location bind_loc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
-                    rhs_loc.lastColumn);
-  return {
-      std::make_unique<Bind>(bind_loc, symbol, std::move(affix.GetFirst()))};
+  Location bind_loc(lhs_location.firstLine, lhs_location.firstColumn,
+                    loc.lastLine, loc.lastColumn);
+  return {std::make_unique<Bind>(bind_loc, name, std::move(affix.GetFirst()))};
 }
 
 /*
@@ -524,7 +332,7 @@ auto Parser::ParseBlock(const Environment &env)
 /*
   term = conditional
        | while
-       | variable
+       | bind
        | affix ";"
 */
 auto Parser::ParseTerm(const Environment &env)
@@ -899,7 +707,7 @@ auto Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence,
 }
 
 /*
-  basic = id
+  basic = id (:= affix)?
         | integer
         | operator basic
         | "true"
@@ -916,6 +724,10 @@ auto Parser::ParseBasic(const Environment &env)
     InternedString symbol = env.symbols->Intern(txt);
 
     nexttok(); // eat the identifier
+
+    if (Peek(Token::ColonEq)) {
+      return ParseBind(symbol, lhs_loc, env);
+    }
 
     return {std::make_unique<Variable>(lhs_loc, symbol)};
   }
@@ -1011,25 +823,25 @@ auto Parser::ParseBasic(const Environment &env)
   }
 
   // #RULE Token::Int at basic position is a literal integer
-  case Token::Int: {
+  case Token::Integer: {
     Location lhs_loc = loc;
     int value = std::stoi(txt);
     nexttok(); // eat '[0-9]+'
-    return {std::make_unique<Int>(lhs_loc, value)};
+    return {std::make_unique<Integer>(lhs_loc, value)};
   }
 
   // #RULE Token::True at basic position is the literal true
   case Token::True: {
     Location lhs_loc = loc;
     nexttok(); // Eat "true"
-    return {std::make_unique<Bool>(lhs_loc, true)};
+    return {std::make_unique<Boolean>(lhs_loc, true)};
   }
 
   // #RULE Token::False at basic position is the literal false
   case Token::False: {
     Location lhs_loc = loc;
     nexttok(); // Eat "false"
-    return {std::make_unique<Bool>(lhs_loc, false)};
+    return {std::make_unique<Boolean>(lhs_loc, false)};
   }
 
   default: {
@@ -1076,7 +888,7 @@ auto Parser::ParseTuple(const Environment &env,
        | "Bool"
        | "(" type {"," type} ")"
        | "[" type "x" int "]"
-       | "ptr" type
+       | "Ptr" "<" type ">"
 */
 auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
   switch (tok) {
@@ -1145,13 +957,11 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
 
     auto &array_type = array_type_result.GetFirst();
 
-    if (!Peek(Token::Id) || txt != "x") {
-      return {Error(Error::Code::MissingArrayX, loc, "parsed: " + txt)};
+    if (!Expect(Token::Semicolon)) {
+      return {Error(Error::Code::MissingArraySemicolon, loc, "parsed: " + txt)};
     }
 
-    nexttok(); // eat 'x'
-
-    if (!Peek(Token::Int)) {
+    if (!Peek(Token::Integer)) {
       return {Error(Error::Code::MissingArrayNum, loc, "parsed: " + txt)};
     }
 
@@ -1168,7 +978,7 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
 
   // #RULE Token::Ptr predicts the type of a pointer
   case Token::Ptr: {
-    nexttok(); // eat "ptr"
+    nexttok(); // eat "Ptr"
 
     auto type = ParseType(env);
 

@@ -1,4 +1,6 @@
+#include <numeric> // std::accumulate
 #include <sstream>
+#include <vector>
 
 #include "Test.h"
 #include "support/Common.h"
@@ -14,133 +16,153 @@
 #include "ast/Bind.h"
 #include "ast/Binop.h"
 #include "ast/Block.h"
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 #include "ast/Conditional.h"
 #include "ast/Dot.h"
 #include "ast/Function.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 #include "ast/Nil.h"
 #include "ast/Tuple.h"
 #include "ast/Unop.h"
 #include "ast/Variable.h"
 #include "ast/While.h"
 
-bool TestParser(std::ostream &out) {
+auto TestParser(std::ostream &out) -> bool {
   bool result = true;
   out << "\n-----------------------\n";
   out << "Testing Pink::Parser: \n";
 
-  /*
-   *  so, the parser itself handles extracting each line and
-   *  then parsing each one. allowing the calling code to simply
-   *  set up the input_stream, and then repeatedly call the Parse
-   *  method to parse each expression. Thus, we set up the input
-   *  stream at the beginning of this test
-   *
-   *  This test routine is meant to test the full breadth of parseable terms.
-   *  To fully test what the language supports.
-   */
-  std::stringstream ss;
-  ss.str(std::string("var x := 0;\n")                     // line 1
-         + std::string("var y := true;\n")                // line 2
-         + std::string("var z := x;\n")                   // line 3
-         + std::string("var a := -1;\n")                  // line 4
-         + std::string("var b := [5, 6, 7, 8, 9];\n")     // line 5
-         + std::string("var c := (true, true, false);\n") // line 6
-         + std::string("var d := a = -2;\n")              // line 7
-         + std::string("fn zero() { 0; }\n")              // line 8
-         + std::string("fn inc(x: Int) { x + 1; }\n")     // line 9
-         + std::string("fn assign() { x = 4; }\n")        // line 10
-  );
+  // abstract out function testing common code into
+  // templated routines. a-la 'TestBindTermIsA<T>'
+
+  std::vector<std::string> source_lines = {
+      "w := 0;\n",                   // bind to basic(integer)
+      "x := true;\n",                // bind to basic(boolean)
+      "y := nil;\n",                 // bind to basic(nil)
+      "z := x;\n",                   // bind to basic(variable)
+      "a := -1;\n",                  // bind to basic(unop)
+      "b := 1 + 1;\n",               // bind to infix
+      "c := [5, 6, 7, 8, 9];\n",     // bind to array literal
+      "d := (true, true, false);\n", // bind to tuple literal
+      "e := (false);\n",             // bind to parenthesized expression
+      "f := a = -2;\n",              // bind to assignment
+      "fn zero() { 0; }\n",   // function with no arguments, integer return type
+      "fn noop() { nil; }\n", // function with no arguments, no return type
+      "fn inc(x: Int) { x + 1; }\n", // function with one argument, integer
+                                     // return type
+      "fn assign() { x = 4; }\n", // function with no arguments, integer return
+                                  // type
+      "fn add(x : Int, y: Int) { z := x + y; }\n", // function with two
+                                                   // arguments, integer return
+                                                   // type
+  };
+
+  auto [source_locations, teststream] = [&source_lines]() {
+    std::vector<pink::Location> source_locations;
+    std::string teststring;
+    size_t line_number = 0;
+
+    for (auto &line : source_lines) {
+      line_number += 1;
+      // note it's (line.length() - 1) so we don't count the newline,
+      // as the newline is not part of the parsed expression.
+      source_locations.emplace_back(line_number, 0, line_number,
+                                    line.length() - 1);
+      teststring += line;
+    }
+
+    return std::make_pair(source_locations, std::stringstream(teststring));
+  }();
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options, &ss);
-  auto parser = env->parser;
+  auto env = pink::Environment::NewGlobalEnv(options, &teststream);
+  auto *parser = env->parser.get();
 
-  size_t ln = 1; // counts lines, so we can construct locations
-                 // relative to the positions of the tests.
-                 // making it much easier to add a new test between
-                 // two existing tests.
-  auto loc = pink::Location(ln, 0, ln, 11);
-  pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> outcome =
-      parser->Parse(*env);
+  size_t line_number = 0;
+  auto location = source_locations[line_number];
+  auto outcome = parser->Parse(*env);
   pink::Ast *expr = nullptr;
 
-  result &= Test(out, "Parser::Parse(\"var x := 0;\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestBindTermIsA<pink::Int>(expr, loc));
+  auto next_test = [&]() {
+    line_number++;
+    location = source_locations[line_number];
+    outcome = parser->Parse(*env);
+  };
 
-  ln++;
-  loc = {ln, 0, ln, 14};
-  outcome = parser->Parse(*env);
+  result &= Test(out, "Parser::Parse(\"w := 0;\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Integer>(expr, location, out));
 
-  result &= Test(out, "Parser::Parse(\"var y := true;\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestBindTermIsA<pink::Bool>(expr, loc));
+  next_test();
+  result &= Test(out, "Parser::Parse(\"x := true;\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Boolean>(expr, location, out));
 
-  ln++;
-  loc = {ln, 0, ln, 11};
-  outcome = parser->Parse(*env);
+  next_test();
+  result &= Test(out, "Parser::Parse(\"y := nil\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Nil>(expr, location, out));
 
-  result &= Test(out, "Parser::Parse(\"var z := x\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestBindTermIsA<pink::Variable>(expr, loc));
+  next_test();
+  result &= Test(out, "Parser::Parse(\"z := x\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Variable>(expr, location, out));
 
-  ln++;
-  loc = {ln, 0, ln, 12};
-  outcome = parser->Parse(*env);
+  next_test();
+  result &= Test(out, "Parser::Parse(\"a := -1;\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Unop>(expr, location, out));
 
-  result &= Test(out, "Parser::Parse(\"var a := -1;\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestBindTermIsA<pink::Unop>(expr, loc));
+  next_test();
+  result &= Test(out, "Parser::Parse(\"b := 1 + 1;\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Binop>(expr, location, out));
 
-  ln++;
-  loc = {ln, 0, ln, 25};
-  outcome = parser->Parse(*env);
+  next_test();
+  result &= Test(out, "Parser::Parse(\"c := [5, 6, 7, 8, 9];\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Array>(expr, location, out));
 
-  result &= Test(out, "Parser::Parse(\"var b := [5, 6, 7, 8, 9];\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestBindTermIsA<pink::Array>(expr, loc));
+  next_test();
+  result &= Test(out, "Parser::Parse(\"d := (true, true, false);\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Tuple>(expr, location, out));
 
-  ln++;
-  loc = {ln, 0, ln, 29};
-  outcome = parser->Parse(*env);
+  next_test();
+  result &= Test(out, "Parser::Parse(\"e := (false);\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Boolean>(expr, location, out));
 
-  result &= Test(out, "Parser::Parse(\"var c := (true, true, false);\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestBindTermIsA<pink::Tuple>(expr, loc));
+  next_test();
+  result &= Test(out, "Parser::Parse(\"f := a = -2;\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestBindTermIsA<pink::Assignment>(expr, location, out));
 
-  ln++;
-  loc = {ln, 0, ln, 16};
-  outcome = parser->Parse(*env);
-
-  result &= Test(out, "Parser::Parse(\"var d := a = -2;\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestBindTermIsA<pink::Assignment>(expr, loc));
-
-  ln++;
-  loc = {ln, 0, ln, 16};
-  outcome = parser->Parse(*env);
-
+  next_test();
   result &= Test(out, "Parser::Parse(\"fn zero() { 0; }\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestFnBodyIsA<pink::Int>(expr, loc));
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestFnBodyIsA<pink::Integer>(expr, location, out));
 
-  ln++;
-  loc = {ln, 0, ln, 25};
-  outcome = parser->Parse(*env);
+  next_test();
+  result &= Test(out, "Parser::Parse(\"fn noop() { nil; }\")",
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestFnBodyIsA<pink::Nil>(expr, location, out));
 
+  next_test();
   result &= Test(out, "Parser::Parse(\"fn inc(x: Int) { x + 1; }\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestFnBodyIsA<pink::Binop>(expr, loc));
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestFnBodyIsA<pink::Binop>(expr, location, out));
 
-  ln++;
-  loc = {ln, 0, ln, 22};
-  outcome = parser->Parse(*env);
-
+  next_test();
   result &= Test(out, "Parser::Parse(\"fn assign() { x = 4; }\")",
-                 ((expr = GetAstOrNull(outcome)) != nullptr) &&
-                     TestFnBodyIsA<pink::Assignment>(expr, loc));
+                 ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+                     TestFnBodyIsA<pink::Assignment>(expr, location, out));
+
+  next_test();
+  result &=
+      Test(out, "Parser::Parse(\"fn add(x : Int, y: Int) { z := x + y; }\")",
+           ((expr = GetAstOrNull(outcome, out)) != nullptr) &&
+               TestFnBodyIsA<pink::Bind>(expr, location, out));
 
   result &= Test(out, "pink::Parser", result);
   out << "\n-----------------------\n";

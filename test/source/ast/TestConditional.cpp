@@ -2,9 +2,9 @@
 #include "Test.h"
 #include "ast/Binop.h"
 #include "ast/Block.h"
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 #include "ast/Conditional.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 
 #include "aux/Environment.h"
 
@@ -28,10 +28,11 @@ auto TestConditional(std::ostream &out) -> bool {
   pink::Location boolean_false_loc(1, 33, 1, 38);
   pink::Location else_block_loc(1, 31, 1, 40);
   pink::Location conditional_loc(1, 1, 1, 40);
-  auto integer_one = std::make_unique<pink::Int>(integer_one_loc, 1);
-  auto integer_zero = std::make_unique<pink::Int>(integer_zero_loc, 0);
-  auto boolean_true = std::make_unique<pink::Bool>(boolean_true_loc, true);
-  auto boolean_false = std::make_unique<pink::Bool>(boolean_false_loc, false);
+  auto integer_one = std::make_unique<pink::Integer>(integer_one_loc, 1);
+  auto integer_zero = std::make_unique<pink::Integer>(integer_zero_loc, 0);
+  auto boolean_true = std::make_unique<pink::Boolean>(boolean_true_loc, true);
+  auto boolean_false =
+      std::make_unique<pink::Boolean>(boolean_false_loc, false);
   // NOLINTEND
   std::vector<std::unique_ptr<pink::Ast>> then_statements;
   then_statements.emplace_back(std::move(boolean_true));

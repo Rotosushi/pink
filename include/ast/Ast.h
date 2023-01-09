@@ -30,19 +30,19 @@ class ConstAstVisitor;
 
 /*
   Would it be faster to store the entire Ast into a vector?
-  to 'flatten' the tree, then would Typecheck and Compile 
-  run faster? 
+  to 'flatten' the tree, then would Typecheck and Compile
+  run faster?
 
-  a few problems: 
-    - Pointers become invalidated if the vector 
+  a few problems:
+    - Pointers become invalidated if the vector
     ever resizes, unfortunate when we are building up a tree
-    from source text and will be appending who knows how many 
+    from source text and will be appending who knows how many
     nodes before the tree is complete.
 
-    if you ever want to modify the tree now you have to copy 
+    if you ever want to modify the tree now you have to copy
     the entire thing to a new vector per modification.
-    and if you store a vector of unique_ptr, then how is 
-    that any different than having the nodes themselves store 
+    and if you store a vector of unique_ptr, then how is
+    that any different than having the nodes themselves store
     unique_ptr's?
 
 */
@@ -75,12 +75,12 @@ public:
     Bind,
     Binop,
     Block,
-    Bool,
+    Boolean,
     Array,
     Conditional,
     Dot,
     Function,
-    Int,
+    Integer,
     Nil,
     Subscript,
     Tuple,

@@ -5,6 +5,7 @@
  *
  */
 #pragma once
+#include <istream>
 #include <string>
 #include <string_view>
 
@@ -120,6 +121,8 @@ public:
    * @copydoc Lexer::AppendBuf(const char* text)
    */
   void AppendBuf(std::string &text);
+
+  void Getline(std::istream &input);
 
   /**
    * @brief Reset the Lexer to a default constructed state.

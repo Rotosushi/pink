@@ -1,3 +1,4 @@
+#pragma once
 #include "ast/Ast.h"
 #include "ast/AstToString.h"
 
@@ -23,11 +24,11 @@ public:
   void Visit(const Bind *bind) const override;
   void Visit(const Binop *binop) const override;
   void Visit(const Block *block) const override;
-  void Visit(const Bool *boolean) const override;
+  void Visit(const Boolean *boolean) const override;
   void Visit(const Conditional *conditional) const override;
   void Visit(const Dot *dot) const override;
   void Visit(const Function *function) const override;
-  void Visit(const Int *integer) const override;
+  void Visit(const Integer *integer) const override;
   void Visit(const Nil *nil) const override;
   void Visit(const Subscript *subscript) const override;
   void Visit(const Tuple *tuple) const override;
@@ -35,24 +36,20 @@ public:
   void Visit(const Variable *variable) const override;
   void Visit(const While *loop) const override;
 
-  TypecheckVisitor(Environment &env) noexcept : env(env) {}
+  TypecheckVisitor(const Environment &env) noexcept : env(env) {}
   TypecheckVisitor(const TypecheckVisitor &other) noexcept
       : VisitorResult(other), env(other.env) {}
   TypecheckVisitor(TypecheckVisitor &&other) noexcept
       : VisitorResult(std::move(other)), env(other.env) {}
-  auto operator=(const TypecheckVisitor &other) noexcept -> TypecheckVisitor & {
-    env = other.env;
-    return *this;
-  }
+  auto operator=(const TypecheckVisitor &other) noexcept
+      -> TypecheckVisitor & = delete;
 
-  auto operator=(TypecheckVisitor &&other) noexcept -> TypecheckVisitor & {
-    env = other.env;
-    return *this;
-  }
+  auto operator=(TypecheckVisitor &&other) noexcept
+      -> TypecheckVisitor & = delete;
 
   ~TypecheckVisitor() override = default;
 
 private:
-  Environment &env;
+  const Environment &env;
 };
 } // namespace pink

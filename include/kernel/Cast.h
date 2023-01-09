@@ -16,7 +16,7 @@ namespace pink {
  * @brief Emit the correct bitcast/zext/sext/trunc instruction to convert a
  * value from it's current type, to the target type.
  *
- * \note the only cast implemented currently is Bool -> Int
+ * \note the only cast implemented currently is Boolean -> Integer
  *
  * @param value the value to cast
  * @param target_type the target type to cast to

@@ -32,10 +32,10 @@ public:
    */
   enum class Kind {
     Array,
-    Bool,
+    Boolean,
     Character,
     Function,
-    Int,
+    Integer,
     Nil,
     Pointer,
     Slice,

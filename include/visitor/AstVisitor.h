@@ -7,11 +7,11 @@
 #include "ast/Bind.h"
 #include "ast/Binop.h"
 #include "ast/Block.h"
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 #include "ast/Conditional.h"
 #include "ast/Dot.h"
 #include "ast/Function.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 #include "ast/Nil.h"
 #include "ast/Subscript.h"
 #include "ast/Tuple.h"
@@ -70,11 +70,11 @@ public:
   virtual void Visit(const Bind *bind) const = 0;
   virtual void Visit(const Binop *binop) const = 0;
   virtual void Visit(const Block *block) const = 0;
-  virtual void Visit(const Bool *boolean) const = 0;
+  virtual void Visit(const Boolean *boolean) const = 0;
   virtual void Visit(const Conditional *conditional) const = 0;
   virtual void Visit(const Dot *dot) const = 0;
   virtual void Visit(const Function *function) const = 0;
-  virtual void Visit(const Int *integer) const = 0;
+  virtual void Visit(const Integer *integer) const = 0;
   virtual void Visit(const Nil *nil) const = 0;
   virtual void Visit(const Subscript *subscript) const = 0;
   virtual void Visit(const Tuple *tuple) const = 0;

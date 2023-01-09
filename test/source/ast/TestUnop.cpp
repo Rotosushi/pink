@@ -1,6 +1,6 @@
 #include "ast/TestUnop.h"
 #include "Test.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 #include "ast/Unop.h"
 
 #include "aux/Environment.h"
@@ -22,7 +22,7 @@ auto TestUnop(std::ostream &out) -> bool {
   // NOLINTEND
   pink::Type *integer_type = env->types->GetIntType();
 
-  auto integer = std::make_unique<pink::Int>(integer_loc, 1); // NOLINT
+  auto integer = std::make_unique<pink::Integer>(integer_loc, 1); // NOLINT
   pink::Ast *integer_pointer = integer.get();
 
   auto unop = std::make_unique<pink::Unop>(unop_loc, minus, std::move(integer));

@@ -4,8 +4,8 @@
 
 #include "ast/Binop.h"
 #include "ast/Block.h"
-#include "ast/Bool.h"
-#include "ast/Int.h"
+#include "ast/Boolean.h"
+#include "ast/Integer.h"
 #include "ast/While.h"
 
 #include "aux/Environment.h"
@@ -28,15 +28,15 @@ auto TestWhile(std::ostream &out) -> bool {
   pink::Location boolean_true_loc = {1, 19, 1, 23};
   pink::Location block_loc = {1, 17, 1, 25};
   pink::Location while_loc = {1, 1, 1, 25};
-  auto integer_zero = std::make_unique<pink::Int>(integer_zero_loc, 0);
-  auto integer_one = std::make_unique<pink::Int>(integer_one_loc, 1);
+  auto integer_zero = std::make_unique<pink::Integer>(integer_zero_loc, 0);
+  auto integer_one = std::make_unique<pink::Integer>(integer_one_loc, 1);
   // NOLINTEND
 
   const auto *cmpeq = env->operators->Intern("==");
   auto binop = std::make_unique<pink::Binop>(
       binop_loc, cmpeq, std::move(integer_one), std::move(integer_zero));
 
-  auto boolean_true = std::make_unique<pink::Bool>(boolean_true_loc, true);
+  auto boolean_true = std::make_unique<pink::Boolean>(boolean_true_loc, true);
 
   std::vector<std::unique_ptr<pink::Ast>> block_statements;
   block_statements.emplace_back(std::move(boolean_true));

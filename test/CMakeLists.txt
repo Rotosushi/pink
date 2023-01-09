@@ -9,9 +9,14 @@ project(pink-test VERSION 0.1)
 
 set (CMAKE_C_STANDARD 11)
 set (CMAKE_CXX_STANDARD 20)
-set (CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 
 cmake_policy(SET CMP0076 NEW)
+
+message(STATUS "using c compiler: ${CMAKE_C_COMPILER}")
+message(STATUS "using c++ compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "using c++ standard: ${CXX_STANDARD}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
@@ -32,6 +37,8 @@ add_executable(pink-test source/TestMain.cpp)
 
 target_sources(pink-test PUBLIC 
 	source/Test.cpp
+  source/Testbench.cpp
+
 	source/ast/TestAssignment.cpp
 	source/ast/TestAstAndNil.cpp
 	source/ast/TestBind.cpp

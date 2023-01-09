@@ -10,7 +10,7 @@
 
 namespace pink {
 /**
- * @brief Represents the Type of Int
+ * @brief Represents the Type of Integer
  *
  */
 class IntegerType : public Type {

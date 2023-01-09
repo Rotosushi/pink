@@ -44,7 +44,7 @@ public:
     MissingArgName,
     MissingArgType,
     MissingArgColon,
-    MissingArrayX,
+    MissingArraySemicolon,
     MissingArrayNum,
     MissingIf,
     MissingThen,
@@ -112,7 +112,12 @@ public:
    * These messages are usually not informative enough about the error on their
    * own to truly help the user locate and correct the error, they are simply
    * the common parts of each error message, stored seperately from any
-   * particular error message to help reduce the size of any particular error.
+   * particular error message to help reduce the size of any particular error
+   * as it is passed around. (it would be faster to only store a reference 
+   * to the complete message in some lookup table, but it would really only 
+   * reduce some stack traffic, as we *want* highly context dependent information 
+   * only knowable at the particular place the error was generated to be 
+   * propagated out to help compose the error message. )
    *
    * \warning it is unsafe to write to any message returned from this routine,
    * as all messages are globally stored c-strings

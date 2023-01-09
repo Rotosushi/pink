@@ -1,7 +1,7 @@
 #include "ast/TestBool.h"
 #include "Test.h"
 
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 
 #include "aux/Environment.h"
 
@@ -16,12 +16,12 @@ auto TestBool(std::ostream &out) -> bool {
 
   // "true;"
   pink::Location boolean_loc(1, 0, 1, 4); // NOLINT
-  std::unique_ptr<pink::Bool> boolean =
-      std::make_unique<pink::Bool>(boolean_loc, true);
+  std::unique_ptr<pink::Boolean> boolean =
+      std::make_unique<pink::Boolean>(boolean_loc, true);
   pink::Type *boolean_type = env->types->GetBoolType();
 
-  result &=
-      Test(out, "Bool::GetKind()", boolean->GetKind() == pink::Ast::Kind::Bool);
+  result &= Test(out, "Bool::GetKind()",
+                 boolean->GetKind() == pink::Ast::Kind::Boolean);
   result &= Test(out, "Bool::classof()", boolean->classof(boolean.get()));
   result &= Test(out, "Bool::GetLoc()", boolean->GetLoc() == boolean_loc);
   result &= Test(out, "Bool::value", boolean->GetValue());

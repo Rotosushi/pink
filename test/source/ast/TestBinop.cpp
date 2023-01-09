@@ -2,7 +2,7 @@
 #include "Test.h"
 
 #include "ast/Binop.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 
 #include "aux/Environment.h"
 
@@ -21,9 +21,9 @@ auto TestBinop(std::ostream &out) -> bool {
   pink::Location integer_2_loc(1, 4, 1, 5); // NOLINT
   pink::Location binop_loc(1, 0, 1, 5);     // NOLINT
   pink::Type *integer_type = env->types->GetIntType();
-  auto integer_1 = std::make_unique<pink::Int>(integer_1_loc, 1);
+  auto integer_1 = std::make_unique<pink::Integer>(integer_1_loc, 1);
   pink::Ast *integer_1_pointer = integer_1.get();
-  auto integer_2 = std::make_unique<pink::Int>(integer_2_loc, 1);
+  auto integer_2 = std::make_unique<pink::Integer>(integer_2_loc, 1);
   pink::Ast *integer_2_pointer = integer_2.get();
   auto binop = std::make_unique<pink::Binop>(
       binop_loc, plus, std::move(integer_1), std::move(integer_2));

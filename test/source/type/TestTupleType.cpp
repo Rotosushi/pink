@@ -25,7 +25,7 @@ auto TestTupleType(std::ostream &out) -> bool {
   result &=
       Test(out, "TupleType::classof()", tuple_type->classof(tuple_type.get()));
 
-  std::string tuple_string = "(Int, Bool)";
+  std::string tuple_string = "(Integer, Boolean)";
   result &= Test(out, "TupleType::ToString()",
                  tuple_type->ToString() == tuple_string);
 

@@ -1,6 +1,6 @@
 /**
- * @file Bool.h
- * @brief Header for class Bool
+ * @file Boolean.h
+ * @brief Header for class Boolean
  * @version 0.1
  *
  */
@@ -11,12 +11,13 @@
 
 namespace pink {
 /**
- * @brief [Bool](#Bool) is an [Ast](#Ast) node which represents a boolean value
+ * @brief [Boolean](#Boolean) is an [Ast](#Ast) node which represents a boolean
+ * value
  *
  *
- * @headerfile Bool.h "ast/Bool.h"
+ * @headerfile Boolean.h "ast/Boolean.h"
  */
-class Bool : public Ast {
+class Boolean : public Ast {
 private:
   /**
    * @brief returns [BooleanType](#BooleanType)
@@ -40,25 +41,25 @@ public:
   bool value;
 
   /**
-   * @brief Construct a new Bool
+   * @brief Construct a new Boolean
    *
    * @param location The textual [location] of the bool
    * @param value The value of the bool
    */
-  Bool(const Location &location, const bool value);
+  Boolean(const Location &location, const bool value);
 
   /**
-   * @brief Destroy the Bool
+   * @brief Destroy the Boolean
    */
-  ~Bool() override = default;
+  ~Boolean() override = default;
 
-  Bool(const Bool &other) = delete;
+  Boolean(const Boolean &other) = delete;
 
-  Bool(Bool &&other) = default;
+  Boolean(Boolean &&other) = default;
 
-  auto operator=(const Bool &other) -> Bool & = delete;
+  auto operator=(const Boolean &other) -> Boolean & = delete;
 
-  auto operator=(Bool &&other) -> Bool & = default;
+  auto operator=(Boolean &&other) -> Boolean & = default;
 
   /**
    * @brief part of the Visitor interface
@@ -74,8 +75,8 @@ public:
    * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
    *
    * @param a The Ast* being tested
-   * @return true if a *is* an instance of [Bool](#Bool)
-   * @return false if a *is not* an instance of [Bool](#Bool)
+   * @return true if a *is* an instance of [Boolean](#Boolean)
+   * @return false if a *is not* an instance of [Boolean](#Boolean)
    */
   static auto classof(const Ast *ast) -> bool;
 
@@ -90,7 +91,7 @@ public:
    * @brief This function converts the boolean value held into it's textual
    * representation.
    *
-   * @return std::string if [value](@ref Bool::value) is true then "true"
+   * @return std::string if [value](@ref Boolean::value) is true then "true"
    *                     otherwise "false"
    */
   [[nodiscard]] auto ToString() const -> std::string override;
@@ -101,7 +102,7 @@ public:
    *
    * This function will never construct an [Error](#Error)
    * it always returns a [ConstantInt] with length 1.
-   * that is, an "i1", holding precisely [value](@ref Bool::value)
+   * that is, an "i1", holding precisely [value](@ref Boolean::value)
    *
    * [llvmValue]: https://llvm.org/doxygen/classllvm_1_1Value.html
    * "llvm::Value*" [ConstantInt]:

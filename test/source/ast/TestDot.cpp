@@ -2,7 +2,7 @@
 
 #include "Test.h"
 #include "ast/Dot.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 #include "ast/TestDot.h"
 #include "ast/Variable.h"
 
@@ -15,7 +15,7 @@ auto TestDot(std::ostream &out) -> bool {
 
   auto options = std::make_shared<pink::CLIOptions>();
   std::stringstream stream;
-  stream.str("var tuple := (false, 12, true);\n");
+  stream.str("tuple := (false, 12, true);\n");
   auto env = pink::Environment::NewGlobalEnv(options, &stream);
 
   auto tuple = env->parser->Parse(*env);
@@ -38,7 +38,7 @@ auto TestDot(std::ostream &out) -> bool {
   const auto *variable_symbol = env->symbols->Intern("tuple");
   auto variable =
       std::make_unique<pink::Variable>(variable_loc, variable_symbol);
-  auto integer = std::make_unique<pink::Int>(integer_loc, 1);
+  auto integer = std::make_unique<pink::Integer>(integer_loc, 1);
   auto dot = std::make_unique<pink::Dot>(dot_loc, std::move(variable),
                                          std::move(integer));
 

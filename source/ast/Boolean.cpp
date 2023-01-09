@@ -1,22 +1,22 @@
-#include "ast/Bool.h"
+#include "ast/Boolean.h"
 
 #include "aux/Environment.h"
 
 #include "visitor/AstVisitor.h"
 
 namespace pink {
-Bool::Bool(const Location &location, const bool value)
-    : Ast(Ast::Kind::Bool, location), value(value) {}
+Boolean::Boolean(const Location &location, const bool value)
+    : Ast(Ast::Kind::Boolean, location), value(value) {}
 
-void Bool::Accept(const ConstAstVisitor *visitor) const {
+void Boolean::Accept(const ConstAstVisitor *visitor) const {
   visitor->Visit(this);
 }
 
-auto Bool::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Bool;
+auto Boolean::classof(const Ast *ast) -> bool {
+  return ast->GetKind() == Ast::Kind::Boolean;
 }
 
-auto Bool::ToString() const -> std::string {
+auto Boolean::ToString() const -> std::string {
   if (value) {
     return "true";
   }
@@ -30,7 +30,8 @@ auto Bool::ToString() const -> std::string {
    ---------------------
     env |- false : Bool
 */
-auto Bool::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
+auto Boolean::TypecheckV(const Environment &env) const
+    -> Outcome<Type *, Error> {
   return {env.types->GetBoolType()};
 }
 
@@ -41,7 +42,7 @@ auto Bool::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
    ---------------------
     env |- false : i1 (0)
 */
-auto Bool::Codegen(const Environment &env) const
+auto Boolean::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
   return {env.instruction_builder->getInt1(value)};

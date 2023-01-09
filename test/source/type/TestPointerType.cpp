@@ -19,7 +19,7 @@ auto TestPointerType(std::ostream &out) -> bool {
   result &= Test(out, "PointerType::classof()",
                  pointer_type->classof(pointer_type.get()));
 
-  std::string pointer_string = "ptr Int";
+  std::string pointer_string = "Ptr<Integer>";
   result &= Test(out, "PointerType::ToString()",
                  pointer_type->ToString() == pointer_string);
 

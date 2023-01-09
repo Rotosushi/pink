@@ -10,19 +10,19 @@
 
 namespace pink {
 /**
- * @brief Represents the Type of Bool
+ * @brief Represents the Type of Boolean
  *
  */
 class BooleanType : public Type {
 public:
   /**
-   * @brief Construct a new Bool Type
+   * @brief Construct a new Boolean Type
    *
    */
   BooleanType();
 
   /**
-   * @brief Destroy the Bool Type
+   * @brief Destroy the Boolean Type
    *
    */
   ~BooleanType() override = default;

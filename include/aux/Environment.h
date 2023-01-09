@@ -102,18 +102,6 @@ public:
   std::shared_ptr<std::vector<InternedString>> false_bindings;
 
   /**
-   * @brief Buffers Error messages when recoverable errors are encountered.
-   *
-   * this is simply to make passing Error's a bit more efficient.
-   * we only support one error at a time right now, so we only
-   * need to buffer a single error. All this really saves is having to
-   * potentially copy error messages around when we return Error's
-   * from functions which can produce errors.
-   *
-   */
-  // std::shared_ptr<std::string> error_message;
-
-  /**
    * @brief Internal flags concerning the current state of compilation.
    *
    * These flags are distinct from the flags controlling compilation held
@@ -401,10 +389,8 @@ private:
    * @brief Construct a new Environment, as a copy of the given Environment
    *
    * This is a convenience constructor for creating a new local
-   * Environment, say for the local scope of a [function](#Function).
+   * Environment, say for the local scope of a [function](pink::Function).
    *
-   * [llvmFunction]: https://llvm.org/doxygen/classllvm_1_1Function.html
-   * "llvm::Function"
    *
    * @param env The Environment to share members with
    * @param symbols The local scope of the new Environment
@@ -442,6 +428,7 @@ public:
                            std::istream *instream)
       -> std::unique_ptr<Environment>;
 
+  
   static auto NewLocalEnv(const Environment &outer,
                           std::shared_ptr<SymbolTable> bindings)
       -> std::unique_ptr<Environment>;

@@ -2,8 +2,8 @@
 #include "Test.h"
 #include "ast/Function.h"
 
-#include "ast/Bool.h"
-#include "ast/Int.h"
+#include "ast/Boolean.h"
+#include "ast/Integer.h"
 #include "ast/Variable.h"
 
 #include "aux/Environment.h"
@@ -17,12 +17,12 @@ auto TestFunction(std::ostream &out) -> bool {
   auto env = pink::Environment::NewGlobalEnv(options);
 
   /*
-  fn first(x: Int, y: Bool)
+  fn first(x: Integer, y: Boolean)
   {
     x;
   }
 
-  fn second(x: Int, y: Bool)
+  fn second(x: Integer, y: Boolean)
   {
     y;
   }

@@ -1,5 +1,5 @@
 #include "ast/Dot.h"
-#include "ast/Int.h"
+#include "ast/Integer.h"
 #include "type/TupleType.h"
 
 #include "aux/Environment.h"
@@ -80,7 +80,7 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   // #RULE We cannot typecheck a tuple index against a runtime value.
   // As it violates static (compile time) typing. So we require the rhs of dot
   // member access to be an integer literal. (integral literal eventually)
-  auto *index = llvm::dyn_cast<Int>(right.get());
+  auto *index = llvm::dyn_cast<Integer>(right.get());
   if (index == nullptr) {
     std::string errmsg =
         std::string("right has type: ") + right_type->ToString();
@@ -109,7 +109,7 @@ auto Dot::Codegen(const Environment &env) const
   }
   llvm::Value *left_value = left_codegen_result.GetFirst();
 
-  auto *index = llvm::dyn_cast<Int>(right.get());
+  auto *index = llvm::dyn_cast<Integer>(right.get());
   if (index == nullptr) {
     std::string errmsg =
         std::string("right has type: ") + right->GetType()->ToString();

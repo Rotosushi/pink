@@ -8,60 +8,46 @@
 
 #include "type/Type.h"
 /*
- *
+ * 1/8/2023
  * So there are a few points of confusion for pointers.
  *
  * 1) what is a pointer in LLVM?
- *  -) that is actually easy to answer, a pointer in LLVM is like a
- *      pointer in C. and, in fact we are already using them within the
- *      language within the Variable, and VarRef structures. That is
- *      because CreateAlloca, and CreateGlobal return pointers to the
- *      memory they allocate on the stack or in global memory respectively.
- *      this means that when Variable is bound to a Value*, that Value* is
- *      either a Pointer to memory, or a Constant value directly.
- *      this means that we can simply construct Pointers using the same
- *      information that we use to construct the Value* that a Variable is
- *      bound to.
+ *  -) conceptually: an integer value holding the address of another llvm value.
  *    this however raises our second question:
  *  2) How can we store and load pointer values into memory in LLVM?
- *     that is, if we are already using Pointers to properly Load/Store in the
- *     language, how can we modify the Load/Store process to store the
- *     pointer itself, instead of the data it is pointing to?
- *     -) the answer to that is with the PtrToInt, and IntToPtr instructions
- *          which are provided by LLVM, with the PtrToInt instruction we can
- * convert what is normaly a pointer value into an integer value, and then we
- * can load/store that integer like we would any other integer. and conversely,
- * given an integer value associated with a pointer type we can use IntToPtr to
- * retreive the Pointer object such that we can Load/Store the data which the
- * pointer is referencing.
- *
- *          in this way PtrToInt acts in a manner that makes it good for
- *          implementing the address of value operator (unary &),
- *          and IntToPtr acts in a manner that makes it good for implementing
- *          the value of address operator (unary * ).
- *
- *  This is what leads us to our solution, namely, Pointers do not exist in
- *  the structure of the terms in the language, that is as an Ast node, but
- *  as values which the Ast nodes are constructing/destructing.
- *
- *  int main() {
- *    x := 0;
- *    y := &x;
- *    *y = 5;
- *    x;
- *  }
+ *   -) simply load and store them like regular values. that is
+ *      when you construct a integer on the stack llvm gives you a
+ *      pointer to that value back, so instead of loading the integer
+ *      from the stack, simply use the pointer directly.
  */
 
 namespace pink {
 /**
  * @brief Represents the Type of a Pointer to a single value.
  *
- *
- * pointers only support indirection. that is unop *
+ * pointers are integer values, so they can be assigned and
+ * passed as parameters, but in the interest of memory safety
+ * pointers only support indirection operation. that is unop [*]
  * a pointer can be constructed from any variable with
- * address of, that is unop &
+ * address of, that is unop [&].
  *
- * a pointer to a slice may be coerced to a slice safely.
+ * instead if you want pointer arithmetic you do that via slices,
+ * which hold the addressable range they support. then the runtime
+ * can check pointer math, and so can the compiler (if the values
+ * are literals)
+ *
+ * a pointer to a slice may be coerced to a slice safely. and
+ * any element within the range of a slice must have a valid address.
+ *
+ * however you may not convert a pointer into a slice.
+ *
+ * (#NOTE: some computer architechtures use memory mapped I/O
+ * for their hardware devices, thus for device drivers it is
+ * useful to construct a pointer to an arbitrary memory location.
+ * this is something to be considered. if this valid use case
+ * was not present I would be on board with saying that pointers
+ * can only be constructed via the address of operator. as in there
+ * would not be syntax to wite down a pointer literal with.)
  *
  *
  */

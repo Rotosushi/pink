@@ -1,27 +1,38 @@
-llvm gives us pointers to the memory it allocates, this is fine,
-as it gives us the means to assign new values and retrieve the
-value stored within.
+llvm gives us pointers to the memory it allocates,
+and the means to assign new values and retrieve the
+value stored within of the pointers it gave to us. 
+no extra work required. (this is very nice)
+we still have to be careful though, not to attempt to 
+assign to things which are not valid memory locations.
 There are two cases that we have to handle with non-pointer typed
 variables within our language
 1) assigning a new value "x = ...;"
-2) retrieving the value  "... = x;" or "... = x + ...;"
+2) retrieving the value  "... = x;" or "... = x <op> ...;"
+
+
 1) when we are assigning a new value to the variable,
    we want to return the pointer llvm gave us as the
-   result of this Variable::Codegen, so we can pass that
-   pointer in as the argument to the CreateStore instruction.
+   result of a Variable::Codegen, so we can pass that
+   pointer in as the argument to the CreateStore instruction
+   being created within Assignment::Codegen
 2) when we are simply using the variable within an expression
    anywhere other than the lhs of assignment we want to load
    the value of the variable and return that so the value
    can be used as the argument to arithmetic operations or
    bound to a function argument for a Call expression.
- this behavior is easy to choose between as we require only
- one bit of information, telling us if we are on the left
- hand side of an assignment expression, if we -are- on the
- left, we emit zero loads, if we aren't we emit one load.
-There are similarly only two cases we need to consider when
+   2a) we must be careful however, because we must not emit 
+       any loads of a type which is too big to fit into a 
+       single register. 
+
+if we -are- on the left, we emit zero loads, 
+if we aren't, chack that we can load the given type,
+if we can we emit one load.
+
+
+There are only two cases we need to consider when
 taking the address of a variable in our language.
 1) "x = &y;"
-2) "x = &y op ...;"
+2) "x = &y <op> ...;"
 3) "&x = ...;"
 1) we want to return the pointer that llvm gave us as the
    value of the variable reference. essentially the
@@ -31,6 +42,7 @@ taking the address of a variable in our language.
    value of the variable reference, just like case 1.
 3) is an error, we cannot assign to a literal integer, which is
    what the pointer in-and-of-itself is.
+   
 So there are four cases that we have to handle to
 properly support dereferencing pointer typed
 variables within our language.

@@ -25,18 +25,18 @@ bool TestIntType(std::ostream &out) {
       -) A Type node constructed with a particular Location
           holds that particular Location.
 
-      -) IntType::ToString() == "Int"
+      -) IntType::ToString() == "Integer"
 
   */
 
   pink::IntegerType a;
 
   result &=
-      Test(out, "IntType::GetKind()", a.GetKind() == pink::Type::Kind::Int);
+      Test(out, "IntType::GetKind()", a.GetKind() == pink::Type::Kind::Integer);
 
   result &= Test(out, "IntType::classof()", a.classof(&a));
 
-  std::string int_type_str = "Int";
+  std::string int_type_str = "Integer";
 
   result &= Test(out, "IntType::ToString()", a.ToString() == int_type_str);
 

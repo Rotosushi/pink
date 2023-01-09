@@ -4,7 +4,12 @@
 
 #include "aux/Environment.h"
 
+#include "ast/TypecheckVisitor.h"
+
 namespace pink {
-auto Typecheck(const Ast *ast, const Environment &env)
-    -> Outcome<Type *, Error>;
+inline auto Typecheck(const Ast *ast, const Environment &env)
+    -> Outcome<Type *, Error> {
+  TypecheckVisitor visitor(env);
+  return visitor.Compute(ast, visitor);
+}
 } // namespace pink

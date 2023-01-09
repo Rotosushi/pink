@@ -72,8 +72,8 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Syntax Error: Expected ':'";
   case Error::Code::MissingArgType:
     return "Syntax Error: Missing type annotation for argument";
-  case Error::Code::MissingArrayX:
-    return "Syntax Error: Missing 'x' in array type";
+  case Error::Code::MissingArraySemicolon:
+    return "Syntax Error: Missing ';' in array type";
   case Error::Code::MissingArrayNum:
     return "Syntax Error: Missing quantity in array type";
   case Error::Code::MissingIf:
@@ -117,12 +117,12 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
            "array members";
   case Error::Code::CondTestExprTypeMismatch:
     return "Type Error: Conditional expression's test expression must have "
-           "type Bool";
+           "type Boolean";
   case Error::Code::CondBodyExprTypeMismatch:
     return "Type Error: Conditional expression's body expressions must have "
            "identical type";
   case Error::Code::WhileTestTypeMismatch:
-    return "Type Error: While loop's test expression must have type Bool";
+    return "Type Error: While loop's test expression must have type Boolean";
   case Error::Code::DotLeftIsNotATuple:
     return "Type Error: Dot operator's right hand side must be a tuple";
   case Error::Code::DotRightIsNotAnInt:

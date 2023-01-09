@@ -25,7 +25,7 @@ auto TestFunctionType(std::ostream &out) -> bool {
   result &= Test(out, "FunctionType::classof",
                  function_type->classof(function_type.get()));
 
-  std::string ft_str = std::string("Int -> Int -> Bool");
+  std::string ft_str = std::string("Integer -> Integer -> Boolean");
 
   result &=
       Test(out, "FunctionType::ToString", function_type->ToString() == ft_str);

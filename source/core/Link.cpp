@@ -7,46 +7,47 @@
 
 namespace pink {
 
+/**
+ * @brief Links together the object file represented by 
+ * this Environment to construct an executable file.
+ * 
+ * \todo what do we do when we want to translate multiple 
+ * files into a single executable? that is when the Environment 
+ * no longer represents just one translation unit, but many?
+ * Obviously the shape of the Environment structure itself must 
+ * change, but how? 
+ * first guess: hold a std::vector of translation units, one for each 
+ * file. A Translation Unit is then all of the data structures 
+ * which may not be shared among Translation Units; parser,
+ * false_bindings, flags, options?, symbols, operators, types,
+ * bindings, binops, unops, llvm::LLVMContext, llvm::Module, 
+ * llvm::InstructionBuilder, current_function), all of these 
+ * structures can only represent a single translation unit.
+ * whereas the llvm::Target, llvm::TargetMachine, llvm::DataLayout
+ * are going to be the same for a given call of the compiler.
+ * (unless we wanted to allow cross compiling only certain files 
+ * passed to the compiler on the command line and native compiling
+ * the rest of the files, but that feels weird and unecessary, as 
+ * the end user can simply call the compiler multiple times to solve 
+ * that problem (admittedly a made up problem),
+ * so then whatever we wanted to pass to Link would be the structure 
+ * holding a reference to all of the Translation Units necessary to 
+ * create an entire executable. Whereas each Translation Unit would 
+ * be enough information to compile a single source file into an object file.
+ * 
+ * @param env 
+ */
 void Link(const Environment &env) {
-  // #TODO: Test that this works when the user passes in a custom output
-  // filename.
   std::string objoutfilename = env.options->output_file + ".o";
   std::string exeoutfilename = env.options->output_file + "";
 
   llvm::raw_os_ostream std_err = std::cerr;
   llvm::raw_os_ostream std_out = std::cout;
 
-  // #TODO find these files in a more dynamic way
-  //  #NOTE: even though we do not use these files
-  //  in particular it may still be useful to define
-  //  a routine which can search the system for the
-  //  absolute path of a given file. for dependency
-  //  lookup.
-  // std::string crt1 = "/usr/lib/x86_64-linux-gnu/crt1.o";
-  // std::string crti = "/usr/lib/x86_64-linux-gnu/crti.o";
-  // std::string crtbegin = "/usr/lib/gcc/x86_64-linux-gnu/11/crtbegin.o";
-  // std::string crt1path = "-L/usr/lib/x86_64-linux-gnu";
-  // std::string crtbeginpath = "-L/usr/lib/gcc/x86_64-linux-gnu/11";
-  // std::string crtend = "/usr/lib/gcc/x86_64-linux-gnu/11/crtend.o";
-  // std::string crtn   = "/usr/lib/x86_64-linux-gnu/crtn.o";
-
-  std::vector<const char *> lld_args({
-      "ld.lld-14", "-m", "elf_x86_64", "--entry",
-      "main", // instead of linking to the crt to have the crt
-              // define the symbol, _start. simply tell the
-              // linker that 'main' is the entry point.
-              //
-      //"-dynamic-linker", "lib64/ld-linux-x86-64.so.2",
-      // crt1.data(),
-      // crti.data(),
-      // crtbegin.data(),
-      // crt1path.data(),
-      // crtbeginpath.data(),
-      //"/usr/lib/x86_64-linux-gnu/libc.so",
-      objoutfilename.data(), "-o", exeoutfilename.data()
-      // crtend.data(),
-      // crtn.data()
-  });
+  std::vector<const char *> lld_args = {"lld",        "-m",
+                                        "elf_x86_64", "--entry",
+                                        "main",       objoutfilename.data(),
+                                        "-o",         exeoutfilename.data()};
 
   lld::elf::link(lld_args, std_out, std_err, /* exitEarly */ false,
                  /* disableOutput */ false);
@@ -54,7 +55,10 @@ void Link(const Environment &env) {
   // #NOTE: we may alternatively use std::system instead of
   // statically linking against lld. however the static linking
   // creates a standalone executable, which is nice.
-  // int result = std::system(command.data());
+  // We may also dynamically link with lld, which only loads
+  // lld if and when we link something; which is what is more
+  // performant in the cases where we don't create an executable
+  // from the source. (when we emit llvm IR or object files)
 }
 
 } // namespace pink

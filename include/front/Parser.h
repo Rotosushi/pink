@@ -23,8 +23,8 @@ namespace pink {
 class Environment;
 
 /**
- * @brief Parser implements a LL(1) recursive [descent] parser for pink, with a
- separate operator [precedence] parser for binary operator terms.
+ * @brief Parser implements a LL(1) recursive [descent] parser for the pink
+language with a separate operator [precedence] parser for binary operator terms.
  *
  * [descent]: https://en.wikipedia.org/wiki/Recursive_descent_parser "descent"
  * [precedence]: https://en.wikipedia.org/wiki/Operator-precedence_parser
@@ -38,7 +38,7 @@ class Environment;
 top = function
     | bind
 
-bind = "var" id ":=" affix ";"
+bind = ["var"] id ":=" affix ";"
 
 function = "fn" id "(" [arg {"," arg}] ")" block
 
@@ -67,19 +67,22 @@ accessor = basic {"." basic}
          | basic {"[" basic "]"}
          | basic
 
-basic = id
+basic = id [":=" affix]
       | integer
       | operator accessor
+      | "nil"
       | "true"
       | "false"
       | "(" affix {"," affix} ")"
       | "[" affix {"," affix} "]"
 
-type = "Int"
-     | "Bool"
+type = "Nil"
+     | "Integer"
+     | "Boolean"
      | "(" type {"," type} ")"
      | "[" type "x" integer "]"
      | "ptr" type
+     | "Ptr" "<" type ">"
 
 // these are the regular expressions used by re2c
 id = [a-zA-Z_][a-zA-Z0-9_]*
@@ -194,6 +197,11 @@ private:
    * \verbatim
    * function = "fn" id "(" [arg {"," arg}] ")" block
    * \endverbatim
+   * 
+   * \todo add an optional explicit return type 
+   * \todo allow functions to have a single body statement
+   * followed by a semicolon instead of a block for their 
+   * body.
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
@@ -203,10 +211,10 @@ private:
       -> Outcome<std::unique_ptr<Ast>, Error>;
 
   /**
-   * @brief Parses Bind expressions
+   * @brief Parses a Bind expression
    *
    * \verbatim
-   * bind = "var" id ":=" affix ";"
+      bind = ["var"] id ":=" affix ";"
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -217,10 +225,26 @@ private:
       -> Outcome<std::unique_ptr<Ast>, Error>;
 
   /**
+   * @brief Parses a Bind expression
+   *
+   * \verbatim
+      bind = ["var"] id ":=" affix ";"
+   * \endverbatim
+   *
+   * @param name the id in the expression
+   * @param env The environment associated with this compilation unit
+   * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
+   * which was parsed. if false, then the Error which was encountered.
+   */
+  auto ParseBind(InternedString name, Location lhs_location,
+                 const Environment &env)
+      -> Outcome<std::unique_ptr<Ast>, Error>;
+
+  /**
    * @brief Parses Argument expressions
    *
    * \verbatim
-   * arg = id ":" type
+      arg = id ":" type
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -234,7 +258,7 @@ private:
    * @brief Parses Block expressions
    *
    * \verbatim
-   * block = "{" {term} "}"
+      block = "{" {term} "}"
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -248,10 +272,10 @@ private:
    * @brief Parses Term expressions
    *
    * \verbatim
-   * term = conditional
-   *      | while
-   *      | bind
-   *      | affix ";"
+      term = conditional
+           | while
+           | bind
+           | affix ";"
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -265,7 +289,7 @@ private:
    * @brief Parses Conditional expressions
    *
    * \verbatim
-   * conditional = "if" "(" affix ")" block "else" block
+      conditional = "if" "(" affix ")" block "else" block
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -279,7 +303,7 @@ private:
    * @brief Parses While expressions
    *
    * \verbatim
-   * while = "while" "(" affix ")" block
+      while = "while" "(" affix ")" block
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -293,9 +317,9 @@ private:
    * @brief Parses Affix expressions
    *
    * \verbatim
-   * affix = composite "=" affix
-   *       | composite "(" [affix {"," affix}] ")"
-   *       | composite
+      affix = composite "=" affix
+            | composite "(" [affix {"," affix}] ")"
+            | composite
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -309,7 +333,7 @@ private:
    * @brief Parses Assignment expressions
    *
    * \verbatim
-   * assignment = composite "=" affix
+      assignment = composite "=" affix
    * \endverbatim
    *
    * @param env the environment associated with this compilation unit
@@ -324,7 +348,7 @@ private:
    * @brief Parses an Application expression
    *
    * \verbatim
-   * application = composite "(" [affix {"," affix}] ")"
+      application = composite "(" [affix {"," affix}] ")"
    * \endverbatim
    *
    * @param env the environment associated with this compilation unit
@@ -339,8 +363,8 @@ private:
    * @brief Parses Composite expressions
    *
    * \verbatim
-   * composite = accessor operator infix-parser
-   *           | accessor
+      composite = accessor operator infix-parser
+                | accessor
    * \endverbatim
    *
    * \note infix-parser is actually the call into the operator precedence
@@ -357,9 +381,9 @@ private:
    * @brief Parses accessor expressions
    *
    * \verbatim
-   * accessor = basic {"." basic}
-   *          | basic {"[" basic "]"}
-   *          | basic
+      accessor = basic {"." basic}
+               | basic {"[" basic "]"}
+               | basic
    * \endverbatim
    *
    * this function is here to give accessor operators a higher
@@ -379,7 +403,7 @@ private:
    * @brief Parses member access expressions
    *
    * \verbatim
-   * dot = basic {"." basic}
+      dot = basic {"." basic}
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -393,7 +417,7 @@ private:
    * @brief Parses subscript access expressions
    *
    * \verbatim
-   * subscript = basic {"[" basic "]"}
+      subscript = basic {"[" basic "]"}
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -425,13 +449,13 @@ private:
    * @brief Parses Basic expressions
    *
    * \verbatim
-   * basic = id
-   *       | integer
-   *       | operator accessor
-   *       | "true"
-   *       | "false"
-   *       | "(" affix {"," affix} ")"
-   *       | "[" affix {"," affix} "]"
+      basic = id [":=" affix]
+            | integer
+            | operator accessor
+            | "true"
+            | "false"
+            | "(" affix {"," affix} ")"
+            | "[" affix {"," affix} "]"
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -445,7 +469,7 @@ private:
    * @brief Parses a Tuple
    *
    * \verbatim
-   *  "(" affix {"," affix} ")"
+      "(" affix {"," affix} ")"
    * \endverbatim
    *
    * \note assuming that we start from the comma
@@ -462,7 +486,7 @@ private:
    * @brief Parses an Array
    *
    * \verbatim
-   * "[" affix {"," affix} "]"
+      "[" affix {"," affix} "]"
    * \endverbatim
    *
    * @param env the environment associated with this compilation unit
@@ -476,11 +500,11 @@ private:
    * @brief Parses Type expressions
    *
    * \verbatim
-   * type = "Int"
-   *      | "Bool"
-   *      | "(" type {"," type} ")"
-   *      | "[" type "x" int "]"
-   *      | "ptr" type
+      type = "Integer"
+           | "Boolean"
+           | "(" type {"," type} ")"
+           | "[" type "x" int "]"
+           | "ptr" type
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit

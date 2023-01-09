@@ -10,6 +10,10 @@
 namespace pink {
 /**
  * @brief Represents the Type of Void
+ * 
+ * \note 1/9/2023 we need VoidType because llvm 
+ * has a void type, and sometimes we need to say that 
+ * and not the Nil type. 
  *
  */
 class VoidType : public Type {
