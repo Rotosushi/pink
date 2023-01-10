@@ -76,6 +76,20 @@ Environment::Environment(const Environment &env,
       target_machine(env.target_machine), data_layout(env.data_layout),
       current_function(env.current_function) {}
 
+void Environment::PrintErrorWithSourceText(std::ostream &out,
+                                           const Error &error) {
+  auto bad_source = parser->ExtractLine(error.loc);
+  error.Print(out, bad_source);
+}
+
+void Environment::ClearFalseBindings() noexcept {
+  for (const auto *binding : *false_bindings) {
+    bindings->Unbind(binding);
+  }
+
+  false_bindings->clear();
+}
+
 auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options)
     -> std::unique_ptr<Environment> {
   return NewGlobalEnv(std::move(options), &std::cin);
@@ -134,8 +148,7 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
       // and the bool is false if the feature string is unavailable on the
       // target. each feature available (and specified within the feature
       // string) must be prefixed with '+', and similarly unavailable features
-      // must be prefixed with '-'. we don't need to know what features are
-      // supported, just that the key is or isn't.
+      // must be prefixed with '-'.
       if ((*idx).getValue()) {
         cpu_features += std::string("+") + (*idx).getKeyData();
       } else {
@@ -156,16 +169,18 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   // optimization/profiling and specifying extra rules
   // for compilation, like what floating point rules to
   // use, and such. This might be useful when considering
-  // optimization.
+  // optimizations to turn on or specific optimization flags
+  // available to the user. 1/9/2023
   llvm::TargetOptions target_options;
   // #TODO: position independant code is a fine default,
   // however we should allow the user to change this via the command line
+  // 1/9/2023
   llvm::Reloc::Model code_relocation_model = llvm::Reloc::Model::PIC_;
   // #TODO: the Small x86-64 code model is a fine default for x86-64,
   // however this must change if the code being compiled becomes larger
   // than 2GB, or if the data within the code or being processed by the
   // code becomes larger than 2GB. So we should add an option on the
-  // command line to select between models.
+  // command line to select between models. 1/9/2023
   // NOTE: this is something to look at for the future, does the
   // codegeneration fail if we don't meet the uder 2GB requirement?
   // would our program be able to recover from such an error?
@@ -186,8 +201,8 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   llvm_module->setDataLayout(data_layout);
   llvm_module->setTargetTriple(target_triple);
 
-  // construct classes which are used to generate debugging information
-  // within the program.
+  // #TODO: construct classes which are used to generate
+  // debugging information for a given source unit.
 
   // a minor gripe about the DIBuilder class, the class itself takes
   // as an argument a pointer to a DICompileUnit, which makes complete
@@ -207,15 +222,9 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   // okay, so a somewhat minor thing to note is that if this language can
   // actually support functions as values then we will run into issues telling
   // the debugger that our language conforms to the C calling convention.
-  // Our functions are slightly different from the ccc in that we pass
-  // everything by reference (from the functions point of view), to support
-  // the ability to make a lambda out of any defined function, this is available
-  // in the ccc, it's just maybe not what the debugger expects. for instance,
-  // can it call a function taking a reference to an int, when from the users
-  // point if view they pass an integer literal to the function? if it is
-  // JIT'ing the code snippets then the Language Rules of C/C++ are that int
-  // literals cannot be directly passed by reference, a local variable must be
-  // constructed, and then the reference can point to the local.
+  // Our functions are slightly different from the ccc, so how do we tell that 
+  // to the debugger? (maybe we can get away with telling the debugger 
+  // all arguments are accessed through a single struct parameter somehow?)
 
   // const llvm::DIBuilder temp_debug_builder(*llvm_module);
   // llvm::DICompileUnit* debug_compile_unit =

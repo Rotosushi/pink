@@ -227,6 +227,7 @@ add_executable(pink
         # that is, those functions which are central drivers of the program.
         source/core/Compile.cpp
         source/core/Link.cpp
+        source/core/Optimize.cpp
         source/core/Pink.cpp
 )
 

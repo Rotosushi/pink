@@ -36,6 +36,8 @@ public:
     MissingLBrace,
     MissingRBrace,
     MissingRBracket,
+    MissingLessThan,
+    MissingGreaterThan,
     MissingVar,
     MissingBindId,
     MissingBindColonEq,

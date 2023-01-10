@@ -28,7 +28,7 @@ void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
   auto *string_type = llvm::cast<llvm::StructType>(
       env.types->GetArrayType(size, character_type)->ToLLVM(env));
   auto *stderr_fd = env.instruction_builder->getInt64(2);
-  SysWriteText(stderr_fd, string_type, error_string, env);
-  SysExit(exit_code, env);
+  CodegenWriteText(stderr_fd, string_type, error_string, env);
+  CodegenSysExit(exit_code, env);
 }
 } // namespace pink

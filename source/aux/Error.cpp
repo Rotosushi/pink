@@ -43,7 +43,7 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Default Error, this should not be printed";
   // syntax error descriptions
   case Error::Code::EndOfFile:
-    return "Syntax Error: End Of Input";
+    return "End of source file encountered";
   case Error::Code::MissingSemicolon:
     return "Syntax Error: Expected ';'";
   case Error::Code::MissingLParen:

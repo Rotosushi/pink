@@ -89,7 +89,7 @@ auto Parser::ExtractLine(const Location &loc) const -> std::string {
 
   size_t lines_seen = 1;
 
-  while (lines_seen < loc.firstLine) {
+  while ((lines_seen < loc.firstLine) && (cursor != end)) {
     if (*cursor == '\n') {
       lines_seen++;
     }
@@ -565,8 +565,7 @@ auto Parser::ParseComposite(const Environment &env)
 }
 
 /*
-  accessor = basic {"." basic}
-           | basic {"[" basic "]"}
+  accessor = basic { ("." basic | "[" basic "]") }
            | basic
 */
 auto Parser::ParseAccessor(const Environment &env)
@@ -577,73 +576,61 @@ auto Parser::ParseAccessor(const Environment &env)
   }
   auto &left = left_term.GetFirst();
 
-  if (Peek(Token::Dot)) {
-    return ParseDot(env, std::move(left));
-  }
+  do {
+    if (Peek(Token::Dot)) {
+      left_term = ParseDot(env, std::move(left));
+    } else if (Peek(Token::LBracket)) {
+      left_term = ParseSubscript(env, std::move(left));
+    }
 
-  if (Peek(Token::LBracket)) {
-    return ParseSubscript(env, std::move(left));
-  }
+  } while (Peek(Token::Dot) || Peek(Token::LBracket));
 
   return {std::move(left)};
 }
 
 /*
- dot = basic {"." basic}
+ dot = basic "." basic
 */
 auto Parser::ParseDot(const Environment &env, std::unique_ptr<Ast> left)
     -> Outcome<std::unique_ptr<Ast>, Error> {
   auto lhs_loc = left->GetLoc();
-  Outcome<std::unique_ptr<Ast>, Error> left_term = std::move(left);
+  nexttok(); // eat '.'
 
-  do {
-    nexttok(); // eat '.'
+  auto right_term = ParseBasic(env);
+  if (!right_term) {
+    return {right_term.GetSecond()};
+  }
+  auto &right = right_term.GetFirst();
 
-    auto right = ParseBasic(env);
-    if (!right) {
-      return {right.GetSecond()};
-    }
-
-    const Location &rhs_loc = right.GetFirst()->GetLoc();
-    Location dotloc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
-                    rhs_loc.lastColumn);
-    left_term = Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Dot>(
-        dotloc, std::move(left_term.GetFirst()), std::move(right.GetFirst())));
-  } while (Peek(Token::Dot));
-
-  return {std::move(left_term.GetFirst())};
+  const Location &rhs_loc = right->GetLoc();
+  Location dotloc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+                  rhs_loc.lastColumn);
+  return {std::make_unique<Dot>(dotloc, std::move(left), std::move(right))};
 }
 
 /*
- subscript = basic {"[" basic "]"}
+ subscript = basic "[" basic "]"
 */
 auto Parser::ParseSubscript(const Environment &env, std::unique_ptr<Ast> left)
     -> Outcome<std::unique_ptr<Ast>, Error> {
   auto lhs_loc = left->GetLoc();
-  Outcome<std::unique_ptr<Ast>, Error> left_term = std::move(left);
+  nexttok(); // eat '['
 
-  do {
-    nexttok(); // eat '['
+  auto right_term = ParseBasic(env);
+  if (!right_term) {
+    return {right_term.GetSecond()};
+  }
+  auto &right = right_term.GetFirst();
 
-    auto right_term = ParseBasic(env);
-    if (!right_term) {
-      return {right_term.GetSecond()};
-    }
+  if (!Expect(Token::RBracket)) { // eat ']'
+    return {Error(Error::Code::MissingRBracket, loc, txt)};
+  }
 
-    if (!Expect(Token::RBracket)) { // eat ']'
-      return {Error(Error::Code::MissingRBracket, loc)};
-    }
-
-    auto rhs_loc = loc;
-    Location subscript_loc(lhs_loc.firstLine, lhs_loc.firstColumn,
-                           rhs_loc.lastLine, rhs_loc.lastColumn);
-    left_term =
-        Outcome<std::unique_ptr<Ast>, Error>(std::make_unique<Subscript>(
-            subscript_loc, std::move(left_term.GetFirst()),
-            std::move(right_term.GetFirst())));
-  } while (Peek(Token::LBracket));
-
-  return {std::move(left_term.GetFirst())};
+  auto rhs_loc = loc;
+  Location location(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+                    rhs_loc.lastColumn);
+  return {
+      std::make_unique<Subscript>(location, std::move(left), std::move(right))};
 }
 
 /*
@@ -775,7 +762,7 @@ auto Parser::ParseBasic(const Environment &env)
     }
     // else we parsed a parenthised expression
     if (!Expect(Token::RParen)) {
-      return {Error(Error::Code::MissingRParen, loc)};
+      return {Error(Error::Code::MissingRParen, loc, txt)};
     }
 
     return {std::move(result.GetFirst())};
@@ -803,7 +790,7 @@ auto Parser::ParseBasic(const Environment &env)
     } while (tok == Token::Comma);
 
     if (tok != Token::RBracket) {
-      return Error(Error::Code::MissingRBracket, loc);
+      return Error(Error::Code::MissingRBracket, loc, txt);
     }
 
     Location rhs_loc = loc;
@@ -845,7 +832,7 @@ auto Parser::ParseBasic(const Environment &env)
   }
 
   default: {
-    return {Error(Error::Code::UnknownBasicToken, loc, "parsed: " + txt)};
+    return {Error(Error::Code::UnknownBasicToken, loc, txt)};
   }
   } // !switch(tok)
 }
@@ -870,7 +857,7 @@ auto Parser::ParseTuple(const Environment &env,
   }
 
   if (!Peek(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, loc);
+    return Error(Error::Code::MissingRParen, loc, txt);
   }
 
   Location rhs_loc = loc;
@@ -939,7 +926,7 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
     }
 
     if (!Expect(Token::RParen)) {
-      return Error(Error::Code::MissingRParen, loc);
+      return Error(Error::Code::MissingRParen, loc, txt);
     }
 
     return left;
@@ -958,11 +945,11 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
     auto &array_type = array_type_result.GetFirst();
 
     if (!Expect(Token::Semicolon)) {
-      return {Error(Error::Code::MissingArraySemicolon, loc, "parsed: " + txt)};
+      return {Error(Error::Code::MissingArraySemicolon, loc, txt)};
     }
 
     if (!Peek(Token::Integer)) {
-      return {Error(Error::Code::MissingArrayNum, loc, "parsed: " + txt)};
+      return {Error(Error::Code::MissingArrayNum, loc, txt)};
     }
 
     size_t num = std::stoi(txt);
@@ -970,7 +957,7 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
     nexttok(); // eat '[0-9]+'
 
     if (!Expect(Token::RBracket)) {
-      return {Error(Error::Code::MissingRBracket, loc, "parsed: " + txt)};
+      return {Error(Error::Code::MissingRBracket, loc, txt)};
     }
 
     return {env.types->GetArrayType(num, array_type)};
@@ -979,6 +966,11 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
   // #RULE Token::Ptr predicts the type of a pointer
   case Token::Ptr: {
     nexttok(); // eat "Ptr"
+
+    // if we don't see "<" that's a misformed Ptr Type literal.
+    if (!Peek(Token::Op) || (strcmp("<", txt.c_str()) != 0)) {
+      return {Error(Error::MissingLessThan, loc, txt)};
+    }
 
     auto type = ParseType(env);
 
@@ -990,7 +982,7 @@ auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {
   }
 
   default: {
-    return Error(Error::Code::UnknownTypeToken, loc, "parsed: " + txt);
+    return Error(Error::Code::UnknownTypeToken, loc, txt);
   }
   }
 }

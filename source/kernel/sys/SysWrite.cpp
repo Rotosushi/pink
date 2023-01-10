@@ -5,9 +5,9 @@
 #include "llvm/IR/InlineAsm.h"
 
 namespace pink {
-auto SysWriteSlice(llvm::Value *file_descriptor, llvm::StructType *slice_type,
-                   llvm::Value *slice_ptr, const Environment &env)
-    -> llvm::Value * {
+auto CodegenWriteSlice(llvm::Value *file_descriptor,
+                       llvm::StructType *slice_type, llvm::Value *slice_ptr,
+                       const Environment &env) -> llvm::Value * {
   assert(file_descriptor != nullptr);
   assert(slice_type != nullptr);
   assert(slice_ptr != nullptr);
@@ -32,11 +32,11 @@ auto SysWriteSlice(llvm::Value *file_descriptor, llvm::StructType *slice_type,
 
   auto *buffer_ptr =
       env.instruction_builder->CreateLoad(pointer_type, slice_ptr_ptr);
-  return SysWrite(file_descriptor, write_size, buffer_ptr, env);
+  return CodegenSysWrite(file_descriptor, write_size, buffer_ptr, env);
 }
 
-auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
-                  llvm::Value *text_ptr, const Environment &env)
+auto CodegenWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
+                      llvm::Value *text_ptr, const Environment &env)
     -> llvm::Value * {
   assert(file_descriptor != nullptr);
   assert(text_type != nullptr);
@@ -52,7 +52,7 @@ auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
   auto *text_size =
       env.instruction_builder->CreateLoad(integer_type, text_size_ptr);
 
-  return SysWrite(file_descriptor, text_size, text_buffer_ptr, env);
+  return CodegenSysWrite(file_descriptor, text_size, text_buffer_ptr, env);
 }
 
 // construct a call to the sys_write x86-64 linux system call
@@ -63,8 +63,9 @@ auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
 // mov rax, 1                ; "={rax},i"
 // syscall                   ; "={rax}"
 // ; then rax holds the result
-auto SysWrite(llvm::Value *file_descriptor, llvm::Value *size,
-              llvm::Value *buffer, const Environment &env) -> llvm::Value * {
+auto CodegenSysWrite(llvm::Value *file_descriptor, llvm::Value *size,
+                     llvm::Value *buffer, const Environment &env)
+    -> llvm::Value * {
   assert(file_descriptor != nullptr);
   assert(size != nullptr);
   assert(buffer != nullptr);

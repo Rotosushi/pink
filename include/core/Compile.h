@@ -44,9 +44,11 @@
  */
 namespace pink {
 /**
- * @brief Runs the Compilation process over the given Environment
+ * @brief Runs the process of Compilation given the command
+ * line options.
  *
- * @param env the environment representing the compilation unit to compile.
+ * @param argc
+ * @param argv
  */
-void Compile(const Environment &env);
+auto Compile(int argc, char **argv) -> int;
 } // namespace pink

@@ -138,28 +138,28 @@ auto Function::Codegen(const Environment &env) const
   auto *llvm_return_type = pink_function_type->result->ToLLVM(env);
 
   llvm::FunctionType *llvm_function_type = nullptr;
-  llvm::Function *function = nullptr;
-  // #RULE main returns via a call to sys_exit.
-  // so the llvm function type returns void
-  if (is_main) {
-    auto *main_function_type = env.types->GetFunctionType(
-        env.types->GetVoidType(), pink_function_type->arguments);
+  llvm::Function *function = [&]() {
+    // #RULE main returns via a call to sys_exit.
+    // so the llvm function type returns void
+    if (is_main) {
+      auto *main_function_type = env.types->GetFunctionType(
+          env.types->GetVoidType(), pink_function_type->arguments);
 
-    llvm_function_type =
-        llvm::cast<llvm::FunctionType>(main_function_type->ToLLVM(env));
+      llvm_function_type =
+          llvm::cast<llvm::FunctionType>(main_function_type->ToLLVM(env));
 
-    function = llvm::Function::Create(llvm_function_type,
-                                      llvm::Function::ExternalLinkage, name,
-                                      *env.llvm_module);
+      return llvm::Function::Create(llvm_function_type,
+                                    llvm::Function::ExternalLinkage, name,
+                                    *env.llvm_module);
+    }
 
-  } else {
     llvm_function_type =
         llvm::cast<llvm::FunctionType>(pink_function_type->ToLLVM(env));
 
-    function = llvm::Function::Create(llvm_function_type,
-                                      llvm::Function::ExternalLinkage, name,
-                                      *env.llvm_module);
-  }
+    return llvm::Function::Create(llvm_function_type,
+                                  llvm::Function::ExternalLinkage, name,
+                                  *env.llvm_module);
+  }();
 
   CodegenParameterAttributes(env, function, llvm_function_type,
                              pink_function_type);
@@ -205,7 +205,7 @@ auto Function::Codegen(const Environment &env) const
 
 void Function::CodegenMainReturn(const Environment &env,
                                  llvm::Value *body_value) {
-  SysExit(body_value, env);
+  CodegenSysExit(body_value, env);
   // even though we call sysexit to return from our
   // program, llvm considers the main function
   // ill-formed without this return statement.

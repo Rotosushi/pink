@@ -406,6 +406,9 @@ private:
               std::shared_ptr<llvm::IRBuilder<>> builder);
 
 public:
+  void PrintErrorWithSourceText(std::ostream &out, const Error &error);
+  void ClearFalseBindings() noexcept;
+
   /**
    * @brief Constructs a new global Environment. With all members initialized
    * for native codegeneration.
@@ -428,7 +431,6 @@ public:
                            std::istream *instream)
       -> std::unique_ptr<Environment>;
 
-  
   static auto NewLocalEnv(const Environment &outer,
                           std::shared_ptr<SymbolTable> bindings)
       -> std::unique_ptr<Environment>;

@@ -10,26 +10,60 @@
 #include "llvm/Support/raw_ostream.h" // llvm::raw_fd_stream
 
 namespace pink {
-void EmitObjectFile(const Environment &env, const std::string &filename) {
+auto EmitObjectFile(std::ostream &out, const Environment &env,
+                    const std::string &filename) -> int;
+
+auto EmitAssemblyFile(std::ostream &out, const Environment &env,
+                      const std::string &filename) -> int;
+
+auto EmitLLVMFile(std::ostream &out, const Environment &env,
+                  const std::string &filename) -> int;
+
+auto EmitFiles(std::ostream &out, const Environment &env) -> int {
+  const auto &options = env.options;
+  int result = EXIT_FAILURE;
+  if (options->emit_llvm) {
+    result = EmitLLVMFile(out, env, options->GetLLVMFilename());
+    if (result == EXIT_FAILURE) {
+      return result;
+    }
+  }
+
+  if (options->emit_assembly) {
+    result = EmitAssemblyFile(out, env, options->GetAsmFilename());
+    if (result == EXIT_FAILURE) {
+      return result;
+    }
+  }
+
+  if (options->emit_object) {
+    result = EmitObjectFile(out, env, options->GetObjFilename());
+    if (result == EXIT_FAILURE) {
+      return result;
+    }
+  }
+}
+
+auto EmitObjectFile(std::ostream &out, const Environment &env,
+                    const std::string &filename) -> int {
   std::error_code outfile_error;
   llvm::raw_fd_ostream outfile(filename, outfile_error);
 
   if (outfile_error) {
     std::stringstream error_message;
     error_message << outfile_error;
-    pink::FatalError("Could not open output file [" + filename +
-                         "] because of an error: " + error_message.str(),
-                     __FILE__, __LINE__);
+    out << "Could not open output file [" << filename
+        << "] error: " << error_message.str();
+    return EXIT_FAILURE;
   }
 
   llvm::legacy::PassManager objPrintPass;
   if (env.target_machine->addPassesToEmitFile(
           objPrintPass, outfile, nullptr,
           llvm::CodeGenFileType::CGFT_ObjectFile)) {
-    FatalError("the target machine " +
-                   env.target_machine->getTargetTriple().str() +
-                   " cannot emit an object file of this type",
-               __FILE__, __LINE__);
+    out << "the target machine " << env.target_machine->getTargetTriple().str()
+        << " cannot emit an object file of this type";
+    return EXIT_FAILURE;
   }
 
   objPrintPass.run(*env.llvm_module);
@@ -37,58 +71,44 @@ void EmitObjectFile(const Environment &env, const std::string &filename) {
   outfile.close();
 }
 
-void EmitAssemblyFile(const Environment &env, const std::string &filename) {
+auto EmitAssemblyFile(std::ostream &out, const Environment &env,
+                      const std::string &filename) -> int {
   std::error_code outfile_error;
   llvm::raw_fd_ostream outfile(filename, outfile_error);
 
   if (outfile_error) {
     std::stringstream error_message;
-
     error_message << outfile_error;
-    pink::FatalError("Could not open output file [" + filename +
-                         "] because of an error: " + error_message.str(),
-                     __FILE__, __LINE__);
+    out << "Could not open output file [" << filename
+        << "] because of an error: " << error_message.str();
+    return EXIT_FAILURE;
   }
 
   llvm::legacy::PassManager asmPrintPass;
-  // addPassesToEmitFile(legacy::PassManager pass_manager,
-  //                     llvm::raw_fd_ostream& outfile,
-  //                     llvm::raw_fd_ostream* dwarfOutfile,
-  //                     llvm::CodeGenFileType CodeGenFileType,)
-  //
-  // notice the nullptr will need to be replaced with a pointer to the
-  // dwarf object output file, once we emit debugging information.
   if (env.target_machine->addPassesToEmitFile(
           asmPrintPass, outfile, nullptr,
           llvm::CodeGenFileType::CGFT_AssemblyFile)) {
-    FatalError("the target_machine " +
-                   env.target_machine->getTargetTriple().str() +
-                   " cannot emit an assembly file of this type",
-               __FILE__, __LINE__);
+    out << "the target_machine " << env.target_machine->getTargetTriple().str()
+        << " cannot emit an assembly file of this type";
+    return EXIT_FAILURE;
   }
 
-  // this step fills 'outstream' with the contents of the llvm_module,
-  // that is, it writes the contents of the llvm_module to the file.
   asmPrintPass.run(*env.llvm_module);
 }
 
-void EmitLLVMFile(const Environment &env, const std::string &filename) {
+auto EmitLLVMFile(std::ostream &out, const Environment &env,
+                  const std::string &filename) -> int {
   std::error_code outfile_error;
-  llvm::raw_fd_ostream outfile(
-      filename,
-      outfile_error); // using a llvm::raw_fd_stream for llvm::Module::Print
+  llvm::raw_fd_ostream outfile(filename, outfile_error);
 
   if (outfile_error) {
     std::stringstream error_message;
-
     error_message << outfile_error;
-    pink::FatalError("Could not open output file [" + filename +
-                         "] because of an error: " + error_message.str(),
-                     __FILE__, __LINE__);
+    out << "Could not open output file [" << filename
+        << "] because of an error: " << error_message.str();
+    return EXIT_FAILURE;
   }
 
-  // simply print to the output file the
-  // code generated, as it is already in llvm IR
   env.llvm_module->print(outfile, nullptr);
 
   outfile.close();

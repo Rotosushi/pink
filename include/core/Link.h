@@ -8,11 +8,11 @@
 
 namespace pink {
 /**
- * @brief Runs the Linker lld on the given compilation unit
+ * @brief Runs lld on the given Environment
  *
  *  This function calls lld::elf::link
  *
  * @param env the environment which emitted the object file to be linked
  */
-void Link(const Environment &env);
+auto Link(std::ostream &out, std::ostream &err, const Environment &env) -> int;
 } // namespace pink

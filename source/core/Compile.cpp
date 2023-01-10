@@ -1,10 +1,9 @@
-
-
-#include "core/Compile.h"
-
 #include <fstream> // std::fstream
 
-#include "ast/Typecheck.h"
+#include "core/Compile.h"
+#include "core/Link.h"
+
+#include "support/EmitFile.h"
 
 #include "aux/Error.h" // pink::FatalError
 
@@ -12,141 +11,77 @@
 #include "llvm/Passes/PassBuilder.h"     // llvm::PassBuilder
 
 namespace pink {
-void Compile(const Environment &env) {
-  std::fstream infile;
+auto Compile(std::ostream &err, Environment &env) -> int;
 
-  infile.open(env.options->input_file);
+auto Compile(int argc, char **argv) -> int {
+  auto &out = std::cout;
+  auto &err = std::cerr;
+  auto options = pink::ParseCLIOptions(err, argc, argv);
+  auto env = Environment::NewGlobalEnv(options);
 
-  if (!infile.is_open()) {
-    FatalError("Could not open input file " + env.options->input_file, __FILE__,
-               __LINE__);
+  if (Compile(err, *env) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
   }
 
-  env.parser->SetIStream(&infile);
+  if (EmitFiles(err, *env) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
 
-  /*
-    #TODO: handle temporary values within statements.
-    
-  */
+  return Link(out, err, *env);
+}
+
+auto Compile(std::ostream &err, Environment &env) -> int {
   std::vector<std::unique_ptr<pink::Ast>> valid_terms;
 
-  while (!env.parser->EndOfInput()) {
-    auto term = env.parser->Parse(env);
-
-    if (!term) {
-      pink::Error error(term.GetSecond());
-
-      if (error.code == Error::Code::EndOfFile) {
-        // if we didn't parse any terms, then there is nothing to optimize,
-        // emit, or link together thus we are safe to simply exit.
-        if (valid_terms.empty()) {
-          FatalError("Parsed an empty source file " + env.options->input_file,
-                     __FILE__, __LINE__);
-        }
-        // else we did parse some terms and simply reached the end of the
-        // source file, so we can safely continue with compilation of the
-        // valid terms.
-        break; // out of while loop
-      }
-      // #TODO: Handle more than the first error detected in the input code.
-      std::string bad_source = env.parser->ExtractLine(error.loc);
-      FatalError(error.ToString(bad_source), __FILE__, __LINE__);
-    } else {
-      auto type = term.GetFirst()->Typecheck(env);
-
-      // if not type and error == use-before-definition
-      // {
-      //   push term into a llvm::DenseMap<pink::InternedString,
-      //   std::pair<std::unique_ptr<pink::Ast>,
-      //   std::vector<std::unique_ptr<pink::Ast>>::iterator>>
-      //   // where the InternedString holds the variable name which was used
-      //   // before it was defined, and std::unique_ptr<pink::Ast> holds the
-      //   // term which failed to type. and the std::vector<...>::iterator
-      //   // holds the place where we would have inserted this term into the
-      //   // original vector. that place where we would have inserted is
-      //   // instead filled with a dummy term later, which is intended to be
-      //   // replaced by the real term once there are no use-before-definition
-      //   // errors.
-      //   //
-      // }
-      if (!type) {
-        pink::Error error = type.GetSecond();
-        std::string bad_source = env.parser->ExtractLine(error.loc);
-        FatalError(error.ToString(bad_source), __FILE__, __LINE__);
-      } else {
-        valid_terms.push_back(std::move(term.GetFirst()));
-      }
+  { // empty scope, to destroy infile after we are done using it.
+    std::fstream infile;
+    infile.open(env.options->input_file);
+    if (!infile.is_open()) {
+      err << "Could not open input file " << env.options->input_file;
+      return EXIT_FAILURE;
     }
+    env.parser->SetIStream(&infile);
+
+    while (!env.parser->EndOfInput()) {
+      auto term_result = env.parser->Parse(env);
+      if (!term_result) {
+        auto &error = term_result.GetSecond();
+        if ((error.code == Error::Code::EndOfFile) && (!valid_terms.empty())) {
+          break; // out of while loop
+        }
+        env.PrintErrorWithSourceText(err, error);
+        return EXIT_FAILURE;
+      }
+      auto &term = term_result.GetFirst();
+
+      auto type_result = term->Typecheck(env);
+      if (!type_result) {
+        auto &error = type_result.GetSecond();
+        env.PrintErrorWithSourceText(err, error);
+        return EXIT_FAILURE;
+      }
+
+      valid_terms.emplace_back(std::move(term));
+    }
+    env.ClearFalseBindings();
   }
 
-  // if there are no invalid terms when we get here.
-  // that is, if every bit of source we parsed typechecks
-  // then we simply have to emit all of their definitions into
-  // the llvm_module. (perhaps this too will require a
-  // use-before-definition buffer?)
-  // however, we have one thing to take care of, after typing all
-  // expressions, the Bind form will have constructed false bindings
-  // to allow the type of bound names to be used in later expressions.
-  // so, we have to unbind each name that was falsely bound,
-  // so that Codegen can bind those names to their actual types.
-  for (InternedString fbnd : *env.false_bindings) {
-    env.bindings->Unbind(fbnd);
-  }
-  // then since we unbound them, clear the names from the list
-  env.false_bindings->clear();
-
+  // we can very naturally support more than one error
+  // here, as we have a buffer of all of the terms already.
+  auto failed = false;
   for (std::unique_ptr<pink::Ast> &term : valid_terms) {
-    // as a side effect Codegen builds all of the llvm assembly within the
-    // llvm_module using the llvm::IRBuilder<>
     pink::Outcome<llvm::Value *, pink::Error> value = term->Codegen(env);
 
     if (!value) {
-      pink::Error error(value.GetSecond());
-      std::string bad_source(env.parser->ExtractLine(error.loc));
-      FatalError(error.ToString(bad_source), __FILE__, __LINE__);
+      failed = true;
+      auto error = value.GetSecond();
+      env.PrintErrorWithSourceText(err, error);
     }
   }
-
-  // #NOTE:
-  //    at this point in execution we are done compiling the source
-  //    down to llvm IR.
-  infile.close();
-
-  // if the optimization level is greater than zero, optimize the code.
-  // #TODO: look more into what would be good optimizations to run.
-  // #TODO: when we add modules, it is important that we think about
-  // when to run the optimizer, only at individual module translation time
-  // or during link time?
-  
-  // 
-  if (env.options->optimization_level != llvm::OptimizationLevel::O0) {
-    // These are the analysis pass managers that run the actual
-    // analysis and optimization code against the IR.
-    llvm::LoopAnalysisManager LAM;
-    llvm::FunctionAnalysisManager FAM;
-    llvm::CGSCCAnalysisManager CGAM;
-    llvm::ModuleAnalysisManager MAM;
-
-    // https://llvm.org/doxygen/classllvm_1_1PassBuilder.html
-    llvm::PassBuilder passBuilder;
-
-    // #TODO: what are the default Alias Analysis that this constructs?
-    FAM.registerPass([&] { return passBuilder.buildDefaultAAPipeline(); });
-
-    // Register the AnalysisManagers with the Pass Builder
-    passBuilder.registerModuleAnalyses(MAM);
-    passBuilder.registerCGSCCAnalyses(CGAM);
-    passBuilder.registerFunctionAnalyses(FAM);
-    passBuilder.registerLoopAnalyses(LAM);
-    // This registers each of the passes with eachother, so they
-    // can perform optimizations together, lazily
-    passBuilder.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-    llvm::ModulePassManager MPM = passBuilder.buildPerModuleDefaultPipeline(
-        env.options->optimization_level);
-
-    // Run the optimizer agains the IR
-    MPM.run(*env.llvm_module, MAM);
+  if (failed) {
+    return EXIT_FAILURE;
   }
+
+  return EXIT_SUCCESS;
 }
 } // namespace pink
