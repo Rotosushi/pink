@@ -25,8 +25,6 @@
 
 namespace pink {
 class Environment;
-class AstVisitor;
-class ConstAstVisitor;
 
 /*
   Would it be faster to store the entire Ast into a vector?
@@ -172,20 +170,6 @@ public:
    * @return const Type* the type of this ast, or nullptr
    */
   [[nodiscard]] auto GetType() const -> Type *;
-
-  /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  // virtual void Accept(AstVisitor *visitor) = 0;
-
-  /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  virtual void Accept(const ConstAstVisitor *visitor) const = 0;
 
   /**
    * @brief Computes the canonical string representation of this Ast

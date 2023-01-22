@@ -4,17 +4,11 @@
 
 #include "type/SliceType.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 Binop::Binop(const Location &location, InternedString opr,
              std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Binop, location), op(opr), left(std::move(left)),
       right(std::move(right)) {}
-
-void Binop::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto Binop::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Binop;

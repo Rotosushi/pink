@@ -28,6 +28,7 @@ test/build/
 doxy/
 old_c_src/
 old_cpp_src/
+sandbox/*
 
 # Build results
 [Dd]ebug/

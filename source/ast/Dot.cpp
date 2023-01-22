@@ -6,15 +6,11 @@
 
 #include "kernel/LoadValue.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 Dot::Dot(const Location &location, std::unique_ptr<Ast> left,
          std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Dot, location), left(std::move(left)),
       right(std::move(right)) {}
-
-void Dot::Accept(const ConstAstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Dot::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Dot;

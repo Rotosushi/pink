@@ -1,0 +1,45 @@
+
+memory layout is roughly equivalent to the types you use.
+  (with packed structs it is even more closely related to 
+  how the actual bits look in memory representing the type)
+
+time spent in the program executing the code that you wrote 
+  down is roughly equivalent to what you would get just by writing 
+  a potentially optimized assembly version of the code.
+  to say that another way, I dislike the garbage collector as a 
+  core feature of the language because it adds a constraint to the 
+  time/space semantics of the program that is invisible to the 
+  programmer, namely the time/space overhead of garbage cleanup.
+  I really like the garbage collector from a memory safety perspective.
+  there are however other options with less overhead.
+
+nothing invisible to the programmer. (as much as is possible)
+  programming in C feels like you are writing in a higher level language
+  whose programming model is very close to the abstract machine, "The CPU."
+  so what I want to do is see how close I can get the abstract machine 
+  "The Lambda Calculus" to the abstract machine "The CPU."
+  (well, truly the LLVM IR model of computation, not my abstract 
+  notion of a CPU)
+
+
+
+
+in the spirit of the coming together of these two environments,
+since '->' is already understood to be the function type,
+why not make '<-' assignment? it's 'inverse' 
+
+
+
+it should be as easy to factor a sequence of code out into a function as possible.
+
+types should be inferred where ever it is possible.
+(with optional type annotations)
+
+strictly evaluating (it would be real neat if it was easy to create a thunk though)
+
+every runtime entity must be singly, statically typed. 
+Then we add type variables, implemented as templates for the flexibility.
+along with function overload resolution.
+
+
+

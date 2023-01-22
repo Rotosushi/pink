@@ -1,7 +1,9 @@
 #include "core/Optimize.h"
 
+#include "llvm/Analysis/AliasAnalysis.h"
+
 namespace pink {
-auto Optimize(std::ostream &out, Environment &env) {
+auto Optimize(std::ostream &out, Environment &env) -> int {
   if (env.options->optimization_level != llvm::OptimizationLevel::O0) {
     llvm::LoopAnalysisManager LAM;
     llvm::FunctionAnalysisManager FAM;

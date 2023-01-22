@@ -66,13 +66,6 @@ public:
   auto GetBody() const -> const Ast * { return body.get(); }
 
   /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  void Accept(const ConstAstVisitor *visitor) const override;
-
-  /**
    * @brief Compute the cannonical string representation of this While
    * expression
    *

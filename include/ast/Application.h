@@ -67,13 +67,6 @@ public:
 
   auto operator=(Application &&other) -> Application & = default;
 
-  /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  void Accept(const ConstAstVisitor *visitor) const override;
-
   auto GetCallee() const -> const Ast * { return callee.get(); }
 
   auto GetArguments() const -> const std::vector<std::unique_ptr<Ast>> & {

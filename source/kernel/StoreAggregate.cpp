@@ -17,30 +17,31 @@ namespace pink {
  *  through every single valued element in an iterative solution as well, the
  *  potential cost of this recursive solution is not too expensive in terms
  *  of space or time, compared to an imagined fully iterative solution.
- *
- *
+ * 
+ *  note that this solution is meant to be used in conjunction with calls to 
+ *  memcpy. As a call to memcpy for larger types is more efficient than this 
+ *  solution. (I believe, have not tested).
  *
  *  there are two distinct cases that cannot be mixed however, and that is
  *  dependant upon the kind of source we are given, that is are we attempting
- *  to store a llvm::Value* or an llvm::Constant*. if we are storing the value
- *  from a llvm::Constant* then this procedure can be used for our
- *  constant initialization procedure. Now this is not useful for initializing
+ *  to store a llvm::Value* or a llvm::Constant*. if we are storing the value
+ *  from a llvm::Constant* then this procedure can be used for initializing
+ *  variables with a constant. Now this is not useful for initializing
  *  GlobalVariables, as they can already be given aggregate llvm::Constant*
  *  as initializers, but it does come in handy when considering initializing
- *  a local variable with a constant initializer, or as in the other case
- *  when copying an existing aggregate to another memory location.
+ *  a local variable with a constant initializer. The other case comes when 
+ *  we need to lower something like tuple assignment. When we want to store 
+ *  the value at some location into another location. This happens when we pass 
+ *  arguments to procedures, or return arguments from procedures (copy-elision 
+ *  is an optimization, I am speaking about the base semantics), or when we 
+ *  want to assign or bind an aggregate value to another variable.
  *
  *
  *  instead of spliting this function in two internally with a huge
  *  if ... else ... clause, we are going to split the procedure into
- *  two procedures. one for storing a llvm::Constant* Aggregate into
+ *  two functions. one for storing a llvm::Constant* Aggregate into
  *  a memory location, and one for storing the contents of one memory
- *  location into another. Hold up, can't we support that with a memcpy?
- *  I think so, yeah, we just need the sizes of the types involved.
- *  however we cannot memcpy from a llvm::Constant, and the speedup of
- *  switching to memcpy really only shows when the types get large.
- *  so this procedure will still be useful for smallish types, so it
- *  will be nice to have around.
+ *  location into another. 
  *
  *  Input Constraints:
  *   -) type of src and dest must be equivalent, and each must have type

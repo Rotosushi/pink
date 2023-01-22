@@ -203,6 +203,9 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
 
   // #TODO: construct classes which are used to generate
   // debugging information for a given source unit.
+  // 1/16/2023: this todo is on hold for now, 
+  // because adding debug information requires us to tell the 
+  // debugger how to call our functions. 
 
   // a minor gripe about the DIBuilder class, the class itself takes
   // as an argument a pointer to a DICompileUnit, which makes complete
@@ -218,13 +221,6 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   // DICompileUnit, then make another DIBuilder associated with the
   // DICompileUnit? It seems like there is a redundant step in there.
   //
-
-  // okay, so a somewhat minor thing to note is that if this language can
-  // actually support functions as values then we will run into issues telling
-  // the debugger that our language conforms to the C calling convention.
-  // Our functions are slightly different from the ccc, so how do we tell that 
-  // to the debugger? (maybe we can get away with telling the debugger 
-  // all arguments are accessed through a single struct parameter somehow?)
 
   // const llvm::DIBuilder temp_debug_builder(*llvm_module);
   // llvm::DICompileUnit* debug_compile_unit =

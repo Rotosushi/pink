@@ -91,6 +91,85 @@ integer = [0-9]+
 
     \endverbatim
  */
+
+/*
+  what about this EBNF grammar?
+
+top = declaration ";"
+
+declaration = variable
+            | function
+            | type
+
+variable = identifier
+         | identifier ":" type ["<-" affix]
+         | identifier ":" "<-" affix
+         | identifier ":<-" affix
+
+function = "fn" identifier argument-list block
+
+affix = application
+      | application binop infix-parser
+
+binop = "+"
+      | "-"
+      | "*"
+      | "/"
+      | "%"
+      | ">"
+      | "<"
+      | "="
+      | "<="
+      | ">="
+      | "&"
+      | "|"
+      | "^"
+
+
+application = basic {basic}
+
+accessor = basic {("." affix)}
+
+basic = identifier
+      | 
+      | unop accessor
+      | tuple_or_affix
+      | array
+      | conditional
+      | loop
+      | block
+      | integer
+      | "nil"
+      | "true"
+      | "false"
+      | "(" affix ")"
+
+unop = operator 
+
+tuple_or_affix = "(" affix {"," affix} ")"
+
+array = "[" affix {"," affix} "]"
+
+conditional = "if" "(" affix ")" (affix | block) ["else" (affix | block)]
+
+loop = "while" "(" affix ")" (affix | block)
+
+block = "{" affix {";" affix} "}"
+
+type = "Nil"
+     | "Integer"
+     | "Boolean"
+     | "Ptr" template
+     | "(" type {"," type} ")"
+     | "[" type ";" integer "]"
+     | type {"->" type}
+
+template = "`" type {"," type} "`"
+
+identifier = [a-zA-Z_][a-zA-Z0-9_]*
+integer = [0-9]+
+*/
+
 class Parser {
 private:
   /**
@@ -197,10 +276,10 @@ private:
    * \verbatim
    * function = "fn" id "(" [arg {"," arg}] ")" block
    * \endverbatim
-   * 
-   * \todo add an optional explicit return type 
+   *
+   * \todo add an optional explicit return type
    * \todo allow functions to have a single body statement
-   * followed by a semicolon instead of a block for their 
+   * followed by a semicolon instead of a block for their
    * body.
    *
    * @param env The environment associated with this compilation unit

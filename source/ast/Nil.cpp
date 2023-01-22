@@ -2,12 +2,8 @@
 
 #include "aux/Environment.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 Nil::Nil(const Location &location) : Ast(Ast::Kind::Nil, location) {}
-
-void Nil::Accept(const ConstAstVisitor *visitor) const { visitor->Visit(this); }
 
 auto Nil::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Nil;

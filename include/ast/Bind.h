@@ -74,13 +74,6 @@ public:
   auto GetAffix() const -> const Ast * { return affix.get(); }
 
   /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  void Accept(const ConstAstVisitor *visitor) const override;
-
-  /**
    * @brief Implements LLVM style [RTTI] for this class
    *
    * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"

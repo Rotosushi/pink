@@ -21,27 +21,29 @@ auto EmitLLVMFile(std::ostream &out, const Environment &env,
 
 auto EmitFiles(std::ostream &out, const Environment &env) -> int {
   const auto &options = env.options;
-  int result = EXIT_FAILURE;
+  int result = EXIT_SUCCESS;
   if (options->emit_llvm) {
-    result = EmitLLVMFile(out, env, options->GetLLVMFilename());
+    result &= EmitLLVMFile(out, env, options->GetLLVMFilename());
     if (result == EXIT_FAILURE) {
       return result;
     }
   }
 
   if (options->emit_assembly) {
-    result = EmitAssemblyFile(out, env, options->GetAsmFilename());
+    result &= EmitAssemblyFile(out, env, options->GetAsmFilename());
     if (result == EXIT_FAILURE) {
       return result;
     }
   }
 
   if (options->emit_object) {
-    result = EmitObjectFile(out, env, options->GetObjFilename());
+    result &= EmitObjectFile(out, env, options->GetObjFilename());
     if (result == EXIT_FAILURE) {
       return result;
     }
   }
+
+  return result;
 }
 
 auto EmitObjectFile(std::ostream &out, const Environment &env,
@@ -67,8 +69,7 @@ auto EmitObjectFile(std::ostream &out, const Environment &env,
   }
 
   objPrintPass.run(*env.llvm_module);
-
-  outfile.close();
+  return EXIT_SUCCESS;
 }
 
 auto EmitAssemblyFile(std::ostream &out, const Environment &env,
@@ -93,7 +94,7 @@ auto EmitAssemblyFile(std::ostream &out, const Environment &env,
     return EXIT_FAILURE;
   }
 
-  asmPrintPass.run(*env.llvm_module);
+  return asmPrintPass.run(*env.llvm_module);
 }
 
 auto EmitLLVMFile(std::ostream &out, const Environment &env,
@@ -110,7 +111,6 @@ auto EmitLLVMFile(std::ostream &out, const Environment &env,
   }
 
   env.llvm_module->print(outfile, nullptr);
-
-  outfile.close();
+  return EXIT_SUCCESS;
 }
 } // namespace pink

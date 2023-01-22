@@ -3,18 +3,12 @@
 
 #include "aux/Environment.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 Conditional::Conditional(const Location &location, std::unique_ptr<Ast> test,
                          std::unique_ptr<Ast> first,
                          std::unique_ptr<Ast> second)
     : Ast(Ast::Kind::Conditional, location), test(std::move(test)),
       first(std::move(first)), second(std::move(second)) {}
-
-void Conditional::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto Conditional::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Conditional;

@@ -68,13 +68,6 @@ public:
   auto operator=(Block &&other) -> Block & = default;
 
   /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  void Accept(const ConstAstVisitor *visitor) const override;
-
-  /**
    * @brief an iterator over the statements within the block
    *
    */

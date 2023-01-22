@@ -103,7 +103,6 @@ add_library(common STATIC
 	source/ast/Array.cpp
 	source/ast/Assignment.cpp
 	source/ast/Ast.cpp
-	source/ast/AstToString.cpp
 	source/ast/Bind.cpp
 	source/ast/Binop.cpp
 	source/ast/Block.cpp
@@ -115,8 +114,6 @@ add_library(common STATIC
 	source/ast/Nil.cpp
 	source/ast/Subscript.cpp
 	source/ast/Tuple.cpp
-  source/ast/Typecheck.cpp
-  source/ast/TypecheckVisitor.cpp
 	source/ast/Unop.cpp
 	source/ast/Variable.cpp
 	source/ast/While.cpp
@@ -167,7 +164,7 @@ add_library(common STATIC
 	source/front/Parser.cpp
 		
 	# the 'kernel' directory is for files which implement functionality 
-	# within the compiler which is made directly available to the programmer.
+	# of the language itself
 	source/kernel/ops/BinopPrimitives.cpp
 	source/kernel/ops/UnopPrimitives.cpp
 	source/kernel/sys/SysExit.cpp
@@ -190,8 +187,6 @@ add_library(common STATIC
 	source/support/LLVMTypeToString.cpp 
 	source/support/EmitFile.cpp
 	source/support/Gensym.cpp
-
-	source/visitor/AstVisitor.cpp
 )
 			   
 

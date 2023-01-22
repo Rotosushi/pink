@@ -55,6 +55,16 @@
 
   we are prevented because of the type narrowing that happens during partial application.
   c++ solves this with the explicit capture list.
+  which solves this whole thing rather elegantly. as there is no more partial binding,
+  because all arguments you want to partially bind can be done via the explicit capture list.
+  as far as I can tell the only thing a c++ lambda cannot do as a consequence of this
+  is have an outer function construct a lambda, pass that lambda into a function call,
+  have that function call partially bind the lambda then pass the same closure back out.
+  or, going the other way, construct a lambda, pass it to a function to bind some number of 
+  arguments, then pass it to another function to bind still more arguments, and so on,
+  until you apply the function after binding all of the arguments. Essentially, c++ 
+  requires all partial bindings to occur at lambda creation time, whereas a more general 
+  lambda would allow you to partially bind arguments at a later point in the program.
 
   if we could come up with a structure which could represent a closure around 
   a function of arbitrary type which could be applied systematically 
@@ -71,7 +81,11 @@
 
   in C it might be:
 
-  int f(int a, int b) { return a + b; }
+  void f(void* ret, void* args) { 
+    int* result = (int*)ret;
+    closure_f_data* data = (closure_f_data*)args;
+    *result = data->a + data->b;
+  }
 
   typedef int (*f_pointer)(int, int);
 
@@ -87,5 +101,128 @@
     closure_f_data data;
   } closure_f;
 
+  the problem with this is how does a caller know where to place any new arguments 
+  within the structure during partial application, so they can be passed during
+  full application? if you are wondering why that poses a problem, it is because 
+  after you partially apply a procedure it's type can get smaller. (as the new 
+  closure takes less arguments to apply) if you have a closure such as this, due to 
+  it's type and the typechecking rules, you can bind this to a procedure argument which  
+  expects a smaller function type, Thus the layout type of the closure you would 
+  expect given the arguments function type is different than the layout type of the 
+  runtime closure type. if this type incongruity can be resolved at runtime, such that 
+  a single implementation of a function call site, can call any closure type which matches 
+  the exact function type, or any closure which could be reduced due to the evaluation rules to 
+  a type which matches the function type, then that would allow you to implement the 
+  type shortening/reduction that the evaluation rules provide. Additionally given a 
+  mechanism which gave you type shortening like this, you can leverage it to 
+  implement hidden parameters to functions, allowing the capture list of a lambda to 
+  be passed into a call of said lambda.
+
+  there is no way to type agnostically bind arguments to the closure object,
+  something which is necessary to support both full and partial application.
+
+  this is where my next idea comes from.
+
+  assuming that it is perfectly fine to pass a pointer to an inner struct member 
+  as the single argument to a procedure at application time, then it might also be 
+  acceptable to use a pointer to a structure member to bind a runtime value to 
+  an argument within that structure, thus we might be able to leverage an array 
+  of void* to perform binding at parital application time. like so:
+
+  void f(void *ret, void *args) { 
+    int* ret_val = (int*)ret;
+    closure_f_data* data = (closure_f_data*)args;
+    *ret_val = data->a + data->b;
+    return;
+   }
+
+  typedef void (*f_pointer)(void*, void*);
+
+  typedef struct closure_f_data {
+    f_pointer ptr;
+    int a;
+    int b;
+  } closure_f_data;
+
+  typedef struct closure_f {
+    f_pointer ptr;
+    closure_f_data *arg_struct;
+    size_t length;
+    size_t bound;
+    void* arguments[3];
+    closure_f_data data;
+  } closure_f;
+
+  void init_closure_f(closure_f* closure, f_pointer ptr) {
+    closure->ptr = ptr;
+    closure->arg_struct = &closure->data;
+    closure->length = 3;
+    closure->bound  = 1;
+    closure->data.ptr = ptr;
+    closure->arguments[0] = &closure->data.ptr;
+  }
+
+  void init_closure_f(closure_f* closure, f_pointer ptr, int a, int b) {
+    closure->ptr = ptr;
+    closure->arg_struct = &closure->data;
+    closure->length = 3;
+    closure->bound  = 3;
+    closure->data = {ptr, a, b};
+    closure->arguments[0] = &closure->data.ptr;
+    closure->arguments[1] = &closure->data.a;
+    closure->arguments[2] = &closure->data.b; 
+  }
+
+  typedef struct Closure {
+    f_pointer ptr;
+    void* arg_struct;
+    size_t length;
+    size_t bound;
+    void** arguments;
+  } Closure;
+
+  void Apply(Closure* closure, void* ret_val) {
+    closure->ptr(ret_val, closure->arg_struct);
+  }
+
+  we can then apply a closure via a pointer to said closure like so:
   
+  int a = ...;
+  int b = ...;
+  closure_f lambda;
+  init_closure_f(&lambda, f, a, b);
+  ...;
+  Closure* closure = (Closure*)(&lambda);
+  int ret_val;
+  Apply(closure, (void*)(&ret_val));
+
+  we can bind a given argument to the closure like so:
+
+  closure_f lambda;
+  init_closure_f(&lambda, f);
+  ...;
+  int a = ...;
+  Closure* closure = (Closure*)(&lambda);
+  *((int*)(closure->arguments[1])) = a;
+
+  and we can tell when a given closure has no more 
+  slots open by checking the difference between 
+  length and bound.
+  
+  I think, in the interests of getting something working, that 
+  doesn't take quite as much work, we can transition from as we
+  are now; no closures, to an environment with closures but no 
+  partial application, then to an environment with full partial 
+  application. 
+
+  then we can get to work adding templates to the language.
+
+  because if we can implement partial application in a statically 
+  typed, strictly evaluated way, the kind of polymorphism which 
+  arises from the introduction of type variables seems to simply 
+  fit right on top. (because any given implementation of the 
+  Type variable term is simply one of a set of statically typed 
+  strictly evaluated implementations. the difficulty arises in the 
+  choice from the set. (I think this is F-bounded polymorphism?))
+
 

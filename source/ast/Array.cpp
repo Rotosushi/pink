@@ -5,8 +5,6 @@
 
 #include "support/LLVMValueToString.h"
 
-#include "visitor/AstVisitor.h"
-
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 
@@ -14,10 +12,6 @@ namespace pink {
 Array::Array(const Location &location,
              std::vector<std::unique_ptr<Ast>> members)
     : Ast(Ast::Kind::Array, location), members(std::move(members)) {}
-
-void Array::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto Array::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Array;

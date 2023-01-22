@@ -4,17 +4,11 @@
 
 #include "aux/Environment.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 While::While(const Location &location, std::unique_ptr<Ast> test,
              std::unique_ptr<Ast> body)
     : Ast(Ast::Kind::While, location), test(std::move(test)),
       body(std::move(body)) {}
-
-void While::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto While::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::While;
@@ -110,13 +104,13 @@ auto While::Codegen(const Environment &env) const
   env.instruction_builder->SetInsertPoint(after_BB);
   env.current_function->insert(env.current_function->end(), after_BB);
 
-  // 10) The type of While is Nil, because a While Expression always 
+  // 10) The type of While is Nil, because a While Expression always
   // returns nil.
   // #NOTE: we could return the result of evaluating the body as the
   //        result of a while expression, and that would be natural,
   //        except that the case where the loop never runs asks
   //        the question of what to return. to me the obvious answer
-  //        is the default construction of the value. However that 
+  //        is the default construction of the value. However that
   //        also seems like a bad idea.
   return {env.instruction_builder->getFalse()};
 }

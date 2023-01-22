@@ -3,15 +3,9 @@
 
 #include "aux/Environment.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 Integer::Integer(const Location &location, const long long value)
     : Ast(Ast::Kind::Integer, location), value(value) {}
-
-void Integer::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto Integer::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Integer;

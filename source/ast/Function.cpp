@@ -10,8 +10,6 @@
 
 #include "support/LLVMErrorToString.h"
 
-#include "visitor/AstVisitor.h"
-
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "llvm/IR/Verifier.h"
@@ -23,10 +21,6 @@ Function::Function(const Location &location, const InternedString name,
     : Ast(Ast::Kind::Function, location), name(name),
       arguments(std::move(arguments)), body(std::move(body)),
       bindings(std::make_shared<SymbolTable>(outer_scope)) {}
-
-void Function::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto Function::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Function;
@@ -222,7 +216,7 @@ void Function::CodegenParameterAttributes(
    * add the sret parameter attribute to a parameter
    * of the function.
    *
-   * this is within a conditional because if it true, then
+   * this is within a conditional because if its true, then
    * the parameter list holds the return value, so the parameter
    * list is one element larger that the pink::FunctionType says.
    * so we have to use different offsets to get to each argument.

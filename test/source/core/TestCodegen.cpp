@@ -465,20 +465,6 @@ auto TestArrayCodegen(std::ostream &out, int numIter, std::mt19937_64 &gen)
 
 // NOLINTEND
 
-/*
- *  TestBasic tests that the compiler can emit a correct program,
- *    given the input file. this revolves around generating
- *    random numbers for the contents of any given input file,
- *    so we can be sure to generate test code which we are not
- *    specifically conforming to.
- *
- *  #TODO: 9/15/2022
- *    This function is reaching 1000 lines. it may be too big.
- *    We could refactor this routine into more than one testing
- *    routine, for granularity of errors, and for readability of
- *    this file in particular. (all these tests are good so far.)
- *
- */
 auto TestCodegen(std::ostream &out) -> bool {
   // TestCodegen might as well be called TestCodegenSideeffects
   // because all we can truly test is that the program returned the
@@ -493,7 +479,7 @@ auto TestCodegen(std::ostream &out) -> bool {
   // picking behavior to test. This is good, because it means
   // we cannot write the code to fit exactly to the tests. It
   // is also bad, because it means we are not specifically testing
-  // every edge case.
+  // every edge case every time.
   int numIter = 1;
 
   std::random_device rnd;

@@ -21,7 +21,13 @@ namespace pink {
 void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
                   const Environment &env) {
   assert(exit_code != nullptr);
-
+  /*
+    #NOTE #CONCERN:
+      Here we allocate global text (the way we handle it should work for 
+      both ascii and utf-8) however, how do we ensure that we are using 
+      the correct type between AllocateGlobalText and CodegenWriteText?
+      
+  */
   auto *error_string = AllocateGlobalText(Gensym(), error_description, env);
   auto size = error_description.size() + 1;
   auto *character_type = env.types->GetCharacterType();

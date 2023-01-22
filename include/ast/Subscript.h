@@ -23,13 +23,6 @@ public:
   auto operator=(const Subscript &other) -> Subscript & = delete;
   auto operator=(Subscript &&other) -> Subscript & = default;
 
-  /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor
-   */
-  void Accept(const ConstAstVisitor *visitor) const override;
-
   inline auto GetLeft() const -> const Ast * { return left.get(); }
 
   inline auto GetRight() const -> const Ast * { return right.get(); }

@@ -1,7 +1,5 @@
 #include "ast/Subscript.h"
 
-#include "visitor/AstVisitor.h"
-
 #include "kernel/ArraySubscript.h"
 #include "kernel/SliceSubscript.h"
 
@@ -10,10 +8,6 @@ Subscript::Subscript(const Location &location, std::unique_ptr<Ast> left,
                      std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Subscript, location), left(std::move(left)),
       right(std::move(right)) {}
-
-void Subscript::Accept(const ConstAstVisitor *visitor) const {
-  return visitor->Visit(this);
-}
 
 auto Subscript::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Subscript;

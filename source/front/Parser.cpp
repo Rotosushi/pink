@@ -285,7 +285,6 @@ auto Parser::ParseArgument(const Environment &env)
     Error(Error::Code::MissingArgColon, loc);
   }
 
-  // todo: if (!isTypeToken(tok))
   if (Peek(Token::Comma) || Peek(Token::RParen)) {
     return Error(Error::Code::MissingArgType, loc);
   }

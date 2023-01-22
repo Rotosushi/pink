@@ -87,16 +87,16 @@ auto TestTypecheck(std::ostream &out) -> bool {
   };
 
   result &= Test(out, "Parser::Parse(a := 128;), Typecheck() == Int",
-                 ((term = GetAstOrNull(outcome, out)) != nullptr) &&
+                 ((term = GetAstOrNull(out, outcome, *env)) != nullptr) &&
                      (TestBindTermIsA<pink::Integer>(term, loc, out)) &&
-                     (TestGetypeIsA<pink::IntegerType>(
+                     (TestGetypeHoldsType<pink::IntegerType>(
                          getype = term->Typecheck(*env), out)));
 
   next_test();
   result &= Test(out, "Parser::Parse(b := true;), Typecheck() == Bool",
-                 ((term = GetAstOrNull(outcome, out)) != nullptr) &&
+                 ((term = GetAstOrNull(out, outcome, *env)) != nullptr) &&
                      (TestBindTermIsA<pink::Boolean>(term, loc, out)) &&
-                     (TestGetypeIsA<pink::BooleanType>(
+                     (TestGetypeHoldsType<pink::BooleanType>(
                          getype = term->Typecheck(*env), out)));
 
   // even though we have not generated the code binding
@@ -107,25 +107,25 @@ auto TestTypecheck(std::ostream &out) -> bool {
   // the expression 'c := a'
   next_test();
   result &= Test(out, "Parser::Parse(c := a;), Typecheck() == Integer",
-                 ((term = GetAstOrNull(outcome, out)) != nullptr) &&
+                 ((term = GetAstOrNull(out, outcome, *env)) != nullptr) &&
                      (TestBindTermIsA<pink::Variable>(term, loc, out)) &&
-                     (TestGetypeIsA<pink::IntegerType>(
+                     (TestGetypeHoldsType<pink::IntegerType>(
                          getype = term->Typecheck(*env), out)));
 
   next_test();
   result &= Test(out, "Parser::Parse(d := &a;), Typecheck() == Ptr<Integer>",
-                 ((term = GetAstOrNull(outcome, out)) != nullptr) &&
+                 ((term = GetAstOrNull(out, outcome, *env)) != nullptr) &&
                      (TestBindTermIsA<pink::Unop>(term, loc, out)) &&
-                     (TestGetypeIsA<pink::PointerType>(
+                     (TestGetypeHoldsType<pink::PointerType>(
                          getype = term->Typecheck(*env), out)));
 
   next_test();
   result &= Test(
       out, "Parser::Parse(fn zero() { 0; }), Typecheck() == Nil -> Integer",
-      ((term = GetAstOrNull(outcome, out)) != nullptr) &&
+      ((term = GetAstOrNull(out, outcome, *env)) != nullptr) &&
           (TestFnBodyIsA<pink::Integer>(term, loc, out)) &&
-          (TestGetypeIsA<pink::FunctionType>(getype = term->Typecheck(*env),
-                                             out)));
+          (TestGetypeHoldsType<pink::FunctionType>(
+              getype = term->Typecheck(*env), out)));
 
   result &= Test(out, "pink First Phase", result);
 

@@ -86,12 +86,6 @@ public:
   auto GetLeft() const -> const Ast * { return left.get(); }
 
   auto GetRight() const -> const Ast * { return right.get(); }
-  /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  void Accept(const ConstAstVisitor *visitor) const override;
 
   /**
    * @brief Implements LLVM style [RTTI] for this class

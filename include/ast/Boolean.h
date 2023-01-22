@@ -62,13 +62,6 @@ public:
   auto operator=(Boolean &&other) -> Boolean & = default;
 
   /**
-   * @brief part of the Visitor interface
-   *
-   * @param visitor the visitor to accept
-   */
-  void Accept(const ConstAstVisitor *visitor) const override;
-
-  /**
    * @brief This function is used to implement llvm style [RTTI] for this node
    * kind
    *

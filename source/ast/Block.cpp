@@ -2,18 +2,12 @@
 #include "ast/Block.h"
 #include "aux/Environment.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 Block::Block(const Location &location) : Ast(Ast::Kind::Block, location) {}
 
 Block::Block(const Location &location,
              std::vector<std::unique_ptr<Ast>> &stmnts)
     : Ast(Ast::Kind::Block, location), statements(std::move(stmnts)) {}
-
-void Block::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto Block::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Block;

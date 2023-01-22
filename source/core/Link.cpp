@@ -58,8 +58,8 @@ auto Link(std::ostream &out, std::ostream &err, const Environment &env) -> int {
                                         "main",       objoutfilename.data(),
                                         "-o",         exeoutfilename.data()};
 
-  lld::elf::link(lld_args, llvm_out, llvm_err, /* exitEarly */ false,
-                 /* disableOutput */ false);
+  return lld::elf::link(lld_args, llvm_out, llvm_err, /* exitEarly */ false,
+                        /* disableOutput */ false);
 }
 
 } // namespace pink

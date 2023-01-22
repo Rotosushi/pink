@@ -1,16 +1,10 @@
 #include "ast/Unop.h"
 #include "aux/Environment.h"
 
-#include "visitor/AstVisitor.h"
-
 namespace pink {
 Unop::Unop(const Location &location, InternedString opr,
            std::unique_ptr<Ast> right)
     : Ast(Ast::Kind::Unop, location), op(opr), right(std::move(right)) {}
-
-void Unop::Accept(const ConstAstVisitor *visitor) const {
-  visitor->Visit(this);
-}
 
 auto Unop::classof(const Ast *ast) -> bool {
   return ast->GetKind() == Ast::Kind::Unop;
