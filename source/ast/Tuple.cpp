@@ -4,32 +4,8 @@
 #include "support/LLVMValueToString.h"
 
 namespace pink {
-Tuple::Tuple(const Location &location,
-             std::vector<std::unique_ptr<Ast>> members)
-    : Ast(Ast::Kind::Tuple, location), members(std::move(members)) {}
 
-auto Tuple::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Tuple;
-}
-
-auto Tuple::ToString() const -> std::string {
-  std::string result("(");
-  size_t idx = 0;
-  size_t length = members.size();
-
-  for (const auto &member : members) {
-    result += member->ToString();
-
-    if (idx < (length - 1)) {
-      result += ", ";
-    }
-
-    idx++;
-  }
-  result += ")";
-  return result;
-}
-
+/*
 auto Tuple::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   std::vector<Type *> member_types;
 
@@ -50,6 +26,7 @@ auto Tuple::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
   return {env.types->GetTupleType(member_types)};
 }
+*/
 
 /**
  * \todo make tuple return an already alocated tuple.
@@ -68,6 +45,7 @@ auto Tuple::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
  * any term which needs to allocate can grab that name.
  * but then what about anonymous terms? (temporary values)
  */
+/*
 auto Tuple::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -94,4 +72,5 @@ auto Tuple::Codegen(const Environment &env) const
 
   return {llvm::ConstantStruct::get(tuple_type, tuple_elements)};
 }
+*/
 } // namespace pink

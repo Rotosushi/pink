@@ -15,97 +15,34 @@ namespace pink {
  */
 class Bind : public Ast {
 private:
-  /**
-   * @brief Compute the Type of the Bind expression
-   *
-   *  "var" [symbol] ":=" [affix] ";"
-   *
-   * The type of a bind expression is the type of the
-   * affix expression if and only if the symbol is not
-   * already bound locally within the environment.
-   * and the affix expression is itself typeable.
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<Type*, Error> if true the type of the Bind expression,
-   * if false the Error encountered.
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
+  InternedString symbol;
+  Ast::Pointer affix;
 
 public:
-  /**
-   * @brief the symbol being bound
-   *
-   */
-  InternedString symbol;
-
-  /**
-   * @brief the term holding the value to bind the symbol to
-   *
-   */
-  std::unique_ptr<Ast> affix;
-
-  /**
-   * @brief Construct a new Bind
-   *
-   * @param location the textual location of the Bind expression
-   * @param symbol the symbol to be bound
-   * @param affix the expression holding the value to bind the symbol to
-   */
   Bind(const Location &location, InternedString symbol,
-       std::unique_ptr<Ast> affix);
+       Ast::Pointer affix) noexcept
+      : Ast(Ast::Kind::Bind, location), symbol(symbol),
+        affix(std::move(affix)) {}
+  ~Bind() noexcept override = default;
+  Bind(const Bind &other) noexcept = delete;
+  Bind(Bind &&other) noexcept = default;
+  auto operator=(const Bind &other) noexcept -> Bind & = delete;
+  auto operator=(Bind &&other) noexcept -> Bind & = default;
 
-  /**
-   * @brief Destroy the Bind
-   *
-   */
-  ~Bind() override = default;
+  auto GetSymbol() noexcept -> InternedString { return symbol; }
+  auto GetSymbol() const noexcept -> InternedString { return symbol; }
+  auto GetAffix() noexcept -> Ast::Pointer & { return affix; }
+  auto GetAffix() const noexcept -> const Ast::Pointer & {
+    return affix;
+  }
 
-  Bind(const Bind &other) = delete;
+  static auto classof(const Ast *ast) noexcept -> bool {
+    return Ast::Kind::Bind == ast->GetKind();
+  }
 
-  Bind(Bind &&other) = default;
-
-  auto operator=(const Bind &other) -> Bind & = delete;
-
-  auto operator=(Bind &&other) -> Bind & = default;
-
-  auto GetSymbol() const -> InternedString { return symbol; }
-
-  auto GetAffix() const -> const Ast * { return affix.get(); }
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the ast to test
-   * @return true if the ast *is* an instance of a Bind expression
-   * @return false if the ast *is not* an instance of a Bind expression
-   */
-  static auto classof(const Ast *ast) -> bool;
-
-  /**
-   * @brief Compute the cannonical string representation of the Bind expression
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the Value of the Bind expression
-   *
-   * "var" [symbol] ":=" [affix] ";"
-   *
-   * The value of a bind expression is the value of
-   * the affix expression if and only if the symbol
-   * has not been locally bound. and the affix expression
-   * itself has a computable value.
-   *
-   * @param env the environment of the compilation unit
-   * @return Outcome<llvm::Value*, Error> if true the value of the Bind
-   * expression, if false the Error encountered
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

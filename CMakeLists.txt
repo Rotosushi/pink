@@ -117,6 +117,9 @@ add_library(common STATIC
 	source/ast/Unop.cpp
 	source/ast/Variable.cpp
 	source/ast/While.cpp
+
+  source/ast/visitor/AstVisitor.cpp
+  source/ast/action/ToString.cpp
 	
 
 	# the 'type' directory is for all of the classes which together 
@@ -132,6 +135,9 @@ add_library(common STATIC
 	source/type/TupleType.cpp
 	source/type/Type.cpp
 	source/type/VoidType.cpp
+
+  source/type/visitor/TypeVisitor.cpp
+  source/type/action/ToString.cpp
 
 
 	# the 'aux' directory is for the classes which are necessary or convenient
@@ -187,6 +193,9 @@ add_library(common STATIC
 	source/support/LLVMTypeToString.cpp 
 	source/support/EmitFile.cpp
 	source/support/Gensym.cpp
+
+  # the 'visitor' directory is for the visitor interfaces
+  source/visitor/VisitorResult.cpp 
 )
 			   
 

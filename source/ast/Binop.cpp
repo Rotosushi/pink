@@ -5,39 +5,12 @@
 #include "type/SliceType.h"
 
 namespace pink {
-Binop::Binop(const Location &location, InternedString opr,
-             std::unique_ptr<Ast> left, std::unique_ptr<Ast> right)
-    : Ast(Ast::Kind::Binop, location), op(opr), left(std::move(left)),
-      right(std::move(right)) {}
-
-auto Binop::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Binop;
-}
-
-auto Binop::ToString() const -> std::string {
-  std::string result;
-  if (llvm::isa<Binop>(left)) {
-    result += "(" + left->ToString() + ")";
-  } else {
-    result += left->ToString();
-  }
-
-  result += " " + std::string(op) + " ";
-
-  if (llvm::isa<Binop>(right)) {
-    result += "(" + right->ToString() + ")";
-  } else {
-    result += right->ToString();
-  }
-
-  return result;
-}
 
 /*
     env |- lhs : Tl, rhs : Tr, op : Tl -> Tr -> T
   --------------------------------------------------
                       env |- lhs op rhs : T
-*/
+
 auto Binop::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   auto lhs_result = left->Typecheck(env);
   if (!lhs_result) {
@@ -73,7 +46,9 @@ auto Binop::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
   return {literal->second->result_type};
 }
+*/
 
+/*
 auto Binop::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -119,4 +94,5 @@ auto Binop::Codegen(const Environment &env) const
   return {literal->second->generate(lhs_type->ToLLVM(env), lhs_value,
                                     rhs_type->ToLLVM(env), rhs_value, env)};
 }
+*/
 } // namespace pink

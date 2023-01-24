@@ -4,20 +4,11 @@
 #include "kernel/LoadValue.h"
 
 namespace pink {
-Variable::Variable(const Location &location, InternedString symbol)
-    : Ast(Ast::Kind::Variable, location), symbol(symbol) {}
-
-auto Variable::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Variable;
-}
-
-auto Variable::ToString() const -> std::string { return {symbol}; }
-
 /*
         env |- x is-in env, x : T
   -----------------------------
                   env |- x : T
-*/
+
 auto Variable::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
   auto bound = env.bindings->Lookup(symbol);
@@ -29,7 +20,9 @@ auto Variable::TypecheckV(const Environment &env) const
   std::string errmsg = std::string("unknown symbol: ") + symbol;
   return {Error(Error::Code::NameNotBoundInScope, GetLoc(), errmsg)};
 }
+*/
 
+/*
 auto Variable::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   auto bound = env.bindings->Lookup(symbol);
@@ -44,4 +37,5 @@ auto Variable::Codegen(const Environment &env) const
   std::string errmsg = std::string("unknown symbol: ") + symbol;
   return {Error(Error::Code::NameNotBoundInScope, GetLoc(), errmsg)};
 }
+*/
 } // namespace pink

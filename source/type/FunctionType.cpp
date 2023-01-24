@@ -4,14 +4,7 @@
 #include "aux/Environment.h"
 
 namespace pink {
-FunctionType::FunctionType(Type *return_type,
-                           const std::vector<Type *> &args_types)
-    : Type(Type::Kind::Function), result(return_type), arguments(args_types) {}
-
-auto FunctionType::classof(const Type *type) -> bool {
-  return type->GetKind() == Type::Kind::Function;
-}
-
+/*
 auto FunctionType::EqualTo(Type *other) const -> bool {
   bool equal = true;
 
@@ -58,6 +51,7 @@ auto FunctionType::ToString() const -> std::string {
   str += result->ToString();
   return str;
 }
+*/
 
 /*
  *  So we know that the actual function type that a given function has is
@@ -87,6 +81,7 @@ auto FunctionType::ToString() const -> std::string {
  *  to answer that question.
  *
  */
+/*
 auto FunctionType::ToLLVM(const Environment &env) const -> llvm::Type * {
   std::vector<llvm::Type *> llvm_args;
 
@@ -102,23 +97,24 @@ auto FunctionType::ToLLVM(const Environment &env) const -> llvm::Type * {
   std::transform(arguments.begin(), arguments.end(), llvm_args.begin(),
                  transform_argument);
 
-  /*
-    \note if the result type of a function cannot fit within
-    a register we must pass it through a hidden first
-    parameter on the stack.
-  */
+
+  //  \note if the result type of a function cannot fit within
+  //  a register we must pass it through a hidden first
+  //  parameter on the stack.
+
   llvm::Type *result_type = result->ToLLVM(env);
   if (result_type->isSingleValueType() || result_type->isVoidTy()) {
-    llvm::Type *fn_ty = llvm::FunctionType::get(result_type, llvm_args,
-                                                /* isVarArg */ false);
-    return fn_ty;
-  }
-  // promote return value to an argument as a pointer
-  llvm_args.insert(
-      llvm_args.begin(),
-      env.instruction_builder->getPtrTy(env.data_layout.getAllocaAddrSpace()));
-  llvm::Type *fn_ty = llvm::FunctionType::get(
-      env.instruction_builder->getVoidTy(), llvm_args, /* isVararg */ false);
-  return fn_ty;
+    llvm::Type *fn_ty = llvm::FunctionType::get(result_type, llvm_args, false);
+return fn_ty;
 }
+// promote return value to an argument as a pointer
+llvm_args.insert(llvm_args.begin(), env.instruction_builder->getPtrTy(
+                                        env.data_layout.getAllocaAddrSpace()));
+llvm::Type *fn_ty = llvm::FunctionType::get(
+    env.instruction_builder->getVoidTy(), llvm_args, false);
+return fn_ty;
+}
+
+*/
+
 } // namespace pink

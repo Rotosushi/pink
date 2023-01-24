@@ -15,45 +15,6 @@
 #include "llvm/IR/Verifier.h"
 
 namespace pink {
-Function::Function(const Location &location, const InternedString name,
-                   std::vector<std::pair<InternedString, Type *>> arguments,
-                   std::unique_ptr<Ast> body, SymbolTable *outer_scope)
-    : Ast(Ast::Kind::Function, location), name(name),
-      arguments(std::move(arguments)), body(std::move(body)),
-      bindings(std::make_shared<SymbolTable>(outer_scope)) {}
-
-auto Function::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Function;
-}
-
-/*
-'fn' name '(' (args[0].first ':' args[0].second->ToString() (',')?)+ ')\n'
-'{' '\n'
-        body->ToString() '\n'
-'}' '\n'
-*/
-auto Function::ToString() const -> std::string {
-  std::string result;
-
-  result += std::string("fn ") + name;
-
-  result += " (";
-
-  size_t len = arguments.size();
-
-  for (size_t i = 0; i < len; i++) {
-    result += arguments[i].first;
-    result += ": " + arguments[i].second->ToString();
-
-    if (i < (len - 1)) {
-      result += ", ";
-    }
-  }
-
-  result += ") {" + body->ToString() + "}";
-
-  return result;
-}
 
 /*
                           env |- a0 : T0, a1 : T1, ..., an : Tn, body : Tb
@@ -76,21 +37,21 @@ So, I don't think that a pink::FunctionType needs to be modified in any way,
 just it's mapping to a llvm::FunctionType, however call sites must also be aware
 of the difference, because the sret(<ty>) parameter must be allocated by the
 caller before we call the function.
-*/
+
 auto Function::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
   for (const auto &pair : arguments) {
-    bindings->Bind(pair.first, pair.second, nullptr);
+    scope->Bind(pair.first, pair.second, nullptr);
   }
 
-  auto local_env = Environment::NewLocalEnv(env, bindings);
+  auto local_env = Environment::NewLocalEnv(env, scope);
 
   // type the body with respect to the local_env
   auto body_result = body->Typecheck(*local_env);
 
   // remove the false bindings before returning;
   for (const auto &pair : arguments) {
-    bindings->Unbind(pair.first);
+    scope->Unbind(pair.first);
   }
 
   for (InternedString fbnd : *(local_env->false_bindings)) {
@@ -118,7 +79,9 @@ auto Function::TypecheckV(const Environment &env) const
 
   return {func_ty};
 }
+*/
 
+/*
 auto Function::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -166,7 +129,7 @@ auto Function::Codegen(const Environment &env) const
       std::make_shared<llvm::IRBuilder<>>(entryblock, entrypoint);
 
   auto local_env =
-      Environment::NewLocalEnv(env, bindings, local_builder, function);
+      Environment::NewLocalEnv(env, scope, local_builder, function);
 
   CodegenArgumentInit(*local_env, function, pink_function_type);
 
@@ -196,7 +159,9 @@ auto Function::Codegen(const Environment &env) const
 
   return {function};
 }
+*/
 
+/*
 void Function::CodegenMainReturn(const Environment &env,
                                  llvm::Value *body_value) {
   CodegenSysExit(body_value, env);
@@ -212,15 +177,15 @@ void Function::CodegenParameterAttributes(
     const pink::FunctionType *pink_function_type) {
 
   auto *result_type = pink_function_type->result->ToLLVM(env);
-  /* find out if we need to
-   * add the sret parameter attribute to a parameter
-   * of the function.
-   *
-   * this is within a conditional because if its true, then
-   * the parameter list holds the return value, so the parameter
-   * list is one element larger that the pink::FunctionType says.
-   * so we have to use different offsets to get to each argument.
-   */
+  //   find out if we need to
+  // * add the sret parameter attribute to a parameter
+  // * of the function.
+  // *
+  // * this is within a conditional because if its true, then
+  // * the parameter list holds the return value, so the parameter
+  // * list is one element larger that the pink::FunctionType says.
+  // * so we have to use different offsets to get to each argument.
+
   if (!result_type->isSingleValueType()) {
     assert(llvm_function_type->getReturnType()->isVoidTy());
 
@@ -232,16 +197,16 @@ void Function::CodegenParameterAttributes(
     // the sret(<ty>) attribute to the first parameter attribute
     result_attribute_builder.addStructRetAttr(result_type);
     function->addParamAttrs(0, result_attribute_builder);
-    /*
-     *  Now all we need to do is add any byval(<ty>) attributes
-     *  to any argument which needs it. We must be careful to
-     *  mention however, that in the translation from pink::FunctionType
-     *  to llvm::FunctionType we also promote any non singleValueType to
-     *  an opaque pointer type. So we have to use the arguments within the
-     *  Function to know the type. as otherwise we couldn't tell the
-     *  difference between a pointer that needed the byval(<ty>) attribute,
-     *  and a pointer that did not.
-     */
+
+    // *  Now all we need to do is add any byval(<ty>) attributes
+    // *  to any argument which needs it. We must be careful to
+    // *  mention however, that in the translation from pink::FunctionType
+    // *  to llvm::FunctionType we also promote any non singleValueType to
+    // *  an opaque pointer type. So we have to use the arguments within the
+    // *  Function to know the type. as otherwise we couldn't tell the
+    // *  difference between a pointer that needed the byval(<ty>) attribute,
+    // *  and a pointer that did not.
+
     for (size_t i = 1; i < llvm_function_type->getNumParams(); i++) {
       llvm::AttrBuilder param_attr_builder(*env.context);
 
@@ -255,20 +220,20 @@ void Function::CodegenParameterAttributes(
       }
     }
   } else {
-    /*
-     *  all we need to do here is add any byval(<ty>) attributes
-     *  to any argument which needs it.
-     */
-    for (size_t i = 0; i < llvm_function_type->getNumParams(); i++) {
-      llvm::AttrBuilder param_attr_builder(*env.context);
-      llvm::Type *param_ty = pink_function_type->arguments[i]->ToLLVM(env);
+    //
+    //  *  all we need to do here is add any byval(<ty>) attributes
+    //  *  to any argument which needs it.
+    //
+for (size_t i = 0; i < llvm_function_type->getNumParams(); i++) {
+  llvm::AttrBuilder param_attr_builder(*env.context);
+  llvm::Type *param_ty = pink_function_type->arguments[i]->ToLLVM(env);
 
-      if ((!param_ty->isVoidTy()) && !param_ty->isSingleValueType()) {
-        param_attr_builder.addByValAttr(param_ty);
-        function->addParamAttrs(i, param_attr_builder);
-      }
-    }
+  if ((!param_ty->isVoidTy()) && !param_ty->isSingleValueType()) {
+    param_attr_builder.addByValAttr(param_ty);
+    function->addParamAttrs(i, param_attr_builder);
   }
+}
+}
 }
 
 void Function::CodegenArgumentInit(
@@ -299,5 +264,7 @@ void Function::CodegenArgumentInit(
                        arg_allocas[i]);
   }
 }
+
+*/
 
 } // namespace pink

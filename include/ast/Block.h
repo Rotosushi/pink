@@ -12,117 +12,64 @@
 
 namespace pink {
 /**
- * @brief Represents a Block of expressions
- *
+ * @brief Represents a new scope of expressions
  */
 class Block : public Ast {
+public:
+  using ExpressionsType = std::vector<Ast::Pointer>;
+  using iterator = ExpressionsType::iterator;
+  using const_iterator = ExpressionsType::const_iterator;
+
 private:
-  /**
-   * @brief Compute the Type of the block expression
-   *
-   * the result type of a block is the type of the last statement in
-   * the sequence.
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<Type*, Error> if true the return type of the block
-   * expression, if false the Error encountered.
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
+  ExpressionsType expressions;
+  SymbolTable::Pointer scope;
 
 public:
-  /**
-   * @brief the sequence of statements composing the block
-   *
-   */
-  std::vector<std::unique_ptr<Ast>> statements;
+  Block(const Location &location, SymbolTable *outer_scope) noexcept
+      : Ast(Ast::Kind::Block, location), scope(outer_scope) {}
+  Block(const Location &location, ExpressionsType expressions,
+        SymbolTable *outer_scope) noexcept
+      : Ast(Ast::Kind::Block, location), expressions(std::move(expressions)),
+        scope(outer_scope) {}
+  ~Block() noexcept override = default;
+  Block(const Block &other) noexcept = delete;
+  Block(Block &&other) noexcept = default;
+  auto operator=(const Block &other) noexcept -> Block & = delete;
+  auto operator=(Block &&other) noexcept -> Block & = default;
 
-  /**
-   * @brief Construct a new empty Block
-   *
-   * @param location the textual location of the block
-   */
-  Block(const Location &location);
-
-  /**
-   * @brief Construct a new Block
-   *
-   * @param location the textual location of the block
-   * @param statements the statements composing the block
-   */
-  Block(const Location &location,
-        std::vector<std::unique_ptr<Ast>> &statements);
-
-  /**
-   * @brief Destroy the Block
-   *
-   */
-  ~Block() override = default;
-
-  Block(const Block &other) = delete;
-
-  Block(Block &&other) = default;
-
-  auto operator=(const Block &other) -> Block & = delete;
-
-  auto operator=(Block &&other) -> Block & = default;
-
-  /**
-   * @brief an iterator over the statements within the block
-   *
-   */
-  using iterator = std::vector<std::unique_ptr<Ast>>::iterator;
-  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
-
-  /**
-   * @brief Get the iterator to the beginning of the block
-   *
-   * @return iterator the iterator to the beginning of the block
-   */
-  [[nodiscard]] auto begin() -> iterator { return statements.begin(); }
-  [[nodiscard]] auto cbegin() const -> const_iterator {
-    return statements.cbegin();
+  auto GetExpressions() noexcept -> ExpressionsType & { return expressions; }
+  auto GetExpressions() const noexcept -> const ExpressionsType & {
+    return expressions;
+  }
+  auto GetScope() noexcept -> SymbolTable::Pointer & { return scope; }
+  auto GetScope() const noexcept -> const SymbolTable::Pointer & {
+    return scope;
   }
 
-  /**
-   * @brief Get the iterator to the end of the block
-   *
-   * @return iterator the iterator to the end of the block
-   */
-  [[nodiscard]] auto end() -> iterator { return statements.end(); }
-  [[nodiscard]] auto cend() const -> const_iterator {
-    return statements.cend();
+  [[nodiscard]] auto begin() noexcept -> iterator {
+    return expressions.begin();
+  }
+  [[nodiscard]] auto begin() const noexcept -> const_iterator {
+    return expressions.begin();
+  }
+  [[nodiscard]] auto cbegin() const noexcept -> const_iterator {
+    return expressions.cbegin();
+  }
+  [[nodiscard]] auto end() noexcept -> iterator { return expressions.end(); }
+  [[nodiscard]] auto end() const noexcept -> const_iterator {
+    return expressions.end();
+  }
+  [[nodiscard]] auto cend() const noexcept -> const_iterator {
+    return expressions.cend();
   }
 
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the ast to test
-   * @return true if ast *is* an instance of a Block
-   * @return false if ast *is not* an instance of a Block
-   */
-  static auto classof(const Ast *ast) -> bool;
+  static auto classof(const Ast *ast) noexcept -> bool {
+    return Ast::Kind::Block == ast->GetKind();
+  }
 
-  /**
-   * @brief Return the cannonical string representation of the Block
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the Value of this Block
-   *
-   * The result Value of a Block is the result value of the last statement
-   * within the Block
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Value*, Error> if true the result value of the Block,
-   * if false the Error encountered.
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

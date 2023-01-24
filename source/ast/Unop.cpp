@@ -2,21 +2,11 @@
 #include "aux/Environment.h"
 
 namespace pink {
-Unop::Unop(const Location &location, InternedString opr,
-           std::unique_ptr<Ast> right)
-    : Ast(Ast::Kind::Unop, location), op(opr), right(std::move(right)) {}
-
-auto Unop::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Unop;
-}
-
-auto Unop::ToString() const -> std::string { return op + right->ToString(); }
-
 /*
         env |- rhs : Tr, op : Tr -> T
   ----------------------------------------
                     env |- op rhs : T
-*/
+
 auto Unop::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   // get the type of the rhs
   auto rhs_result = right->Typecheck(env);
@@ -83,14 +73,14 @@ auto Unop::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   // return the result type of applying the operator to the given type
   return {literal->second->result_type};
 }
-
+*/
 /*
 
         env |- rhs : Tr, op : Tr -> T
   ----------------------------------------
                     env |- op rhs : unop.generate(rhs.value)
 
-*/
+
 auto Unop::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   // get the type of the right hand side for operator lookup
@@ -205,4 +195,5 @@ auto Unop::Codegen(const Environment &env) const
   // either outcome, return the result.
   return {unop_value};
 }
+*/
 } // namespace pink

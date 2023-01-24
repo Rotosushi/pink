@@ -9,14 +9,8 @@
 #include "llvm/IR/DerivedTypes.h"
 
 namespace pink {
-Array::Array(const Location &location,
-             std::vector<std::unique_ptr<Ast>> members)
-    : Ast(Ast::Kind::Array, location), members(std::move(members)) {}
 
-auto Array::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Array;
-}
-
+/*
 auto Array::ToString() const -> std::string {
   std::string result;
   result += "[";
@@ -35,11 +29,12 @@ auto Array::ToString() const -> std::string {
   result += "]";
   return result;
 }
+*/
 
 /*  The type of an array is the type of it's first member
  *  and the length of the array, as long as every one of
  *  it's members are the same type.
- */
+ 
 auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   size_t idx = 0;
   std::vector<Type *> member_types;
@@ -64,6 +59,7 @@ auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
   return {env.types->GetArrayType(members.size(), member_types[0])};
 }
+*/
 
 /** the value of an array is a llvm::ConstantArray of the same length
  *  and type. As long as the array can be typed.
@@ -77,7 +73,7 @@ auto Array::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
  *
  *
  *
- */
+ 
 auto Array::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -119,6 +115,5 @@ auto Array::Codegen(const Environment &env) const
 
   return {llvm::ConstantStruct::get(array_layout, {size, constant_array})};
 }
+*/
 } // namespace pink
-
-/**/

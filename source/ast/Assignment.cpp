@@ -7,19 +7,6 @@
 #include "support/LLVMValueToString.h"
 
 namespace pink {
-Assignment::Assignment(const Location &location, std::unique_ptr<Ast> left,
-                       std::unique_ptr<Ast> right)
-    : Ast(Ast::Kind::Assignment, location), left(std::move(left)),
-      right(std::move(right)) {}
-
-auto Assignment::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Assignment;
-}
-
-auto Assignment::ToString() const -> std::string {
-  std::string result = left->ToString() + " = " + right->ToString();
-  return result;
-}
 
 /*
     env |- lhs : Tl, rhs : Tr, Tl == Tr, lhs is-assignable
@@ -30,7 +17,7 @@ auto Assignment::ToString() const -> std::string {
             llvm::Value*'s that are going to be bound in the symboltable
             are going to be pointers to places that can be assigned,
             either llvm::AllocaInsts*, or llvm::GlobalVariable*
-*/
+
 auto Assignment::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
   // make sure we can type both sides
@@ -55,7 +42,9 @@ auto Assignment::TypecheckV(const Environment &env) const
   }
   return {lhs_type};
 }
+*/
 
+/*
 auto Assignment::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -105,4 +94,5 @@ auto Assignment::Codegen(const Environment &env) const
   FatalError(errmsg, __FILE__, __LINE__);
   return {Error()};
 }
+*/
 } // namespace pink

@@ -7,19 +7,6 @@
 #include "kernel/LoadValue.h"
 
 namespace pink {
-Dot::Dot(const Location &location, std::unique_ptr<Ast> left,
-         std::unique_ptr<Ast> right)
-    : Ast(Ast::Kind::Dot, location), left(std::move(left)),
-      right(std::move(right)) {}
-
-auto Dot::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Dot;
-}
-
-auto Dot::ToString() const -> std::string {
-  return left->ToString() + "." + right->ToString();
-}
-
 /*
  *  The dot operator computes pointers into structure types,
  *  this is done in a few ways,
@@ -52,7 +39,7 @@ auto Dot::ToString() const -> std::string {
  *  that integer to index the struct type of the left hand side to compute
  *  the result type of the Dot operator.
  *
- */
+
 auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   Outcome<Type *, Error> left_typecheck_result = left->Typecheck(env);
   if (!left_typecheck_result) {
@@ -94,7 +81,8 @@ auto Dot::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
   return {tuple_type->member_types[index_value]};
 }
-
+ */
+/*
 auto Dot::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -132,4 +120,5 @@ auto Dot::Codegen(const Environment &env) const
   llvm::Type *member_type = struct_type->getTypeAtIndex(index_value);
   return LoadValue(member_type, gep, env);
 }
+ */
 } // namespace pink

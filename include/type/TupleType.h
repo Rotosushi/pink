@@ -14,64 +14,49 @@ namespace pink {
  */
 class TupleType : public Type {
 public:
-  /**
-   * @brief The Types of the Tuple members
-   */
-  std::vector<Type *> member_types;
+  using Elements = std::vector<Type::Pointer>;
+  using iterator = Elements::iterator;
+  using const_iterator = Elements::const_iterator;
 
-  /**
-   * @brief Construct a new TupleType
-   *
-   * @param member_types the member Types of this TupleType
-   */
-  TupleType(const std::vector<Type *> &member_types);
+private:
+  Elements elements;
 
-  /**
-   * @brief Destroy the Tuple Type
-   */
-  ~TupleType() override = default;
+public:
+  TupleType(Elements elements) noexcept
+      : Type(Type::Kind::Tuple), elements(std::move(elements)) {}
+  ~TupleType() noexcept override = default;
+  TupleType(const TupleType &other) noexcept = default;
+  TupleType(TupleType &&other) noexcept = default;
+  auto operator=(const TupleType &other) noexcept -> TupleType & = default;
+  auto operator=(TupleType &&other) noexcept -> TupleType & = default;
 
-  TupleType(const TupleType &other) = default;
+  [[nodiscard]] auto GetElements() noexcept -> Elements & { return elements; }
+  [[nodiscard]] auto GetElements() const noexcept -> const Elements & {
+    return elements;
+  }
 
-  TupleType(TupleType &&other) = default;
+  [[nodiscard]] auto begin() noexcept -> iterator { return elements.begin(); }
+  [[nodiscard]] auto begin() const noexcept -> const_iterator {
+    return elements.begin();
+  }
+  [[nodiscard]] auto cbegin() const noexcept -> const_iterator {
+    return elements.cbegin();
+  }
+  [[nodiscard]] auto end() noexcept -> iterator { return elements.end(); }
+  [[nodiscard]] auto end() const noexcept -> const_iterator {
+    return elements.end();
+  }
+  [[nodiscard]] auto cend() const noexcept -> const_iterator {
+    return elements.cend();
+  }
 
-  auto operator=(const TupleType &other) -> TupleType & = default;
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Tuple == type->GetKind();
+  }
 
-  auto operator=(TupleType &&other) -> TupleType & = default;
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * @param type the type being tested
-   * @return true if type *is* an instance of TupleType
-   * @return false if type *is not* an instance of TupleType
-   */
-  static auto classof(const Type *type) -> bool;
-
-  /**
-   * @brief Computes if other is equivalent to this TupleType
-   *
-   * @param other the other type
-   * @return true if other *is* equivalent to this TupleType
-   * @return false if other *is not* equivalent to this TupleType
-   */
-  auto EqualTo(Type *other) const -> bool override;
-
-  /**
-   * @brief Compute the cannonical string representation of this TupleType
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the llvm::Type equivalent to this TupleType
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Type*, Error> if true the llvm::Type equivalent to
-   * this TupleType, if false the Error encountered
-   */
-  [[nodiscard]] auto ToLLVM(const Environment &env) const
-      -> llvm::Type * override;
+  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstTypeVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

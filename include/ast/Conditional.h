@@ -10,102 +10,38 @@
 namespace pink {
 /**
  * @brief Represents an instance of a conditional expression
- *
- * \todo #CPP lowered to conditionals
- *
  */
 class Conditional : public Ast {
 private:
-  /**
-   * @brief Compute the Type of this conditional expression
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<Type*, Error> if true the Type of this conditional
-   * expression if false the Error encountered.
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
+  Ast::Pointer test;
+  Ast::Pointer first;
+  Ast::Pointer second;
 
 public:
-  /**
-   * @brief The test statement of the conditional
-   *
-   */
-  std::unique_ptr<Ast> test;
+  Conditional(const Location &location, Ast::Pointer test, Ast::Pointer first,
+              Ast::Pointer second) noexcept
+      : Ast(Ast::Kind::Conditional, location), test(std::move(test)),
+        first(std::move(first)), second(std::move(second)) {}
+  ~Conditional() noexcept override = default;
+  Conditional(const Conditional &other) noexcept = delete;
+  Conditional(Conditional &&other) noexcept = default;
+  auto operator=(const Conditional &other) noexcept -> Conditional & = delete;
+  auto operator=(Conditional &&other) noexcept -> Conditional & = default;
 
-  /**
-   * @brief The first alternative of the conditional
-   *
-   */
-  std::unique_ptr<Ast> first;
+  auto GetTest() noexcept -> Ast::Pointer & { return test; }
+  auto GetTest() const noexcept -> const Ast::Pointer & { return test; }
+  auto GetFirst() noexcept -> Ast::Pointer & { return first; }
+  auto GetFirst() const noexcept -> const Ast::Pointer & { return first; }
+  auto GetSecond() noexcept -> Ast::Pointer & { return second; }
+  auto GetSecond() const noexcept -> const Ast::Pointer & { return second; }
 
-  /**
-   * @brief the second alternative of the conditional
-   *
-   */
-  std::unique_ptr<Ast> second;
+  static auto classof(const Ast *ast) noexcept -> bool {
+    return Ast::Kind::Conditional == ast->GetKind();
+  }
 
-  /**
-   * @brief Construct a new Conditional
-   *
-   * @param location the textual location of the conditional
-   * @param test the test expression of the conditional
-   * @param first the first alternative of the conditional
-   * @param second the second alternative of the conditional
-   */
-  Conditional(const Location &location, std::unique_ptr<Ast> test,
-              std::unique_ptr<Ast> first, std::unique_ptr<Ast> second);
-
-  /**
-   * @brief Destroy the Conditional
-   *
-   */
-  ~Conditional() override = default;
-
-  Conditional(const Conditional &other) = delete;
-
-  Conditional(Conditional &&other) = default;
-
-  auto operator=(const Conditional &other) -> Conditional & = delete;
-
-  auto operator=(Conditional &&other) -> Conditional & = default;
-
-  auto GetTest() const -> const Ast * { return test.get(); }
-
-  auto GetFirst() const -> const Ast * { return first.get(); }
-
-  auto GetSecond() const -> const Ast * { return second.get(); }
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the ast to test
-   * @return true if ast *is* an instance of a Conditional
-   * @return false if ast *is not* an instance of a Conditional
-   */
-  static auto classof(const Ast *ast) -> bool;
-
-  /**
-   * @brief Compute the cannonical string representation of this Conditional
-   * expression
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the Value of the Conditional
-   *
-   * the result value of a conditional is the result value of
-   * whichever alternative expression was evaluated.
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Value*, Error> if true then the result value of the
-   * conditional, if false then the Error encountered
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

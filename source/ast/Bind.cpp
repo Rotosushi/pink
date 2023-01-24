@@ -11,23 +11,6 @@
 #include "llvm/IR/GlobalVariable.h"
 
 namespace pink {
-Bind::Bind(const Location &location, InternedString symbol,
-           std::unique_ptr<Ast> affix)
-    : Ast(Ast::Kind::Bind, location), symbol(symbol), affix(std::move(affix)) {}
-
-auto Bind::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Bind;
-}
-
-auto Bind::ToString() const -> std::string {
-  return std::string(symbol) += " := " + affix->ToString();
-}
-
-/**
- * \todo add namespaces (maybe in the form of modules) to the language.
- * namespaces are super useful.
- *
- */
 
 /*
     env |- t : T, x is-not-in env.bindings
@@ -38,7 +21,7 @@ auto Bind::ToString() const -> std::string {
             from evaluating it. and it is only when we
             have both type and value that we can construct
             a binding in the symboltable.
-*/
+
 auto Bind::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   // #RULE: Bind only checks for symbol redefinition in the Local Scope
   // this allows for shadow declarations
@@ -63,7 +46,9 @@ auto Bind::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
 
   return {affix_type};
 }
+*/
 
+/*
 auto Bind::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -96,4 +81,5 @@ auto Bind::Codegen(const Environment &env) const
   // Rule: Bind is an Expression
   return {term_value};
 }
+*/
 } // namespace pink

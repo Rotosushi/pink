@@ -1,0 +1,20 @@
+#pragma once
+
+#include "ast/Application.h"
+#include "ast/Array.h"
+#include "ast/Assignment.h"
+#include "ast/Bind.h"
+#include "ast/Binop.h"
+#include "ast/Block.h"
+#include "ast/Boolean.h"
+#include "ast/Conditional.h"
+#include "ast/Dot.h"
+#include "ast/Function.h"
+#include "ast/Integer.h"
+#include "ast/Nil.h"
+#include "ast/Subscript.h"
+#include "ast/Tuple.h"
+#include "ast/Unop.h"
+#include "ast/Variable.h"
+#include "ast/While.h"
+

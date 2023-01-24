@@ -12,79 +12,30 @@
 namespace pink {
 /**
  * @brief Represents a Variable expression
- *
- *
  */
 class Variable : public Ast {
 private:
-  /**
-   * @brief Compute the Type of this Unop expression
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<Type*, Error> if true, the Type of the Unop expression,
-   * if false the Error encountered
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
-
-public:
-  /**
-   * @brief The symbol which this Variable expression represents
-   *
-   */
   InternedString symbol;
 
-  /**
-   * @brief Construct a new Variable
-   *
-   * @param loc the textual location of this Variable
-   * @param symbol the symbol this Variable represents
-   */
-  Variable(const Location &loc, InternedString symbol);
+public:
+  Variable(const Location &location, InternedString symbol) noexcept
+      : Ast(Ast::Kind::Variable, location), symbol(symbol) {}
+  ~Variable() noexcept override = default;
+  Variable(const Variable &other) noexcept = delete;
+  Variable(Variable &&other) noexcept = default;
+  auto operator=(const Variable &other) noexcept -> Variable & = delete;
+  auto operator=(Variable &&other) noexcept -> Variable & = default;
 
-  /**
-   * @brief Destroy the Variable
-   *
-   */
-  ~Variable() override = default;
+  auto GetSymbol() noexcept -> InternedString { return symbol; }
+  auto GetSymbol() const noexcept -> InternedString { return symbol; }
 
-  Variable(const Variable &other) = delete;
+  static auto classof(const Ast *ast) noexcept -> bool {
+    return Ast::Kind::Variable == ast->GetKind();
+  }
 
-  Variable(Variable &&other) = default;
-
-  auto operator=(const Variable &other) -> Variable & = delete;
-
-  auto operator=(Variable &&other) -> Variable & = default;
-
-  auto GetSymbol() const -> InternedString { return symbol; }
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the ast to test
-   * @return true if ast *is* an instance of Variable
-   * @return false if ast *is not* an instance of Variable
-   */
-  static auto classof(const Ast *ast) -> bool;
-
-  /**
-   * @brief Computes the cannonical string representation of this Variable
-   * expression
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Computes the Value of this Variable expression
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Value*, Error> if true the Value of this Variable
-   * expression, if false the Error encountered
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

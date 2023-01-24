@@ -7,15 +7,8 @@
 #include "support/LLVMValueToString.h"
 
 namespace pink {
-Application::Application(const Location &location, std::unique_ptr<Ast> callee,
-                         std::vector<std::unique_ptr<Ast>> arguments)
-    : Ast(Ast::Kind::Application, location), callee(std::move(callee)),
-      arguments(std::move(arguments)) {}
 
-auto Application::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Application;
-}
-
+/*
 auto Application::ToString() const -> std::string {
   std::string result;
   result += callee->ToString();
@@ -35,6 +28,7 @@ auto Application::ToString() const -> std::string {
   result += ")";
   return result;
 }
+*/
 
 /*
  *  The type of an application is the return type of the
@@ -50,7 +44,7 @@ auto Application::ToString() const -> std::string {
  *        ENV |- c a0 a1 ... an : Tr
  *
  *
- */
+
 auto Application::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
   auto calleeTy = callee->Typecheck(env);
@@ -150,5 +144,6 @@ auto Application::Codegen(const Environment &env) const
 
   return {call};
 }
+*/
 
 } // namespace pink

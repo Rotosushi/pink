@@ -1,0 +1,32 @@
+
+what are the consequences of imposing the Rule
+
+"Any dynamic memory malloc'd within a scope is free'd when it falls out of scope,
+  except if explicitly returned out of that scope."
+
+program entry starts at main:
+
+void main() {
+  // obtain memory.
+
+  // function call (a) using some dynamic memory
+  // assigning to b
+
+  // auto free
+}
+
+moreMemory a(someMemory) {
+  // obtain moreMemory
+
+  // use someMemory with moreMemory 
+
+  // auto free 
+  // return moreMemory
+}
+
+all this requires is keeping track of which pointers are to dynamic memory,
+something which is a boolean between stack/heap. (well, there is the .data section...)
+maybe (static? auto? stack?) | dynamic 
+
+this fails to take into account double free, if it answers the question of 
+what is dynamic memory as a parameter?

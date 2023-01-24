@@ -873,7 +873,7 @@ auto Parser::ParseTuple(const Environment &env,
        | "Int"
        | "Bool"
        | "(" type {"," type} ")"
-       | "[" type "x" int "]"
+       | "[" type ";" int "]"
        | "Ptr" "<" type ">"
 */
 auto Parser::ParseType(const Environment &env) -> Outcome<Type *, Error> {

@@ -5,20 +5,14 @@
 #include "llvm/IR/DerivedTypes.h"
 
 namespace pink {
-ArrayType::ArrayType(size_t size, Type *member_type)
-    : Type(Type::Kind::Array), size(size), member_type(member_type) {}
-
-auto ArrayType::classof(const Type *type) -> bool {
-  return type->GetKind() == Type::Kind::Array;
-}
-
+/*
 auto ArrayType::EqualTo(Type *other) const -> bool {
   bool equal = true;
 
   auto *array_type = llvm::dyn_cast<ArrayType>(other);
   if (array_type != nullptr) {
     if ((array_type->size != size) ||
-        (array_type->member_type != member_type)) {
+        (array_type->element_type != member_type)) {
       equal = false;
     }
   } else {
@@ -27,7 +21,8 @@ auto ArrayType::EqualTo(Type *other) const -> bool {
 
   return equal;
 }
-
+*/
+/*
 auto ArrayType::ToString() const -> std::string {
   std::string result;
 
@@ -46,4 +41,5 @@ auto ArrayType::ToLLVM(const Environment &env) const -> llvm::Type * {
   return llvm::StructType::get(*env.context,
                                {llvm_integer_type, llvm_array_type});
 }
+*/
 } // namespace pink

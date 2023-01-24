@@ -9,78 +9,35 @@
 namespace pink {
 /**
  * @brief Represents the Type of an Array
- *
  */
 class ArrayType : public Type {
+private:
+  std::size_t size;
+  Type::Pointer element_type;
+
 public:
-  /**
-   * @brief The size of the Array
-   *
-   */
-  size_t size;
+  ArrayType(std::size_t size, Type::Pointer element_type) noexcept
+      : Type(Type::Kind::Array), size(size), element_type(element_type) {
+    assert(element_type != nullptr);
+  }
+  ~ArrayType() noexcept override = default;
+  ArrayType(const ArrayType &other) noexcept = default;
+  ArrayType(ArrayType &&other) noexcept = default;
+  auto operator=(const ArrayType &other) noexcept -> ArrayType & = default;
+  auto operator=(ArrayType &&other) noexcept -> ArrayType & = default;
 
-  /**
-   * @brief The member type of the Array
-   *
-   */
-  Type *member_type;
+  [[nodiscard]] auto GetSize() const -> std::size_t { return size; }
+  [[nodiscard]] auto GetElementType() const -> Type::Pointer {
+    return element_type;
+  }
 
-  /**
-   * @brief Construct a new ArrayType
-   *
-   * @param size the size of the ArrayType
-   * @param member_type the member Type of the ArrayType
-   */
-  ArrayType(size_t size, Type *member_type);
+  static auto classof(const Type::Pointer type) noexcept -> bool {
+    return Type::Kind::Array == type->GetKind();
+  }
 
-  /**
-   * @brief Destroy the ArrayType
-   *
-   */
-  ~ArrayType() override = default;
-
-  ArrayType(const ArrayType &other) = default;
-
-  ArrayType(ArrayType &&other) = default;
-
-  auto operator=(const ArrayType &other) -> ArrayType & = default;
-
-  auto operator=(ArrayType &&other) -> ArrayType & = default;
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param type the type to test
-   * @return true if type *is* an ArrayType
-   * @return false if type *is not* an ArrayType
-   */
-  static auto classof(const Type *type) -> bool;
-
-  /**
-   * @brief Compute if this ArrayType is equivalent to the 'other' Type
-   *
-   * @param other the other Type
-   * @return true if other *is* equivalent to this ArrayType
-   * @return false if other *is not* equivalent to this ArrayType
-   */
-  auto EqualTo(Type *other) const -> bool override;
-
-  /**
-   * @brief Compute the cannonical string representation of this ArrayType
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the llvm equivalent of this ArrayType
-   *
-   * @param env the environment of this compilation unit
-   * @return llvm::Type* the llvm::Type equivalent of this ArrayType
-   */
-  [[nodiscard]] auto ToLLVM(const Environment &env) const
-      -> llvm::Type * override;
+  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstTypeVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

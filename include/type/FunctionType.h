@@ -11,79 +11,46 @@
 namespace pink {
 /**
  * @brief Represents the Type of a Function
- *
  */
 class FunctionType : public Type {
 public:
-  /**
-   * @brief the return Type of the Function
-   *
-   */
-  Type *result;
+  using Arguments = std::vector<Type::Pointer>;
 
-  /**
-   * @brief The argument Types of the Function
-   *
-   */
-  std::vector<Type *> arguments;
+private:
+  Type::Pointer return_type;
+  Arguments arguments;
 
-  /**
-   * @brief Construct a new FunctionType
-   *
-   * @param return_type the return Type of the Function
-   * @param arg_types the argument Types of the Function
-   */
-  FunctionType(Type *return_type, const std::vector<Type *> &arg_types);
+public:
+  FunctionType(Type::Pointer return_type, Arguments arguments) noexcept
+      : Type(Type::Kind::Function), return_type(return_type),
+        arguments(std::move(arguments)) {
+    assert(return_type != nullptr);
+  }
+  ~FunctionType() noexcept override = default;
+  FunctionType(const FunctionType &other) noexcept = default;
+  FunctionType(FunctionType &&other) noexcept = default;
+  auto operator=(const FunctionType &other) noexcept
+      -> FunctionType & = default;
+  auto operator=(FunctionType &&other) noexcept -> FunctionType & = default;
 
-  /**
-   * @brief Destroy the FunctionType
-   *
-   */
-  ~FunctionType() override = default;
+  [[nodiscard]] auto GetReturnType() noexcept -> Type::Pointer {
+    return return_type;
+  }
+  [[nodiscard]] auto GetReturnType() const noexcept -> Type::Pointer {
+    return return_type;
+  }
+  [[nodiscard]] auto GetArguments() noexcept -> Arguments { return arguments; }
+  [[nodiscard]] auto GetArguments() const noexcept -> Arguments {
+    return arguments;
+  }
 
-  FunctionType(const FunctionType &other) = default;
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Function == type->GetKind();
+  }
 
-  FunctionType(FunctionType &&other) = default;
-
-  auto operator=(const FunctionType &other) -> FunctionType & = default;
-
-  auto operator=(FunctionType &&other) -> FunctionType & = default;
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this clas
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param type the Type being tested
-   * @return true if type *is* an instance of FunctionType
-   * @return false if type *is not* an instance of FunctionType
-   */
-  static auto classof(const Type *type) -> bool;
-
-  /**
-   * @brief Compute if this FunctionType is equivalent to the other Type
-   *
-   * @param other the other type
-   * @return true if other is equivalent to this FunctionType
-   * @return false if other is not equivalent to this FunctionType
-   */
-  auto EqualTo(Type *other) const -> bool override;
-
-  /**
-   * @brief Compute the cannonical string representation of this FunctionType
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the llvm::Type equal to this FunctionType
-   *
-   * @param env the environment of this compilation environment
-   * @return Outcome<llvm::Type*, Error> if true the llvm::Type equal to the
-   * FunctionType, if false then the Error encountered
-   */
-  [[nodiscard]] auto ToLLVM(const Environment &env) const
-      -> llvm::Type * override;
+  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstTypeVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

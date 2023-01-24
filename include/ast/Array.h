@@ -15,168 +15,84 @@
  *  an array
  *
  *  1) declaration and initialization
- *    a) x := [ Integer x 5 ];
- *    b) x := [0, 1, 2, 3, 4, 5];
+ *    a) x : [Integer; 5];
+ *    b) x := [0, 1, 2, 3, 4];
  *
  *  2) pointer access
- *    a) y := x;
- *    b) y := x + n;
- *    c) y := *(x + n);
- *    d) y := x[n];
- *
- *  3) // pointer access and indirection
- *    a) *y = 33;
- *    b) x[n] = 44;
- *    c) y := n + *y;
+ *    a) a := x;
+ *    b) b := x[n];
+ *    c) c := &x[n];
+ *    d) x[n] = 33;
+ *    e) *c = 44;
  *
  *  we declare an array of memory in much the same way that
  *  we declare a regular bit of memory, we simply create
  *  an alloca instruction, but we add an argument which is
  *  how many elements to allocate.
- *  in this way, the name of bound to an array alloca will act in
- *  the same way as a name bound to any other type, it will represent
- *  a pointer to the first element of the type within the allocation.
+ *  in this way, the name bound to an array will act in
+ *  the same way as a name bound to any other type.
+ *  Array elements can be accessed using the bracket syntax 'a[n]'
+ *  and pointers to these elements can be created by using the
+ *  address of operator '&a[n]'
  *
- *  so, we know how to declare an array of default initialized memory,
- *  and then we can bind that declaration to a name this is what we
- *  need to do to support the semantics of 1a
- *
- *  initializing the array with specific values after allocation requires
- *  that we be able to index any particular member of the array, which
- *  means that to support 1b, we have to support the semantics of 3b,
- *  then it is simply a matter of repeating that member assignment for
- *  each member initialization. (which given that the declaration form
- *  specifies all members and their initial values means that the entire
- *  array must be indexed)
- *
- *  then, we can notice that the expression in 3b is equal to a combination of
- *  the expressions in 2b and 3a, that is
- *  x[n] = 44 is equal to *(x + n) = 44
- *
- *  looking at the llvm IR that clang emits, it seems that we can use a GEP
- *  instruction. we give the GEP instruction a pointer to the array, the
- *  array cell to index and the structure member to access, and it returns
- *  a pointer to that member of the array.
- *
- *  then we can use that pointer like we would any other pointer we already
- *  handle, that is we can indirect it to assign new contents to the memory
- *  pointed too, or we could load from it to use the memory at that location
- *
+ *  There is a slight inconvenience however with the array
+ *  type carrying it's size, that is why we are introducing
+ *  the slice type. which is a pointer type, which additionally stores an
+ *  length + offset, thus a runtime check can be emitted which
+ *  bounds checks array access.
  *
  */
 namespace pink {
 
 /**
- * @brief Array represents a c-style array expression,
- *
- *  \todo #CPP array can easily be implemented as a std::array
- *
- *
- * \todo differentiating pointers to single types and pointers to arrays
- * with a type, would be useful for safety of written code. and makes
- * it so every bit of pointer arithmetic can be bounds checked at runtime.
- * having this makes me feel better about allowing pointer arithmetic at all.
- * because of what a pain they are to get wrong.
- *
+ * @brief Array represents a sequence of known length of a single known type.
  */
 class Array : public Ast {
+public:
+  using Elements = std::vector<Ast::Pointer>;
+  using iterator = Elements::iterator;
+  using const_iterator = Elements::const_iterator;
+
 private:
-  /**
-   * @brief Compute the Type of the Array expression.
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<Type*, Error> if true, the array type,
-   * if false the Error encountered.
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
+  Elements elements;
 
 public:
-  /**
-   * @brief The members of the array
-   *
-   */
-  std::vector<std::unique_ptr<Ast>> members;
+  Array(const Location &location, Elements elements) noexcept
+      : Ast(Ast::Kind::Array, location), elements(std::move(elements)) {}
+  ~Array() noexcept override = default;
+  Array(const Array &other) noexcept = delete;
+  Array(Array &&other) noexcept = default;
+  auto operator=(const Array &other) noexcept -> Array & = delete;
+  auto operator=(Array &&other) noexcept -> Array & = default;
 
-  /**
-   * @brief Construct a new Array
-   *
-   * @param location the textual location of this array
-   * @param members the members of this array
-   */
-  Array(const Location &location, std::vector<std::unique_ptr<Ast>> members);
+  [[nodiscard]] auto GetElements() noexcept -> Elements & { return elements; }
 
-  /**
-   * @brief Destroy the Array
-   *
-   */
-  ~Array() override = default;
-
-  Array(const Array &other) = delete;
-
-  Array(Array &&other) = default;
-
-  auto operator=(const Array &other) -> Array & = delete;
-
-  auto operator=(Array &&other) -> Array & = default;
-
-  auto GetMembers() const -> const std::vector<std::unique_ptr<Ast>> & {
-    return members;
+  [[nodiscard]] auto GetElements() const noexcept -> const Elements & {
+    return elements;
   }
 
-  /**
-   * @brief only support const_iterator usage
-   *
-   */
-  using iterator = std::vector<std::unique_ptr<Ast>>::iterator;
-  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+  [[nodiscard]] auto begin() noexcept -> iterator { return elements.begin(); }
+  [[nodiscard]] auto begin() const noexcept -> const_iterator {
+    return elements.begin();
+  }
+  [[nodiscard]] auto cbegin() const noexcept -> const_iterator {
+    return elements.cbegin();
+  }
+  [[nodiscard]] auto end() noexcept -> iterator { return elements.end(); }
+  [[nodiscard]] auto end() const noexcept -> const_iterator {
+    return elements.end();
+  }
+  [[nodiscard]] auto cend() const noexcept -> const_iterator {
+    return elements.cend();
+  }
 
-  /**
-   * @brief iterator to beginning of array members
-   *
-   * @return iterator to beginning of array members
-   */
-  auto begin() -> iterator { return members.begin(); }
-  auto cbegin() const -> const_iterator { return members.cbegin(); }
+  static auto classof(const Ast *ast) noexcept -> bool {
+    return Ast::Kind::Array == ast->GetKind();
+  }
 
-  /**
-   * @brief iterator to end of array members
-   *
-   * @return iterator to end of array members
-   */
-  auto end() -> iterator { return members.end(); }
-  auto cend() const -> const_iterator { return members.cend(); }
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the ast to check
-   * @return true if ast *is* an instance of an Array
-   * @return false if ast *is not* an instance of an Array
-   */
-  static auto classof(const Ast *ast) -> bool;
-
-  /**
-   * @brief Compute the cannonical string representation of this Array
-   * expression
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the llvm::ConstantArray representing this Array
-   *
-   * Due to a language limitation all members must be llvm::Constants
-   * themselves.
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Value*, Error> if true, the llvm::ConstantArray,
-   * if false, the Error encountered.
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

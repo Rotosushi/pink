@@ -4,70 +4,52 @@
 #include "aux/Environment.h"
 
 namespace pink {
-Conditional::Conditional(const Location &location, std::unique_ptr<Ast> test,
-                         std::unique_ptr<Ast> first,
-                         std::unique_ptr<Ast> second)
-    : Ast(Ast::Kind::Conditional, location), test(std::move(test)),
-      first(std::move(first)), second(std::move(second)) {}
+/*
+*  The type of a conditional is based on two checks,
+*  1) the type of the test expression is Boolean.
+*  2) the type of both alternative expressions must match.
+*
 
-auto Conditional::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Conditional;
+auto Conditional::TypecheckV(const Environment &env) const
+  -> Outcome<Type *, Error> {
+auto test_type_result = test->Typecheck(env);
+if (!test_type_result) {
+  return test_type_result;
+}
+auto *test_type = test_type_result.GetFirst();
+
+Type *bool_ty = env.types->GetBoolType();
+if (bool_ty != test_type) {
+  std::string errmsg =
+      std::string("test expression has type: ") + test_type->ToString();
+  return {
+      Error(Error::Code::CondTestExprTypeMismatch, test->GetLoc(), errmsg)};
 }
 
-auto Conditional::ToString() const -> std::string {
-  std::string result = "if ";
-  result += test->ToString();
-  result += " then ";
-  result += first->ToString();
-  result += " else ";
-  result += second->ToString();
-  return result;
+auto first_type_result = first->Typecheck(env);
+if (!first_type_result) {
+  return first_type_result;
 }
+auto *first_type = first_type_result.GetFirst();
+
+auto second_type_result = second->Typecheck(env);
+if (!second_type_result) {
+  return second_type_result;
+}
+auto *second_type = second_type_result.GetFirst();
+
+if (first_type != second_type) {
+  std::string errmsg =
+      std::string("first alternative has type: ") + first_type->ToString() +
+      ", second alternative has type: " + second_type->ToString();
+  return {Error(Error::Code::CondBodyExprTypeMismatch, GetLoc(), errmsg)};
+}
+
+return {first_type};
+}
+*/
 
 /*
- *  The type of a conditional is based on two checks,
- *  1) the type of the test expression is Boolean.
- *  2) the type of both alternative expressions must match.
- *
- */
-auto Conditional::TypecheckV(const Environment &env) const
-    -> Outcome<Type *, Error> {
-  auto test_type_result = test->Typecheck(env);
-  if (!test_type_result) {
-    return test_type_result;
-  }
-  auto *test_type = test_type_result.GetFirst();
-
-  Type *bool_ty = env.types->GetBoolType();
-  if (bool_ty != test_type) {
-    std::string errmsg =
-        std::string("test expression has type: ") + test_type->ToString();
-    return {
-        Error(Error::Code::CondTestExprTypeMismatch, test->GetLoc(), errmsg)};
-  }
-
-  auto first_type_result = first->Typecheck(env);
-  if (!first_type_result) {
-    return first_type_result;
-  }
-  auto *first_type = first_type_result.GetFirst();
-
-  auto second_type_result = second->Typecheck(env);
-  if (!second_type_result) {
-    return second_type_result;
-  }
-  auto *second_type = second_type_result.GetFirst();
-
-  if (first_type != second_type) {
-    std::string errmsg =
-        std::string("first alternative has type: ") + first_type->ToString() +
-        ", second alternative has type: " + second_type->ToString();
-    return {Error(Error::Code::CondBodyExprTypeMismatch, GetLoc(), errmsg)};
-  }
-
-  return {first_type};
-}
-
 // the outline of generating the code for a conditional expression
 // was retrieved from here:
 //  llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl05.html
@@ -128,5 +110,5 @@ auto Conditional::Codegen(const Environment &env) const
   phi_node->addIncoming(second_value, else_BB);
   return {phi_node};
 }
-
+*/
 } // namespace pink

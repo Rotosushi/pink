@@ -9,93 +9,34 @@
 namespace pink {
 /**
  * @brief Represents a member access expression.
- *
- * this expression represents extracting a value from an aggregate type
- *
- * \todo #CPP lowered to the dot operator
- *
  */
 class Dot : public Ast {
 private:
-  /**
-   * @brief Compute the Type of the Dot expression
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<Type*, Error> if true the type of the dot expression,
-   * if false the Error encountered
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
+  Ast::Pointer left;
+  Ast::Pointer right;
 
 public:
-  /**
-   * @brief the left hand side expression
-   *
-   * the aggregate being accessed
-   */
-  std::unique_ptr<Ast> left;
+  Dot(const Location &location, Ast::Pointer left, Ast::Pointer right) noexcept
+      : Ast(Ast::Kind::Dot, location), left(std::move(left)),
+        right(std::move(right)) {}
+  ~Dot() noexcept override = default;
+  Dot(const Dot &other) noexcept = delete;
+  Dot(Dot &&other) noexcept = default;
+  auto operator=(const Dot &other) noexcept -> Dot & = delete;
+  auto operator=(Dot &&other) noexcept -> Dot & = default;
 
-  /**
-   * @brief the right hand side expression
-   *
-   * the index to compute
-   */
-  std::unique_ptr<Ast> right;
+  auto GetLeft() noexcept -> Ast::Pointer & { return left; }
+  auto GetLeft() const noexcept -> const Ast::Pointer & { return left; }
+  auto GetRight() noexcept -> Ast::Pointer & { return right; }
+  auto GetRight() const noexcept -> const Ast::Pointer & { return right; }
 
-  /**
-   * @brief Construct a new Dot
-   *
-   * @param location the textual location of the Dot expression
-   * @param left the left hand side expression
-   * @param right the right hand side expression
-   */
-  Dot(const Location &location, std::unique_ptr<Ast> left,
-      std::unique_ptr<Ast> right);
+  static auto classof(const Ast *ast) noexcept -> bool {
+    return Ast::Kind::Dot == ast->GetKind();
+  }
 
-  /**
-   * @brief Destroy the Dot
-   *
-   */
-  ~Dot() override = default;
-
-  Dot(const Dot &other) = delete;
-
-  Dot(Dot &&other) = default;
-
-  auto operator=(const Dot &other) -> Dot & = delete;
-
-  auto operator=(Dot &&other) -> Dot & = default;
-
-  auto GetLeft() const -> const Ast * { return left.get(); }
-
-  auto GetRight() const -> const Ast * { return right.get(); }
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the class to test
-   * @return true if ast *is* an instance of Dot
-   * @return false if ast *is not* an instance of Dot
-   */
-  static auto classof(const Ast *ast) -> bool;
-
-  /**
-   * @brief Return the cannonical string representation of this Dot expression
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the value of this Dot expression
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Value*, Error> if true the Value of the Dot
-   * expression, if false the Error encountered.
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

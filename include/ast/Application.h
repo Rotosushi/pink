@@ -4,7 +4,8 @@
  * @version 0.1
  */
 #pragma once
-#include <vector>
+#include <memory> // std::unique_ptr
+#include <vector> // std::vector
 
 #include "ast/Ast.h"
 
@@ -14,115 +15,59 @@ namespace pink {
  *
  */
 class Application : public Ast {
+public:
+  using Arguments = std::vector<Ast::Pointer>;
+  using iterator = Arguments::iterator;
+  using const_iterator = Arguments::const_iterator;
+
 private:
-  /**
-   * @brief Compute the Type of this Application expression
-   *
-   * If all the given argument types match the functions formal argument
-   * types then the type of the application term is the return type of
-   * the function called.
-   *
-   * @param env The environment of this compilation unit.
-   * @return Outcome<Type*, Error> if the types match, then the return type of
-   * the function being called, if false the Error which was encountered.
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
+  Ast::Pointer callee;
+  Arguments arguments;
 
 public:
-  /**
-   * @brief The function to call
-   *
-   */
-  std::unique_ptr<Ast> callee;
+  Application(const Location &location, Ast::Pointer callee,
+              Arguments arguments) noexcept
+      : Ast(Ast::Kind::Application, location), callee(std::move(callee)),
+        arguments(std::move(arguments)) {}
+  ~Application() noexcept override = default;
+  Application(const Application &other) noexcept = delete;
+  Application(Application &&other) noexcept = default;
+  auto operator=(const Application &other) noexcept -> Application & = delete;
+  auto operator=(Application &&other) noexcept -> Application & = default;
 
-  /**
-   * @brief The arguments to pass
-   *
-   */
-  std::vector<std::unique_ptr<Ast>> arguments;
-
-  /**
-   * @brief Construct a new Application
-   *
-   * @param location the textual location of the Application
-   * @param callee the expression representing the function to be applied.
-   * @param arguments the expressions representing the arguments to the
-   * function.
-   */
-  Application(const Location &location, std::unique_ptr<Ast> callee,
-              std::vector<std::unique_ptr<Ast>> arguments);
-
-  /**
-   * @brief Destroy the Application
-   *
-   */
-  ~Application() override = default;
-
-  Application(const Application &other) = delete;
-
-  Application(Application &&other) = default;
-
-  auto operator=(const Application &other) -> Application & = delete;
-
-  auto operator=(Application &&other) -> Application & = default;
-
-  auto GetCallee() const -> const Ast * { return callee.get(); }
-
-  auto GetArguments() const -> const std::vector<std::unique_ptr<Ast>> & {
+  [[nodiscard]] auto GetCallee() noexcept -> Ast::Pointer & { return callee; }
+  [[nodiscard]] auto GetCallee() const noexcept -> const Ast::Pointer & {
+    return callee;
+  }
+  [[nodiscard]] auto GetArguments() noexcept -> Arguments & {
+    return arguments;
+  }
+  [[nodiscard]] auto GetArguments() const noexcept -> const Arguments & {
     return arguments;
   }
 
-  using iterator = std::vector<std::unique_ptr<Ast>>::iterator;
-  using const_iterator = std::vector<std::unique_ptr<Ast>>::const_iterator;
+  [[nodiscard]] auto begin() noexcept -> iterator { return arguments.begin(); }
+  [[nodiscard]] auto begin() const noexcept -> const_iterator {
+    return arguments.begin();
+  }
+  [[nodiscard]] auto cbegin() const noexcept -> const_iterator {
+    return arguments.cbegin();
+  }
+  [[nodiscard]] auto end() noexcept -> iterator { return arguments.end(); }
+  [[nodiscard]] auto end() const noexcept -> const_iterator {
+    return arguments.end();
+  }
+  [[nodiscard]] auto cend() const noexcept -> const_iterator {
+    return arguments.cend();
+  }
 
-  /**
-   * @brief iterator to beginning of arguments
-   *
-   * @return iterator arguments.begin()
-   */
-  auto begin() -> iterator { return arguments.begin(); }
-  auto cbegin() const -> const_iterator { return arguments.cbegin(); }
+  static auto classof(const Ast *ast) -> bool {
+    return ast->GetKind() == Ast::Kind::Application;
+  }
 
-  /**
-   * @brief iterator to end of arguments
-   *
-   * @return iterator arguments.end()
-   */
-  auto end() -> iterator { return arguments.end(); }
-  auto cend() const -> const_iterator { return arguments.cend(); }
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the Ast to check
-   * @return true if ast *is* an instance of an Application
-   * @return false if ast *is not* an instance of an Application
-   */
-  static auto classof(const Ast *ast) -> bool;
-
-  /**
-   * @brief Compute the cannonical string representation of this Application
-   * expression
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the Value of this Application expression.
-   *
-   * The value of the Application is the return value from the
-   * function after it has been called.
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Value*, Error> true if we can apply the function, and
-   * then this holds the return value, or false if we cannot apply the function,
-   * and then this holds the Error encountered.
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

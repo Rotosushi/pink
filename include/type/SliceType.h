@@ -30,55 +30,31 @@ namespace pink {
  *
  */
 class SliceType : public Type {
+private:
+  Type::Pointer pointee_type;
+
 public:
-  Type *pointee_type;
+  SliceType(Type::Pointer pointee_type) noexcept
+      : Type(Type::Kind::Slice), pointee_type(pointee_type) {
+    assert(pointee_type != nullptr);
+  }
+  ~SliceType() noexcept override = default;
+  SliceType(const SliceType &other) noexcept = default;
+  SliceType(SliceType &&other) noexcept = default;
+  auto operator=(const SliceType &other) noexcept -> SliceType & = default;
+  auto operator=(SliceType &&other) noexcept -> SliceType & = default;
 
-  SliceType(Type *pointee_type);
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Slice == type->GetKind();
+  }
 
-  ~SliceType() override = default;
+  [[nodiscard]] auto GetPointeeType() const noexcept -> Type::Pointer {
+    return pointee_type;
+  }
 
-  SliceType(const SliceType &other) = default;
-
-  SliceType(SliceType &&other) = default;
-
-  auto operator=(const SliceType &other) -> SliceType & = default;
-
-  auto operator=(SliceType &&other) -> SliceType & = default;
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param type the type being tested
-   * @return true if type *is* an instance of SliceType
-   * @return false if type *is not* an instance of SliceType
-   */
-  static auto classof(const Type *type) -> bool;
-
-  /**
-   * @brief Computes if other is equivalent to this SliceType
-   *
-   * @param other the other type
-   * @return true if other *is* equivalent to this SliceType
-   * @return false if other  *is not* equivalent to this SliceType
-   */
-  auto EqualTo(Type *other) const -> bool override;
-
-  /**
-   * @brief Compute the cannonical string representation of this SliceType
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the llvm::Type equivalent to this SliceType
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Type *, Error> if true the llvm::Type
-   */
-  [[nodiscard]] auto ToLLVM(const Environment &env) const
-      -> llvm::Type * override;
+  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstTypeVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

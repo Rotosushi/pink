@@ -17,83 +17,31 @@ namespace pink {
  */
 class Unop : public Ast {
 private:
-  /**
-   * @brief Compute the Type of this Unop expression
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<Type*, Error> if true the Type of this Unop expression,
-   * if false the Error encountered
-   */
-  [[nodiscard]] auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> override;
+  InternedString op;
+  Ast::Pointer right;
 
 public:
-  /**
-   * @brief the Unary Operator this expression represents
-   *
-   */
-  InternedString op;
+  Unop(const Location &location, InternedString opr,
+       Ast::Pointer right) noexcept
+      : Ast(Ast::Kind::Unop, location), op(opr), right(std::move(right)) {}
+  ~Unop() noexcept override = default;
+  Unop(const Unop &other) noexcept = delete;
+  Unop(Unop &&other) noexcept = default;
+  auto operator=(const Unop &other) noexcept -> Unop & = delete;
+  auto operator=(Unop &&other) noexcept -> Unop & = default;
 
-  /**
-   * @brief The argument to the Unary operation
-   *
-   */
-  std::unique_ptr<Ast> right;
+  auto GetOp() noexcept -> InternedString { return op; }
+  auto GetOp() const noexcept -> InternedString { return op; }
+  auto GetRight() noexcept -> Ast::Pointer & { return right; }
+  auto GetRight() const noexcept -> const Ast::Pointer & { return right; }
 
-  /**
-   *
-   * @brief Construct a new Unop
-   *
-   * @param location the textual location of this Unop expression
-   * @param opr the unary operator
-   * @param right the argument to the operation
-   */
-  Unop(const Location &loc, InternedString opr, std::unique_ptr<Ast> right);
+  static auto classof(const Ast *ast) noexcept -> bool {
+    return Ast::Kind::Unop == ast->GetKind();
+  }
 
-  /**
-   * @brief Destroy the Unop
-   *
-   */
-  ~Unop() override = default;
-
-  Unop(const Unop &other) = delete;
-
-  Unop(Unop &&other) = default;
-
-  auto operator=(const Unop &other) -> Unop & = delete;
-
-  auto operator=(Unop &&other) -> Unop & = default;
-
-  auto GetOp() const -> InternedString { return op; }
-
-  auto GetRight() const -> const Ast * { return right.get(); }
-
-  /**
-   * @brief Implements LLVM style [RTTI] for this class
-   *
-   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
-   *
-   * @param ast the ast to test
-   * @return true if ast *is* an instance of a Unop expression
-   * @return false if ast *is not* an instance of a Unop expression
-   */
-  static auto classof(const Ast *ast) -> bool;
-
-  /**
-   * @brief Compute the cannonical string representation of this Unop expression
-   *
-   * @return std::string the string representation
-   */
-  [[nodiscard]] auto ToString() const -> std::string override;
-
-  /**
-   * @brief Compute the result Value of this Unop Expression
-   *
-   * @param env the environment of this compilation unit
-   * @return Outcome<llvm::Value*, Error> if true the result Value of this Unop
-   * expression, if false the Error encountered
-   */
-  [[nodiscard]] auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> override;
+  void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
+  void Accept(ConstAstVisitor *visitor) const noexcept override {
+    visitor->Visit(this);
+  }
 };
 } // namespace pink

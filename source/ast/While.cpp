@@ -5,23 +5,7 @@
 #include "aux/Environment.h"
 
 namespace pink {
-While::While(const Location &location, std::unique_ptr<Ast> test,
-             std::unique_ptr<Ast> body)
-    : Ast(Ast::Kind::While, location), test(std::move(test)),
-      body(std::move(body)) {}
-
-auto While::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::While;
-}
-
-auto While::ToString() const -> std::string {
-  std::string result("while ");
-  result += test->ToString();
-  result += " do ";
-  result += body->ToString();
-  return result;
-}
-
+/*
 auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   auto test_getype_result = test->Typecheck(env);
   if (!test_getype_result) {
@@ -43,7 +27,8 @@ auto While::TypecheckV(const Environment &env) const -> Outcome<Type *, Error> {
   }
   return body_getype_result;
 }
-
+*/
+/*
 auto While::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -114,4 +99,5 @@ auto While::Codegen(const Environment &env) const
   //        also seems like a bad idea.
   return {env.instruction_builder->getFalse()};
 }
+*/
 } // namespace pink

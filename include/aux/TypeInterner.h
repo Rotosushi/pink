@@ -174,10 +174,10 @@ public:
    * @brief Get the instance of a ArrayType
    *
    * @param size the size of the ArrayType
-   * @param member_type the member type of the ArrayType
+   * @param element_type the member type of the ArrayType
    * @return ArrayType* the ArrayType
    */
-  auto GetArrayType(size_t size, Type *member_type) -> ArrayType *;
+  auto GetArrayType(size_t size, Type *element_type) -> ArrayType *;
 
   /**
    * @brief Get the instance of a SliceType

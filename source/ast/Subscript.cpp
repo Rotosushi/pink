@@ -4,23 +4,11 @@
 #include "kernel/SliceSubscript.h"
 
 namespace pink {
-Subscript::Subscript(const Location &location, std::unique_ptr<Ast> left,
-                     std::unique_ptr<Ast> right)
-    : Ast(Ast::Kind::Subscript, location), left(std::move(left)),
-      right(std::move(right)) {}
-
-auto Subscript::classof(const Ast *ast) -> bool {
-  return ast->GetKind() == Ast::Kind::Subscript;
-}
-
-auto Subscript::ToString() const -> std::string {
-  return left->ToString() + "[" + right->ToString() + "]";
-}
 
 /*
   lhs has to be an Array or a Slice
   rhs has to be an IntegerType
-*/
+
 auto Subscript::TypecheckV(const Environment &env) const
     -> Outcome<Type *, Error> {
   auto rhs_type_result = right->Typecheck(env);
@@ -57,7 +45,9 @@ auto Subscript::TypecheckV(const Environment &env) const
   assert(element_type != nullptr);
   return {element_type};
 }
+*/
 
+/*
 auto Subscript::Codegen(const Environment &env) const
     -> Outcome<llvm::Value *, Error> {
   assert(GetType() != nullptr);
@@ -118,5 +108,6 @@ auto Subscript::Codegen(const Environment &env) const
   FatalError(errmsg, __FILE__, __LINE__);
   return {Error()};
 }
+*/
 
 } // namespace pink

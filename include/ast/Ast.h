@@ -9,22 +9,17 @@
  */
 
 #pragma once
-#include <iostream>
-#include <memory>
-#include <string>
+#include <memory>   // std::unique_ptr
+#include <optional> // std::optional
 
-#include "llvm/Support/Casting.h"
+#include "llvm/Support/Casting.h" // llvm::isa, llvm::cast, etc
 
-#include "aux/Error.h"
-#include "aux/Location.h"
-#include "aux/Outcome.h"
+#include "aux/Location.h" // pink::Location
 
-#include "type/Type.h"
-
-#include "llvm/IR/Value.h"
+#include "ast/visitor/AstVisitor.h"
 
 namespace pink {
-class Environment;
+class Type;
 
 /*
   Would it be faster to store the entire Ast into a vector?
@@ -43,18 +38,22 @@ class Environment;
     that any different than having the nodes themselves store
     unique_ptr's?
 
+    - any node of the tree representing another sequence of terms
+    doesn't have a knowable size, and so would need to store a
+    set of pointers.
+
+    -
+
 */
 
 /**
  * @brief Ast is the base class of all abstract syntax tree nodes
  *
- *  Any class written to represent a node within the Ast must inherit from Ast.
- *
- * \note Ast is pure virtual, so there is no way to construct a plain Ast,
- * only an instance of a derived Ast may be constructed.
+ * \note Ast is pure virtual
  */
 class Ast {
 public:
+  using Pointer = std::unique_ptr<Ast>;
   /**
    * @brief Ast::Kind is defined so as to conform to LLVM style [RTTI]
    *
@@ -89,110 +88,43 @@ public:
 
 private:
   Kind kind;
-  Location loc;
-  mutable Type *type;
-
-  /** @property kind
-   * @brief holds the [kind](#Kind) of this Ast node
-   */
-  /** @property loc
-   * @brief holds the textual [location](#Location) of this Ast node
-   */
-  /** @property type
-   * @brief initially nullptr; however after a call to Typecheck it caches the
-   * [type](#Type) of this Ast node
-   */
-
-  /**
-   * @brief The pure virtual method which implements type checking of this Ast
-   * expression
-   *
-   * @param env The Environment to type check against; An
-   * [Environment](#Environment) as if constructed by
-   * [NewGlobalEnv](#NewGlobalEnv)
-   *
-   * @return Outcome<Type*, Error> if this Ast could be typed by the type
-   * checker, then the Outcome holds that type, otherwise the Outcome holds the
-   * Error the type checker ran into during evaluation.
-   */
-  [[nodiscard]] virtual auto TypecheckV(const Environment &env) const
-      -> Outcome<Type *, Error> = 0;
+  Location location;
+  mutable Type *cached_type;
 
 public:
-  /**
-   * @brief Construct a new Ast object
-   *
-   * \warning Ast is a virtual base class, and so an instance of an Ast cannot
-   * be constructed directly, only an instance of a derived class may be
-   * constructed.
-   *
-   * @param kind the [kind](#Kind) of the ast object being constructed
-   * @param location the textual [location](#Location) of the ast object being
-   * constructed
-   */
-  Ast(Kind kind, Location location);
-
-  /**
-   * @brief Destroy an Ast object
-   */
-  virtual ~Ast() = default;
-
-  Ast(const Ast &other) = delete;
-
-  Ast(Ast &&other) = default;
-
-  auto operator=(const Ast &other) -> Ast & = delete;
-
+  Ast(Kind kind, Location location) noexcept : kind(kind), location(location) {}
+  virtual ~Ast() noexcept = default;
+  Ast(const Ast &other) noexcept = delete;
+  Ast(Ast &&other) noexcept = default;
+  auto operator=(const Ast &other) noexcept -> Ast & = delete;
   auto operator=(Ast &&other) noexcept -> Ast & = default;
 
-  /**
-   * @brief Get the Kind
-   *
-   * @return Kind the [kind](#Kind) of the Ast object
-   */
-  [[nodiscard]] auto GetKind() const -> const Kind &;
+  [[nodiscard]] auto GetKind() noexcept -> Kind { return kind; }
+  [[nodiscard]] auto GetKind() const noexcept -> Kind { return kind; }
+  [[nodiscard]] auto GetLocation() noexcept -> Location & { return location; }
+  [[nodiscard]] auto GetLocation() const noexcept -> const Location & {
+    return location;
+  }
 
-  /**
-   * @brief Get the Loc
-   *
-   * @return Location the syntactic [location](#Location) of the Ast object
-   */
-  [[nodiscard]] auto GetLoc() const -> const Location &;
+  [[nodiscard]] auto GetCachedType() noexcept -> std::optional<const Type *> {
+    if (cached_type == nullptr) {
+      return {};
+    }
+    return {cached_type};
+  }
 
-  /**
-   * @brief Get the Type
-   *
-   * \note: the type is only filled in an Ast after Typecheck has been
-   * called on this Ast. That is, immediately after construction of
-   * an Ast, GetType will return nullptr, and only after the Ast passed
-   * Typechecking will this return a valid type pointer.
-   *
-   * @return const Type* the type of this ast, or nullptr
-   */
-  [[nodiscard]] auto GetType() const -> Type *;
+  [[nodiscard]] auto GetCachedType() const noexcept
+      -> std::optional<const Type *> {
+    if (cached_type == nullptr) {
+      return {};
+    }
+    return {cached_type};
+  }
 
-  /**
-   * @brief Computes the canonical string representation of this Ast
-   *
-   * by canonical I simply mean that if the [parser](#Parser) were to read in
-   * the string returned by ToString it would construct the exact same Ast as
-   * generated the string. That is, Parser::Parse() and Ast::ToString() are
-   * inverse operations. (modulo textual formatting)
-   *
-   * \todo ToString ends up doing a lot of intermediate allocations
-   * and concatenations as it builds up it's result, this seems like
-   * a good place to consider optimizing. To accomplish this it might
-   * work to buffer all of the strings into a list, and then perform
-   * a single concatenation at the end. This might speed up the algorithm
-   * overall. as there may be less total allocations, and there will be
-   * no repeated copying of the intermediate strings.
-   *
-   * \todo This function does not currently indent blocks of code
-   * according to their nested depth. and I feel that it should.
-   *
-   * @return std::string the canonical string representing this Ast
-   */
-  [[nodiscard]] virtual auto ToString() const -> std::string = 0;
+  void SetCachedType(Type *type) const noexcept { cached_type = type; }
+
+  virtual void Accept(AstVisitor *visitor) noexcept = 0;
+  virtual void Accept(ConstAstVisitor *visitor) const noexcept = 0;
 
   /**
    * @brief Computes the [Type](#Type) of this [term](#Ast)
@@ -211,8 +143,8 @@ public:
    * this term a [type](#Type) then the Outcome holds that type, otherwise the
    * Outcome holds the Error that the type checking algorithm constructed.
    */
-  [[nodiscard]] auto Typecheck(const Environment &env) const
-      -> Outcome<Type *, Error>;
+  //[[nodiscard]] auto Typecheck(const Environment &env) const
+  //    -> Outcome<Type *, Error>;
 
   /**
    * @brief Computes the LLVM Intermediate Representation ([IR]) corresponding
@@ -239,7 +171,7 @@ public:
    * this term a [value] then the Outcome holds this value, otherwise the
    * Outcome holds the [Error] the code generator constructed.
    */
-  [[nodiscard]] virtual auto Codegen(const Environment &env) const
-      -> Outcome<llvm::Value *, Error> = 0;
+  //[[nodiscard]] virtual auto Codegen(const Environment &env) const
+  //    -> Outcome<llvm::Value *, Error> = 0;
 };
 } // namespace pink
