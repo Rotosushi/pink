@@ -15,6 +15,8 @@ namespace pink {
 class FunctionType : public Type {
 public:
   using Arguments = std::vector<Type::Pointer>;
+  using iterator = Arguments::iterator;
+  using const_iterator = Arguments::const_iterator;
 
 private:
   Type::Pointer return_type;
@@ -42,6 +44,21 @@ public:
   [[nodiscard]] auto GetArguments() noexcept -> Arguments { return arguments; }
   [[nodiscard]] auto GetArguments() const noexcept -> Arguments {
     return arguments;
+  }
+
+  [[nodiscard]] auto begin() noexcept -> iterator { return arguments.begin(); }
+  [[nodiscard]] auto begin() const noexcept -> const_iterator {
+    return arguments.begin();
+  }
+  [[nodiscard]] auto cbegin() const noexcept -> const_iterator {
+    return arguments.cbegin();
+  }
+  [[nodiscard]] auto end() noexcept -> iterator { return arguments.end(); }
+  [[nodiscard]] auto end() const noexcept -> const_iterator {
+    return arguments.end();
+  }
+  [[nodiscard]] auto cend() const noexcept -> const_iterator {
+    return arguments.cend();
   }
 
   static auto classof(const Type *type) noexcept -> bool {

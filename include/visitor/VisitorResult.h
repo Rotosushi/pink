@@ -5,8 +5,8 @@ template <class Visitor, class Pointer, class ResultType> class VisitorResult {
 public:
   ResultType result;
 
-  static auto Compute(Pointer pointer) -> ResultType {
-    Visitor visitor;
+  static auto Compute(Pointer pointer, Visitor *other) -> ResultType {
+    Visitor visitor(*other);
     pointer->Accept(&visitor);
     return visitor.result;
   }
@@ -19,8 +19,8 @@ class ConstVisitorResult {
 public:
   mutable ResultType result;
 
-  static auto Compute(Pointer pointer) -> ResultType {
-    Visitor visitor;
+  static auto Compute(Pointer pointer, const Visitor *other) -> ResultType {
+    Visitor visitor(*other);
     pointer->Accept(&visitor);
     return visitor.result;
   }

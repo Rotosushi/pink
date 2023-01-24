@@ -131,7 +131,7 @@ application = basic {basic}
 accessor = basic {("." affix)}
 
 basic = identifier
-      | 
+      |
       | unop accessor
       | tuple_or_affix
       | array
@@ -144,7 +144,7 @@ basic = identifier
       | "false"
       | "(" affix ")"
 
-unop = operator 
+unop = operator
 
 tuple_or_affix = "(" affix {"," affix} ")"
 
@@ -159,12 +159,12 @@ block = "{" affix {";" affix} "}"
 type = "Nil"
      | "Integer"
      | "Boolean"
-     | "Ptr" template
-     | "(" type {"," type} ")"
-     | "[" type ";" integer "]"
+     | "Pointer" template
+     | "Tuple" template
+     | "Array" template
      | type {"->" type}
 
-template = "`" type {"," type} "`"
+template = "<" type {"," type} "<"
 
 identifier = [a-zA-Z_][a-zA-Z0-9_]*
 integer = [0-9]+

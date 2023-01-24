@@ -119,7 +119,9 @@ add_library(common STATIC
 	source/ast/While.cpp
 
   source/ast/visitor/AstVisitor.cpp
+
   source/ast/action/ToString.cpp
+  source/ast/action/Typecheck.cpp
 	
 
 	# the 'type' directory is for all of the classes which together 

@@ -7,13 +7,13 @@
 
 namespace pink {
 void AstToString::Visit(const Application *application) const noexcept {
-  result = Compute(application->GetCallee());
+  result = Compute(application->GetCallee(), this);
   result += "(";
 
   std::size_t index = 0;
   std::size_t length = application->GetArguments().size();
   for (const auto &argument : application->GetArguments()) {
-    result += Compute(argument);
+    result += Compute(argument, this);
 
     if (index < (length - 1)) {
       result += ", ";
@@ -30,7 +30,7 @@ void AstToString::Visit(const Array *array) const noexcept {
   std::size_t index = 0;
   std::size_t length = array->GetElements().size();
   for (const auto &element : array->GetElements()) {
-    result += Compute(element);
+    result += Compute(element, this);
 
     if (index < (length - 1)) {
       result += ", ";
@@ -42,9 +42,9 @@ void AstToString::Visit(const Array *array) const noexcept {
 }
 
 void AstToString::Visit(const Assignment *assignment) const noexcept {
-  result = Compute(assignment->GetLeft());
+  result = Compute(assignment->GetLeft(), this);
   result += " = ";
-  result += Compute(assignment->GetRight());
+  result += Compute(assignment->GetRight(), this);
 }
 
 void AstToString::Visit(const Bind *bind) const noexcept {
@@ -56,10 +56,10 @@ void AstToString::Visit(const Bind *bind) const noexcept {
 void AstToString::Visit(const Binop *binop) const noexcept {
   if (llvm::isa<Binop>(binop->GetLeft())) {
     result += "(";
-    result += Compute(binop->GetLeft());
+    result += Compute(binop->GetLeft(), this);
     result += ")";
   } else {
-    result += Compute(binop->GetLeft());
+    result += Compute(binop->GetLeft(), this);
   }
 
   result += " ";
@@ -68,17 +68,17 @@ void AstToString::Visit(const Binop *binop) const noexcept {
 
   if (llvm::isa<Binop>(binop->GetRight())) {
     result += "(";
-    result += Compute(binop->GetRight());
+    result += Compute(binop->GetRight(), this);
     result += ")";
   } else {
-    result += Compute(binop->GetRight());
+    result += Compute(binop->GetRight(), this);
   }
 }
 
 void AstToString::Visit(const Block *block) const noexcept {
   result = "{ ";
   for (const auto &expression : block->GetExpressions()) {
-    result += Compute(expression);
+    result += Compute(expression, this);
 
     if (!llvm::isa<Conditional>(expression) && !llvm::isa<While>(expression)) {
       result += "; ";
@@ -98,17 +98,17 @@ void AstToString::Visit(const Boolean *boolean) const noexcept {
 
 void AstToString::Visit(const Conditional *conditional) const noexcept {
   result = "if (";
-  result += Compute(conditional->GetTest());
+  result += Compute(conditional->GetTest(), this);
   result += ") ";
-  result += Compute(conditional->GetFirst());
+  result += Compute(conditional->GetFirst(), this);
   result += " else ";
-  result += Compute(conditional->GetSecond());
+  result += Compute(conditional->GetSecond(), this);
 }
 
 void AstToString::Visit(const Dot *dot) const noexcept {
-  result = Compute(dot->GetLeft());
+  result = Compute(dot->GetLeft(), this);
   result += ".";
-  result += Compute(dot->GetRight());
+  result += Compute(dot->GetRight(), this);
 }
 
 void AstToString::Visit(const Function *function) const noexcept {
@@ -129,7 +129,7 @@ void AstToString::Visit(const Function *function) const noexcept {
   }
 
   result += ") ";
-  result += Compute(function->GetBody());
+  result += Compute(function->GetBody(), this);
 }
 
 void AstToString::Visit(const Integer *integer) const noexcept {
@@ -142,9 +142,9 @@ void AstToString::Visit(const Nil *nil) const noexcept {
 }
 
 void AstToString::Visit(const Subscript *subscript) const noexcept {
-  result = Compute(subscript->GetLeft());
+  result = Compute(subscript->GetLeft(), this);
   result += "[";
-  result += Compute(subscript->GetRight());
+  result += Compute(subscript->GetRight(), this);
   result += "]";
 }
 
@@ -154,7 +154,7 @@ void AstToString::Visit(const Tuple *tuple) const noexcept {
   std::size_t index = 0;
   std::size_t length = tuple->GetElements().size();
   for (const auto &element : *tuple) {
-    result += Compute(element);
+    result += Compute(element, this);
 
     if (index < (length - 1)) {
       result += ", ";
@@ -167,7 +167,7 @@ void AstToString::Visit(const Tuple *tuple) const noexcept {
 
 void AstToString::Visit(const Unop *unop) const noexcept {
   result = unop->GetOp();
-  result += Compute(unop->GetRight());
+  result += Compute(unop->GetRight(), this);
 }
 
 void AstToString::Visit(const Variable *variable) const noexcept {
@@ -176,12 +176,13 @@ void AstToString::Visit(const Variable *variable) const noexcept {
 
 void AstToString::Visit(const While *loop) const noexcept {
   result = "while (";
-  result += Compute(loop->GetTest());
+  result += Compute(loop->GetTest(), this);
   result += ") ";
-  result += Compute(loop->GetBody());
+  result += Compute(loop->GetBody(), this);
 }
 
 [[nodiscard]] auto ToString(const Ast::Pointer &ast) noexcept -> std::string {
-  return AstToString::Compute(ast);
+  AstToString visitor;
+  return AstToString::Compute(ast, &visitor);
 }
 } // namespace pink
