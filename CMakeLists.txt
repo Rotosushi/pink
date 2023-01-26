@@ -122,6 +122,7 @@ add_library(common STATIC
 
   source/ast/action/ToString.cpp
   source/ast/action/Typecheck.cpp
+  source/ast/action/Codegen.cpp
 	
 
 	# the 'type' directory is for all of the classes which together 
@@ -139,7 +140,10 @@ add_library(common STATIC
 	source/type/VoidType.cpp
 
   source/type/visitor/TypeVisitor.cpp
+
+  source/type/action/StructuralEquality.cpp
   source/type/action/ToString.cpp
+  source/type/action/ToLLVM.cpp
 
 
 	# the 'aux' directory is for the classes which are necessary or convenient

@@ -22,7 +22,7 @@ public:
 
 private:
   ExpressionsType expressions;
-  SymbolTable::Pointer scope;
+  mutable SymbolTable::Pointer scope;
 
 public:
   Block(const Location &location, SymbolTable *outer_scope) noexcept
@@ -36,6 +36,8 @@ public:
   Block(Block &&other) noexcept = default;
   auto operator=(const Block &other) noexcept -> Block & = delete;
   auto operator=(Block &&other) noexcept -> Block & = default;
+
+  auto IsEmpty() const noexcept -> bool { return begin() == end(); }
 
   auto GetExpressions() noexcept -> ExpressionsType & { return expressions; }
   auto GetExpressions() const noexcept -> const ExpressionsType & {

@@ -1,4 +1,5 @@
 #include "aux/Flags.h"
+#include "Flags.h"
 
 namespace pink {
 
@@ -24,5 +25,13 @@ auto TypecheckFlags::WithinDereferencePtr() const -> bool {
 
 auto TypecheckFlags::WithinDereferencePtr(bool state) -> bool {
   return flags[inDereferencePtr] = state;
+}
+
+auto TypecheckFlags::WithinBindExpression() const -> bool {
+  return flags[inBindExpression];
+}
+
+auto pink::TypecheckFlags::WithinBindExpression(bool state) -> bool {
+  return flags[inBindExpression] = state;
 }
 } // namespace pink

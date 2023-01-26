@@ -75,6 +75,7 @@ public:
    * @return llvm::Optional<std::pair<Type*, UnopCodegen*>> if has_value the
    * implementation for the given Type, otherwise nothing.
    */
-  auto Lookup(Type *arg_t) -> llvm::Optional<std::pair<Type *, UnopCodegen *>>;
+  virtual auto Lookup(Type *arg_t) -> llvm::Optional<std::pair<Type *, UnopCodegen *>>;
 };
+
 } // namespace pink

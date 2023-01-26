@@ -32,7 +32,7 @@ private:
   InternedString name;
   Arguments arguments;
   Ast::Pointer body;
-  SymbolTable::Pointer scope;
+  mutable SymbolTable::Pointer scope;
 
 public:
   Function(const Location &location, const InternedString name,
@@ -50,13 +50,11 @@ public:
   auto GetName() noexcept -> InternedString { return name; }
   auto GetName() const noexcept -> InternedString { return name; }
   auto GetArguments() noexcept -> Arguments & { return arguments; }
-  auto GetArguments() const noexcept -> const Arguments & {
-    return arguments;
-  }
+  auto GetArguments() const noexcept -> const Arguments & { return arguments; }
   auto GetBody() noexcept -> Ast::Pointer & { return body; }
   auto GetBody() const noexcept -> const Ast::Pointer & { return body; }
-  auto GetSymbolTable() noexcept -> SymbolTable::Pointer & { return scope; }
-  auto GetSymbolTable() const noexcept -> const SymbolTable::Pointer & {
+  auto GetScope() noexcept -> SymbolTable::Pointer & { return scope; }
+  auto GetScope() const noexcept -> const SymbolTable::Pointer & {
     return scope;
   }
 

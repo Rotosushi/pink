@@ -1,0 +1,22 @@
+what is a template implementation wise?
+
+as far as I can tell, it's a kind of function, which takes
+an extra set of arguments consisting of typenames.
+
+The template itself cannot be called. instead you give the
+template a set of typenames as arguments and it binds those
+typenames to those types and this creates a new instance of
+the templated function, which then can be applied just as a
+function would.
+
+This means the template object needs to keep track of it's
+list of template arguments, and the Ast which it is going
+to perform substitution over. Then, when a syntactic form is 
+encountered which binds the type arguments to the template, 
+a new instance of the function can be created and then used.
+an additional thing the template needs to keep track of is 
+all of the instances that it has created, this is so code 
+can apply the same instance if it calls the template with the 
+same type arguments.
+
+unlike with operators a template can have any number of arguments,

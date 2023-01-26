@@ -24,6 +24,32 @@ namespace pink {
  *  We could optimize searching up the stack of scopes if we 
  *  store all scopes related to a given compilation environment 
  *  in a std::vector acting like a stack.
+ * 
+ * \note 1/24/2023:
+ *  The current implementation of the stack of scopes 
+ *  is to simply have the nodes of the tree own their 
+ *  own scope, then when we process that particular node 
+ *  we use it's local scope to register bindings, since 
+ *  we walk the tree top-down this naturally handles 
+ *  to insertion and deletion of scopes from the scope stack 
+ *  with no extra effort on the part of the program,
+ *  an alternative solution would be to keep an actual stack 
+ *  of scopes in the environment, and have any nodes in the 
+ *  tree that have a local scope push a new scope onto the 
+ *  stack, and pop it off when finished with the task. 
+ *  since all scopes are stored in the same std::vector this 
+ *  approach may take better advantage of locality of reference 
+ *  when traversing up the scope stack to resolve name lookup.
+ *  and given that we add and remove scopes only when necessary 
+ *  it may be more space efficient than the current solution which 
+ *  allocates all of the scopes for a given Ast for the lifetime of 
+ *  each Ast object.
+ *  
+ * another benefit of this implementation is that we would no 
+ * longer need to construct entire Environments to represent a 
+ * new local environment. okay, that is a lot of object construction 
+ * we can avoid, this is now a todo.
+ *  
  *
  */
 class SymbolTable {

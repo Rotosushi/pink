@@ -5,6 +5,13 @@
 #include "llvm/IR/Value.h"
 
 namespace pink {
+/*
+  #TODO: implement an AllocateTemporary and DeallocateTemporaries
+  pair of functions, which can implement the behavior required when 
+  considering the construction of temporary values on the stack 
+  during expression evaluation. 
+*/
+
 /**
  * @brief Allocate a variable. Performs global or local allocation
  *

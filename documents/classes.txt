@@ -1,0 +1,54 @@
+so, layout wise what is a class?
+
+  just a struct with more semantics?
+
+  class Name {
+    // members
+  };
+
+  is roughly equal to 
+
+  struct Name {
+    // members
+  };
+
+  member functions are lowered to regular functions 
+  with an additional this pointer. 
+
+  and layout can be inherited from the definitions of other 
+  classes. which that is akin to doing an prepend to the list 
+  of members from the perspective of layout.
+
+  if you want multiple inheritance then you need some way 
+  of trimming/not-adding-in-the-first-place the additions
+  when you run into the double inheritance diamond.
+
+  you can store classes on the stack like structs,
+  you can store classes on the heap like structs,
+  you can pass classes by value like structs, 
+  you can return classes by value like structs,
+
+  the only special feature is virtual methods,
+  which by way of a look up table per class 
+  (each class instance? each class within the heirarchy?
+  one for the whole class heirarchy?),
+  tells the compiler (somehow) which function to call when 
+  you apply a virtual method.
+
+  my first instinct is to say that since any virtual method 
+  which is inhereited by a given class has the same function 
+  signature, you can simply store a different address inside 
+  of the same pointer slot for a given member of a class heirarchy,
+  which implies that each instance of a class has a table of it's 
+  virtual members functions layed down in memory.
+
+
+  what would it mean to simply allow any free function 
+  which defines as it's first parameter a pointer to some 
+  class to be a member function of that class? and the 
+  reverse, to allow any member function to be called like 
+  a free function, given the class as the first argument?
+  how does one resolve which function to call, query the 
+  namespace for free functions, then if that turns up empty 
+  query the class member namespace for member functions?
+  and visa-versa for member call syntax

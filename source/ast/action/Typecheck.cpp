@@ -1,5 +1,10 @@
 #include "ast/action/Typecheck.h"
+#include "ast/action/ToString.h"
+
 #include "type/action/ToString.h"
+
+#include "ast/visitor/AstVisitor.h"
+#include "visitor/VisitorResult.h"
 
 #include "ast/All.h"
 
@@ -9,7 +14,43 @@
 
 namespace pink {
 
-/*
+class TypecheckVisitor
+    : public ConstVisitorResult<TypecheckVisitor, const Ast::Pointer &,
+                                TypecheckResult>,
+      public ConstAstVisitor {
+private:
+  Environment &env;
+
+public:
+  void Visit(const Application *application) const noexcept override;
+  void Visit(const Array *array) const noexcept override;
+  void Visit(const Assignment *assignment) const noexcept override;
+  void Visit(const Bind *bind) const noexcept override;
+  void Visit(const Binop *binop) const noexcept override;
+  void Visit(const Block *block) const noexcept override;
+  void Visit(const Boolean *boolean) const noexcept override;
+  void Visit(const Conditional *conditional) const noexcept override;
+  void Visit(const Dot *dot) const noexcept override;
+  void Visit(const Function *function) const noexcept override;
+  void Visit(const Integer *integer) const noexcept override;
+  void Visit(const Nil *nil) const noexcept override;
+  void Visit(const Subscript *subscript) const noexcept override;
+  void Visit(const Tuple *tuple) const noexcept override;
+  void Visit(const Unop *unop) const noexcept override;
+  void Visit(const Variable *variable) const noexcept override;
+  void Visit(const While *loop) const noexcept override;
+
+  TypecheckVisitor(Environment &env) noexcept : env(env) {}
+  ~TypecheckVisitor() noexcept override = default;
+  TypecheckVisitor(const TypecheckVisitor &other) noexcept = default;
+  TypecheckVisitor(TypecheckVisitor &&other) noexcept = default;
+  auto operator=(const TypecheckVisitor &other) noexcept
+      -> TypecheckVisitor & = delete;
+  auto operator=(TypecheckVisitor &&other) noexcept
+      -> TypecheckVisitor & = delete;
+};
+
+/* 1/24/2023
   The type of and Ast::Application is the result type of the
   callee function if and only if each argument type present in
   the Ast::Application matches the corresponding argument type
@@ -70,7 +111,7 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
   result = result_type;
 }
 
-/*
+/* 1/24/2023
   The type of an Array is an ArrayType of the
   same length and type as the Array if and only if
   each element of the Array is the same type as the
@@ -106,7 +147,7 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
   result = {result_type};
 }
 
-/*
+/* 1/24/2023
   The type of an assignment is the Type of it's left hand side,
   if and only if the left hand side is the same type.
 */
@@ -140,7 +181,7 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
   result = right_type;
 }
 
-/*
+/* 1/24/2023
   The Type of a Ast::Bind is the type of it's right hand side,
   if and only if the name being bound is not already bound.
 */
@@ -172,20 +213,26 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
   result = affix_type;
 }
 
+/*
+  The type of a binop expression is the return type of it's
+  implementation given the types of it's left and right hand
+  side expressions if and only if there is an implementation
+  of the binop given the left and right expressions.
+*/
 void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
   auto left_result = Compute(binop->GetLeft(), this);
   if (!left_result) {
     result = left_result;
     return;
   }
-  auto left_type = left_result.GetFirst();
+  auto *left_type = left_result.GetFirst();
 
   auto right_result = Compute(binop->GetRight(), this);
   if (!right_result) {
     result = right_result;
     return;
   }
-  auto right_type = right_result.GetFirst();
+  auto *right_type = right_result.GetFirst();
 
   auto literal = env.binops->Lookup(binop->GetOp());
 
@@ -210,34 +257,405 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
     return;
   }
 
-  auto result_type = implementation->second->result_type;
+  auto *result_type = implementation->second->result_type;
   binop->SetCachedType(result_type);
   result = result_type;
 }
 
-void TypecheckVisitor::Visit(const Block *block) const noexcept {}
+/* 1/24/2023
+  The type of a block is the type of it's last expression,
+  if and only if each expression within the block can be
+  typed. An empty block has type Nil.
+*/
+void TypecheckVisitor::Visit(const Block *block) const noexcept {
+  if (block->IsEmpty()) {
+    result = env.types->GetNilType();
+    block->SetCachedType(env.types->GetNilType());
+    return;
+  }
 
-void TypecheckVisitor::Visit(const Boolean *boolean) const noexcept {}
+  auto local_env = Environment::NewLocalEnv(env, block->GetScope());
+  TypecheckVisitor local_visitor(*local_env);
 
-void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {}
+  for (const auto &expression : *block) {
+    result = Compute(expression, &local_visitor);
 
-void TypecheckVisitor::Visit(const Dot *dot) const noexcept {}
+    if (!result) {
+      return;
+    }
+  }
+}
 
-void TypecheckVisitor::Visit(const Function *function) const noexcept {}
+/* 1/24/2023
+  The type of a boolean literal is Boolean.
+*/
+void TypecheckVisitor::Visit(const Boolean *boolean) const noexcept {
+  auto *result_type = env.types->GetBoolType();
+  boolean->SetCachedType(result_type);
+  result = result_type;
+}
 
-void TypecheckVisitor::Visit(const Integer *integer) const noexcept {}
+/* 1/24/2023
+  The type of a Conditional expression is the type of the first of it's
+  alternative expressions if and only if the test expression has type
+  Boolean, and both alternative expressions have the same type.
+*/
+void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {
+  auto test_result = Compute(conditional->GetTest(), this);
+  if (!test_result) {
+    result = test_result;
+    return;
+  }
+  auto *test_type = test_result.GetFirst();
 
-void TypecheckVisitor::Visit(const Nil *nil) const noexcept {}
+  if (test_type != env.types->GetBoolType()) {
+    std::string errmsg = "Test expression has type [";
+    errmsg += ToString(test_type);
+    errmsg += "] expected type [Boolean]";
+    result = Error(Error::Code::CondTestExprTypeMismatch,
+                   conditional->GetTest()->GetLocation(), errmsg);
+    return;
+  }
 
-void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {}
+  auto first_result = Compute(conditional->GetFirst(), this);
+  if (!first_result) {
+    result = first_result;
+    return;
+  }
+  auto *first_type = first_result.GetFirst();
 
-void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {}
+  auto second_result = Compute(conditional->GetSecond(), this);
+  if (!second_result) {
+    result = second_result;
+    return;
+  }
+  auto *second_type = second_result.GetFirst();
 
-void TypecheckVisitor::Visit(const Unop *unop) const noexcept {}
+  conditional->SetCachedType(second_type);
+  result = first_type;
+}
 
-void TypecheckVisitor::Visit(const Variable *variable) const noexcept {}
+/* 1/24/2023
+  The Type of a Dot expression is the accessed member type
+  if and only if the left hand side expression has the type
+  Tuple and the right hand side expression is some Integer
+  literal whose value is within the range of the given Tuple.
 
-void TypecheckVisitor::Visit(const While *loop) const noexcept {}
+  #NOTE: when we add structure types, we will need to implement
+  named member access here. 1/24/2023
+
+  #ASIDE: theoretically we could support runtime variable indecies if
+  we computed the result type as the union of all of the available
+  structure types, though that might get dicey depending upon
+  the semantics of unions. (which are useful and so we are going
+  to try and have them, tagged i think, as that is safe and reasonably
+  efficient)
+*/
+void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
+  auto left_result = Compute(dot->GetLeft(), this);
+  if (!left_result) {
+    result = left_result;
+    return;
+  }
+  auto *left_type = left_result.GetFirst();
+
+  auto *structure_type = llvm::dyn_cast<TupleType>(left_type);
+  if (structure_type == nullptr) {
+    std::string errmsg = "Left has type [";
+    errmsg += ToString(left_type);
+    errmsg += "] which is not an accessable type.";
+    result = Error(Error::Code::DotLeftIsNotATuple,
+                   dot->GetLeft()->GetLocation(), errmsg);
+    return;
+  }
+
+  // non owning reference to right
+  auto *right = llvm::dyn_cast<Integer>(dot->GetRight().get());
+  if (right == nullptr) {
+    std::string errmsg = "Right [";
+    errmsg += ToString(dot->GetRight());
+    errmsg += "] is not an Integer literal.";
+    result = Error(Error::Code::DotRightIsNotAnInt,
+                   dot->GetRight()->GetLocation(), errmsg);
+    return;
+  }
+
+  auto index = static_cast<std::size_t>(right->GetValue());
+  if (index > structure_type->GetElements().size()) {
+    std::string errmsg = "Index [";
+    errmsg += std::to_string(index);
+    errmsg += "] is larger than the highest indexable element [";
+    errmsg += std::to_string(structure_type->GetElements().size() - 1);
+    errmsg += "]";
+    result = Error(Error::Code::DotIndexOutOfRange, dot->GetLocation(), errmsg);
+    return;
+  }
+
+  auto *result_type = structure_type->GetElements()[index];
+  dot->SetCachedType(result_type);
+  result = result_type;
+}
+
+/*
+  The type of a function is it's FunctionType if and only if
+  the body typechecks given that all of the function's arguments
+  are bound to their respective types.
+*/
+void TypecheckVisitor::Visit(const Function *function) const noexcept {
+  auto BindArguments = [*this, function]() {
+    for (const auto &argument : *function) {
+      function->GetScope()->Bind(argument.first, argument.second, nullptr);
+    }
+  };
+
+  auto UnbindArguments = [*this, function]() {
+    for (const auto &argument : *function) {
+      function->GetScope()->Unbind(argument.first);
+    }
+  };
+
+  auto local_env = Environment::NewLocalEnv(env, function->GetScope());
+
+  auto Cleanup = [&]() {
+    UnbindArguments();
+    local_env->ClearFalseBindings();
+  };
+
+  BindArguments();
+  auto body_result = Compute(function->GetBody(), this);
+  if (!body_result) {
+    result = body_result;
+    Cleanup();
+    return;
+  }
+  Cleanup();
+  auto *body_type = body_result.GetFirst();
+
+  std::vector<Type::Pointer> argument_types(function->GetArguments().size());
+  auto GetType = [](const Function::Argument &argument) {
+    return argument.second;
+  };
+  std::transform(function->begin(), function->end(), argument_types.begin(),
+                 GetType);
+
+  auto *result_type = env.types->GetFunctionType(body_type, argument_types);
+  function->SetCachedType(result_type);
+  result = result_type;
+}
+
+/*
+  The type of an integer literal is Integer
+*/
+void TypecheckVisitor::Visit(const Integer *integer) const noexcept {
+  auto result_type = env.types->GetIntType();
+  integer->SetCachedType(result_type);
+  result = result_type;
+}
+
+/*
+  The type of the nil literal is Nil.
+*/
+void TypecheckVisitor::Visit(const Nil *nil) const noexcept {
+  auto result_type = env.types->GetNilType();
+  nil->SetCachedType(result_type);
+  result = result_type;
+}
+
+/*
+  The type of a subscript operation is the element_type of the
+  subscriptable pointer being accessed if and only if the left
+  expression has slice or array type, and the right expression
+  has Integer type.
+*/
+void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
+  auto right_result = Compute(subscript->GetRight(), this);
+  if (!right_result) {
+    result = right_result;
+    return;
+  }
+  auto *right_type = right_result.GetFirst();
+
+  if ((llvm::dyn_cast<IntegerType>(right_type)) == nullptr) {
+    std::string errmsg = "Cannot use type [";
+    errmsg += ToString(right_type);
+    errmsg += "] as an index.";
+    result = Error(Error::Code::SubscriptRightIsNotAnIndex,
+                   subscript->GetRight()->GetLocation(), errmsg);
+    return;
+  }
+
+  auto left_result = Compute(subscript->GetLeft(), this);
+  if (!left_result) {
+    result = left_result;
+    return;
+  }
+  auto *left_type = left_result.GetFirst();
+
+  auto element_result = [&]() -> TypecheckResult {
+    if (auto *array_type = llvm::dyn_cast<ArrayType>(left_type);
+        array_type != nullptr) {
+      return array_type->GetElementType();
+    }
+
+    if (auto *slice_type = llvm::dyn_cast<SliceType>(left_type);
+        slice_type != nullptr) {
+      return slice_type->GetPointeeType();
+    }
+
+    std::string errmsg = "Cannot subscript type [";
+    errmsg += ToString(left_type);
+    errmsg += "]";
+    return Error(Error::Code::SubscriptLeftIsNotSubscriptable,
+                 subscript->GetLeft()->GetLocation(), errmsg);
+  }();
+  if (!element_result) {
+    result = element_result;
+    return;
+  }
+  auto *element_type = element_result.GetFirst();
+
+  subscript->SetCachedType(element_type);
+  result = element_type;
+}
+
+/*
+  The type of a Tuple is a TupleType containing the type of
+  each of the elements of the Tuple if and only if each of
+  the elements of the Tuple Typecheck.
+*/
+void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
+  std::vector<Type::Pointer> element_types;
+
+  for (const auto &element : *tuple) {
+    auto element_result = Compute(element, this);
+    if (!element_result) {
+      result = element_result;
+      return;
+    }
+    element_types.push_back(element_result.GetFirst());
+  }
+
+  auto *result_type = env.types->GetTupleType(element_types);
+  tuple->SetCachedType(result_type);
+  result = result_type;
+}
+
+/*
+  The type of a Unop is the return type of the unops implementation
+  given the type of it's right hand side expression as argument
+  if and only if the unop has an implementation for the type of
+  the right expression
+*/
+void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
+  auto right_result = Compute(unop->GetRight(), this);
+  if (!right_result) {
+    result = right_result;
+    return;
+  }
+  auto *right_type = right_result.GetFirst();
+
+  auto literal = env.unops->Lookup(unop->GetOp());
+  if (!literal) {
+    std::string errmsg = "Unknown unop [";
+    errmsg += unop->GetOp();
+    errmsg += "]";
+    result = Error(Error::Code::UnknownUnop, unop->GetLocation(), errmsg);
+    return;
+  }
+
+  auto implementation_result =
+      [&]() -> Outcome<std::pair<Type *, UnopCodegen *>, Error> {
+    auto found = literal->second->Lookup(right_type);
+    if (found) {
+      return *found;
+    }
+
+    if (strcmp(unop->GetOp(), "*") == 0) {
+      // create a new instance of the dereference op
+      // with the same body as every other dereference op.
+      auto dereference_integer =
+          literal->second->Lookup(env.types->GetIntType());
+      assert(dereference_integer.has_value());
+      return literal->second->Register(env.types->GetPointerType(right_type),
+                                       right_type,
+                                       dereference_integer->second->generate);
+    }
+
+    if (strcmp(unop->GetOp(), "&") == 0) {
+      auto address_of_integer =
+          literal->second->Lookup(env.types->GetIntType());
+      assert(address_of_integer.has_value());
+      return literal->second->Register(right_type,
+                                       env.types->GetPointerType(right_type),
+                                       address_of_integer->second->generate);
+    }
+
+    std::string errmsg = "No implementation of unop [";
+    errmsg += unop->GetOp();
+    errmsg += "] found for type [";
+    errmsg += ToString(right_type);
+    errmsg += "]";
+    return Error(Error::Code::ArgTypeMismatch, unop->GetLocation(), errmsg);
+  }();
+  auto &implementation = implementation_result.GetFirst();
+
+  auto *result_type = implementation.second->result_type;
+  unop->SetCachedType(result_type);
+  result = result_type;
+}
+
+/*
+  The type of a variable is the type the variable is
+  bound to in scope if and only if the type is bound
+  in scope.
+*/
+void TypecheckVisitor::Visit(const Variable *variable) const noexcept {
+  auto bound = env.bindings->Lookup(variable->GetSymbol());
+
+  if (bound.has_value()) {
+    variable->SetCachedType(bound->first);
+    result = bound->first;
+    return;
+  }
+
+  std::string errmsg = "[";
+  errmsg += variable->GetSymbol();
+  errmsg += "]";
+  result =
+      Error(Error::Code::NameNotBoundInScope, variable->GetLocation(), errmsg);
+}
+
+/*
+  The type of a While loop is Nil if and only if the
+  test expression has type Boolean and the body expression
+  is typeable.
+*/
+void TypecheckVisitor::Visit(const While *loop) const noexcept {
+  auto test_result = Compute(loop->GetTest(), this);
+  if (!test_result) {
+    result = test_result;
+    return;
+  }
+  auto *test_type = test_result.GetFirst();
+
+  if (test_type != env.types->GetBoolType()) {
+    std::string errmsg = "Test expression has type [";
+    errmsg += ToString(test_type);
+    errmsg += "]. expected type [Boolean]";
+    result = Error(Error::Code::WhileTestTypeMismatch,
+                   loop->GetTest()->GetLocation(), errmsg);
+    return;
+  }
+
+  auto body_result = Compute(loop->GetBody(), this);
+  if (!body_result) {
+    result = body_result;
+    return;
+  }
+  auto *result_type = env.types->GetNilType();
+  loop->SetCachedType(result_type);
+  result = result_type;
+}
 
 [[nodiscard]] auto Typecheck(const Ast::Pointer &ast, Environment &env) noexcept
     -> TypecheckResult {
