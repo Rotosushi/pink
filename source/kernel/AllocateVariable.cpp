@@ -19,7 +19,9 @@ auto AllocateGlobal(const std::string &name, llvm::Type *type,
     -> llvm::GlobalVariable * {
   auto *variable = llvm::cast<llvm::GlobalVariable>(
       env.llvm_module->getOrInsertGlobal(name, type));
-
+  // while not technically a problem, it is bad practice
+  // to construct uninitialized global variables. (or global
+  // variables at all frankly.)
   if (initializer != nullptr) {
     auto *const_init = llvm::dyn_cast<llvm::Constant>(initializer);
     if (const_init == nullptr) {

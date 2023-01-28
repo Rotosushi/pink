@@ -2,6 +2,8 @@
 
 #include "aux/TypeInterner.h"
 
+#include "type/action/StructuralEquality.h"
+
 namespace pink {
 
 auto TypeInterner::GetNilType() -> NilType * {
@@ -51,7 +53,7 @@ auto TypeInterner::GetFunctionType(Type *return_type,
   FunctionType *possible_result = possible.get();
 
   auto types_equal = [possible_result](std::unique_ptr<FunctionType> &type) {
-    return possible_result->EqualTo(type.get());
+    return StructuralEquality(possible_result, type.get());
   };
   auto found =
       std::find_if(function_types.begin(), function_types.end(), types_equal);
@@ -67,7 +69,7 @@ auto TypeInterner::GetPointerType(Type *pointee_type) -> PointerType * {
   auto possible = std::make_unique<PointerType>(pointee_type);
 
   for (auto &pointer_type : pointer_types) {
-    if (possible->EqualTo(pointer_type.get())) {
+    if (StructuralEquality(pointer_type.get(), possible.get())) {
       return pointer_type.get();
     }
   }
@@ -82,7 +84,7 @@ auto TypeInterner::GetArrayType(size_t size, Type *member_type) -> ArrayType * {
   auto possible = std::make_unique<ArrayType>(size, member_type);
 
   for (auto &array_type : array_types) {
-    if (possible->EqualTo(array_type.get())) {
+    if (StructuralEquality(array_type.get(), possible.get())) {
       return array_type.get();
     }
   }
@@ -98,7 +100,7 @@ auto TypeInterner::GetSliceType(Type *pointee_type) -> SliceType * {
   auto *possible_result = possible.get();
 
   auto types_equal = [possible_result](std::unique_ptr<SliceType> &type) {
-    return possible_result->EqualTo(type.get());
+    return StructuralEquality(possible_result, type.get());
   };
   auto found =
       std::find_if(slice_types.begin(), slice_types.end(), types_equal);
@@ -115,7 +117,7 @@ auto TypeInterner::GetTupleType(const std::vector<Type *> &member_types)
   auto possible = std::make_unique<TupleType>(member_types);
 
   for (auto &tuple_type : tuple_types) {
-    if (possible->EqualTo(tuple_type.get())) {
+    if (StructuralEquality(tuple_type.get(), possible.get())) {
       return tuple_type.get();
     }
   }

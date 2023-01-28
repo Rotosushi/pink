@@ -37,16 +37,16 @@ public:
 
 class ConstTypeVisitor {
 public:
-  virtual void Visit(const ArrayType *array_type) noexcept = 0;
-  virtual void Visit(const BooleanType *boolean_type) noexcept = 0;
-  virtual void Visit(const CharacterType *character_type) noexcept = 0;
-  virtual void Visit(const FunctionType *function_type) noexcept = 0;
-  virtual void Visit(const IntegerType *integer_type) noexcept = 0;
-  virtual void Visit(const NilType *nil_type) noexcept = 0;
-  virtual void Visit(const PointerType *pointer_type) noexcept = 0;
-  virtual void Visit(const SliceType *slice_type) noexcept = 0;
-  virtual void Visit(const TupleType *tuple_type) noexcept = 0;
-  virtual void Visit(const VoidType *void_type) noexcept = 0;
+  virtual void Visit(const ArrayType *array_type) const noexcept = 0;
+  virtual void Visit(const BooleanType *boolean_type) const noexcept = 0;
+  virtual void Visit(const CharacterType *character_type) const noexcept = 0;
+  virtual void Visit(const FunctionType *function_type) const noexcept = 0;
+  virtual void Visit(const IntegerType *integer_type) const noexcept = 0;
+  virtual void Visit(const NilType *nil_type) const noexcept = 0;
+  virtual void Visit(const PointerType *pointer_type) const noexcept = 0;
+  virtual void Visit(const SliceType *slice_type) const noexcept = 0;
+  virtual void Visit(const TupleType *tuple_type) const noexcept = 0;
+  virtual void Visit(const VoidType *void_type) const noexcept = 0;
 
   ConstTypeVisitor() noexcept = default;
   virtual ~ConstTypeVisitor() noexcept = default;

@@ -3,29 +3,47 @@
 #include "type/All.h"
 
 namespace pink {
-void TypeToString::Visit(const ArrayType *array_type) noexcept {
+class ToStringVisitor
+    : public ConstVisitorResult<ToStringVisitor, const Type::Pointer,
+                                std::string>,
+      public ConstTypeVisitor {
+public:
+  void Visit(const ArrayType *array_type) const noexcept override;
+  void Visit(const BooleanType *boolean_type) const noexcept override;
+  void Visit(const CharacterType *character_type) const noexcept override;
+  void Visit(const FunctionType *function_type) const noexcept override;
+  void Visit(const IntegerType *integer_type) const noexcept override;
+  void Visit(const NilType *nil_type) const noexcept override;
+  void Visit(const PointerType *pointer_type) const noexcept override;
+  void Visit(const SliceType *slice_type) const noexcept override;
+  void Visit(const TupleType *tuple_type) const noexcept override;
+  void Visit(const VoidType *void_type) const noexcept override;
+};
+
+void ToStringVisitor::Visit(const ArrayType *array_type) const noexcept {
   result = "[";
-  result += Compute(array_type->GetElementType());
+  result += Compute(array_type->GetElementType(), this);
   result += "; ";
   result += std::to_string(array_type->GetSize());
   result += "]";
 }
 
-void TypeToString::Visit(const BooleanType *boolean_type) noexcept {
+void ToStringVisitor::Visit(const BooleanType *boolean_type) const noexcept {
   result = "Boolean";
 }
 
-void TypeToString::Visit(const CharacterType *character_type) noexcept {
+void ToStringVisitor::Visit(
+    const CharacterType *character_type) const noexcept {
   result = "Character";
 }
 
-void TypeToString::Visit(const FunctionType *function_type) noexcept {
-  result = "(";
+void ToStringVisitor::Visit(const FunctionType *function_type) const noexcept {
+  result             = "(";
 
-  std::size_t index = 0;
+  std::size_t index  = 0;
   std::size_t length = function_type->GetArguments().size();
   for (auto *type : function_type->GetArguments()) {
-    result += Compute(type);
+    result += Compute(type, this);
 
     if (index < (length - 1)) {
       result += ", ";
@@ -33,34 +51,36 @@ void TypeToString::Visit(const FunctionType *function_type) noexcept {
     index++;
   }
   result += ") -> ";
-  result += Compute(function_type->GetReturnType());
+  result += Compute(function_type->GetReturnType(), this);
 }
 
-void TypeToString::Visit(const IntegerType *integer_type) noexcept {
+void ToStringVisitor::Visit(const IntegerType *integer_type) const noexcept {
   result = "Integer";
 }
 
-void TypeToString::Visit(const NilType *nil_type) noexcept { result = "Nil"; }
+void ToStringVisitor::Visit(const NilType *nil_type) const noexcept {
+  result = "Nil";
+}
 
-void TypeToString::Visit(const PointerType *pointer_type) noexcept {
+void ToStringVisitor::Visit(const PointerType *pointer_type) const noexcept {
   result = "Pointer<";
-  result += Compute(pointer_type->GetPointeeType());
+  result += Compute(pointer_type->GetPointeeType(), this);
   result += ">";
 }
 
-void TypeToString::Visit(const SliceType *slice_type) noexcept {
+void ToStringVisitor::Visit(const SliceType *slice_type) const noexcept {
   result = "Slice<";
-  result += Compute(slice_type->GetPointeeType());
+  result += Compute(slice_type->GetPointeeType(), this);
   result += ">";
 }
 
-void TypeToString::Visit(const TupleType *tuple_type) noexcept {
-  result = "(";
+void ToStringVisitor::Visit(const TupleType *tuple_type) const noexcept {
+  result             = "(";
 
-  std::size_t index = 0;
+  std::size_t index  = 0;
   std::size_t length = tuple_type->GetElements().size();
   for (auto *type : *tuple_type) {
-    result += Compute(type);
+    result += Compute(type, this);
 
     if (index < (length - 1)) {
       result += ", ";
@@ -70,11 +90,12 @@ void TypeToString::Visit(const TupleType *tuple_type) noexcept {
   result += ")";
 }
 
-void TypeToString::Visit(const VoidType *void_type) noexcept {
+void ToStringVisitor::Visit(const VoidType *void_type) const noexcept {
   result = "Void";
 }
 
 [[nodiscard]] auto ToString(const Type::Pointer type) noexcept -> std::string {
-  return TypeToString::Compute(type);
+  ToStringVisitor visitor;
+  return visitor.Compute(type, &visitor);
 }
 } // namespace pink

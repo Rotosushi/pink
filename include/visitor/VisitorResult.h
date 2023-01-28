@@ -14,10 +14,11 @@ namespace pink {
 template <class Visitor, class Pointer, class ResultType> class VisitorResult {
 public:
   ResultType result;
+
   // as far as I can tell, passing as a class member via constructors is the
   // only way to pass differing amounts of arguments within any given visitor.
   // because we don't want to modify the signature of Accept or Visit.
-  static auto Compute(Pointer pointer, Visitor *other) -> ResultType {
+  auto Compute(Pointer pointer, Visitor *other) -> ResultType {
     Visitor visitor(*other);
     pointer->Accept(&visitor);
     return visitor.result;
@@ -37,7 +38,7 @@ public:
   */
   mutable ResultType result;
 
-  static auto Compute(Pointer pointer, const Visitor *other) -> ResultType {
+  auto Compute(Pointer pointer, const Visitor *other) const -> ResultType {
     Visitor visitor(*other);
     pointer->Accept(&visitor);
     return visitor.result;

@@ -1,1 +1,176 @@
 #include "type/action/StructuralEquality.h"
+
+#include "type/visitor/TypeVisitor.h"
+#include "visitor/VisitorResult.h"
+
+#include "type/All.h"
+#include "type/Type.h"
+
+namespace pink {
+class StructuralEqualityVisitor
+    : public ConstVisitorResult<StructuralEqualityVisitor, const Type::Pointer,
+                                bool>,
+      public ConstTypeVisitor {
+private:
+  Type::Pointer one;
+
+public:
+  void Visit(const ArrayType *array_type) const noexcept override;
+  void Visit(const BooleanType *boolean_type) const noexcept override;
+  void Visit(const CharacterType *character_type) const noexcept override;
+  void Visit(const FunctionType *function_type) const noexcept override;
+  void Visit(const IntegerType *integer_type) const noexcept override;
+  void Visit(const NilType *nil_type) const noexcept override;
+  void Visit(const PointerType *pointer_type) const noexcept override;
+  void Visit(const SliceType *slice_type) const noexcept override;
+  void Visit(const TupleType *tuple_type) const noexcept override;
+  void Visit(const VoidType *void_type) const noexcept override;
+
+  StructuralEqualityVisitor(Type::Pointer one) noexcept
+      : ConstVisitorResult(), one(one) {}
+  ~StructuralEqualityVisitor() noexcept override = default;
+  StructuralEqualityVisitor(const StructuralEqualityVisitor &other) noexcept =
+      default;
+  StructuralEqualityVisitor(StructuralEqualityVisitor &&other) noexcept =
+      default;
+  auto operator=(const StructuralEqualityVisitor &other) noexcept
+      -> StructuralEqualityVisitor & = default;
+  auto operator=(StructuralEqualityVisitor &&other) noexcept
+      -> StructuralEqualityVisitor & = default;
+};
+
+void StructuralEqualityVisitor::Visit(
+    const ArrayType *array_type) const noexcept {
+  auto *other_array = llvm::dyn_cast<ArrayType>(one);
+  if (other_array == nullptr) {
+    result = false;
+    return;
+  }
+
+  if (array_type->GetSize() != other_array->GetSize()) {
+    result = false;
+    return;
+  }
+
+  result = StructuralEquality(array_type->GetElementType(),
+                              other_array->GetElementType());
+}
+
+void StructuralEqualityVisitor::Visit(
+    const BooleanType *boolean_type) const noexcept {
+  auto *other_boolean = llvm::dyn_cast<BooleanType>(one);
+  result              = (other_boolean != nullptr);
+}
+
+void StructuralEqualityVisitor::Visit(
+    const CharacterType *character_type) const noexcept {
+  auto *other_character = llvm::dyn_cast<CharacterType>(one);
+  result                = (other_character != nullptr);
+}
+void StructuralEqualityVisitor::Visit(
+    const FunctionType *function_type) const noexcept {
+  auto *other_type = llvm::dyn_cast<FunctionType>(one);
+  if (other_type == nullptr) {
+    result = false;
+    return;
+  }
+
+  if (function_type->GetArguments().size() !=
+      other_type->GetArguments().size()) {
+    result = false;
+    return;
+  }
+
+  if (!StructuralEquality(function_type->GetReturnType(),
+                          other_type->GetReturnType())) {
+    result = false;
+    return;
+  }
+
+  const auto &function_arguments = function_type->GetArguments();
+  const auto &other_arguments    = other_type->GetArguments();
+
+  for (size_t index = 0; index < function_arguments.size(); index += 1) {
+    if (!StructuralEquality(function_arguments[index],
+                            other_arguments[index])) {
+      result = false;
+      return;
+    }
+  }
+
+  result = true;
+}
+
+void StructuralEqualityVisitor::Visit(
+    const IntegerType *integer_type) const noexcept {
+  auto *other_integer = llvm::dyn_cast<IntegerType>(one);
+  result              = (other_integer != nullptr);
+}
+
+void StructuralEqualityVisitor::Visit(const NilType *nil_type) const noexcept {
+  auto *other_type = llvm::dyn_cast<NilType>(one);
+  result           = (other_type != nullptr);
+}
+void StructuralEqualityVisitor::Visit(
+    const PointerType *pointer_type) const noexcept {
+  auto *other_type = llvm::dyn_cast<PointerType>(one);
+  if (other_type == nullptr) {
+    result = false;
+    return;
+  }
+
+  result = StructuralEquality(pointer_type->GetPointeeType(),
+                              other_type->GetPointeeType());
+}
+
+void StructuralEqualityVisitor::Visit(
+    const SliceType *slice_type) const noexcept {
+  auto *other_type = llvm::dyn_cast<SliceType>(one);
+  if (other_type == nullptr) {
+    result = false;
+    return;
+  }
+
+  result = StructuralEquality(slice_type->GetPointeeType(),
+                              other_type->GetPointeeType());
+}
+
+void StructuralEqualityVisitor::Visit(
+    const TupleType *tuple_type) const noexcept {
+  auto *other_type = llvm::dyn_cast<TupleType>(one);
+  if (other_type == nullptr) {
+    result = false;
+    return;
+  }
+
+  if (tuple_type->GetElements().size() != other_type->GetElements().size()) {
+    result = false;
+    return;
+  }
+
+  const auto &element_types  = tuple_type->GetElements();
+  const auto &other_elements = other_type->GetElements();
+  for (size_t index = 0; index < element_types.size(); index += 1) {
+    if (!StructuralEquality(element_types[index], other_elements[index])) {
+      result = false;
+      return;
+    }
+  }
+
+  result = true;
+}
+
+void StructuralEqualityVisitor::Visit(
+    const VoidType *void_type) const noexcept {
+  auto *other_type = llvm::dyn_cast<VoidType>(one);
+  result           = (other_type != nullptr);
+}
+
+[[nodiscard]] auto StructuralEquality(const Type::Pointer one,
+                                      const Type::Pointer two) noexcept
+    -> bool {
+  StructuralEqualityVisitor visitor(one);
+  return visitor.Compute(two, &visitor);
+}
+
+} // namespace pink

@@ -25,9 +25,9 @@ class Environment;
  * of a binary operation
  *
  */
-using BinopCodegenFn = Outcome<llvm::Value *, Error> (*)(
-    llvm::Type *lty, llvm::Value *left, llvm::Type *rty, llvm::Value *right,
-    const Environment &env);
+using BinopCodegenFn = llvm::Value *(*)(llvm::Type *lty, llvm::Value *left,
+                                        llvm::Type *rty, llvm::Value *right,
+                                        const Environment &env);
 
 /**
  * @brief Represents a generator for the implementation of a particular Binop
@@ -47,7 +47,7 @@ public:
    */
   BinopCodegenFn generate;
 
-  BinopCodegen() = delete;
+  BinopCodegen()                          = delete;
 
   /**
    * @brief Construct a new Binop Codegen

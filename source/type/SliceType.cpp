@@ -3,13 +3,7 @@
 #include "aux/Environment.h"
 
 namespace pink {
-SliceType::SliceType(Type *pointee_type)
-    : Type(Type::Kind::Slice), pointee_type(pointee_type) {}
-
-auto SliceType::classof(const Type *type) -> bool {
-  return type->GetKind() == Type::Kind::Slice;
-}
-
+/*
 auto SliceType::EqualTo(Type *other) const -> bool {
   bool result = true;
   if (auto *other_slice = llvm::dyn_cast<SliceType>(other)) {
@@ -41,4 +35,5 @@ auto SliceType::ToLLVM(const Environment &env) const -> llvm::Type * {
   return llvm::StructType::get(
       *env.context, {integer_type, integer_type, pointer_type}, false);
 }
+*/
 } // namespace pink

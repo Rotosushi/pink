@@ -7,10 +7,10 @@
 
 namespace pink {
 void AstToString::Visit(const Application *application) const noexcept {
-  result = Compute(application->GetCallee(), this);
-  result += "(";
+  result             = Compute(application->GetCallee(), this);
+  result             += "(";
 
-  std::size_t index = 0;
+  std::size_t index  = 0;
   std::size_t length = application->GetArguments().size();
   for (const auto &argument : application->GetArguments()) {
     result += Compute(argument, this);
@@ -25,9 +25,9 @@ void AstToString::Visit(const Application *application) const noexcept {
 }
 
 void AstToString::Visit(const Array *array) const noexcept {
-  result = "[";
+  result             = "[";
 
-  std::size_t index = 0;
+  std::size_t index  = 0;
   std::size_t length = array->GetElements().size();
   for (const auto &element : array->GetElements()) {
     result += Compute(element, this);
@@ -50,7 +50,7 @@ void AstToString::Visit(const Assignment *assignment) const noexcept {
 void AstToString::Visit(const Bind *bind) const noexcept {
   result = bind->GetSymbol();
   result += " := ";
-  result += Compute(bind->GetAffix());
+  result += Compute(bind->GetAffix(), this);
 }
 
 void AstToString::Visit(const Binop *binop) const noexcept {
@@ -112,11 +112,11 @@ void AstToString::Visit(const Dot *dot) const noexcept {
 }
 
 void AstToString::Visit(const Function *function) const noexcept {
-  result = "fn ";
-  result += function->GetName();
-  result += "(";
+  result             = "fn ";
+  result             += function->GetName();
+  result             += "(";
 
-  std::size_t index = 0;
+  std::size_t index  = 0;
   std::size_t length = function->GetArguments().size();
   for (const auto &argument : *function) {
     result += argument.first;
@@ -149,9 +149,9 @@ void AstToString::Visit(const Subscript *subscript) const noexcept {
 }
 
 void AstToString::Visit(const Tuple *tuple) const noexcept {
-  result = "(";
+  result             = "(";
 
-  std::size_t index = 0;
+  std::size_t index  = 0;
   std::size_t length = tuple->GetElements().size();
   for (const auto &element : *tuple) {
     result += Compute(element, this);
@@ -183,6 +183,6 @@ void AstToString::Visit(const While *loop) const noexcept {
 
 [[nodiscard]] auto ToString(const Ast::Pointer &ast) noexcept -> std::string {
   AstToString visitor;
-  return AstToString::Compute(ast, &visitor);
+  return visitor.Compute(ast, &visitor);
 }
 } // namespace pink

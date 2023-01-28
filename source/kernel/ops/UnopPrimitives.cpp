@@ -6,14 +6,13 @@
 #include "support/DisableWarning.h"
 
 namespace pink {
-auto UnopIntNegate(llvm::Value *term, const Environment &env)
-    -> Outcome<llvm::Value *, Error> {
+auto UnopIntNegate(llvm::Value *term, const Environment &env) -> llvm::Value * {
   assert(term != nullptr);
   return {env.instruction_builder->CreateNeg(term, "neg")};
 }
 
 auto UnopBoolNegate(llvm::Value *term, const Environment &env)
-    -> Outcome<llvm::Value *, Error> {
+    -> llvm::Value * {
   assert(term != nullptr);
   return {env.instruction_builder->CreateNot(term, "not")};
 }
@@ -24,10 +23,14 @@ auto UnopBoolNegate(llvm::Value *term, const Environment &env)
   location so it always makes sense to construct a pointer to any possible type.
 
   thus we do not need to do anything to support the semantics of either
-  operation. as it all truly depends on how we treat the pointer held in any
-  given llvm::Value*
+  operation in these functions.
+  as it all truly depends on how we treat the pointer held in any given
+  llvm::Value*
 
-  given this, we do not make use of an argument which is necessary for each
+  and the outer term has more information with which to choose when exactly to
+  emit loads.
+
+  given this, we do not make use of the env argument which is necessary for each
   other unop I can imagine. and more pertinently all other unops we have
   defined.
 
@@ -36,7 +39,7 @@ auto UnopBoolNegate(llvm::Value *term, const Environment &env)
   constructed, this function unfortunately has to have an extra parameter.
 
   so, we are going to ignore the normal warning of an unused parameter.
-  such that the code compiles with zero warnings.
+  such that the code compiles with zero warnings,
 
 */
 
@@ -44,17 +47,17 @@ auto UnopBoolNegate(llvm::Value *term, const Environment &env)
 NOWARN(
     "-Wunused-parameter",
     auto UnopAddressOfValue(llvm::Value *term, const Environment &env)
-        ->Outcome<llvm::Value *, Error> { return {term}; }
+        ->llvm::Value * { return {term}; }
 
     auto UnopValueOfAddress(llvm::Value *term, const Environment &env)
-        ->Outcome<llvm::Value *, Error> { return {term}; })
+        ->llvm::Value * { return {term}; })
 // NOLINTEND
 
 void InitializeUnopPrimitives(const Environment &env) {
-  Type *int_ty = env.types->GetIntType();
-  Type *bool_ty = env.types->GetBoolType();
-  Type *int_ptr_ty = env.types->GetPointerType(int_ty);
-  Type *bool_ptr_ty = env.types->GetPointerType(bool_ty);
+  Type *int_ty           = env.types->GetIntType();
+  Type *bool_ty          = env.types->GetBoolType();
+  Type *int_ptr_ty       = env.types->GetPointerType(int_ty);
+  Type *bool_ptr_ty      = env.types->GetPointerType(bool_ty);
 
   InternedString neg_str = env.operators->Intern("-");
   InternedString not_str = env.operators->Intern("!");

@@ -7,9 +7,6 @@
 
 #include "llvm/IR/Value.h"
 
-#include "aux/Error.h"
-#include "aux/Outcome.h"
-
 #include "type/Type.h"
 
 namespace pink {
@@ -26,8 +23,8 @@ class Environment;
  * errors, as the body of a generator is always
  * going to succeed.
  */
-using UnopCodegenFn = Outcome<llvm::Value *, Error> (*)(llvm::Value *term,
-                                                        const Environment &env);
+using UnopCodegenFn = llvm::Value *(*)(llvm::Value       *term,
+                                       const Environment &env);
 
 class UnopCodegen {
 public:
@@ -43,7 +40,7 @@ public:
    */
   UnopCodegenFn generate;
 
-  UnopCodegen() = delete;
+  UnopCodegen()                         = delete;
 
   /**
    * @brief Construct a new Unop Codegen
