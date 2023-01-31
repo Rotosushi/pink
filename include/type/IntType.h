@@ -15,7 +15,7 @@ class IntegerType : public Type {
 public:
   using Pointer = IntegerType const *;
 
-  IntegerType();
+  IntegerType() noexcept : Type(Type::Kind::Integer) {}
   ~IntegerType() noexcept override                                   = default;
   IntegerType(const IntegerType &other) noexcept                     = default;
   IntegerType(IntegerType &&other) noexcept                          = default;

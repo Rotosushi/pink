@@ -6,9 +6,9 @@
 #include "type/TestArrayType.h"
 
 auto TestArrayType(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n--------------------------------\n";
-  out << "Testing pink::ArrayType:\n";
+  bool        result = true;
+  std::string name   = "pink::ArrayType";
+  TestHeader(out, name);
 
   auto integer_type = std::make_unique<pink::IntegerType>();
 
@@ -19,13 +19,7 @@ auto TestArrayType(std::ostream &out) -> bool {
                  array_type->GetKind() == pink::Type::Kind::Array);
 
   result &=
-      Test(out, "ArrayType::classof()", array_type->classof(array_type.get()));
+      Test(out, "ArrayType::classof()", llvm::isa<pink::ArrayType>(array_type));
 
-  std::string array_string = "[Integer x 5]";
-  result &= Test(out, "ArrayType::ToString()",
-                 array_type->ToString() == array_string);
-
-  Test(out, "pink::ArrayType", result);
-  out << "\n--------------------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

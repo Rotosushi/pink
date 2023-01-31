@@ -50,7 +50,8 @@ auto TestBlock(std::ostream &out) -> bool {
   stmts.emplace_back(std::move(bind));
   stmts.emplace_back(std::move(binop));
 
-  pink::Ast::Pointer block = std::make_unique<pink::Block>(block_loc, stmts);
+  pink::Ast::Pointer block = std::make_unique<pink::Block>(
+      block_loc, std::move(stmts), env->bindings.get());
 
   result &=
       Test(out, "Block::getKind()", block->GetKind() == pink::Ast::Kind::Block);

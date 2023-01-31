@@ -22,7 +22,6 @@
 #include "ast/Integer.h"
 #include "ast/Nil.h"
 #include "ast/Tuple.h"
-#include "ast/Typecheck.h"
 #include "ast/Unop.h"
 #include "ast/Variable.h"
 #include "ast/While.h"

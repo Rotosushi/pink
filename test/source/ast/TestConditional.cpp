@@ -43,10 +43,10 @@ auto TestConditional(std::ostream &out) -> bool {
   std::vector<std::unique_ptr<pink::Ast>> else_statements;
   else_statements.emplace_back(std::move(boolean_false));
 
-  auto then_block =
-      std::make_unique<pink::Block>(then_block_loc, then_statements);
-  auto else_block =
-      std::make_unique<pink::Block>(else_block_loc, else_statements);
+  auto then_block = std::make_unique<pink::Block>(
+      then_block_loc, std::move(then_statements), env->bindings.get());
+  auto else_block = std::make_unique<pink::Block>(
+      else_block_loc, std::move(else_statements), env->bindings.get());
   pink::InternedString cmpeq = env->operators->Intern("==");
 
   auto binop = std::make_unique<pink::Binop>(

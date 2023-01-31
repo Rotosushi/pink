@@ -10,12 +10,16 @@
 #include "ast/Function.h"
 #include "ast/While.h"
 
+#include "ast/action/ToString.h"
+
+#include "type/action/ToString.h"
+
 inline auto
-GetAstOrNull(std::ostream &out,
-             pink::Outcome<std::unique_ptr<pink::Ast>, pink::Error> &outcome,
-             pink::Environment &env) -> pink::Ast * {
+GetAstOrNull(std::ostream                                   &out,
+             pink::Outcome<pink::Ast::Pointer, pink::Error> &outcome,
+             pink::Environment &env) -> pink::Ast::Pointer & {
   if (outcome) {
-    return outcome.GetFirst().get();
+    return outcome.GetFirst();
   }
 
   env.PrintErrorWithSourceText(out, outcome.GetSecond());
@@ -23,23 +27,24 @@ GetAstOrNull(std::ostream &out,
 }
 
 template <class T>
-inline auto TestBlocksFirstExpr(pink::Ast *expr, std::ostream &out) -> bool {
+inline auto TestBlocksFirstExpr(const pink::Ast::Pointer &expr,
+                                std::ostream             &out) -> bool {
   auto *block = llvm::dyn_cast<pink::Block>(expr);
 
   bool result = (block == nullptr);
   if (!result) {
-    out << "Expression was not a block [" << expr->ToString() << "]\n";
+    out << "Expression was not a block [" << ToString(expr) << "]\n";
     return result;
   }
 
   result &= (block->begin() != block->end());
   if (!result) {
-    out << "Block is empty [" << expr->ToString() << "]\n";
+    out << "Block is empty [" << ToString(expr) << "]\n";
     return result;
   }
 
   auto *first = block->begin()->get();
-  result &= (first != nullptr);
+  result      &= (first != nullptr);
   if (!result) {
     out << "Blocks first expression was empty.\n";
     return result;
@@ -47,7 +52,7 @@ inline auto TestBlocksFirstExpr(pink::Ast *expr, std::ostream &out) -> bool {
 
   result &= (llvm::isa<T>(first));
   if (!result) {
-    out << "Blocks first expression was [" << first->ToString() << "]\n";
+    out << "Blocks first expression was [" << ToString(first) << "]\n";
     return result;
   }
 
@@ -63,48 +68,48 @@ inline auto TestBlocksFirstExpr(pink::Ast *expr, std::ostream &out) -> bool {
    the functions body.
 */
 template <class T>
-inline auto TestFnBodyIsA(pink::Ast *expr, pink::Location &loc,
-                          std::ostream &out) -> bool {
-  assert(expr != nullptr);
-  pink::Function *fun = nullptr;
-  pink::Block *body = nullptr;
-  pink::Ast *body_expr = nullptr;
+inline auto TestFnBodyIsA(const pink::Ast::Pointer expr,
+                          const pink::Location &loc, std::ostream &out)
+    -> bool {
+  auto *fun = llvm::dyn_cast<pink::Function>(expr);
 
-  bool result = (fun = llvm::dyn_cast<pink::Function>(expr)) != nullptr;
+  bool result = (fun != nullptr);
   if (!result) {
-    out << "Expression was not a Function, was: " << expr->ToString() << "\n";
+    out << "Expression was not a Function, was: " << ToString(expr) << "\n";
     return result;
   }
 
-  result &= loc == fun->GetLoc();
+  result &= loc == fun->GetLocation();
   if (!result) {
     out << "Expected location: " << loc
-        << " Function had location: " << fun->GetLoc() << "\n";
+        << " Function had location: " << fun->GetLocation() << "\n";
     return result;
   }
 
-  result &= (body = llvm::dyn_cast<pink::Block>(fun->body.get())) != nullptr;
+  auto *body = llvm::dyn_cast<pink::Block>(fun->GetBody());
+  result     &= (body != nullptr);
   if (!result) {
     out << "Expected function body to be a block, instead was: "
-        << fun->body->ToString() << "\n";
+        << ToString(fun->GetBody()) << "\n";
     return result;
   }
 
   result &= body->begin() != body->end();
   if (!result) {
-    out << "Function body is empty: " << fun->ToString() << "\n";
+    out << "Function body is empty: " << ToString(fun) << "\n";
     return result;
   }
 
-  result &= (body_expr = body->begin()->get()) != nullptr;
+  auto &body_expr = *(body->begin());
+  result          &= (body_expr != nullptr);
   if (!result) {
-    out << "Function Body Expression was nullptr: " << fun->ToString() << "\n";
+    out << "Function Body Expression was nullptr: " << ToString(fun) << "\n";
     return result;
   }
 
   result &= (llvm::isa<T>(body_expr));
   if (!result) {
-    out << "Function body Expression was: " << body_expr->ToString();
+    out << "Function body Expression was: " << ToString(body_expr);
     return result;
   }
 
@@ -116,104 +121,26 @@ inline auto TestFnBodyIsA(pink::Ast *expr, pink::Location &loc,
    a bind's term 'isa' specific kind of ast.
 */
 template <class T>
-inline auto TestBindTermIsA(pink::Ast *expr, pink::Location &loc,
-                            std::ostream &out) -> bool {
-  assert(expr != nullptr);
-  pink::Bind *bind = nullptr;
-  bool result = (bind = llvm::dyn_cast<pink::Bind>(expr)) != nullptr;
-  if (!result) {
-    out << "Expression was not a bind expression [" << expr->ToString()
-        << "]\n";
-    return result;
-  }
-
-  result &= (loc == expr->GetLoc());
-  if (!result) {
-    out << "Expected location: " << loc
-        << " Bind has location: " << expr->GetLoc() << "\n";
-    return result;
-  }
-
-  result &= (llvm::isa<T>(bind->affix.get()));
-  if (!result) {
-    out << "Bind affix Expression was [" << bind->affix->ToString() << "]\n";
-    return result;
-  }
-
-  return result;
-}
-
-template <class Test, class First, class Second>
-inline auto TestConditional(pink::Ast *expr, pink::Location &loc,
-                            std::ostream &out) -> bool {
-  assert(expr != nullptr);
-  auto *conditional = llvm::dyn_cast<pink::Conditional>(expr);
-
-  bool result = (conditional == nullptr);
-  if (!result) {
-    out << "Expression was not a Conditional [" << expr->ToString() << "]\n";
-    return result;
-  }
-
-  result &= (loc == expr->GetLoc());
-  if (!result) {
-    out << "Expected location: " << loc
-        << " Actual Location: " << expr->GetLoc() << "\n";
-    return result;
-  }
-
-  result &= (llvm::isa<Test>(conditional->test.get()));
-  if (!result) {
-    out << "Conditional test expression was [" << conditional->test->ToString()
-        << "]\n";
-    return result;
-  }
-
-  result &= (llvm::isa<First>(conditional->first.get()));
-  if (!result) {
-    out << "Conditional first expression was ["
-        << conditional->first->ToString() << "]\n";
-    return result;
-  }
-
-  result &= (llvm::isa<Second>(conditional->second.get()));
-  if (!result) {
-    out << "Conditional second expression was ["
-        << conditional->second->ToString() << "]\n";
-    return result;
-  }
-
-  return result;
-}
-
-template <class Test, class Body>
-inline auto TestWhile(pink::Ast *expr, pink::Location &loc, std::ostream &out)
+inline auto TestBindTermIsA(const pink::Ast::Pointer expr,
+                            const pink::Location &loc, std::ostream &out)
     -> bool {
-  assert(expr != nullptr);
-  auto *loop = llvm::dyn_cast<pink::While>(expr);
-
-  bool result = (loop == nullptr);
+  auto *bind   = llvm::dyn_cast<pink::Bind>(expr);
+  bool  result = (bind != nullptr);
   if (!result) {
-    out << "Expression was not a while [" << expr->ToString() << "]\n";
+    out << "Expression was not a bind expression [" << ToString(expr) << "]\n";
     return result;
   }
 
-  result = (expr->GetLoc() == loc);
+  result &= (loc == expr->GetLocation());
   if (!result) {
-    out << "Expected Location: " << loc
-        << " Actual Location: " << expr->GetLoc() << "\n";
+    out << "Expected location: " << loc
+        << " Bind has location: " << expr->GetLocation() << "\n";
     return result;
   }
 
-  result = (llvm::isa<Test>(loop->test.get()));
+  result &= (llvm::isa<T>(bind->GetAffix()));
   if (!result) {
-    out << "While test expression was [" << loop->test->ToString() << "]\n";
-    return result;
-  }
-
-  result = (llvm::isa<Body>(loop->body.get()));
-  if (!result) {
-    out << "While body expression was [" << loop->body->ToString() << "]\n";
+    out << "Bind affix Expression was [" << ToString(bind->GetAffix()) << "]\n";
     return result;
   }
 
@@ -222,17 +149,17 @@ inline auto TestWhile(pink::Ast *expr, pink::Location &loc, std::ostream &out)
 
 template <class T>
 inline auto
-TestGetypeHoldsType(pink::Outcome<pink::Type *, pink::Error> &getype,
-                    std::ostream &out) -> bool {
+TestGetypeHoldsType(pink::Outcome<pink::Type::Pointer, pink::Error> &getype,
+                    std::ostream &out, pink::Environment &env) -> bool {
   bool result = (getype);
   if (!result) {
-    out << getype.GetSecond().ToString("");
+    env.PrintErrorWithSourceText(out, getype.GetSecond());
     return result;
   }
 
   result = (llvm::isa<T>(getype.GetFirst()));
   if (!result) {
-    out << "Actual Type: " << getype.GetFirst()->ToString() << "\n";
+    out << "Actual Type: " << ToString(getype.GetFirst()) << "\n";
     return result;
   }
 

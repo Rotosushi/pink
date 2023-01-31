@@ -15,21 +15,21 @@
 // we are choosing to disable this specific warning just for the function.
 NOWARN(
     "-Wunused-parameter",
-    pink::Outcome<llvm::Value *, pink::Error> test_literal_fn(
-        llvm::Value *term, const pink::Environment &env) {
-      return {pink::Error()};
+    llvm::Value *test_literal_fn(llvm::Value             *term,
+                                 const pink::Environment &env) {
+      return nullptr;
     })
 
 bool TestUnopLiteral(std::ostream &out) {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::UnopLiteral: \n";
+  bool        result = true;
+  std::string name   = "pink::UnopLiteral";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
-  pink::Type *ty = env->types->GetIntType();
-  pink::UnopLiteral unop;
+  pink::Type::Pointer ty = env->types->GetIntType();
+  pink::UnopLiteral   unop;
 
   auto pair = unop.Register(ty, ty, test_literal_fn);
 
@@ -37,13 +37,11 @@ bool TestUnopLiteral(std::ostream &out) {
 
   auto opt = unop.Lookup(ty);
 
-  result &=
-      Test(out, "UnopLiteral::Lookup()", opt.has_value() && (*opt).first == ty);
+  result &= Test(out, "UnopLiteral::Lookup()",
+                 opt.has_value() && opt->second->GetReturnType() == ty);
 
-  pink::Outcome<llvm::Value *, pink::Error> v =
-      (*opt).second->generate(nullptr, *env);
-
-  result &= Test(out, "UnopLiteral::generate", !v.GetWhich());
+  result &= Test(out, "UnopLiteral::generate",
+                 opt->second->GetGenerateFn() == test_literal_fn);
 
   unop.Unregister(ty);
 
@@ -51,7 +49,5 @@ bool TestUnopLiteral(std::ostream &out) {
 
   result &= Test(out, "UnopLiteral::Unregister()", !opt.has_value());
 
-  result &= Test(out, "pink::UnopLiteral", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

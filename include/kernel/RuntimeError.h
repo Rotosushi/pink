@@ -14,5 +14,5 @@ namespace pink {
  * @param env the environment of this compilation unit.
  */
 void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
-                  const Environment &env);
+                  Environment &env);
 } // namespace pink

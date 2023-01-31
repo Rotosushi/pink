@@ -5,9 +5,9 @@
 #include "aux/Location.h"
 
 auto TestLocation(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::Location\n";
+  bool        result = true;
+  std::string name   = "pink::Location";
+  TestHeader(out, name);
 
   pink::Location location = {1, 2, 3, 4};
 
@@ -16,5 +16,5 @@ auto TestLocation(std::ostream &out) -> bool {
   result &= Test(out, "Location::lastLine", location.lastLine == 3);
   result &= Test(out, "Location::lastColumn", location.lastColumn == 4);
 
-  return Test(out, "pink::Location", result);
+  return TestFooter(out, name, result);
 }

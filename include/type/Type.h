@@ -54,7 +54,7 @@ public:
   auto operator=(const Type &other) noexcept -> Type & = default;
   auto operator=(Type &&other) noexcept -> Type      & = default;
 
-  [[nodiscard]] auto GetKind() const -> Kind;
+  [[nodiscard]] auto GetKind() const -> Kind { return kind; }
 
   virtual void Accept(TypeVisitor *vistor) noexcept             = 0;
   virtual void Accept(ConstTypeVisitor *visitor) const noexcept = 0;

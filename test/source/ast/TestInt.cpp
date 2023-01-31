@@ -17,9 +17,9 @@ auto TestInt(std::ostream &out) -> bool {
   auto env     = pink::Environment::NewGlobalEnv(options);
 
   // "42;"
-  pink::Type        *integer_type = env->types->GetIntType();
-  pink::Location     integer_loc(1, 0, 1, 3);
-  pink::Ast::Pointer integer =
+  pink::Type::Pointer integer_type = env->types->GetIntType();
+  pink::Location      integer_loc(1, 0, 1, 3);
+  pink::Ast::Pointer  integer =
       std::make_unique<pink::Integer>(integer_loc, 42); // NOLINT
 
   result &= Test(out, "Int::GetKind()",

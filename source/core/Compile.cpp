@@ -34,7 +34,7 @@ auto Compile(int argc, char **argv) -> int {
 }
 
 auto Compile(std::ostream &err, Environment &env) -> int {
-  std::vector<std::unique_ptr<pink::Ast>> valid_terms;
+  std::vector<Ast::Pointer> valid_terms;
 
   { // empty scope, to destroy infile after we are done using it.
     std::fstream infile;
@@ -55,7 +55,7 @@ auto Compile(std::ostream &err, Environment &env) -> int {
         env.PrintErrorWithSourceText(err, error);
         return EXIT_FAILURE;
       }
-      auto &term       = term_result.GetFirst();
+      auto &term = term_result.GetFirst();
 
       auto type_result = Typecheck(term, env);
       if (!type_result) {
@@ -69,8 +69,8 @@ auto Compile(std::ostream &err, Environment &env) -> int {
     env.ClearFalseBindings();
   }
 
-  for (std::unique_ptr<pink::Ast> &term : valid_terms) {
-    Codegen(term, env);
+  for (auto &term : valid_terms) {
+    auto *value = Codegen(term, env);
   }
   return EXIT_SUCCESS;
 }

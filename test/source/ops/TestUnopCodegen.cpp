@@ -15,31 +15,27 @@
 // we are choosing to disable this specific warning just for the function.
 NOWARN(
     "-Wunused-parameter",
-    pink::Outcome<llvm::Value *, pink::Error> test_codegen_fn(
-        llvm::Value *term, const pink::Environment &env) {
-      return {pink::Error()};
+    llvm::Value *test_codegen_fn(llvm::Value             *term,
+                                 const pink::Environment &env) {
+      return nullptr;
     })
 
 bool TestUnopCodegen(std::ostream &out) {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::UnopCodegen: \n";
+  bool        result = true;
+  std::string name   = "pink::UnopCodegen";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
-  pink::Type *ty = env->types->GetIntType();
-  pink::UnopCodegen unop_gen(ty, test_codegen_fn);
+  pink::Type::Pointer ty = env->types->GetIntType();
+  pink::UnopCodegen   unop_gen(ty, test_codegen_fn);
 
-  result &= Test(out, "UnopCodegen::result_type", unop_gen.result_type == ty);
-
-  pink::Outcome<llvm::Value *, pink::Error> v =
-      unop_gen.generate(nullptr, *env);
+  result &=
+      Test(out, "UnopCodegen::result_type", unop_gen.GetReturnType() == ty);
 
   result &= Test(out, "UnopCodegen::generate",
-                 unop_gen.generate == test_codegen_fn && !v);
+                 unop_gen.GetGenerateFn() == test_codegen_fn);
 
-  result &= Test(out, "pink::UnopCodegen", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

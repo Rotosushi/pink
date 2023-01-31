@@ -4,9 +4,9 @@
 #include "aux/Outcome.h"
 
 auto TestOutcome(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::Outcome: \n";
+  bool        result = true;
+  std::string name   = "pink::Outcome";
+  TestHeader(out, name);
 
   pink::Outcome<int, char> outcome_0(1);
   pink::Outcome<int, char> outcome_1('g');
@@ -25,7 +25,5 @@ auto TestOutcome(std::ostream &out) -> bool {
 
   result &= Test(out, "Outcome<T, U>::GetTwo()", character == 'g');
 
-  result &= Test(out, "pink::Outcome", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

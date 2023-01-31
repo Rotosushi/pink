@@ -31,26 +31,26 @@ auto TestFunction(std::ostream &out) -> bool {
   }
   */
 
-  pink::InternedString symbol_x     = env->symbols->Intern("x");
-  pink::InternedString symbol_y     = env->symbols->Intern("y");
-  pink::InternedString fname        = env->symbols->Intern("first");
-  pink::InternedString sname        = env->symbols->Intern("second");
-  pink::Type          *integer_type = env->types->GetIntType();
-  pink::Type          *boolean_type = env->types->GetBoolType();
+  auto           symbol_x     = env->symbols->Intern("x");
+  auto           symbol_y     = env->symbols->Intern("y");
+  auto           fname        = env->symbols->Intern("first");
+  auto           sname        = env->symbols->Intern("second");
+  auto           integer_type = env->types->GetIntType();
+  auto           boolean_type = env->types->GetBoolType();
   // NOLINTBEGIN
-  pink::Location       first_loc      = {1, 0, 4, 1};
-  pink::Location       variable_x_loc = {3, 3, 3, 4};
-  pink::Location       second_loc     = {6, 0, 9, 1};
-  pink::Location       variable_y_loc = {8, 3, 8, 4};
+  pink::Location first_loc      = {1, 0, 4, 1};
+  pink::Location variable_x_loc = {3, 3, 3, 4};
+  pink::Location second_loc     = {6, 0, 9, 1};
+  pink::Location variable_y_loc = {8, 3, 8, 4};
   // NOLINTEND
 
   auto variable_x = std::make_unique<pink::Variable>(variable_x_loc, symbol_x);
   auto variable_y = std::make_unique<pink::Variable>(variable_y_loc, symbol_y);
 
-  std::vector<std::pair<pink::InternedString, pink::Type *>> fargs = {
+  std::vector<std::pair<pink::InternedString, pink::Type::Pointer>> fargs = {
       {symbol_x, integer_type},
       {symbol_y, boolean_type}};
-  std::vector<std::pair<pink::InternedString, pink::Type *>> sargs = {
+  std::vector<std::pair<pink::InternedString, pink::Type::Pointer>> sargs = {
       {symbol_x, integer_type},
       {symbol_y, boolean_type}};
 

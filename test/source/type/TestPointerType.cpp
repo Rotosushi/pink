@@ -6,9 +6,9 @@
 #include "type/TestPointerType.h"
 
 auto TestPointerType(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n--------------------------------\n";
-  out << "Testing pink::PointerType:\n";
+  bool        result = true;
+  std::string name   = "pink::PointerType";
+  TestHeader(out, name);
 
   auto integer_type = std::make_unique<pink::IntegerType>();
   auto pointer_type = std::make_unique<pink::PointerType>(integer_type.get());
@@ -19,11 +19,5 @@ auto TestPointerType(std::ostream &out) -> bool {
   result &= Test(out, "PointerType::classof()",
                  pointer_type->classof(pointer_type.get()));
 
-  std::string pointer_string = "Ptr<Integer>";
-  result &= Test(out, "PointerType::ToString()",
-                 pointer_type->ToString() == pointer_string);
-
-  Test(out, "pink::PointerType", result);
-  out << "\n--------------------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

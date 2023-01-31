@@ -7,8 +7,6 @@
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/TargetSelect.h"
 
-// we just pretend that main is the 'consumer'
-// or 'end user' of the compiler.
 auto main(int argc, char **argv) -> int {
   llvm::InitLLVM llvm(argc, argv);
 

@@ -5,13 +5,18 @@
 
 #include "ast/Nil.h"
 
+#include "ast/action/ToString.h"
+#include "ast/action/Typecheck.h"
+
+#include "type/action/ToString.h"
+
 auto TestEnvironment(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing Pink::Environment: \n";
+  bool        result = true;
+  std::string name   = "pink::Environment";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
   pink::InternedString symb = env->symbols->Intern("x");
 
@@ -21,20 +26,17 @@ auto TestEnvironment(std::ostream &out) -> bool {
 
   result &= Test(out, "Environment::operators", opr == std::string("+"));
 
-  pink::Type *type = env->types->GetNilType();
+  pink::Type::Pointer type = env->types->GetNilType();
 
   result &=
-      Test(out, "Environment::types", type->ToString() == std::string("Nil"));
+      Test(out, "Environment::types", ToString(type) == std::string("Nil"));
 
   llvm::Value *nil = env->instruction_builder->getFalse();
 
   env->bindings->Bind(symb, type, nil);
 
-  llvm::Optional<std::pair<pink::Type *, llvm::Value *>> term =
-      env->bindings->Lookup(symb);
+  auto term = env->bindings->Lookup(symb);
 
-  // since they point to the same memory, nil, and the bound
-  // term's pointer values compare equal if everything works.
   result &=
       Test(out, "Environment::bindings",
            term.has_value() && (*term).first == type && (*term).second == nil);
@@ -43,6 +45,5 @@ auto TestEnvironment(std::ostream &out) -> bool {
 
   result &= Test(out, "pink::Environment", result);
 
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

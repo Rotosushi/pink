@@ -5,9 +5,9 @@
 #include "aux/Flags.h"
 
 auto TestFlags(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n-----------------------------------------\n";
-  out << "Testing pink::TypecheckFlags\n";
+  bool        result = true;
+  std::string name   = "pink::TypecheckFlags";
+  TestHeader(out, name);
 
   pink::TypecheckFlags flags;
 
@@ -26,5 +26,5 @@ auto TestFlags(std::ostream &out) -> bool {
   result &= Test(out, "TypecheckFlags::WithinDereferencePtr()",
                  flags.WithinDereferencePtr());
 
-  return Test(out, "pink::TypecheckFlags", result);
+  return TestFooter(out, name, result);
 }

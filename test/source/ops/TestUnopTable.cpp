@@ -16,22 +16,22 @@
 // we are choosing to disable this specific warning just for the function.
 NOWARN(
     "-Wunused-parameter",
-    pink::Outcome<llvm::Value *, pink::Error> test_table_fn(
-        llvm::Value *term, const pink::Environment &env) {
-      return {pink::Error()};
+    llvm::Value *test_table_fn(llvm::Value             *term,
+                               const pink::Environment &env) {
+      return nullptr;
     })
 
 bool TestUnopTable(std::ostream &out) {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::UnopTable: \n";
+  bool        result = true;
+  std::string name   = "pink::UnopTable";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
   pink::InternedString minus = env->operators->Intern("-");
-  pink::Type *ty = env->types->GetIntType();
-  pink::UnopTable unop_table;
+  pink::Type::Pointer  ty    = env->types->GetIntType();
+  pink::UnopTable      unop_table;
 
   auto pair = unop_table.Register(minus, ty, ty, test_table_fn);
 
@@ -48,7 +48,5 @@ bool TestUnopTable(std::ostream &out) {
 
   result &= Test(out, "UnopTable::Unregister", !opt1.has_value());
 
-  result &= Test(out, "pink::UnopTable", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

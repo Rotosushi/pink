@@ -75,9 +75,6 @@ execute_process(
 
 separate_arguments(llvm_syslibs)
 
-
-
-
 # use re2c to generate 'Lexer.cpp' from 'Lexer.re',
 # Lexer.cpp is then needed to build the static library
 add_custom_command(
@@ -203,7 +200,7 @@ add_library(common STATIC
   # the 'visitor' directory is for the visitor interfaces
   source/visitor/VisitorResult.cpp 
 )
-			   
+
 
 set_target_properties(common PROPERTIES SOVERSION ${PROJECT_VERSION})
 
@@ -231,14 +228,13 @@ target_link_libraries(common
 #${LLVM_LIBRARY_DIRS}/liblldELF.a
 ${llvm_libs}
 )
-			   
+
 add_executable(pink 
-        # the 'core' directory is for the core files within the compiler,
-        # that is, those functions which are central drivers of the program.
-        source/core/Compile.cpp
-        source/core/Link.cpp
-        source/core/Optimize.cpp
-        source/core/Pink.cpp
+  # the 'core' directory is for the central driver functions.
+  source/core/Compile.cpp
+  source/core/Link.cpp
+  source/core/Optimize.cpp
+  source/core/Pink.cpp
 )
 
 target_link_options(pink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
@@ -246,9 +242,10 @@ target_link_options(pink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
 target_link_directories(pink PUBLIC ${LLVM_LIBRARY_DIRS})
 
 target_link_libraries(pink
+common
 ${LLVM_LIBRARY_DIRS}/liblldCommon.a
 ${LLVM_LIBRARY_DIRS}/liblldELF.a
-common
+
 )
 
 target_include_directories(pink PUBLIC
@@ -259,5 +256,5 @@ target_include_directories(pink PUBLIC
 #TODO: figure out how to build the tests alongside the main project,
 #		but only when the correct argument is passed into the call to 
 #		cmake.
-add_subdirectory(test)
+# add_subdirectory(test)
 

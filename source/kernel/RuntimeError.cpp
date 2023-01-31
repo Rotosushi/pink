@@ -21,7 +21,7 @@ namespace pink {
 // contextual information as well, and the RuntimeError mechanism must
 // emit both strings. (similar to how we handle Syntax/Type/Semantic Errors.)
 void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
-                  const Environment &env) {
+                  Environment &env) {
   assert(exit_code != nullptr);
   /*
     #NOTE #CONCERN:

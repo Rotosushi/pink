@@ -7,15 +7,15 @@
 #include "type/TestTupleType.h"
 
 auto TestTupleType(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n--------------------------------\n";
-  out << "Testing pink::TupleType:\n";
+  bool        result = true;
+  std::string name   = "pink::TupleType";
+  TestHeader(out, name);
 
   auto integer_type = std::make_unique<pink::IntegerType>();
   auto boolean_type = std::make_unique<pink::BooleanType>();
 
-  std::vector<pink::Type *> tuple_elements = {integer_type.get(),
-                                              boolean_type.get()};
+  std::vector<pink::Type::Pointer> tuple_elements = {integer_type.get(),
+                                                     boolean_type.get()};
 
   auto tuple_type = std::make_unique<pink::TupleType>(tuple_elements);
 
@@ -23,13 +23,7 @@ auto TestTupleType(std::ostream &out) -> bool {
                  tuple_type->GetKind() == pink::Type::Kind::Tuple);
 
   result &=
-      Test(out, "TupleType::classof()", tuple_type->classof(tuple_type.get()));
+      Test(out, "TupleType::classof()", llvm::isa<pink::TupleType>(tuple_type));
 
-  std::string tuple_string = "(Integer, Boolean)";
-  result &= Test(out, "TupleType::ToString()",
-                 tuple_type->ToString() == tuple_string);
-
-  Test(out, "pink::TupleType", result);
-  out << "\n--------------------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

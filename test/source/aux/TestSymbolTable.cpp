@@ -7,12 +7,12 @@
 #include "ast/Nil.h"
 
 auto TestSymbolTable(std::ostream &out) -> bool {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::SymbolTable: \n";
+  bool        result = true;
+  std::string name   = "pink::SymbolTable";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
   pink::SymbolTable symbol_table(env->bindings.get());
 
@@ -22,8 +22,8 @@ auto TestSymbolTable(std::ostream &out) -> bool {
   result &= Test(out, "SymbolTable::OuterScope(), inner scope",
                  symbol_table.OuterScope() == env->bindings.get());
 
-  llvm::Value *nil = env->instruction_builder->getFalse();
-  pink::Type *nil_t = env->types->GetNilType();
+  llvm::Value         *nil      = env->instruction_builder->getFalse();
+  pink::Type::Pointer  nil_t    = env->types->GetNilType();
   pink::InternedString symbol_x = env->symbols->Intern("x");
 
   env->bindings->Bind(symbol_x, nil_t, nil);
@@ -52,7 +52,5 @@ auto TestSymbolTable(std::ostream &out) -> bool {
 
   result &= Test(out, "SymbolTable::Unbind()", !unbound_symbol.has_value());
 
-  result &= Test(out, "pink::SymbolTable", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

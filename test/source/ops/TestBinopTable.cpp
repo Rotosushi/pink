@@ -16,23 +16,25 @@
 // we are choosing to disable this specific warning just for the function.
 NOWARN(
     "-Wunused-parameter",
-    pink::Outcome<llvm::Value *, pink::Error> test_binop_table_fn(
-        llvm::Type *lty, llvm::Value *left, llvm::Type *rty, llvm::Value *right,
-        const pink::Environment &env) { return {pink::Error()}; })
+    llvm::Value *test_binop_table_fn(llvm::Type *lty, llvm::Value *left,
+                                     llvm::Type *rty, llvm::Value *right,
+                                     const pink::Environment &env) {
+      return nullptr;
+    })
 
 bool TestBinopTable(std::ostream &out) {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::BinopTable: \n";
+  bool        result = true;
+  std::string name   = "pink::BinopTable";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
   pink::InternedString plus = env->operators->Intern("+");
-  pink::Type *ty = env->types->GetIntType();
-  pink::BinopTable binop_table;
-  pink::Precedence p = 5;
-  pink::Associativity a = pink::Associativity::Left;
+  pink::Type::Pointer  ty   = env->types->GetIntType();
+  pink::BinopTable     binop_table;
+  pink::Precedence     p = 5;
+  pink::Associativity  a = pink::Associativity::Left;
 
   auto pair = binop_table.Register(plus, p, a, ty, ty, ty, test_binop_table_fn);
 
@@ -49,7 +51,5 @@ bool TestBinopTable(std::ostream &out) {
 
   result &= Test(out, "BinopTable::Unregister", opt1.has_value());
 
-  result &= Test(out, "pink::BinopTable", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

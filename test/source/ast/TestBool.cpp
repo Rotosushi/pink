@@ -17,8 +17,8 @@ auto TestBool(std::ostream &out) -> bool {
   auto env     = pink::Environment::NewGlobalEnv(options);
 
   // "true;"
-  pink::Location                 boolean_loc(1, 0, 1, 4); // NOLINT
-  std::unique_ptr<pink::Boolean> boolean =
+  pink::Location     boolean_loc(1, 0, 1, 4); // NOLINT
+  pink::Ast::Pointer boolean =
       std::make_unique<pink::Boolean>(boolean_loc, true);
   pink::Type::Pointer boolean_type = env->types->GetBoolType();
 

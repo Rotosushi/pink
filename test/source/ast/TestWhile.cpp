@@ -8,6 +8,9 @@
 #include "ast/Integer.h"
 #include "ast/While.h"
 
+#include "ast/action/ToString.h"
+#include "ast/action/Typecheck.h"
+
 #include "aux/Environment.h"
 
 auto TestWhile(std::ostream &out) -> bool {
@@ -40,10 +43,11 @@ auto TestWhile(std::ostream &out) -> bool {
 
   std::vector<std::unique_ptr<pink::Ast>> block_statements;
   block_statements.emplace_back(std::move(boolean_true));
-  auto block = std::make_unique<pink::Block>(block_loc, block_statements);
+  auto block = std::make_unique<pink::Block>(
+      block_loc, std::move(block_statements), env->bindings.get());
 
-  auto loop = std::make_unique<pink::While>(while_loc, std::move(binop),
-                                            std::move(block));
+  pink::Ast::Pointer loop = std::make_unique<pink::While>(
+      while_loc, std::move(binop), std::move(block));
 
   result &=
       Test(out, "While::GetKind()", loop->GetKind() == pink::Ast::Kind::While);

@@ -16,31 +16,28 @@
 // we are choosing to disable this specific warning just for the function.
 NOWARN(
     "-Wunused-parameter",
-    pink::Outcome<llvm::Value *, pink::Error> test_binop_codegen_fn(
-        llvm::Type *lty, llvm::Value *left, llvm::Type *rty, llvm::Value *right,
-        const pink::Environment &env) { return {pink::Error()}; })
+    llvm::Value *test_binop_codegen_fn(llvm::Type *lty, llvm::Value *left,
+                                       llvm::Type *rty, llvm::Value *right,
+                                       const pink::Environment &env) {
+      return nullptr;
+    })
 
 bool TestBinopCodegen(std::ostream &out) {
-  bool result = true;
-  out << "\n-----------------------\n";
-  out << "Testing pink::BinopCodegen: \n";
+  bool        result = true;
+  std::string name   = "pink::BinopCodegen";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
-  pink::Type *ty = env->types->GetIntType();
-  pink::BinopCodegen binop_codegen(ty, test_binop_codegen_fn);
+  pink::Type::Pointer ty = env->types->GetIntType();
+  pink::BinopCodegen  binop_codegen(ty, test_binop_codegen_fn);
 
   result &=
       Test(out, "BinopCodegen::result_type", binop_codegen.result_type == ty);
 
-  pink::Outcome<llvm::Value *, pink::Error> gen =
-      binop_codegen.generate(nullptr, nullptr, nullptr, nullptr, *env);
-
   result &= Test(out, "BinopCodegen::generate",
-                 binop_codegen.generate == test_binop_codegen_fn && !gen);
+                 binop_codegen.generate == test_binop_codegen_fn);
 
-  result &= Test(out, "pink::BinopCodegen", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }
