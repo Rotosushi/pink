@@ -2,22 +2,21 @@
 #include "ops/BinopLiteral.h"
 
 namespace pink {
-BinopLiteral::BinopLiteral(Precedence precedence, Associativity associativity)
+BinopLiteral::BinopLiteral(Precedence    precedence,
+                           Associativity associativity) noexcept
     : precedence(precedence), associativity(associativity) {}
 
 BinopLiteral::BinopLiteral(Precedence precedence, Associativity associativity,
-                           Type *left_t, Type *right_t, Type *ret_t,
-                           BinopCodegenFn fn_p)
+                           Type::Pointer left_t, Type::Pointer right_t,
+                           Type::Pointer ret_t, BinopCodegenFn fn_p)
     : precedence(precedence), associativity(associativity) {
   overloads.insert(std::make_pair(std::make_pair(left_t, right_t),
                                   std::make_unique<BinopCodegen>(ret_t, fn_p)));
 }
 
-auto BinopLiteral::NumOverloads() const -> unsigned { return overloads.size(); }
-
-auto BinopLiteral::Register(Type *left_t, Type *right_t, Type *ret_t,
-                            BinopCodegenFn fn_p)
-    -> std::pair<std::pair<Type *, Type *>, BinopCodegen *> {
+auto BinopLiteral::Register(Type::Pointer left_t, Type::Pointer right_t,
+                            Type::Pointer ret_t, BinopCodegenFn fn_p)
+    -> std::pair<Key, BinopCodegen *> {
   auto iter = overloads.find(std::make_pair(left_t, right_t));
 
   if (iter == overloads.end()) {
@@ -30,7 +29,7 @@ auto BinopLiteral::Register(Type *left_t, Type *right_t, Type *ret_t,
   return std::make_pair(iter->first, iter->second.get());
 }
 
-void BinopLiteral::Unregister(Type *left_t, Type *right_t) {
+void BinopLiteral::Unregister(Type::Pointer left_t, Type::Pointer right_t) {
   auto iter = overloads.find(std::make_pair(left_t, right_t));
 
   if (iter != overloads.end()) {
@@ -38,8 +37,8 @@ void BinopLiteral::Unregister(Type *left_t, Type *right_t) {
   }
 }
 
-auto BinopLiteral::Lookup(Type *left_t, Type *right_t)
-    -> llvm::Optional<std::pair<std::pair<Type *, Type *>, BinopCodegen *>> {
+auto BinopLiteral::Lookup(Type::Pointer left_t, Type::Pointer right_t)
+    -> llvm::Optional<std::pair<Key, BinopCodegen *>> {
   auto iter = overloads.find(std::make_pair(left_t, right_t));
 
   if (iter == overloads.end()) {

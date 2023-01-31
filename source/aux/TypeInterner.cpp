@@ -6,7 +6,7 @@
 
 namespace pink {
 
-auto TypeInterner::GetNilType() -> NilType * {
+auto TypeInterner::GetNilType() -> NilType::Pointer {
   if (nil_type == nullptr) {
     nil_type = std::make_unique<NilType>();
   }
@@ -14,7 +14,7 @@ auto TypeInterner::GetNilType() -> NilType * {
   return nil_type.get();
 }
 
-auto TypeInterner::GetBoolType() -> BooleanType * {
+auto TypeInterner::GetBoolType() -> BooleanType::Pointer {
   if (bool_type == nullptr) {
     bool_type = std::make_unique<BooleanType>();
   }
@@ -22,7 +22,7 @@ auto TypeInterner::GetBoolType() -> BooleanType * {
   return bool_type.get();
 }
 
-auto TypeInterner::GetIntType() -> IntegerType * {
+auto TypeInterner::GetIntType() -> IntegerType::Pointer {
   if (int_type == nullptr) {
     int_type = std::make_unique<IntegerType>();
   }
@@ -30,7 +30,7 @@ auto TypeInterner::GetIntType() -> IntegerType * {
   return int_type.get();
 }
 
-auto TypeInterner::GetCharacterType() -> CharacterType * {
+auto TypeInterner::GetCharacterType() -> CharacterType::Pointer {
   if (character_type == nullptr) {
     character_type = std::make_unique<CharacterType>();
   }
@@ -38,7 +38,7 @@ auto TypeInterner::GetCharacterType() -> CharacterType * {
   return character_type.get();
 }
 
-auto TypeInterner::GetVoidType() -> VoidType * {
+auto TypeInterner::GetVoidType() -> VoidType::Pointer {
   if (void_type == nullptr) {
     void_type = std::make_unique<VoidType>();
   }
@@ -46,9 +46,9 @@ auto TypeInterner::GetVoidType() -> VoidType * {
   return void_type.get();
 }
 
-auto TypeInterner::GetFunctionType(Type *return_type,
-                                   const std::vector<Type *> &arg_types)
-    -> FunctionType * {
+auto TypeInterner::GetFunctionType(Type::Pointer return_type,
+                                   std::vector<Type::Pointer> const &arg_types)
+    -> FunctionType::Pointer {
   auto possible = std::make_unique<FunctionType>(return_type, arg_types);
   FunctionType *possible_result = possible.get();
 
@@ -65,7 +65,8 @@ auto TypeInterner::GetFunctionType(Type *return_type,
   return found->get();
 }
 
-auto TypeInterner::GetPointerType(Type *pointee_type) -> PointerType * {
+auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
+    -> PointerType::Pointer {
   auto possible = std::make_unique<PointerType>(pointee_type);
 
   for (auto &pointer_type : pointer_types) {
@@ -80,7 +81,8 @@ auto TypeInterner::GetPointerType(Type *pointee_type) -> PointerType * {
   return result;
 }
 
-auto TypeInterner::GetArrayType(size_t size, Type *member_type) -> ArrayType * {
+auto TypeInterner::GetArrayType(size_t size, Type::Pointer member_type)
+    -> ArrayType::Pointer {
   auto possible = std::make_unique<ArrayType>(size, member_type);
 
   for (auto &array_type : array_types) {
@@ -95,11 +97,12 @@ auto TypeInterner::GetArrayType(size_t size, Type *member_type) -> ArrayType * {
   return result;
 }
 
-auto TypeInterner::GetSliceType(Type *pointee_type) -> SliceType * {
-  auto possible = std::make_unique<SliceType>(pointee_type);
+auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
+    -> SliceType::Pointer {
+  auto  possible        = std::make_unique<SliceType>(pointee_type);
   auto *possible_result = possible.get();
 
-  auto types_equal = [possible_result](std::unique_ptr<SliceType> &type) {
+  auto types_equal      = [possible_result](std::unique_ptr<SliceType> &type) {
     return StructuralEquality(possible_result, type.get());
   };
   auto found =
@@ -112,8 +115,8 @@ auto TypeInterner::GetSliceType(Type *pointee_type) -> SliceType * {
   return found->get();
 }
 
-auto TypeInterner::GetTupleType(const std::vector<Type *> &member_types)
-    -> TupleType * {
+auto TypeInterner::GetTupleType(std::vector<Type::Pointer> const &member_types)
+    -> TupleType::Pointer {
   auto possible = std::make_unique<TupleType>(member_types);
 
   for (auto &tuple_type : tuple_types) {

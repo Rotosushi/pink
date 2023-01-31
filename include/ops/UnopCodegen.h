@@ -15,46 +15,31 @@ class Environment;
 /**
  * @brief pointer to a function which can be used to generate an implementation
  * of a given unop
- *
- * I suppose that technically, we are going to
- * catch any errors before the point of calling
- * an actual generator expression. Thus we should
- * not need an Outcome type to wrap any potential
- * errors, as the body of a generator is always
- * going to succeed.
  */
 using UnopCodegenFn = llvm::Value *(*)(llvm::Value       *term,
                                        const Environment &env);
 
 class UnopCodegen {
-public:
-  /**
-   * @brief The result type of calling the generator function
-   *
-   */
-  Type *result_type;
-
-  /**
-   * @brief a pointer to the generator function
-   *
-   */
+private:
+  Type::Pointer result_type;
   UnopCodegenFn generate;
 
-  UnopCodegen()                         = delete;
+public:
+  UnopCodegen()           = delete;
+  ~UnopCodegen() noexcept = default;
+  UnopCodegen(Type::Pointer return_type, UnopCodegenFn gen) noexcept
+      : result_type(return_type), generate(gen) {}
+  UnopCodegen(const UnopCodegen &other) noexcept                     = default;
+  UnopCodegen(UnopCodegen &&other) noexcept                          = default;
+  auto operator=(const UnopCodegen &other) noexcept -> UnopCodegen & = default;
+  auto operator=(UnopCodegen &&other) noexcept -> UnopCodegen      & = default;
 
-  /**
-   * @brief Construct a new Unop Codegen
-   *
-   * @param other the UnopCodegen to copy
-   */
-  UnopCodegen(const UnopCodegen &other) = default;
+  [[nodiscard]] auto GetReturnType() const noexcept -> Type::Pointer {
+    return result_type;
+  }
 
-  /**
-   * @brief Construct a new Unop Codegen
-   *
-   * @param return_type the return type of the generator function
-   * @param gen the generator function
-   */
-  UnopCodegen(Type *return_type, UnopCodegenFn gen);
+  [[nodiscard]] auto GetGenerateFn() const noexcept -> UnopCodegenFn {
+    return generate;
+  }
 };
 } // namespace pink

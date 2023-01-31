@@ -95,7 +95,7 @@ public:
    * @brief Construct a new Type Interner
    *
    */
-  TypeInterner() = default;
+  TypeInterner()                                              = default;
 
   /**
    * @brief We disallow a TypeInterner to be constructed from an existing
@@ -103,54 +103,54 @@ public:
    *
    * @param other the other Type Interner
    */
-  TypeInterner(const TypeInterner &other) = delete;
+  TypeInterner(const TypeInterner &other)                     = delete;
 
-  TypeInterner(TypeInterner &&other) = default;
+  TypeInterner(TypeInterner &&other)                          = default;
 
   auto operator=(const TypeInterner &other) -> TypeInterner & = delete;
 
-  auto operator=(TypeInterner &&other) -> TypeInterner & = default;
+  auto operator=(TypeInterner &&other) -> TypeInterner      & = default;
 
   /**
    * @brief Destroy the Type Interner
    *
    */
-  ~TypeInterner() = default;
+  ~TypeInterner()                                             = default;
 
   /**
    * @brief Get the instance of a NilType
    *
    * @return NilType* the NilType
    */
-  auto GetNilType() -> NilType *;
+  auto GetNilType() -> NilType::Pointer;
 
   /**
    * @brief Get the instance of a BooleanType
    *
    * @return BooleanType* the BooleanType
    */
-  auto GetBoolType() -> BooleanType *;
+  auto GetBoolType() -> BooleanType::Pointer;
 
   /**
    * @brief Get the instance of an IntegerType
    *
    * @return IntegerType* the IntegerType
    */
-  auto GetIntType() -> IntegerType *;
+  auto GetIntType() -> IntegerType::Pointer;
 
   /**
    * @brief Get the instance of a Character Type
    *
    * @return CharacterType* the CharacterType
    */
-  auto GetCharacterType() -> CharacterType *;
+  auto GetCharacterType() -> CharacterType::Pointer;
 
   /**
    * @brief Get the instance of a VoidType
    *
    * @return VoidType* the VoidType
    */
-  auto GetVoidType() -> VoidType *;
+  auto GetVoidType() -> VoidType::Pointer;
 
   /**
    * @brief Get the instance of a FunctionType
@@ -159,8 +159,9 @@ public:
    * @param arg_types the argument types of the FunctionType
    * @return FunctionType* the FunctionType
    */
-  auto GetFunctionType(Type *ret_type, const std::vector<Type *> &arg_types)
-      -> FunctionType *;
+  auto GetFunctionType(Type::Pointer                     ret_type,
+                       std::vector<Type::Pointer> const &arg_types)
+      -> FunctionType::Pointer;
 
   /**
    * @brief Get the instance of a PointerType
@@ -168,7 +169,7 @@ public:
    * @param pointee_type the pointee type of the PointerType
    * @return PointerType* the PointerType
    */
-  auto GetPointerType(Type *pointee_type) -> PointerType *;
+  auto GetPointerType(Type::Pointer pointee_type) -> PointerType::Pointer;
 
   /**
    * @brief Get the instance of a ArrayType
@@ -177,14 +178,15 @@ public:
    * @param element_type the member type of the ArrayType
    * @return ArrayType* the ArrayType
    */
-  auto GetArrayType(size_t size, Type *element_type) -> ArrayType *;
+  auto GetArrayType(size_t size, Type::Pointer element_type)
+      -> ArrayType::Pointer;
 
   /**
    * @brief Get the instance of a SliceType
    * @param pointee_type the type of the pointee
    * @return SliceType*
    */
-  auto GetSliceType(Type *pointee_type) -> SliceType *;
+  auto GetSliceType(Type::Pointer pointee_type) -> SliceType::Pointer;
 
   /**
    * @brief Get the instance of a TupleType
@@ -192,7 +194,8 @@ public:
    * @param member_types the member types of the TupleType
    * @return TupleType* the TupleType
    */
-  auto GetTupleType(const std::vector<Type *> &member_types) -> TupleType *;
+  auto GetTupleType(std::vector<Type::Pointer> const &member_types)
+      -> TupleType::Pointer;
 };
 
 } // namespace pink

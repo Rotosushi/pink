@@ -13,6 +13,8 @@ namespace pink {
  */
 class BooleanType : public Type {
 public:
+  using Pointer = BooleanType const *;
+
   BooleanType() noexcept : Type(Type::Kind::Boolean) {}
   ~BooleanType() noexcept override = default;
   BooleanType(const BooleanType &other) noexcept = default;

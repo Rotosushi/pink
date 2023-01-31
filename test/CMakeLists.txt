@@ -39,21 +39,21 @@ target_sources(pink-test PUBLIC
 	source/Test.cpp
   source/Testbench.cpp
 
+  source/ast/TestApplication.cpp
+	source/ast/TestArray.cpp
 	source/ast/TestAssignment.cpp
-	source/ast/TestAstAndNil.cpp
 	source/ast/TestBind.cpp
 	source/ast/TestBinop.cpp
+  source/ast/TestBlock.cpp
 	source/ast/TestBool.cpp
-	source/ast/TestInt.cpp
-	source/ast/TestUnop.cpp
-	source/ast/TestVariable.cpp
-	source/ast/TestBlock.cpp
-	source/ast/TestFunction.cpp
-	source/ast/TestApplication.cpp
-	source/ast/TestArray.cpp
-	source/ast/TestTuple.cpp
 	source/ast/TestConditional.cpp
 	source/ast/TestDot.cpp
+	source/ast/TestFunction.cpp
+	source/ast/TestInt.cpp
+  source/ast/TestNil.cpp
+  source/ast/TestTuple.cpp
+	source/ast/TestUnop.cpp
+	source/ast/TestVariable.cpp
 	source/ast/TestWhile.cpp
 
 	source/aux/TestEnvironment.cpp
@@ -72,7 +72,7 @@ target_sources(pink-test PUBLIC
 	source/ops/TestUnopLiteral.cpp
 	source/ops/TestUnopTable.cpp
 
-	source/type/TestTypeAndNilType.cpp
+	source/type/TestNilType.cpp
 	source/type/TestIntType.cpp
 	source/type/TestBoolType.cpp
 	source/type/TestFunctionType.cpp

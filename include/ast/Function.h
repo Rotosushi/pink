@@ -23,15 +23,15 @@ namespace pink {
  */
 class Function : public Ast {
 public:
-  using Argument = std::pair<InternedString, Type *>;
-  using Arguments = std::vector<Argument>;
-  using iterator = Arguments::iterator;
+  using Argument       = std::pair<InternedString, Type::Pointer>;
+  using Arguments      = std::vector<Argument>;
+  using iterator       = Arguments::iterator;
   using const_iterator = Arguments::const_iterator;
 
 private:
-  InternedString name;
-  Arguments arguments;
-  Ast::Pointer body;
+  InternedString               name;
+  Arguments                    arguments;
+  Ast::Pointer                 body;
   mutable SymbolTable::Pointer scope;
 
 public:
@@ -41,11 +41,11 @@ public:
       : Ast(Ast::Kind::Function, location), name(name),
         arguments(std::move(arguments)), body(std::move(body)),
         scope(outer_scope) {}
-  ~Function() noexcept override = default;
-  Function(const Function &other) noexcept = delete;
-  Function(Function &&other) noexcept = default;
+  ~Function() noexcept override                                = default;
+  Function(const Function &other) noexcept                     = delete;
+  Function(Function &&other) noexcept                          = default;
   auto operator=(const Function &other) noexcept -> Function & = delete;
-  auto operator=(Function &&other) noexcept -> Function & = default;
+  auto operator=(Function &&other) noexcept -> Function      & = default;
 
   auto GetName() noexcept -> InternedString { return name; }
   auto GetName() const noexcept -> InternedString { return name; }

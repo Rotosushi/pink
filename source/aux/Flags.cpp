@@ -1,5 +1,4 @@
 #include "aux/Flags.h"
-#include "Flags.h"
 
 namespace pink {
 

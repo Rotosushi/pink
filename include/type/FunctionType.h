@@ -14,13 +14,14 @@ namespace pink {
  */
 class FunctionType : public Type {
 public:
-  using Arguments = std::vector<Type::Pointer>;
-  using iterator = Arguments::iterator;
+  using Arguments      = std::vector<Type::Pointer>;
+  using iterator       = Arguments::iterator;
   using const_iterator = Arguments::const_iterator;
+  using Pointer        = FunctionType const *;
 
 private:
   Type::Pointer return_type;
-  Arguments arguments;
+  Arguments     arguments;
 
 public:
   FunctionType(Type::Pointer return_type, Arguments arguments) noexcept
@@ -28,11 +29,11 @@ public:
         arguments(std::move(arguments)) {
     assert(return_type != nullptr);
   }
-  ~FunctionType() noexcept override = default;
+  ~FunctionType() noexcept override                = default;
   FunctionType(const FunctionType &other) noexcept = default;
-  FunctionType(FunctionType &&other) noexcept = default;
+  FunctionType(FunctionType &&other) noexcept      = default;
   auto operator=(const FunctionType &other) noexcept
-      -> FunctionType & = default;
+      -> FunctionType                                           & = default;
   auto operator=(FunctionType &&other) noexcept -> FunctionType & = default;
 
   [[nodiscard]] auto GetReturnType() noexcept -> Type::Pointer {

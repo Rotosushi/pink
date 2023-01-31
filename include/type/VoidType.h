@@ -13,12 +13,14 @@ namespace pink {
  */
 class VoidType : public Type {
 public:
+  using Pointer = VoidType const *;
+
   VoidType() noexcept : Type(Type::Kind::Void) {}
-  ~VoidType() noexcept override = default;
-  VoidType(const VoidType &other) noexcept = default;
-  VoidType(VoidType &&other) noexcept = default;
+  ~VoidType() noexcept override                                = default;
+  VoidType(const VoidType &other) noexcept                     = default;
+  VoidType(VoidType &&other) noexcept                          = default;
   auto operator=(const VoidType &other) noexcept -> VoidType & = default;
-  auto operator=(VoidType &&other) noexcept -> VoidType & = default;
+  auto operator=(VoidType &&other) noexcept -> VoidType      & = default;
 
   static auto classof(const Type *type) noexcept -> bool {
     return Type::Kind::Void == type->GetKind();

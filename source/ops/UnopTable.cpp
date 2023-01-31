@@ -16,8 +16,8 @@ auto UnopTable::Register(InternedString opr)
   return std::make_pair(pair.first->first, pair.first->second.get());
 }
 
-auto UnopTable::Register(InternedString opr, Type *arg_t, Type *ret_t,
-                         UnopCodegenFn fn_p)
+auto UnopTable::Register(InternedString opr, Type::Pointer arg_t,
+                         Type::Pointer ret_t, UnopCodegenFn fn_p)
     -> std::pair<InternedString, UnopLiteral *> {
   auto iter = table.find(opr);
 

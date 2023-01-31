@@ -14,9 +14,10 @@ namespace pink {
  */
 class TupleType : public Type {
 public:
-  using Elements = std::vector<Type::Pointer>;
-  using iterator = Elements::iterator;
+  using Elements       = std::vector<Type::Pointer>;
+  using iterator       = Elements::iterator;
   using const_iterator = Elements::const_iterator;
+  using Pointer        = TupleType const *;
 
 private:
   Elements elements;
@@ -24,11 +25,11 @@ private:
 public:
   TupleType(Elements elements) noexcept
       : Type(Type::Kind::Tuple), elements(std::move(elements)) {}
-  ~TupleType() noexcept override = default;
-  TupleType(const TupleType &other) noexcept = default;
-  TupleType(TupleType &&other) noexcept = default;
+  ~TupleType() noexcept override                                 = default;
+  TupleType(const TupleType &other) noexcept                     = default;
+  TupleType(TupleType &&other) noexcept                          = default;
   auto operator=(const TupleType &other) noexcept -> TupleType & = default;
-  auto operator=(TupleType &&other) noexcept -> TupleType & = default;
+  auto operator=(TupleType &&other) noexcept -> TupleType      & = default;
 
   [[nodiscard]] auto GetElements() noexcept -> Elements & { return elements; }
   [[nodiscard]] auto GetElements() const noexcept -> const Elements & {

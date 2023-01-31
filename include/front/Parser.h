@@ -243,20 +243,6 @@ private:
   auto Peek(Token token) -> bool;
 
   /**
-   * @brief Get a line of text from the input stream
-   *
-   * acts exactly as std::getline, filling the buffer passed
-   * from the input stream until it encounters the newline char '\\n'
-   * except that unlike std::getline it appends the '\\n'
-   * to the buffer. This is to preserve the '\\n' for the
-   * lexer in order for the lexer to correctly count it's
-   * position within the source file.
-   *
-   * @param str the string to fill with the new line
-   */
-  [[nodiscard]] auto Getline() const -> std::string;
-
-  /**
    * @brief Parses Top level expressions
    *
    * \verbatim
@@ -331,7 +317,7 @@ private:
    * which was parsed. if false, then the Error which was encountered.
    */
   auto ParseArgument(const Environment &env)
-      -> Outcome<std::pair<InternedString, Type *>, Error>;
+      -> Outcome<std::pair<InternedString, Type::Pointer>, Error>;
 
   /**
    * @brief Parses Block expressions
@@ -590,7 +576,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseType(const Environment &env) -> Outcome<Type *, Error>;
+  auto ParseType(const Environment &env) -> Outcome<Type::Pointer, Error>;
 
 public:
   /**
@@ -611,15 +597,15 @@ public:
    * @brief Destroy the Parser
    *
    */
-  ~Parser() = default;
+  ~Parser()                           = default;
 
-  Parser(const Parser &other) = delete;
+  Parser(const Parser &other)         = delete;
 
-  Parser(Parser &&other) = delete;
+  Parser(Parser &&other)              = delete;
 
   auto operator=(const Parser &other) = delete;
 
-  auto operator=(Parser &&other) = delete;
+  auto operator=(Parser &&other)      = delete;
 
   /**
    * @brief Test if the Parser is at the end of it's input

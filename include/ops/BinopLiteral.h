@@ -19,92 +19,45 @@ namespace pink {
  *
  */
 class BinopLiteral {
+public:
+  using Key   = std::pair<Type::Pointer, Type::Pointer>;
+  using Value = std::unique_ptr<BinopCodegen>;
+
 private:
-  /**
-   * @brief the set of generator functions associated with this binop
-   *
-   */
-  llvm::DenseMap<std::pair<Type *, Type *>, std::unique_ptr<BinopCodegen>>
-      overloads;
+  llvm::DenseMap<Key, Value> overloads;
+  Precedence                 precedence;
+  Associativity              associativity;
 
 public:
-  /**
-   * @brief The precedence of this binary operator
-   *
-   */
-  Precedence precedence;
+  BinopLiteral() noexcept  = default;
+  ~BinopLiteral() noexcept = default;
+  BinopLiteral(Precedence precedence, Associativity associativity) noexcept;
+  BinopLiteral(Precedence precedence, Associativity associativity,
+               Type::Pointer left_t, Type::Pointer right_t, Type::Pointer ret_t,
+               BinopCodegenFn fn_p);
+  BinopLiteral(const BinopLiteral &other) noexcept = delete;
+  BinopLiteral(BinopLiteral &&other) noexcept      = default;
+  auto operator=(const BinopLiteral &other) noexcept -> BinopLiteral & = delete;
+  auto operator=(BinopLiteral &&other) noexcept -> BinopLiteral & = default;
 
-  /**
-   * @brief The associativity of this binary operator
-   *
-   */
-  Associativity associativity;
+  [[nodiscard]] auto NumOverloads() const noexcept -> unsigned int {
+    return overloads.size();
+  }
 
-  BinopLiteral() = delete;
-  /**
-   * @brief Construct a new Binop Literal
-   *
-   * @param precedence the precedence of this binop
-   * @param associativity the associativity of this binop
-   */
-  BinopLiteral(Precedence precedence, Associativity associativity);
+  [[nodiscard]] auto GetPrecedence() const noexcept -> Precedence {
+    return precedence;
+  }
 
-  /**
-   * @brief Construct a new Binop Literal
-   *
-   * @param precedence the precedence of this binop
-   * @param associativity the associativity of this binop
-   * @param left_t the left argument Type of the generator function
-   * @param right_t the right argument Type of the generator function
-   * @param ret_t the return Type of the generator function
-   * @param fn_p the generator function
-   */
-  BinopLiteral(Precedence precedence, Associativity associativity, Type *left_t,
-               Type *right_t, Type *ret_t, BinopCodegenFn fn_p);
+  [[nodiscard]] auto GetAssociativity() const noexcept -> Associativity {
+    return associativity;
+  }
 
-  /**
-   * @brief Destroy the Binop Literal
-   *
-   */
-  ~BinopLiteral() = default;
+  auto Register(Type::Pointer left_t, Type::Pointer right_t,
+                Type::Pointer ret_t, BinopCodegenFn fn_p)
+      -> std::pair<Key, BinopCodegen *>;
+  void Unregister(Type::Pointer left_t, Type::Pointer right_t);
 
-  /**
-   * @brief Return the number of implementations this binop has
-   *
-   * @return unsigned the number of overloads of this binop
-   */
-  [[nodiscard]] auto NumOverloads() const -> unsigned;
-
-  /**
-   * @brief Register a new implementation of this binop
-   *
-   * @param left_t the left argument Type of the generator function
-   * @param right_t the right argument Type of the generator function
-   * @param ret_t the return Type of the generator function
-   * @param fn_p the generator function
-   * @return std::pair<std::pair<Type*, Type*>, BinopCodegen*> the new overload
-   */
-  auto Register(Type *left_t, Type *right_t, Type *ret_t, BinopCodegenFn fn_p)
-      -> std::pair<std::pair<Type *, Type *>, BinopCodegen *>;
-
-  /**
-   * @brief Remove an existing implementation of this binop
-   *
-   * @param left_t the left argument Type of the implementation to remove
-   * @param right_t the right argument Type of the implementation to remove
-   */
-  void Unregister(Type *left_t, Type *right_t);
-
-  /**
-   * @brief Lookup an implementation of the binop corresponding to the given
-   * Types
-   *
-   * @param left_t the left argument Type of the implementation
-   * @param right_t the right argument Type of the implementation
-   * @return llvm::Optional<std::pair<std::pair<Type*, Type*>, BinopCodegen*>>
-   * if true the implementation of the binop, if false then nothing.
-   */
-  auto Lookup(Type *left_t, Type *right_t)
-      -> llvm::Optional<std::pair<std::pair<Type *, Type *>, BinopCodegen *>>;
+  auto Lookup(Type::Pointer left_t, Type::Pointer right_t)
+      -> llvm::Optional<std::pair<Key, BinopCodegen *>>;
 };
 } // namespace pink

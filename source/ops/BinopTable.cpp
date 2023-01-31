@@ -17,8 +17,9 @@ auto BinopTable::Register(InternedString opr, Precedence precedence,
 }
 
 auto BinopTable::Register(InternedString opr, Precedence precedence,
-                          Associativity associativity, Type *left_t,
-                          Type *right_t, Type *ret_t, BinopCodegenFn fn_p)
+                          Associativity associativity, Type::Pointer left_t,
+                          Type::Pointer right_t, Type::Pointer ret_t,
+                          BinopCodegenFn fn_p)
     -> std::pair<InternedString, BinopLiteral *> {
   auto iter = table.find(opr);
 

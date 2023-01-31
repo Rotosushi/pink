@@ -1,6 +1,6 @@
 #pragma once
 
-#include "type/ArrayType.h";
+#include "type/ArrayType.h"
 #include "type/BoolType.h"
 #include "type/CharacterType.h"
 #include "type/FunctionType.h"

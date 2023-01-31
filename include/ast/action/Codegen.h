@@ -8,7 +8,7 @@
 
 namespace pink {
 class Environment;
-using CodegenResult = Outcome<llvm::Value *, Error>;
+using CodegenResult = llvm::Value *;
 /**
  * @brief Computes the LLVM Intermediate Representation ([IR]) corresponding
  * to this Ast.

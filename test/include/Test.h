@@ -5,14 +5,33 @@
 
 #include "support/Support.h" // bits_per_byte
 
-/*
-    This is a primitive Testing subroutine.
-    it simply prints if the test Passed or Failed.
-    then returns test.
-*/
-auto Test(std::ostream &out, const std::string &test_name, bool test) -> bool;
+auto Test(std::ostream &out, const std::string &test_name, bool test) -> bool {
+  if (test) {
+    out << "\tTest: " << test_name << ": Passed\n";
+  } else {
+    out << "\tTest: " << test_name << ": Failed\n";
+  }
+  return test;
+}
 
-auto Test(std::ostream &out, const char *test_name, bool test) -> bool;
+auto Test(std::ostream &out, std::string &&test_name, bool test) -> bool {
+  if (test) {
+    out << "\tTest: " << test_name << ": Passed\n";
+  } else {
+    out << "\tTest: " << test_name << ": Failed\n";
+  }
+  return test;
+}
 
+void TestHeader(std::ostream &out, std::string &test_name) {
+  out << "------------------------------------------------";
+  out << "Test: " << test_name << "\n";
+}
+
+auto TestFooter(std::ostream &out, std::string &test_name, bool test) -> bool {
+  Test(out, test_name, test);
+  out << "------------------------------------------------\n";
+  return test;
+}
 
 /* ---------------------- */

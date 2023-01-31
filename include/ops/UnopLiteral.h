@@ -19,63 +19,25 @@ namespace pink {
  */
 class UnopLiteral {
 private:
-  /**
-   * @brief a [table] of all implementations of this unop
-   *
-   * [table]: https://llvm.org/doxygen/DenseMap_8h.html "table"
-   *
-   */
-
-  llvm::DenseMap<Type *, std::unique_ptr<UnopCodegen>> overloads;
+  llvm::DenseMap<Type::Pointer, std::unique_ptr<UnopCodegen>> overloads;
 
 public:
-  /**
-   * @brief Construct a new Unop Literal, with no implementations
-   *
-   */
-  UnopLiteral() = default;
+  UnopLiteral() noexcept  = default;
+  ~UnopLiteral() noexcept = default;
+  UnopLiteral(Type::Pointer arg_t, Type::Pointer ret_t, UnopCodegenFn fn_p) {
+    overloads.insert(
+        std::make_pair(arg_t, std::make_unique<UnopCodegen>(ret_t, fn_p)));
+  }
+  UnopLiteral(const UnopLiteral &other) noexcept                     = delete;
+  UnopLiteral(UnopLiteral &&other) noexcept                          = default;
+  auto operator=(const UnopLiteral &other) noexcept -> UnopLiteral & = delete;
+  auto operator=(UnopLiteral &&other) noexcept -> UnopLiteral      & = default;
 
-  /**
-   * @brief Construct a new Unop Literal, with one implementation
-   *
-   * @param arg_t the argument Type for this unop
-   * @param ret_t the return Type for this unop
-   * @param fn_p the generator function for this unop
-   */
-  UnopLiteral(Type *arg_t, Type *ret_t, UnopCodegenFn fn_p);
-
-  /**
-   * @brief Destroy the Unop Literal
-   *
-   */
-  ~UnopLiteral() = default;
-
-  /**
-   * @brief Register a new implementation of this Unop
-   *
-   * @param arg_t the argument Type of the new implementation
-   * @param ret_t the return Type of the new implementation
-   * @param fn_p the generator function for the new implementation
-   * @return std::pair<Type*, UnopCodegen*> The new implementation
-   */
-  auto Register(Type *arg_t, Type *ret_t, UnopCodegenFn fn_p)
-      -> std::pair<Type *, UnopCodegen *>;
-
-  /**
-   * @brief Remove an implementation of this unop
-   *
-   * @param arg_t the argument type of the implementation to remove
-   */
-  void Unregister(Type *arg_t);
-
-  /**
-   * @brief Lookup an implementation of this unop for the given argument Type.
-   *
-   * @param arg_t the argument Type to lookup
-   * @return llvm::Optional<std::pair<Type*, UnopCodegen*>> if has_value the
-   * implementation for the given Type, otherwise nothing.
-   */
-  virtual auto Lookup(Type *arg_t) -> llvm::Optional<std::pair<Type *, UnopCodegen *>>;
+  auto Register(Type::Pointer arg_t, Type::Pointer ret_t, UnopCodegenFn fn_p)
+      -> std::pair<Type::Pointer, UnopCodegen *>;
+  void Unregister(Type::Pointer arg_t);
+  auto Lookup(Type::Pointer arg_t)
+      -> llvm::Optional<std::pair<Type::Pointer, UnopCodegen *>>;
 };
 
 } // namespace pink

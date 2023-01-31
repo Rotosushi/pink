@@ -64,71 +64,71 @@ auto Testbench::SetTestsRun(Testbench::Which which, bool state) -> bool {
   }
 
   if (which == Testbench::aux) {
-    tests_run[Testbench::error] = state;
-    tests_run[Testbench::outcome] = state;
+    tests_run[Testbench::error]           = state;
+    tests_run[Testbench::outcome]         = state;
     tests_run[Testbench::string_interner] = state;
-    tests_run[Testbench::symbol_table] = state;
-    tests_run[Testbench::type_interner] = state;
-    tests_run[Testbench::environment] = state;
-    tests_run[Testbench::unop_codegen] = state;
-    tests_run[Testbench::unop_literal] = state;
-    tests_run[Testbench::unop_table] = state;
-    tests_run[Testbench::binop_codegen] = state;
-    tests_run[Testbench::binop_literal] = state;
-    tests_run[Testbench::binop_table] = state;
-    tests_run[Testbench::flags] = state;
-    tests_run[Testbench::location] = state;
+    tests_run[Testbench::symbol_table]    = state;
+    tests_run[Testbench::type_interner]   = state;
+    tests_run[Testbench::environment]     = state;
+    tests_run[Testbench::unop_codegen]    = state;
+    tests_run[Testbench::unop_literal]    = state;
+    tests_run[Testbench::unop_table]      = state;
+    tests_run[Testbench::binop_codegen]   = state;
+    tests_run[Testbench::binop_literal]   = state;
+    tests_run[Testbench::binop_table]     = state;
+    tests_run[Testbench::flags]           = state;
+    tests_run[Testbench::location]        = state;
     return state;
   }
 
   if (which == Testbench::ast) {
-    tests_run[Testbench::nil] = state;
-    tests_run[Testbench::boolean] = state;
-    tests_run[Testbench::integer] = state;
-    tests_run[Testbench::variable] = state;
-    tests_run[Testbench::bind] = state;
-    tests_run[Testbench::binop] = state;
-    tests_run[Testbench::unop] = state;
-    tests_run[Testbench::assignment] = state;
-    tests_run[Testbench::block] = state;
-    tests_run[Testbench::function] = state;
+    tests_run[Testbench::nil]         = state;
+    tests_run[Testbench::boolean]     = state;
+    tests_run[Testbench::integer]     = state;
+    tests_run[Testbench::variable]    = state;
+    tests_run[Testbench::bind]        = state;
+    tests_run[Testbench::binop]       = state;
+    tests_run[Testbench::unop]        = state;
+    tests_run[Testbench::assignment]  = state;
+    tests_run[Testbench::block]       = state;
+    tests_run[Testbench::function]    = state;
     tests_run[Testbench::application] = state;
-    tests_run[Testbench::array] = state;
-    tests_run[Testbench::tuple] = state;
+    tests_run[Testbench::array]       = state;
+    tests_run[Testbench::tuple]       = state;
     tests_run[Testbench::conditional] = state;
-    tests_run[Testbench::dot] = state;
-    tests_run[Testbench::loop] = state;
+    tests_run[Testbench::dot]         = state;
+    tests_run[Testbench::loop]        = state;
     return state;
   }
 
   if (which == Testbench::type) {
-    tests_run[Testbench::nil_type] = state;
-    tests_run[Testbench::boolean_type] = state;
-    tests_run[Testbench::integer_type] = state;
+    tests_run[Testbench::nil_type]      = state;
+    tests_run[Testbench::boolean_type]  = state;
+    tests_run[Testbench::integer_type]  = state;
     tests_run[Testbench::function_type] = state;
-    tests_run[Testbench::array_type] = state;
-    tests_run[Testbench::pointer_type] = state;
-    tests_run[Testbench::void_type] = state;
-    tests_run[Testbench::tuple_type] = state;
+    tests_run[Testbench::array_type]    = state;
+    tests_run[Testbench::pointer_type]  = state;
+    tests_run[Testbench::void_type]     = state;
+    tests_run[Testbench::tuple_type]    = state;
     return state;
   }
 
   if (which == Testbench::kernel) {
-    tests_run[Testbench::unop_primitives] = state;
+    tests_run[Testbench::unop_primitives]  = state;
     tests_run[Testbench::binop_primitives] = state;
     return state;
   }
 
   if (which == Testbench::front) {
-    tests_run[Testbench::token] = state;
-    tests_run[Testbench::lexer] = state;
+    tests_run[Testbench::token]  = state;
+    tests_run[Testbench::lexer]  = state;
     tests_run[Testbench::parser] = state;
     return state;
   }
 
   if (which == Testbench::core) {
     tests_run[Testbench::typecheck] = state;
-    tests_run[Testbench::codegen] = state;
+    tests_run[Testbench::codegen]   = state;
     return state;
   }
 
@@ -150,71 +150,71 @@ auto Testbench::SetTestsResult(Testbench::Which which, bool state) -> bool {
   }
 
   if (which == Testbench::aux) {
-    test_results[Testbench::error] = state;
-    test_results[Testbench::outcome] = state;
+    test_results[Testbench::error]           = state;
+    test_results[Testbench::outcome]         = state;
     test_results[Testbench::string_interner] = state;
-    test_results[Testbench::symbol_table] = state;
-    test_results[Testbench::type_interner] = state;
-    test_results[Testbench::environment] = state;
-    test_results[Testbench::unop_codegen] = state;
-    test_results[Testbench::unop_literal] = state;
-    test_results[Testbench::unop_table] = state;
-    test_results[Testbench::binop_codegen] = state;
-    test_results[Testbench::binop_literal] = state;
-    test_results[Testbench::binop_table] = state;
-    test_results[Testbench::flags] = state;
-    test_results[Testbench::location] = state;
+    test_results[Testbench::symbol_table]    = state;
+    test_results[Testbench::type_interner]   = state;
+    test_results[Testbench::environment]     = state;
+    test_results[Testbench::unop_codegen]    = state;
+    test_results[Testbench::unop_literal]    = state;
+    test_results[Testbench::unop_table]      = state;
+    test_results[Testbench::binop_codegen]   = state;
+    test_results[Testbench::binop_literal]   = state;
+    test_results[Testbench::binop_table]     = state;
+    test_results[Testbench::flags]           = state;
+    test_results[Testbench::location]        = state;
     return state;
   }
 
   if (which == Testbench::ast) {
-    test_results[Testbench::nil] = state;
-    test_results[Testbench::boolean] = state;
-    test_results[Testbench::integer] = state;
-    test_results[Testbench::variable] = state;
-    test_results[Testbench::bind] = state;
-    test_results[Testbench::binop] = state;
-    test_results[Testbench::unop] = state;
-    test_results[Testbench::assignment] = state;
-    test_results[Testbench::block] = state;
-    test_results[Testbench::function] = state;
+    test_results[Testbench::nil]         = state;
+    test_results[Testbench::boolean]     = state;
+    test_results[Testbench::integer]     = state;
+    test_results[Testbench::variable]    = state;
+    test_results[Testbench::bind]        = state;
+    test_results[Testbench::binop]       = state;
+    test_results[Testbench::unop]        = state;
+    test_results[Testbench::assignment]  = state;
+    test_results[Testbench::block]       = state;
+    test_results[Testbench::function]    = state;
     test_results[Testbench::application] = state;
-    test_results[Testbench::array] = state;
-    test_results[Testbench::tuple] = state;
+    test_results[Testbench::array]       = state;
+    test_results[Testbench::tuple]       = state;
     test_results[Testbench::conditional] = state;
-    test_results[Testbench::dot] = state;
-    test_results[Testbench::loop] = state;
+    test_results[Testbench::dot]         = state;
+    test_results[Testbench::loop]        = state;
     return state;
   }
 
   if (which == Testbench::type) {
-    test_results[Testbench::nil_type] = state;
-    test_results[Testbench::boolean_type] = state;
-    test_results[Testbench::integer_type] = state;
+    test_results[Testbench::nil_type]      = state;
+    test_results[Testbench::boolean_type]  = state;
+    test_results[Testbench::integer_type]  = state;
     test_results[Testbench::function_type] = state;
-    test_results[Testbench::array_type] = state;
-    test_results[Testbench::pointer_type] = state;
-    test_results[Testbench::void_type] = state;
-    test_results[Testbench::tuple_type] = state;
+    test_results[Testbench::array_type]    = state;
+    test_results[Testbench::pointer_type]  = state;
+    test_results[Testbench::void_type]     = state;
+    test_results[Testbench::tuple_type]    = state;
     return state;
   }
 
   if (which == Testbench::kernel) {
-    test_results[Testbench::unop_primitives] = state;
+    test_results[Testbench::unop_primitives]  = state;
     test_results[Testbench::binop_primitives] = state;
     return state;
   }
 
   if (which == Testbench::front) {
-    test_results[Testbench::token] = state;
-    test_results[Testbench::lexer] = state;
+    test_results[Testbench::token]  = state;
+    test_results[Testbench::lexer]  = state;
     test_results[Testbench::parser] = state;
     return state;
   }
 
   if (which == Testbench::core) {
     test_results[Testbench::typecheck] = state;
-    test_results[Testbench::codegen] = state;
+    test_results[Testbench::codegen]   = state;
     return state;
   }
 
@@ -492,12 +492,12 @@ void Testbench::PrintCorePassedTests(std::ostream &out) const {
 
 auto Testbench::RunTests(std::ostream &out) -> bool {
   bool result = true;
-  result &= RunAuxTests(out);
-  result &= RunAstTests(out);
-  result &= RunTypeTests(out);
-  result &= RunKernelTests(out);
-  result &= RunFrontTests(out);
-  result &= RunCoreTests(out);
+  result      &= RunAuxTests(out);
+  result      &= RunAstTests(out);
+  result      &= RunTypeTests(out);
+  result      &= RunKernelTests(out);
+  result      &= RunFrontTests(out);
+  result      &= RunCoreTests(out);
   return result;
 }
 
@@ -567,7 +567,7 @@ auto Testbench::RunAuxTests(std::ostream &out) -> bool {
 auto Testbench::RunAstTests(std::ostream &out) -> bool {
   bool result = true;
   if (RanTest(Testbench::nil)) {
-    result &= SetTestResult(Testbench::nil, TestAstAndNil(out));
+    result &= SetTestResult(Testbench::nil, TestNil(out));
   }
 
   if (RanTest(Testbench::boolean)) {
@@ -637,7 +637,7 @@ auto Testbench::RunAstTests(std::ostream &out) -> bool {
 auto Testbench::RunTypeTests(std::ostream &out) -> bool {
   bool result = true;
   if (RanTest(Testbench::nil_type)) {
-    result &= SetTestResult(Testbench::nil_type, TestTypeAndNilType(out));
+    result &= SetTestResult(Testbench::nil_type, TestNilType(out));
   }
 
   if (RanTest(Testbench::integer_type)) {

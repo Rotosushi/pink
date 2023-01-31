@@ -9,7 +9,7 @@ auto BinopIntAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateAdd(left, right, "iadd")};
+  return env.instruction_builder->CreateAdd(left, right, "iadd");
 }
 
 auto BinopIntSub(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -19,7 +19,7 @@ auto BinopIntSub(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateSub(left, right, "isub")};
+  return env.instruction_builder->CreateSub(left, right, "isub");
 }
 
 auto BinopIntMul(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -29,7 +29,7 @@ auto BinopIntMul(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateMul(left, right, "imul")};
+  return env.instruction_builder->CreateMul(left, right, "imul");
 }
 
 auto BinopIntSDiv(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -39,7 +39,7 @@ auto BinopIntSDiv(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateSDiv(left, right, "idiv")};
+  return env.instruction_builder->CreateSDiv(left, right, "idiv");
 }
 
 auto BinopIntMod(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -49,7 +49,7 @@ auto BinopIntMod(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateSRem(left, right, "imod")};
+  return env.instruction_builder->CreateSRem(left, right, "imod");
 }
 
 auto BinopIntEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -59,7 +59,7 @@ auto BinopIntEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpEQ(left, right, "ieq")};
+  return env.instruction_builder->CreateICmpEQ(left, right, "ieq");
 }
 
 auto BinopBoolEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -69,7 +69,7 @@ auto BinopBoolEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpEQ(left, right, "booleq")};
+  return env.instruction_builder->CreateICmpEQ(left, right, "booleq");
 }
 
 auto BinopIntNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -79,7 +79,7 @@ auto BinopIntNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpNE(left, right, "ineq")};
+  return env.instruction_builder->CreateICmpNE(left, right, "ineq");
 }
 
 auto BinopBoolNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -89,7 +89,7 @@ auto BinopBoolNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpNE(left, right, "boolneq")};
+  return env.instruction_builder->CreateICmpNE(left, right, "boolneq");
 }
 
 auto BinopIntGt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -99,7 +99,7 @@ auto BinopIntGt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpSGT(left, right, "igt")};
+  return env.instruction_builder->CreateICmpSGT(left, right, "igt");
 }
 
 auto BinopIntGe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -109,7 +109,7 @@ auto BinopIntGe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpSGE(left, right, "ige")};
+  return env.instruction_builder->CreateICmpSGE(left, right, "ige");
 }
 
 auto BinopIntLt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -119,7 +119,7 @@ auto BinopIntLt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpSLT(left, right, "ilt")};
+  return env.instruction_builder->CreateICmpSLT(left, right, "ilt");
 }
 
 auto BinopIntLe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -129,7 +129,7 @@ auto BinopIntLe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateICmpSLE(left, right, "ile")};
+  return env.instruction_builder->CreateICmpSLE(left, right, "ile");
 }
 
 auto BinopBoolAnd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -139,7 +139,7 @@ auto BinopBoolAnd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateAnd(left, right, "and")};
+  return env.instruction_builder->CreateAnd(left, right, "and");
 }
 
 auto BinopBoolOr(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -149,9 +149,10 @@ auto BinopBoolOr(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
   assert(left != nullptr);
   assert(right != nullptr);
 
-  return {env.instruction_builder->CreateOr(left, right, "or")};
+  return env.instruction_builder->CreateOr(left, right, "or");
 }
 
+/*
 auto BinopSliceLeftAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
                        llvm::Value *right, const Environment &env)
     -> llvm::Value * {
@@ -162,7 +163,7 @@ auto BinopSliceLeftAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 
   std::vector<llvm::Value *> indicies = {right};
   return {env.instruction_builder->CreateGEP(lty, left, indicies,
-                                             "gep" /* isInBounds = true*/)};
+                                             "gep")};
 }
 
 auto BinopSliceRightAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
@@ -175,8 +176,9 @@ auto BinopSliceRightAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 
   std::vector<llvm::Value *> indicies = {left};
   return {env.instruction_builder->CreateGEP(rty, right, indicies,
-                                             "gep" /* isInBounds = true*/)};
+                                             "gep")};
 }
+*/
 
 void InitializeBinopPrimitives(const Environment &env) {
   /*
@@ -201,10 +203,10 @@ void InitializeBinopPrimitives(const Environment &env) {
   InternedString cmpgt     = env.operators->Intern(">");
   InternedString cmpge     = env.operators->Intern(">=");
 
-  Type *int_ty             = env.types->GetIntType();
-  Type *bool_ty            = env.types->GetBoolType();
-  Type *int_slice_ty       = env.types->GetSliceType(int_ty);
-  Type *bool_slice_ty      = env.types->GetSliceType(bool_ty);
+  Type::Pointer int_ty     = env.types->GetIntType();
+  Type::Pointer bool_ty    = env.types->GetBoolType();
+  // Type *int_slice_ty       = env.types->GetSliceType(int_ty);
+  // Type *bool_slice_ty      = env.types->GetSliceType(bool_ty);
 
   Associativity left_assoc = Associativity::Left;
   // Associativity right_assoc = Associativity::Right;
@@ -245,13 +247,15 @@ void InitializeBinopPrimitives(const Environment &env) {
   env.binops->Register(mod, five, left_assoc, int_ty, int_ty, int_ty,
                        BinopIntMod);
 
-  env.binops->Register(plus, four, left_assoc, int_slice_ty, int_ty,
-                       int_slice_ty, BinopSliceLeftAdd);
-  env.binops->Register(plus, four, left_assoc, int_ty, int_slice_ty,
-                       int_slice_ty, BinopSliceRightAdd);
-  env.binops->Register(plus, four, left_assoc, bool_slice_ty, int_ty,
-                       bool_slice_ty, BinopSliceLeftAdd);
-  env.binops->Register(plus, four, left_assoc, int_ty, bool_slice_ty,
-                       bool_slice_ty, BinopSliceRightAdd);
+  /*
+    env.binops->Register(plus, four, left_assoc, int_slice_ty, int_ty,
+                         int_slice_ty, BinopSliceLeftAdd);
+    env.binops->Register(plus, four, left_assoc, int_ty, int_slice_ty,
+                         int_slice_ty, BinopSliceRightAdd);
+    env.binops->Register(plus, four, left_assoc, bool_slice_ty, int_ty,
+                         bool_slice_ty, BinopSliceLeftAdd);
+    env.binops->Register(plus, four, left_assoc, int_ty, bool_slice_ty,
+                         bool_slice_ty, BinopSliceRightAdd);
+  */
 }
 } // namespace pink

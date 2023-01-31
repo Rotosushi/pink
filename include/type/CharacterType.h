@@ -4,12 +4,14 @@
 namespace pink {
 class CharacterType : public Type {
 public:
+  using Pointer = CharacterType const *;
+
   CharacterType() noexcept : Type(Type::Kind::Character) {}
-  ~CharacterType() noexcept override = default;
+  ~CharacterType() noexcept override                 = default;
   CharacterType(const CharacterType &other) noexcept = default;
-  CharacterType(CharacterType &&other) noexcept = default;
+  CharacterType(CharacterType &&other) noexcept      = default;
   auto operator=(const CharacterType &other) noexcept
-      -> CharacterType & = default;
+      -> CharacterType                                            & = default;
   auto operator=(CharacterType &&other) noexcept -> CharacterType & = default;
 
   static auto classof(const Type *type) noexcept -> bool {

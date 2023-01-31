@@ -3,46 +3,45 @@
 #include "ast/Integer.h"
 #include "ast/Unop.h"
 
+#include "ast/action/ToString.h"
+#include "ast/action/Typecheck.h"
+
 #include "aux/Environment.h"
 
 auto TestUnop(std::ostream &out) -> bool {
-  bool result = true;
-
-  out << "\n-----------------------\n";
-  out << "Testing pink::Unop: \n";
+  bool        result = true;
+  std::string name   = "pink::Unop";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
   // "-1;"
   pink::InternedString minus = env->operators->Intern("-");
   // NOLINTBEGIN
-  pink::Location integer_loc(1, 2, 1, 3);
-  pink::Location unop_loc(1, 0, 1, 3);
+  pink::Location       integer_loc(1, 2, 1, 3);
+  pink::Location       unop_loc(1, 0, 1, 3);
   // NOLINTEND
-  pink::Type *integer_type = env->types->GetIntType();
+  pink::Type::Pointer  integer_type = env->types->GetIntType();
 
   auto integer = std::make_unique<pink::Integer>(integer_loc, 1); // NOLINT
   pink::Ast *integer_pointer = integer.get();
 
-  auto unop = std::make_unique<pink::Unop>(unop_loc, minus, std::move(integer));
+  pink::Ast::Pointer unop =
+      std::make_unique<pink::Unop>(unop_loc, minus, std::move(integer));
 
   result &=
       Test(out, "Unop::GetKind()", unop->GetKind() == pink::Ast::Kind::Unop);
-  result &= Test(out, "Unop::classof()", unop->classof(unop.get()));
-  result &= Test(out, "Unop::GetLoc()", unop->GetLoc() == unop_loc);
-  result &= Test(out, "Unop::op", unop->GetOp() == minus);
-  result &= Test(out, "Unop::term", unop->GetRight() == integer_pointer);
+  result &= Test(out, "Unop::classof()", llvm::isa<pink::Unop>(unop));
+  result &= Test(out, "Unop::GetLoc()", unop->GetLocation() == unop_loc);
 
-  std::string unop_str = std::string(minus) + integer_pointer->ToString();
-  result &= Test(out, "Unop::ToString()", unop->ToString() == unop_str);
+  std::string unop_str = "-1";
+  result &= Test(out, "Unop::ToString()", ToString(unop) == unop_str);
 
-  auto typecheck_result = unop->Typecheck(*env);
+  auto typecheck_result = Typecheck(unop, *env);
   result &=
       Test(out, "Unop::Typecheck()",
            typecheck_result && typecheck_result.GetFirst() == integer_type);
 
-  result &= Test(out, "pink::Unop", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

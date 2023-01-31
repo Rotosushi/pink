@@ -5,6 +5,8 @@
 
 #include "support/Gensym.h"
 
+#include "type/action/ToLLVM.h"
+
 namespace pink {
 // write the given error description to stderr and then exit the process.
 // \todo This works fine, except that it repeats the string allocation on each
@@ -23,16 +25,16 @@ void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
   assert(exit_code != nullptr);
   /*
     #NOTE #CONCERN:
-      Here we allocate global text (the way we handle it should work for 
-      both ascii and utf-8) however, how do we ensure that we are using 
+      Here we allocate global text (the way we handle it should work for
+      both ascii and utf-8) however, how do we ensure that we are using
       the correct type between AllocateGlobalText and CodegenWriteText?
-      
+
   */
-  auto *error_string = AllocateGlobalText(Gensym(), error_description, env);
-  auto size = error_description.size() + 1;
+  auto *error_string   = AllocateGlobalText(Gensym(), error_description, env);
+  auto  size           = error_description.size() + 1;
   auto *character_type = env.types->GetCharacterType();
-  auto *string_type = llvm::cast<llvm::StructType>(
-      env.types->GetArrayType(size, character_type)->ToLLVM(env));
+  auto *string_type    = llvm::cast<llvm::StructType>(
+      ToLLVM(env.types->GetArrayType(size, character_type), env));
   auto *stderr_fd = env.instruction_builder->getInt64(2);
   CodegenWriteText(stderr_fd, string_type, error_string, env);
   CodegenSysExit(exit_code, env);

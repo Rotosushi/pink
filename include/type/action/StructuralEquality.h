@@ -3,6 +3,6 @@
 
 namespace pink {
 
-[[nodiscard]] auto StructuralEquality(const Type::Pointer one,
-                                      const Type::Pointer two) noexcept -> bool;
+[[nodiscard]] auto StructuralEquality(Type::Pointer one,
+                                      Type::Pointer two) noexcept -> bool;
 } // namespace pink

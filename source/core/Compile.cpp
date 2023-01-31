@@ -7,6 +7,9 @@
 
 #include "aux/Error.h" // pink::FatalError
 
+#include "ast/action/Codegen.h"
+#include "ast/action/Typecheck.h"
+
 #include "llvm/Analysis/AliasAnalysis.h" // llvm::AAManager
 #include "llvm/Passes/PassBuilder.h"     // llvm::PassBuilder
 
@@ -14,10 +17,10 @@ namespace pink {
 auto Compile(std::ostream &err, Environment &env) -> int;
 
 auto Compile(int argc, char **argv) -> int {
-  auto &out = std::cout;
-  auto &err = std::cerr;
-  auto options = pink::ParseCLIOptions(err, argc, argv);
-  auto env = Environment::NewGlobalEnv(options);
+  auto &out     = std::cout;
+  auto &err     = std::cerr;
+  auto  options = pink::ParseCLIOptions(err, argc, argv);
+  auto  env     = Environment::NewGlobalEnv(options);
 
   if (Compile(err, *env) == EXIT_FAILURE) {
     return EXIT_FAILURE;
@@ -52,9 +55,9 @@ auto Compile(std::ostream &err, Environment &env) -> int {
         env.PrintErrorWithSourceText(err, error);
         return EXIT_FAILURE;
       }
-      auto &term = term_result.GetFirst();
+      auto &term       = term_result.GetFirst();
 
-      auto type_result = term->Typecheck(env);
+      auto type_result = Typecheck(term, env);
       if (!type_result) {
         auto &error = type_result.GetSecond();
         env.PrintErrorWithSourceText(err, error);
@@ -66,22 +69,9 @@ auto Compile(std::ostream &err, Environment &env) -> int {
     env.ClearFalseBindings();
   }
 
-  // we can very naturally support more than one error
-  // here, as we have a buffer of all of the terms already.
-  auto failed = false;
   for (std::unique_ptr<pink::Ast> &term : valid_terms) {
-    pink::Outcome<llvm::Value *, pink::Error> value = term->Codegen(env);
-
-    if (!value) {
-      failed = true;
-      auto error = value.GetSecond();
-      env.PrintErrorWithSourceText(err, error);
-    }
+    Codegen(term, env);
   }
-  if (failed) {
-    return EXIT_FAILURE;
-  }
-
   return EXIT_SUCCESS;
 }
 } // namespace pink

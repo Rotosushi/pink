@@ -88,9 +88,9 @@ public:
   };
 
 private:
-  Kind          kind;
-  Location      location;
-  mutable Type *cached_type;
+  Kind                  kind;
+  Location              location;
+  mutable Type::Pointer cached_type;
 
 public:
   Ast(Kind kind, Location location) noexcept : kind(kind), location(location) {}
@@ -127,7 +127,7 @@ public:
     return cached_type;
   }
 
-  void SetCachedType(Type *type) const noexcept { cached_type = type; }
+  void SetCachedType(Type::Pointer type) const noexcept { cached_type = type; }
 
   virtual void Accept(AstVisitor *visitor) noexcept            = 0;
   virtual void Accept(ConstAstVisitor *visitor) const noexcept = 0;

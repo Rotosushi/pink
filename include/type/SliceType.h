@@ -30,6 +30,9 @@ namespace pink {
  *
  */
 class SliceType : public Type {
+public:
+  using Pointer = SliceType const *;
+
 private:
   Type::Pointer pointee_type;
 
@@ -38,11 +41,11 @@ public:
       : Type(Type::Kind::Slice), pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
-  ~SliceType() noexcept override = default;
-  SliceType(const SliceType &other) noexcept = default;
-  SliceType(SliceType &&other) noexcept = default;
+  ~SliceType() noexcept override                                 = default;
+  SliceType(const SliceType &other) noexcept                     = default;
+  SliceType(SliceType &&other) noexcept                          = default;
   auto operator=(const SliceType &other) noexcept -> SliceType & = default;
-  auto operator=(SliceType &&other) noexcept -> SliceType & = default;
+  auto operator=(SliceType &&other) noexcept -> SliceType      & = default;
 
   static auto classof(const Type *type) noexcept -> bool {
     return Type::Kind::Slice == type->GetKind();

@@ -22,7 +22,7 @@ class Environment;
  */
 class Type {
 public:
-  using Pointer = Type *;
+  using Pointer = Type const *;
 
   /**
    * @brief Type::Kind is deifined so as to conform to LLVM style [RTTI]
@@ -48,15 +48,15 @@ private:
 
 public:
   Type(Kind kind) noexcept : kind(kind) {}
-  virtual ~Type() noexcept = default;
-  Type(const Type &other) noexcept = default;
-  Type(Type &&other) noexcept = default;
+  virtual ~Type() noexcept                             = default;
+  Type(const Type &other) noexcept                     = default;
+  Type(Type &&other) noexcept                          = default;
   auto operator=(const Type &other) noexcept -> Type & = default;
-  auto operator=(Type &&other) noexcept -> Type & = default;
+  auto operator=(Type &&other) noexcept -> Type      & = default;
 
   [[nodiscard]] auto GetKind() const -> Kind;
 
-  virtual void Accept(TypeVisitor *vistor) noexcept = 0;
+  virtual void Accept(TypeVisitor *vistor) noexcept             = 0;
   virtual void Accept(ConstTypeVisitor *visitor) const noexcept = 0;
 };
 } // namespace pink

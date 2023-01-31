@@ -12,56 +12,28 @@
 #include "type/Type.h"
 
 namespace pink {
-// This forward declaration is needed to break the circular dependancy
-// that would be created by the fact that pink::Environment requires
-// the definition of pink::BinopTable, and pink::BinopTable needs
-// the definition of pink::BinopLiteral, and pinkBinopLiteral needs
-// the definition of pink::BinopCodegen, which needs the definition of
-// pink::Environment.
 class Environment;
 
-/**
- * @brief pointer to a function which can generate the code of an implementation
- * of a binary operation
- *
- */
 using BinopCodegenFn = llvm::Value *(*)(llvm::Type *lty, llvm::Value *left,
                                         llvm::Type *rty, llvm::Value *right,
                                         const Environment &env);
 
 /**
- * @brief Represents a generator for the implementation of a particular Binop
- *
+ * @brief Represents an implementation of a particular Binop
  */
 class BinopCodegen {
 public:
-  /**
-   * @brief The result type of the generator function
-   *
-   */
-  Type *result_type;
-
-  /**
-   * @brief The function which can generate the implementation of this Binop
-   *
-   */
+  Type::Pointer  result_type;
   BinopCodegenFn generate;
 
-  BinopCodegen()                          = delete;
-
-  /**
-   * @brief Construct a new Binop Codegen
-   *
-   * @param other the other object to copy
-   */
-  BinopCodegen(const BinopCodegen &other) = default;
-
-  /**
-   * @brief Construct a new Binop Codegen
-   *
-   * @param ret_t the return type of the binary operator
-   * @param fn_p the generator function
-   */
-  BinopCodegen(Type *ret_t, BinopCodegenFn fn_p);
+  BinopCodegen() noexcept  = delete;
+  ~BinopCodegen() noexcept = default;
+  BinopCodegen(Type::Pointer ret_t, BinopCodegenFn fn_p) noexcept
+      : result_type(ret_t), generate(fn_p) {}
+  BinopCodegen(const BinopCodegen &other) noexcept = default;
+  BinopCodegen(BinopCodegen &&other) noexcept      = default;
+  auto operator=(const BinopCodegen &other) noexcept
+      -> BinopCodegen                                           & = default;
+  auto operator=(BinopCodegen &&other) noexcept -> BinopCodegen & = default;
 };
 } // namespace pink

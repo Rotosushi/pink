@@ -13,12 +13,14 @@ namespace pink {
  */
 class IntegerType : public Type {
 public:
+  using Pointer = IntegerType const *;
+
   IntegerType();
-  ~IntegerType() noexcept override = default;
-  IntegerType(const IntegerType &other) noexcept = default;
-  IntegerType(IntegerType &&other) noexcept = default;
+  ~IntegerType() noexcept override                                   = default;
+  IntegerType(const IntegerType &other) noexcept                     = default;
+  IntegerType(IntegerType &&other) noexcept                          = default;
   auto operator=(const IntegerType &other) noexcept -> IntegerType & = default;
-  auto operator=(IntegerType &&other) noexcept -> IntegerType & = default;
+  auto operator=(IntegerType &&other) noexcept -> IntegerType      & = default;
 
   static auto classof(const Type *type) noexcept -> bool {
     return Type::Kind::Integer == type->GetKind();

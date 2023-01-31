@@ -3,36 +3,35 @@
 
 #include "ast/Boolean.h"
 
+#include "ast/action/ToString.h"
+#include "ast/action/Typecheck.h"
+
 #include "aux/Environment.h"
 
 auto TestBool(std::ostream &out) -> bool {
-  bool result = true;
-
-  out << "\n-----------------------\n";
-  out << "Testing pink::Bool: \n";
+  bool        result = true;
+  std::string name   = "pink::Boolean";
+  TestHeader(out, name);
 
   auto options = std::make_shared<pink::CLIOptions>();
-  auto env = pink::Environment::NewGlobalEnv(options);
+  auto env     = pink::Environment::NewGlobalEnv(options);
 
   // "true;"
-  pink::Location boolean_loc(1, 0, 1, 4); // NOLINT
+  pink::Location                 boolean_loc(1, 0, 1, 4); // NOLINT
   std::unique_ptr<pink::Boolean> boolean =
       std::make_unique<pink::Boolean>(boolean_loc, true);
-  pink::Type *boolean_type = env->types->GetBoolType();
+  pink::Type::Pointer boolean_type = env->types->GetBoolType();
 
   result &= Test(out, "Bool::GetKind()",
                  boolean->GetKind() == pink::Ast::Kind::Boolean);
-  result &= Test(out, "Bool::classof()", boolean->classof(boolean.get()));
-  result &= Test(out, "Bool::GetLoc()", boolean->GetLoc() == boolean_loc);
-  result &= Test(out, "Bool::value", boolean->GetValue());
-  result &= Test(out, "Bool::ToString()", boolean->ToString() == "true");
+  result &= Test(out, "Bool::classof()", llvm::isa<pink::Boolean>(boolean));
+  result &= Test(out, "Bool::GetLoc()", boolean->GetLocation() == boolean_loc);
+  result &= Test(out, "Bool::ToString()", ToString(boolean) == "true");
 
-  auto typecheck_result = boolean->Typecheck(*env);
+  auto typecheck_result = Typecheck(boolean, *env);
   result &=
       Test(out, "Bool::Typecheck()",
            typecheck_result && typecheck_result.GetFirst() == boolean_type);
 
-  result &= Test(out, "pink::Result", result);
-  out << "\n-----------------------\n";
-  return result;
+  return TestFooter(out, name, result);
 }

@@ -39,6 +39,9 @@ namespace pink {
  *
  */
 class PointerType : public Type {
+public:
+  using Pointer = PointerType const *;
+
 private:
   Type::Pointer pointee_type;
 
@@ -47,11 +50,11 @@ public:
       : Type(Type::Kind::Pointer), pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
-  ~PointerType() noexcept override = default;
-  PointerType(const PointerType &other) noexcept = default;
-  PointerType(PointerType &&other) noexcept = default;
+  ~PointerType() noexcept override                                   = default;
+  PointerType(const PointerType &other) noexcept                     = default;
+  PointerType(PointerType &&other) noexcept                          = default;
   auto operator=(const PointerType &other) noexcept -> PointerType & = default;
-  auto operator=(PointerType &&other) noexcept -> PointerType & = default;
+  auto operator=(PointerType &&other) noexcept -> PointerType      & = default;
 
   static auto classof(const Type::Pointer type) noexcept -> bool {
     return Type::Kind::Pointer == type->GetKind();

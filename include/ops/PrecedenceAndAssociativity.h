@@ -8,19 +8,11 @@
 #include <cstdint> // int8_t
 
 namespace pink {
-/**
- * @brief Represents the Associativity of binary operators
- *
- */
 enum class Associativity {
   None,
   Left,
   Right,
 };
 
-/**
- * @brief Represents the Precedence of binary operators
- *
- */
 using Precedence = int8_t;
 } // namespace pink

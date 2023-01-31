@@ -81,20 +81,20 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
     return;
   }
 
-  std::vector<Type::Pointer> computed_argument_types;
+  FunctionType::Arguments computed_argument_types;
   computed_argument_types.reserve(application->GetArguments().size());
   for (const auto &argument : *application) {
     auto argument_outcome = Compute(argument, this);
     if (!argument_outcome) {
       result = argument_outcome;
       return;
-    } 
+    }
     computed_argument_types.emplace_back(argument_outcome.GetFirst());
   }
 
   auto cmp = [](Type::Pointer one, Type::Pointer two) { return one != two; };
   auto mismatch = FindBetween(callee_type->begin(), callee_type->end(),
-                              computed_argument_types.begin(), cmp);
+                              computed_argument_types.cbegin(), cmp);
 
   if (mismatch.first != callee_type->end()) {
     std::string errmsg = "Expected argument type [";
@@ -154,7 +154,9 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
   if and only if the left hand side is the same type.
 */
 void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
+  env.flags->OnTheLHSOfAssignment(true);
   auto left_outcome = Compute(assignment->GetLeft(), this);
+  env.flags->OnTheLHSOfAssignment(false);
   if (!left_outcome) {
     result = left_outcome;
     return;
@@ -416,9 +418,11 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
     }
   };
 
-  auto local_env = Environment::NewLocalEnv(env, function->GetScope());
+  auto         local_env = Environment::NewLocalEnv(env, function->GetScope());
+  Environment &old_env   = env;
+  env                    = *local_env;
 
-  auto Cleanup   = [&]() {
+  auto Cleanup           = [&]() {
     UnbindArguments();
     local_env->ClearFalseBindings();
   };
@@ -431,6 +435,7 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
     return;
   }
   Cleanup();
+  env             = old_env;
   auto *body_type = body_result.GetFirst();
 
   std::vector<Type::Pointer> argument_types(function->GetArguments().size());
@@ -548,16 +553,20 @@ void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
   given the type of it's right hand side expression as argument
   if and only if the unop has an implementation for the type of
   the right expression
+
+  \todo refactor unary operator "*" and "&" to their own Ast nodes,
+  just as dot "." is represented with 'Ast::Dot'.
+  the reason being is their extra invariants; as of now "*" and "&"
+  are being implemented within Ast::Unop. This is (I think) confusing
+  the implementation of Ast::Unop, where it is doing more than simply
+  checking the invariants of 'normal' unops. This is reflected (I think)
+  in the implementation of "*" and "&", their codegen functions,
+  which both simply return what they were passed without modification.
+  The entire funcionality of the operation is just in changing how we
+  treat the pointer to some allocation.
 */
 void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
-  auto right_result = Compute(unop->GetRight(), this);
-  if (!right_result) {
-    result = right_result;
-    return;
-  }
-  auto *right_type = right_result.GetFirst();
-
-  auto literal     = env.unops->Lookup(unop->GetOp());
+  auto literal = env.unops->Lookup(unop->GetOp());
   if (!literal) {
     std::string errmsg = "Unknown unop [";
     errmsg             += unop->GetOp();
@@ -567,31 +576,52 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   }
 
   auto implementation_result =
-      [&]() -> Outcome<std::pair<Type *, UnopCodegen *>, Error> {
-    auto found = literal->second->Lookup(right_type);
-    if (found) {
-      return *found;
-    }
-
+      [&]() -> Outcome<std::pair<Type::Pointer, UnopCodegen *>, Error> {
     if (strcmp(unop->GetOp(), "*") == 0) {
+      env.flags->WithinDereferencePtr(true);
+      auto right_result = Compute(unop->GetRight(), this);
+      env.flags->WithinDereferencePtr(false);
+      if (!right_result) {
+        return right_result.GetSecond();
+      }
+      auto *right_type = right_result.GetFirst();
       // create a new instance of the dereference op
       // with the same body as every other dereference op.
-      auto dereference_integer =
+      auto  dereference_integer =
           literal->second->Lookup(env.types->GetIntType());
       assert(dereference_integer.has_value());
-      return literal->second->Register(env.types->GetPointerType(right_type),
-                                       right_type,
-                                       dereference_integer->second->generate);
+      return literal->second->Register(
+          env.types->GetPointerType(right_type), right_type,
+          dereference_integer->second->GetGenerateFn());
     }
 
     if (strcmp(unop->GetOp(), "&") == 0) {
+      if (env.flags->OnTheLHSOfAssignment()) {
+        // we cannot assign to an address value.
+        // that is like assignment to a number
+        return Error(Error::Code::ValueCannotBeAssigned, unop->GetLocation());
+      }
+      env.flags->WithinAddressOf(true);
+      auto right_result = Compute(unop->GetRight(), this);
+      env.flags->WithinAddressOf(false);
+      if (!right_result) {
+        return right_result.GetSecond();
+      }
+      auto *right_type = right_result.GetFirst();
+
       auto address_of_integer =
           literal->second->Lookup(env.types->GetIntType());
       assert(address_of_integer.has_value());
-      return literal->second->Register(right_type,
-                                       env.types->GetPointerType(right_type),
-                                       address_of_integer->second->generate);
+      return literal->second->Register(
+          right_type, env.types->GetPointerType(right_type),
+          address_of_integer->second->GetGenerateFn());
     }
+
+    auto right_result = Compute(unop->GetRight(), this);
+    if (!right_result) {
+      return right_result.GetSecond();
+    }
+    auto *right_type   = right_result.GetFirst();
 
     std::string errmsg = "No implementation of unop [";
     errmsg             += unop->GetOp();
@@ -602,7 +632,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   }();
   auto &implementation = implementation_result.GetFirst();
 
-  auto *result_type    = implementation.second->result_type;
+  auto *result_type    = implementation.second->GetReturnType();
   unop->SetCachedType(result_type);
   result = result_type;
 }
