@@ -24,6 +24,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
 add_compile_options(-O0 -gdwarf-4 -Wall -Wextra)
 
+find_package(Catch2 3 REQUIRED)
+
 # finding and setting up LLVM to be linked into this project
 find_package(LLVM 16 REQUIRED CONFIG)
 
@@ -158,7 +160,7 @@ add_library(common STATIC
 
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 
-	# operators like assignment '=', pointer indirection '*', and address of '&')
+	# operators like assignment '=', member access '.', and subscript '[]')
 	source/ops/BinopCodegen.cpp
 	source/ops/BinopLiteral.cpp
 	source/ops/BinopTable.cpp
@@ -245,14 +247,12 @@ target_link_libraries(pink
 common
 ${LLVM_LIBRARY_DIRS}/liblldCommon.a
 ${LLVM_LIBRARY_DIRS}/liblldELF.a
-
 )
 
 target_include_directories(pink PUBLIC
-						   "${PROJECT_BINARY_DIR}"
-						   include
-						  )
-						  
+  "${PROJECT_BINARY_DIR}"
+  include
+)
 #TODO: figure out how to build the tests alongside the main project,
 #		but only when the correct argument is passed into the call to 
 #		cmake.
