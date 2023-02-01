@@ -6,7 +6,7 @@ namespace pink {
 /**
  * @brief Essentially std::adjacent_find except it get pairs from
  * two ranges, instead of two adjacent elements in the same range.
- * given that this operation really only makes sense if the two
+ * this operation really only makes sense if the two
  * ranges are the same size.
  *
  * @tparam InputIterator the iterator type

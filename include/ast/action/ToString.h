@@ -8,35 +8,6 @@
 #include "visitor/VisitorResult.h"
 
 namespace pink {
-class AstToString
-    : public ConstVisitorResult<AstToString, const Ast::Pointer &, std::string>,
-      public ConstAstVisitor {
-public:
-  void Visit(const Application *application) const noexcept override;
-  void Visit(const Array *array) const noexcept override;
-  void Visit(const Assignment *assignment) const noexcept override;
-  void Visit(const Bind *bind) const noexcept override;
-  void Visit(const Binop *binop) const noexcept override;
-  void Visit(const Block *block) const noexcept override;
-  void Visit(const Boolean *boolean) const noexcept override;
-  void Visit(const Conditional *conditional) const noexcept override;
-  void Visit(const Dot *dot) const noexcept override;
-  void Visit(const Function *function) const noexcept override;
-  void Visit(const Integer *integer) const noexcept override;
-  void Visit(const Nil *nil) const noexcept override;
-  void Visit(const Subscript *subscript) const noexcept override;
-  void Visit(const Tuple *tuple) const noexcept override;
-  void Visit(const Unop *unop) const noexcept override;
-  void Visit(const Variable *variable) const noexcept override;
-  void Visit(const While *loop) const noexcept override;
-
-  AstToString() noexcept = default;
-  ~AstToString() override = default;
-  AstToString(const AstToString &other) noexcept = default;
-  AstToString(AstToString &&other) noexcept = default;
-  auto operator=(const AstToString &other) noexcept -> AstToString & = default;
-  auto operator=(AstToString &&other) noexcept -> AstToString & = default;
-};
 
 /**
  * @brief Computes the canonical string representation of the Ast

@@ -4,11 +4,12 @@
 
 namespace pink {
 auto Optimize(std::ostream &out, Environment &env) -> int {
+  assert(out.good());
   if (env.options->optimization_level != llvm::OptimizationLevel::O0) {
-    llvm::LoopAnalysisManager LAM;
+    llvm::LoopAnalysisManager     LAM;
     llvm::FunctionAnalysisManager FAM;
-    llvm::CGSCCAnalysisManager CGAM;
-    llvm::ModuleAnalysisManager MAM;
+    llvm::CGSCCAnalysisManager    CGAM;
+    llvm::ModuleAnalysisManager   MAM;
 
     // https://llvm.org/doxygen/classllvm_1_1PassBuilder.html
     llvm::PassBuilder passBuilder;

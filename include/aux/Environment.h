@@ -18,7 +18,7 @@
 
 #include "aux/CLIOptions.h"
 #include "aux/Error.h"
-#include "aux/Flags.h"
+#include "aux/InternalFlags.h"
 #include "aux/StringInterner.h"
 #include "aux/SymbolTable.h"
 #include "aux/TypeInterner.h"
@@ -109,7 +109,7 @@ public:
    * controllable by the user on the command line, and instead are exclusively
    * set/reset during compilation of specific terms within a given [Ast](#Ast).
    */
-  std::shared_ptr<TypecheckFlags> flags;
+  std::shared_ptr<InternalFlags> flags;
 
   /**
    * @brief The options associated with the current compilation task.
@@ -358,17 +358,17 @@ private:
    * @param target_machine
    * @param data_layout
    */
-  Environment(std::shared_ptr<TypecheckFlags> flags,
-              std::shared_ptr<CLIOptions> options,
-              std::shared_ptr<Parser> parser,
-              std::shared_ptr<StringInterner> symbols,
-              std::shared_ptr<StringInterner> operators,
-              std::shared_ptr<TypeInterner> types,
-              std::shared_ptr<SymbolTable> bindings,
-              std::shared_ptr<BinopTable> binops,
-              std::shared_ptr<UnopTable> unops,
+  Environment(std::shared_ptr<InternalFlags>     flags,
+              std::shared_ptr<CLIOptions>        options,
+              std::shared_ptr<Parser>            parser,
+              std::shared_ptr<StringInterner>    symbols,
+              std::shared_ptr<StringInterner>    operators,
+              std::shared_ptr<TypeInterner>      types,
+              std::shared_ptr<SymbolTable>       bindings,
+              std::shared_ptr<BinopTable>        binops,
+              std::shared_ptr<UnopTable>         unops,
               std::shared_ptr<llvm::LLVMContext> context,
-              std::shared_ptr<llvm::Module> llvm_module,
+              std::shared_ptr<llvm::Module>      llvm_module,
               std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
               //      std::shared_ptr<llvm::DIBuilder> debug_builder,
               const llvm::Target *target, llvm::TargetMachine *target_machine,
@@ -400,9 +400,9 @@ private:
    */
   Environment(const Environment &env, std::shared_ptr<SymbolTable> symbols,
               std::shared_ptr<llvm::IRBuilder<>> builder,
-              llvm::Function *current_function);
+              llvm::Function                    *current_function);
 
-  Environment(const Environment &env,
+  Environment(const Environment                 &env,
               std::shared_ptr<llvm::IRBuilder<>> builder);
 
 public:
@@ -428,20 +428,20 @@ public:
    * @return std::unique_ptr<Environment> The new compilation environment.
    */
   static auto NewGlobalEnv(std::shared_ptr<CLIOptions> options,
-                           std::istream *instream)
+                           std::istream               *instream)
       -> std::unique_ptr<Environment>;
 
-  static auto NewLocalEnv(const Environment &outer,
+  static auto NewLocalEnv(const Environment           &outer,
                           std::shared_ptr<SymbolTable> bindings)
       -> std::unique_ptr<Environment>;
 
-  static auto NewLocalEnv(const Environment &outer,
-                          std::shared_ptr<SymbolTable> bindings,
+  static auto NewLocalEnv(const Environment                 &outer,
+                          std::shared_ptr<SymbolTable>       bindings,
                           std::shared_ptr<llvm::IRBuilder<>> builder,
-                          llvm::Function *function)
+                          llvm::Function                    *function)
       -> std::unique_ptr<Environment>;
 
-  static auto NewLocalEnv(const Environment &outer,
+  static auto NewLocalEnv(const Environment                 &outer,
                           std::shared_ptr<llvm::IRBuilder<>> builder)
       -> std::unique_ptr<Environment>;
 };

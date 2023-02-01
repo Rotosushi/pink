@@ -192,7 +192,7 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
 
   auto affix_type_cache = bind->GetAffix()->GetCachedType();
   assert(affix_type_cache.has_value());
-  auto *affix_type  = affix_type_cache.value();
+  auto *affix_type = affix_type_cache.value();
 
   auto *affix_value = Compute(bind->GetAffix(), this);
   assert(affix_value != nullptr);
@@ -214,12 +214,12 @@ void CodegenVisitor::Visit(const Binop *binop) const noexcept {
   auto *left_type      = left_cache.value();
   auto *llvm_left_type = ToLLVM(left_type, env);
 
-  auto right_cache     = binop->GetRight()->GetCachedType();
+  auto right_cache = binop->GetRight()->GetCachedType();
   assert(right_cache.has_value());
   auto *right_type      = right_cache.value();
   auto *llvm_right_type = ToLLVM(right_type, env);
 
-  auto *left_value      = Compute(binop->GetLeft(), this);
+  auto *left_value = Compute(binop->GetLeft(), this);
   assert(left_value != nullptr);
 
   auto *right_value = Compute(binop->GetRight(), this);
@@ -321,7 +321,7 @@ void CodegenVisitor::Visit(const Dot *dot) const noexcept {
 void CodegenVisitor::Visit(const Function *function) const noexcept {
   auto is_main = strcmp(function->GetName(), "main") == 0;
 
-  auto cache   = function->GetCachedType();
+  auto cache = function->GetCachedType();
   assert(cache.has_value());
   auto *cache_type         = cache.value();
   auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
@@ -457,6 +457,7 @@ void CodegenVisitor::Visit(const Integer *integer) const noexcept {
 }
 
 void CodegenVisitor::Visit(const Nil *nil) const noexcept {
+  assert(nil != nullptr);
   result = env.instruction_builder->getInt1(false);
 }
 
@@ -466,7 +467,7 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
 
   auto left_cache = subscript->GetLeft()->GetCachedType();
   assert(left_cache.has_value());
-  auto *left_type   = left_cache.value();
+  auto *left_type = left_cache.value();
 
   auto *right_value = [&]() {
     CodegenResult res;
@@ -519,7 +520,7 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
 void CodegenVisitor::Visit(const Tuple *tuple) const noexcept {
   auto tuple_result = tuple->GetCachedType();
   assert(tuple_result.has_value());
-  auto *tuple_type  = tuple_result.value();
+  auto *tuple_type = tuple_result.value();
 
   auto *struct_type = llvm::cast<llvm::StructType>(ToLLVM(tuple_type, env));
 
@@ -584,7 +585,7 @@ CodegenUnopDereferencePointer(const Unop *unop, Type::Pointer right_type,
 void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   auto right_cache = unop->GetRight()->GetCachedType();
   assert(right_cache.has_value());
-  auto *right_type  = right_cache.value();
+  auto *right_type = right_cache.value();
 
   auto *right_value = [&]() -> CodegenResult {
     if (strcmp(unop->GetOp(), "&") == 0) {

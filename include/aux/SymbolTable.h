@@ -133,7 +133,7 @@ public:
    * @brief Bind a given symbol within this table to the given type and value
    *
    * \warning: 9/17/2022
-   * typechecking generates bindings with no corresponding value, so it is
+   * typechecking generates bindings with no corresponding value, so
    * there are entries in the symbol table bound to a llvm::Value of nullptr.
    * these symbols are created and then added to the 'false_bindings'
    * member of the Environment such that they can be unbound before

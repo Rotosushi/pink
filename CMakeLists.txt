@@ -156,7 +156,7 @@ add_library(common STATIC
 	source/aux/StringInterner.cpp
 	source/aux/SymbolTable.cpp
 	source/aux/TypeInterner.cpp
-	source/aux/Flags.cpp
+	source/aux/InternalFlags.cpp
 
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 
@@ -253,8 +253,28 @@ target_include_directories(pink PUBLIC
   "${PROJECT_BINARY_DIR}"
   include
 )
-#TODO: figure out how to build the tests alongside the main project,
-#		but only when the correct argument is passed into the call to 
-#		cmake.
-# add_subdirectory(test)
+
+add_executable(tests 
+
+  test/source/aux/Error.cpp
+  test/source/aux/InternalFlags.cpp
+  test/source/aux/Location.cpp
+  test/source/aux/Outcome.cpp
+  test/source/aux/StringInterner.cpp
+  test/source/aux/TypeInterner.cpp
+
+)
+
+target_include_directories(tests PUBLIC 
+  include
+)
+
+target_link_libraries(tests
+PRIVATE Catch2::Catch2WithMain
+PUBLIC common
+)
+
+include(CTest)
+include(Catch)
+catch_discover_tests(tests)
 

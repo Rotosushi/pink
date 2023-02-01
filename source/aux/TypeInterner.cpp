@@ -65,6 +65,26 @@ auto TypeInterner::GetFunctionType(Type::Pointer return_type,
   return found->get();
 }
 
+auto TypeInterner::GetFunctionType(Type::Pointer                return_type,
+                                   std::vector<Type::Pointer> &&arg_types)
+    -> FunctionType::Pointer {
+  auto possible =
+      std::make_unique<FunctionType>(return_type, std::move(arg_types));
+  FunctionType *possible_result = possible.get();
+
+  auto types_equal = [possible_result](std::unique_ptr<FunctionType> &type) {
+    return StructuralEquality(possible_result, type.get());
+  };
+  auto found =
+      std::find_if(function_types.begin(), function_types.end(), types_equal);
+
+  if (found == function_types.end()) {
+    function_types.emplace_back(std::move(possible));
+    return possible_result;
+  }
+  return found->get();
+}
+
 auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
     -> PointerType::Pointer {
   auto possible = std::make_unique<PointerType>(pointee_type);
@@ -102,7 +122,7 @@ auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
   auto  possible        = std::make_unique<SliceType>(pointee_type);
   auto *possible_result = possible.get();
 
-  auto types_equal      = [possible_result](std::unique_ptr<SliceType> &type) {
+  auto types_equal = [possible_result](std::unique_ptr<SliceType> &type) {
     return StructuralEquality(possible_result, type.get());
   };
   auto found =
@@ -118,6 +138,21 @@ auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
 auto TypeInterner::GetTupleType(std::vector<Type::Pointer> const &member_types)
     -> TupleType::Pointer {
   auto possible = std::make_unique<TupleType>(member_types);
+
+  for (auto &tuple_type : tuple_types) {
+    if (StructuralEquality(tuple_type.get(), possible.get())) {
+      return tuple_type.get();
+    }
+  }
+
+  TupleType *result = possible.get();
+  tuple_types.emplace_back(std::move(possible));
+  return result;
+}
+
+auto TypeInterner::GetTupleType(std::vector<Type::Pointer> &&member_types)
+    -> TupleType::Pointer {
+  auto possible = std::make_unique<TupleType>(std::move(member_types));
 
   for (auto &tuple_type : tuple_types) {
     if (StructuralEquality(tuple_type.get(), possible.get())) {

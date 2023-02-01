@@ -176,9 +176,8 @@ void StructuralEqualityVisitor::Visit(
   result                 = (other_type != nullptr);
 }
 
-[[nodiscard]] auto StructuralEquality(const Type::Pointer one,
-                                      const Type::Pointer two) noexcept
-    -> bool {
+[[nodiscard]] auto StructuralEquality(Type::Pointer one,
+                                      Type::Pointer two) noexcept -> bool {
   StructuralEqualityVisitor visitor(one);
   return visitor.Compute(two, &visitor);
 }

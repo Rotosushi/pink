@@ -20,7 +20,7 @@ CLIOptions::CLIOptions(std::string infile, std::string outfile, bool verbose,
 }
 
 auto CLIOptions::RemoveTrailingExtensions(std::string filename) -> std::string {
-  auto first_extension = filename.end();
+  auto        first_extension = filename.end();
   std::string search_string("/");
 
   // find the -last- occurance of "/" in the filename
@@ -40,13 +40,13 @@ auto CLIOptions::RemoveTrailingExtensions(std::string filename) -> std::string {
   return {filename.begin(), first_extension};
 }
 
-auto PrintVersion(std::ostream &out) -> std::ostream & {
+auto CLIOptions::PrintVersion(std::ostream &out) -> std::ostream & {
   out << "pink version: " << pink_VERSION_MAJOR << "." << pink_VERSION_MINOR
       << std::endl;
   return out;
 }
 
-auto PrintHelp(std::ostream &out) -> std::ostream & {
+auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
   out << "pink Usage: \n"
       << "General program options: \n"
       << "-h, --help: print this help message and exit.\n"
@@ -76,17 +76,17 @@ auto PrintHelp(std::ostream &out) -> std::ostream & {
 
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
     -> std::shared_ptr<CLIOptions> {
-  unsigned numopt = 0; // count of how many options we parsed
+  unsigned    numopt        = 0; // count of how many options we parsed
   const char *short_options = "hvi:o:O:lcs";
 
-  std::string input_file;
-  std::string output_file;
-  static int verbose = 0;
-  bool emit_llvm = false;
-  bool emit_asm = false;
-  bool emit_obj = true;
+  std::string             input_file;
+  std::string             output_file;
+  static int              verbose            = 0;
+  bool                    emit_llvm          = false;
+  bool                    emit_asm           = false;
+  bool                    emit_obj           = true;
   llvm::OptimizationLevel optimization_level = llvm::OptimizationLevel::O0;
-  bool link = true;
+  bool                    link               = true;
 
   // note: we have to use a c style array here because of the api of
   // getopt_long(3) NOLINTBEGIN(modernize-avoid-c-arrays)
@@ -127,13 +127,13 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
     }
 
     case 'h': {
-      PrintHelp(out);
+      CLIOptions::PrintHelp(out);
       exit(0);
       break;
     }
 
     case 'v': {
-      PrintVersion(out);
+      CLIOptions::PrintVersion(out);
       exit(0);
       break;
     }
@@ -150,25 +150,25 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
 
     case 'l': {
       emit_llvm = true;
-      emit_obj = false;
-      emit_asm = false;
-      link = false;
+      emit_obj  = false;
+      emit_asm  = false;
+      link      = false;
       break;
     }
 
     case 'c': {
-      emit_obj = true;
+      emit_obj  = true;
       emit_llvm = false;
-      emit_asm = false;
-      link = false;
+      emit_asm  = false;
+      link      = false;
       break;
     }
 
     case 's': {
-      emit_asm = true;
-      emit_obj = false;
+      emit_asm  = true;
+      emit_obj  = false;
       emit_llvm = false;
-      link = false;
+      link      = false;
       break;
     }
 
@@ -234,10 +234,10 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
   // (except for handling multiple source files this
   //  is the default behavior of many compilers, any
   //  options appearing on the command line not associated
-  //  with any particualr option are considered to be input
+  //  with any particular option are considered to be input
   //  files to the compiler.)
   //  this check allows the program to be called like:
-  //  ->	pink input_file.p
+  //  -> pink input_file.p
   //  and the default behavior is to emit an executable
   //  named:
   //  -> input_file
@@ -262,12 +262,10 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
     // to traverse to the other end of argv, to the other side of
     // all of the options that getopt parsed. This is why we add
     // optind to numopt. however, we also need to account for one
-    // more option, the first one
+    // more option, the first one, hence +1
     char *option = argv[optind + numopt + 1];
     if (option != nullptr) {
       input_file = option; // assume that option is the name of an input file.
-                           // this is okay, because this is the intended
-                           // command line usage of this program.
       // #TODO: input_file needs to be a std::vector<std::string> and we
       // need to collect multiple input files together into a single output
       // program. However, that is a few steps ahead of where we are right at

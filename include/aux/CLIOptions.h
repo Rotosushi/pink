@@ -181,7 +181,8 @@ public:
    * searches for the first '.' appearing after the last '/' in
    * the given input string and returns the string containing
    * everything up to that point. if there is no '.' in the
-   * input string, then the entire string is returned.
+   * input string, then the entire string after the last '/ is
+   * returned.
    *
    * @param filename the filename to remove the extensions of
    * @return std::string the new filename with no extensions

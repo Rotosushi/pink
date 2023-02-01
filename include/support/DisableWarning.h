@@ -12,37 +12,26 @@
 // code is developed with a goal of no warnings
 // first.
 // NOTE: 9/15/2022
-// These are only defined for clang and GCC
-// because those are the two compilers I have been
-// using to build this project. However this
-// macro may certainly be defined for each compiler
-// that supports this style of dignostic push/pop
-// and specific error ingnoring.
-// NOTE: 9/15/2022
 // Outline of this code retrieved from
 // https://stackoverflow.com/questions/48426484/concise-way-to-disable-specific-warning-instances-in-clang
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // I agree with the sentiment that macros are to
-// be avoided if at all possible. given the semantics
+// be avoided if at all possible. However given the semantics
 // that NOWARN is implementing, I am unsure how to
 // accomplish something similar using even variadic
 // constexpr templates. because the code being repeated
 // is not knowable at the time when the macro is defined.
 // instead, whatever code which we want to turn the warning
-// off for is spliced in. This is unfortunately macro
+// off for is spliced in. This is unfortunately textual macro
 // specific semantics as far as I am aware.
-/**
- * @brief helper macro for NOWARN
- *
- */
-#define PRAGMA(x) _Pragma(#x)
 
+#if defined(__GNUC__)
+#define PRAGMA(x) _Pragma(#x)
+#else
+#define PRAGAM(x)
+#endif
 /*
- *
- *
- *
- *
  * NOTE 9/15/2022
  * Turns out that this version of the macro is redundant as clang supports
  * both clang diagnostic push
@@ -57,10 +46,10 @@
  * -> https://gcc.gnu.org/legacy-ml/gcc/2008-07/msg00025.html
  * -> https://github.com/cpredef/predef/blob/master/Compilers.md
  *
- * which is precisely what we are using __clang__ for in this
+ * which is precisely what we were using __clang__ for in this
  * case. so that is both fortunate, and unfortunate, because
  * this version is more opaque than the first version imo.
- * in that it just works for when compiled with GCC or clang.
+ * in that it just works when compiled with GCC or clang.
  *
  * #if defined(__clang__)
  * #define NOWARN(warnoption, ...)                     \
@@ -77,7 +66,7 @@
  *
  * called like:
  *
- * NOWARN(-Wthe-warning,
+ * NOWARN("-Wthe-warning",
  * valid_cpp_code;
  * )
  */
@@ -87,6 +76,8 @@
   PRAGMA(GCC diagnostic ignored warnoption)                                    \
   __VA_ARGS__                                                                  \
   PRAGMA(GCC diagnostic pop)
+#else
+#define NOWARN(warnoption, ...) __VA_ARGS__
 #endif
 
 // NOLINTEND(cppcoreguidelines-macro-usage)

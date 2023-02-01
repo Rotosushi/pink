@@ -16,13 +16,13 @@
 
 namespace pink {
 Environment::Environment(
-    std::shared_ptr<TypecheckFlags> flags, std::shared_ptr<CLIOptions> options,
+    std::shared_ptr<InternalFlags> flags, std::shared_ptr<CLIOptions> options,
     std::shared_ptr<Parser> parser, std::shared_ptr<StringInterner> symbols,
     std::shared_ptr<StringInterner> operators,
     std::shared_ptr<TypeInterner> types, std::shared_ptr<SymbolTable> bindings,
     std::shared_ptr<BinopTable> binops, std::shared_ptr<UnopTable> unops,
     std::shared_ptr<llvm::LLVMContext> context,
-    std::shared_ptr<llvm::Module> llvm_module,
+    std::shared_ptr<llvm::Module>      llvm_module,
     std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
     // std::shared_ptr<llvm::DIBuilder>             debug_builder,
     const llvm::Target *target, llvm::TargetMachine *target_machine,
@@ -39,7 +39,7 @@ Environment::Environment(
       target(target), target_machine(target_machine), data_layout(data_layout),
       current_function(nullptr) {}
 
-Environment::Environment(const Environment &env,
+Environment::Environment(const Environment           &env,
                          std::shared_ptr<SymbolTable> bindings)
     : false_bindings(std::make_shared<std::vector<InternedString>>()),
       flags(env.flags), options(env.options), parser(env.parser),
@@ -51,10 +51,10 @@ Environment::Environment(const Environment &env,
       target(env.target), target_machine(env.target_machine),
       data_layout(env.data_layout), current_function(env.current_function) {}
 
-Environment::Environment(const Environment &env,
-                         std::shared_ptr<SymbolTable> bindings,
+Environment::Environment(const Environment                 &env,
+                         std::shared_ptr<SymbolTable>       bindings,
                          std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
-                         llvm::Function *current_function)
+                         llvm::Function                    *current_function)
     : false_bindings(std::make_shared<std::vector<InternedString>>()),
       flags(env.flags), options(env.options), parser(env.parser),
       symbols(env.symbols), operators(env.operators), types(env.types),
@@ -65,7 +65,7 @@ Environment::Environment(const Environment &env,
       target(env.target), target_machine(env.target_machine),
       data_layout(env.data_layout), current_function(current_function) {}
 
-Environment::Environment(const Environment &env,
+Environment::Environment(const Environment                 &env,
                          std::shared_ptr<llvm::IRBuilder<>> builder)
     : false_bindings(std::make_shared<std::vector<InternedString>>()),
       flags(env.flags), options(env.options), parser(env.parser),
@@ -77,7 +77,7 @@ Environment::Environment(const Environment &env,
       current_function(env.current_function) {}
 
 void Environment::PrintErrorWithSourceText(std::ostream &out,
-                                           const Error &error) {
+                                           const Error  &error) {
   auto bad_source = parser->ExtractLine(error.loc);
   error.Print(out, bad_source);
 }
@@ -96,16 +96,16 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options)
 }
 
 auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
-                               std::istream *instream)
+                               std::istream               *instream)
     -> std::unique_ptr<Environment> {
-  auto flags = std::make_shared<TypecheckFlags>();
-  auto parser = std::make_shared<Parser>(instream);
-  auto symbols = std::make_shared<StringInterner>();
+  auto flags     = std::make_shared<InternalFlags>();
+  auto parser    = std::make_shared<Parser>(instream);
+  auto symbols   = std::make_shared<StringInterner>();
   auto operators = std::make_shared<StringInterner>();
-  auto types = std::make_shared<TypeInterner>();
-  auto bindings = std::make_shared<SymbolTable>();
-  auto binops = std::make_shared<BinopTable>();
-  auto unops = std::make_shared<UnopTable>();
+  auto types     = std::make_shared<TypeInterner>();
+  auto bindings  = std::make_shared<SymbolTable>();
+  auto binops    = std::make_shared<BinopTable>();
+  auto unops     = std::make_shared<UnopTable>();
 
   std::shared_ptr<llvm::LLVMContext> context =
       std::make_shared<llvm::LLVMContext>();
@@ -121,7 +121,7 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   // (and cpu, cpu features, and any other target specific information.)
   std::string target_triple = llvm::sys::getProcessTriple();
 
-  std::string error;
+  std::string         error;
   const llvm::Target *target =
       llvm::TargetRegistry::lookupTarget(target_triple, error);
 
@@ -133,14 +133,14 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   std::string cpu = llvm::sys::getHostCPUName().str();
 
   // get the native CPU features.
-  std::string cpu_features;
+  std::string           cpu_features;
   llvm::StringMap<bool> features;
 
   if (llvm::sys::getHostCPUFeatures(features)) {
-    auto idx = features.begin();
-    auto end = features.end();
+    auto     idx      = features.begin();
+    auto     end      = features.end();
     unsigned numElems = features.getNumItems();
-    unsigned jdx = 0;
+    unsigned jdx      = 0;
 
     while (idx != end) {
       // the StringMap<bool> maps strings (keys) to bools (values)
@@ -171,11 +171,11 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   // use, and such. This might be useful when considering
   // optimizations to turn on or specific optimization flags
   // available to the user. 1/9/2023
-  llvm::TargetOptions target_options;
+  llvm::TargetOptions    target_options;
   // #TODO: position independant code is a fine default,
   // however we should allow the user to change this via the command line
   // 1/9/2023
-  llvm::Reloc::Model code_relocation_model = llvm::Reloc::Model::PIC_;
+  llvm::Reloc::Model     code_relocation_model = llvm::Reloc::Model::PIC_;
   // #TODO: the Small x86-64 code model is a fine default for x86-64,
   // however this must change if the code being compiled becomes larger
   // than 2GB, or if the data within the code or being processed by the
@@ -187,7 +187,7 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   llvm::CodeModel::Model code_model = llvm::CodeModel::Model::Small;
 
   llvm::TargetMachine *target_machine = nullptr;
-  target_machine = target->createTargetMachine(
+  target_machine                      = target->createTargetMachine(
       target_triple, cpu, cpu_features, target_options, code_relocation_model,
       code_model);
 
@@ -203,9 +203,9 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
 
   // #TODO: construct classes which are used to generate
   // debugging information for a given source unit.
-  // 1/16/2023: this todo is on hold for now, 
-  // because adding debug information requires us to tell the 
-  // debugger how to call our functions. 
+  // 1/16/2023: this todo is on hold for now,
+  // because adding debug information requires us to tell the
+  // debugger how to call our functions.
 
   // a minor gripe about the DIBuilder class, the class itself takes
   // as an argument a pointer to a DICompileUnit, which makes complete
@@ -241,22 +241,22 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
   return env;
 }
 
-auto Environment::NewLocalEnv(const Environment &outer,
+auto Environment::NewLocalEnv(const Environment           &outer,
                               std::shared_ptr<SymbolTable> bindings)
     -> std::unique_ptr<Environment> {
   return std::unique_ptr<Environment>(new Environment(outer, bindings));
 }
 
-auto Environment::NewLocalEnv(const Environment &outer,
-                              std::shared_ptr<SymbolTable> bindings,
+auto Environment::NewLocalEnv(const Environment                 &outer,
+                              std::shared_ptr<SymbolTable>       bindings,
                               std::shared_ptr<llvm::IRBuilder<>> builder,
-                              llvm::Function *function)
+                              llvm::Function                    *function)
     -> std::unique_ptr<Environment> {
   return std::unique_ptr<Environment>(
       new Environment(outer, bindings, builder, function));
 }
 
-auto Environment::NewLocalEnv(const Environment &outer,
+auto Environment::NewLocalEnv(const Environment                 &outer,
                               std::shared_ptr<llvm::IRBuilder<>> builder)
     -> std::unique_ptr<Environment> {
   return std::unique_ptr<Environment>(new Environment(outer, builder));

@@ -95,7 +95,7 @@ public:
    * @brief Construct a new Type Interner
    *
    */
-  TypeInterner()                                              = default;
+  TypeInterner() = default;
 
   /**
    * @brief We disallow a TypeInterner to be constructed from an existing
@@ -103,19 +103,19 @@ public:
    *
    * @param other the other Type Interner
    */
-  TypeInterner(const TypeInterner &other)                     = delete;
+  TypeInterner(const TypeInterner &other) = delete;
 
-  TypeInterner(TypeInterner &&other)                          = default;
+  TypeInterner(TypeInterner &&other) = default;
 
   auto operator=(const TypeInterner &other) -> TypeInterner & = delete;
 
-  auto operator=(TypeInterner &&other) -> TypeInterner      & = default;
+  auto operator=(TypeInterner &&other) -> TypeInterner & = default;
 
   /**
    * @brief Destroy the Type Interner
    *
    */
-  ~TypeInterner()                                             = default;
+  ~TypeInterner() = default;
 
   /**
    * @brief Get the instance of a NilType
@@ -163,6 +163,10 @@ public:
                        std::vector<Type::Pointer> const &arg_types)
       -> FunctionType::Pointer;
 
+  auto GetFunctionType(Type::Pointer                ret_type,
+                       std::vector<Type::Pointer> &&arg_types)
+      -> FunctionType::Pointer;
+
   /**
    * @brief Get the instance of a PointerType
    *
@@ -195,6 +199,9 @@ public:
    * @return TupleType* the TupleType
    */
   auto GetTupleType(std::vector<Type::Pointer> const &member_types)
+      -> TupleType::Pointer;
+
+  auto GetTupleType(std::vector<Type::Pointer> &&member_types)
       -> TupleType::Pointer;
 };
 

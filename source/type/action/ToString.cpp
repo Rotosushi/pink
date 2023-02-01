@@ -3,8 +3,8 @@
 #include "type/All.h"
 
 namespace pink {
-class ToStringVisitor
-    : public ConstVisitorResult<ToStringVisitor, const Type::Pointer,
+class TypeToStringVisitor
+    : public ConstVisitorResult<TypeToStringVisitor, const Type::Pointer,
                                 std::string>,
       public ConstTypeVisitor {
 public:
@@ -20,7 +20,7 @@ public:
   void Visit(const VoidType *void_type) const noexcept override;
 };
 
-void ToStringVisitor::Visit(const ArrayType *array_type) const noexcept {
+void TypeToStringVisitor::Visit(const ArrayType *array_type) const noexcept {
   assert(array_type != nullptr);
   result = "[";
   result += Compute(array_type->GetElementType(), this);
@@ -29,18 +29,20 @@ void ToStringVisitor::Visit(const ArrayType *array_type) const noexcept {
   result += "]";
 }
 
-void ToStringVisitor::Visit(const BooleanType *boolean_type) const noexcept {
+void TypeToStringVisitor::Visit(
+    const BooleanType *boolean_type) const noexcept {
   assert(boolean_type != nullptr);
   result = "Boolean";
 }
 
-void ToStringVisitor::Visit(
+void TypeToStringVisitor::Visit(
     const CharacterType *character_type) const noexcept {
   assert(character_type != nullptr);
   result = "Character";
 }
 
-void ToStringVisitor::Visit(const FunctionType *function_type) const noexcept {
+void TypeToStringVisitor::Visit(
+    const FunctionType *function_type) const noexcept {
   assert(function_type != nullptr);
   result = "(";
 
@@ -58,31 +60,33 @@ void ToStringVisitor::Visit(const FunctionType *function_type) const noexcept {
   result += Compute(function_type->GetReturnType(), this);
 }
 
-void ToStringVisitor::Visit(const IntegerType *integer_type) const noexcept {
+void TypeToStringVisitor::Visit(
+    const IntegerType *integer_type) const noexcept {
   assert(integer_type != nullptr);
   result = "Integer";
 }
 
-void ToStringVisitor::Visit(const NilType *nil_type) const noexcept {
+void TypeToStringVisitor::Visit(const NilType *nil_type) const noexcept {
   assert(nil_type != nullptr);
   result = "Nil";
 }
 
-void ToStringVisitor::Visit(const PointerType *pointer_type) const noexcept {
+void TypeToStringVisitor::Visit(
+    const PointerType *pointer_type) const noexcept {
   assert(pointer_type != nullptr);
   result = "Pointer<";
   result += Compute(pointer_type->GetPointeeType(), this);
   result += ">";
 }
 
-void ToStringVisitor::Visit(const SliceType *slice_type) const noexcept {
+void TypeToStringVisitor::Visit(const SliceType *slice_type) const noexcept {
   assert(slice_type != nullptr);
   result = "Slice<";
   result += Compute(slice_type->GetPointeeType(), this);
   result += ">";
 }
 
-void ToStringVisitor::Visit(const TupleType *tuple_type) const noexcept {
+void TypeToStringVisitor::Visit(const TupleType *tuple_type) const noexcept {
   assert(tuple_type != nullptr);
   result = "(";
 
@@ -99,13 +103,13 @@ void ToStringVisitor::Visit(const TupleType *tuple_type) const noexcept {
   result += ")";
 }
 
-void ToStringVisitor::Visit(const VoidType *void_type) const noexcept {
+void TypeToStringVisitor::Visit(const VoidType *void_type) const noexcept {
   assert(void_type != nullptr);
   result = "Void";
 }
 
 [[nodiscard]] auto ToString(const Type::Pointer type) noexcept -> std::string {
-  ToStringVisitor visitor;
+  TypeToStringVisitor visitor;
   return visitor.Compute(type, &visitor);
 }
 } // namespace pink

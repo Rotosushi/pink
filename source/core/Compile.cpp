@@ -71,6 +71,7 @@ auto Compile(std::ostream &err, Environment &env) -> int {
 
   for (auto &term : valid_terms) {
     auto *value = Codegen(term, env);
+    assert(value != nullptr);
   }
   return EXIT_SUCCESS;
 }

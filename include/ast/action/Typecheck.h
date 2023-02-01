@@ -28,7 +28,4 @@ using TypecheckResult = Outcome<Type::Pointer, Error>;
  */
 [[nodiscard]] auto Typecheck(const Ast::Pointer &ast, Environment &env) noexcept
     -> TypecheckResult;
-
-[[nodiscard]] auto Typecheck(const Ast *ast, Environment &env) noexcept
-    -> TypecheckResult;
 } // namespace pink
