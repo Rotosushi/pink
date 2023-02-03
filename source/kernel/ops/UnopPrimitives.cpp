@@ -6,13 +6,12 @@
 #include "support/DisableWarning.h"
 
 namespace pink {
-auto UnopIntNegate(llvm::Value *term, const Environment &env) -> llvm::Value * {
+auto UnopIntNegate(llvm::Value *term, Environment &env) -> llvm::Value * {
   assert(term != nullptr);
   return env.instruction_builder->CreateNeg(term, "neg");
 }
 
-auto UnopBoolNegate(llvm::Value *term, const Environment &env)
-    -> llvm::Value * {
+auto UnopBoolNegate(llvm::Value *term, Environment &env) -> llvm::Value * {
   assert(term != nullptr);
   return env.instruction_builder->CreateNot(term, "not");
 }
@@ -46,10 +45,10 @@ auto UnopBoolNegate(llvm::Value *term, const Environment &env)
 // NOLINTBEGIN
 NOWARN(
     "-Wunused-parameter",
-    auto UnopAddressOfValue(llvm::Value *term, const Environment &env)
+    auto UnopAddressOfValue(llvm::Value *term, Environment &env)
         ->llvm::Value * { return term; }
 
-    auto UnopValueOfAddress(llvm::Value *term, const Environment &env)
+    auto UnopValueOfAddress(llvm::Value *term, Environment &env)
         ->llvm::Value * { return term; })
 // NOLINTEND
 
@@ -59,10 +58,10 @@ void InitializeUnopPrimitives(const Environment &env) {
   Type::Pointer int_ptr_ty  = env.types->GetPointerType(int_ty);
   Type::Pointer bool_ptr_ty = env.types->GetPointerType(bool_ty);
 
-  InternedString neg_str    = env.operators->Intern("-");
-  InternedString not_str    = env.operators->Intern("!");
-  InternedString AOV_str    = env.operators->Intern("&");
-  InternedString VOA_str    = env.operators->Intern("*");
+  InternedString neg_str = env.operators->Intern("-");
+  InternedString not_str = env.operators->Intern("!");
+  InternedString AOV_str = env.operators->Intern("&");
+  InternedString VOA_str = env.operators->Intern("*");
 
   env.unops->Register(neg_str, int_ty, int_ty, UnopIntNegate);
   env.unops->Register(not_str, bool_ty, bool_ty, UnopBoolNegate);

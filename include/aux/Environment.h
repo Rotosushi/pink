@@ -5,6 +5,8 @@
  *
  */
 #pragma once
+#include <list>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -175,6 +177,8 @@ public:
    *
    */
   std::shared_ptr<SymbolTable> bindings;
+
+  // std::stack<SymbolTable, std::list<SymbolTable>> scope_stack;
 
   /**
    * @brief Records all Binary Operators ([binop](#InternedString)s) known to
@@ -408,6 +412,16 @@ private:
 public:
   void PrintErrorWithSourceText(std::ostream &out, const Error &error);
   void ClearFalseBindings() noexcept;
+
+  void PushScope();
+  void PopScope();
+
+  auto Lookup(SymbolTable::Key symbol) const
+      -> llvm::Optional<SymbolTable::Value>;
+  auto LookupLocal(SymbolTable::Key symbol) const
+      -> llvm::Optional<SymbolTable::Value>;
+  void Bind(SymbolTable::Key symbol, Type::Pointer type, llvm::Value *value);
+  void Unbind(SymbolTable::Key symbol);
 
   /**
    * @brief Constructs a new global Environment. With all members initialized

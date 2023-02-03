@@ -230,8 +230,8 @@ void CodegenVisitor::Visit(const Binop *binop) const noexcept {
 
   auto implementation = literal->second->Lookup(left_type, right_type);
   assert(implementation.has_value());
-  result = implementation->second->generate(llvm_left_type, left_value,
-                                            llvm_right_type, right_value, env);
+  result = implementation->second->GetGenerateFn()(
+      llvm_left_type, left_value, llvm_right_type, right_value, env);
 }
 
 /*

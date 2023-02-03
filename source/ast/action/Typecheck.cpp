@@ -161,7 +161,7 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
     result = left_outcome;
     return;
   }
-  auto *left_type    = left_outcome.GetFirst();
+  auto *left_type = left_outcome.GetFirst();
 
   auto right_outcome = Compute(assignment->GetRight(), this);
   if (!right_outcome) {
@@ -229,7 +229,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
     result = left_result;
     return;
   }
-  auto *left_type   = left_result.GetFirst();
+  auto *left_type = left_result.GetFirst();
 
   auto right_result = Compute(binop->GetRight(), this);
   if (!right_result) {
@@ -238,7 +238,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
   }
   auto *right_type = right_result.GetFirst();
 
-  auto literal     = env.binops->Lookup(binop->GetOp());
+  auto literal = env.binops->Lookup(binop->GetOp());
 
   if (!literal || literal->second->NumOverloads() == 0) {
     std::string errmsg = "Unknown binop [";
@@ -261,7 +261,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
     return;
   }
 
-  auto *result_type = implementation->second->result_type;
+  auto *result_type = implementation->second->GetReturnType();
   binop->SetCachedType(result_type);
   result = result_type;
 }
@@ -326,7 +326,7 @@ void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {
     result = first_result;
     return;
   }
-  auto *first_type   = first_result.GetFirst();
+  auto *first_type = first_result.GetFirst();
 
   auto second_result = Compute(conditional->GetSecond(), this);
   if (!second_result) {
@@ -361,7 +361,7 @@ void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
     result = left_result;
     return;
   }
-  auto *left_type      = left_result.GetFirst();
+  auto *left_type = left_result.GetFirst();
 
   auto *structure_type = llvm::dyn_cast<TupleType>(left_type);
   if (structure_type == nullptr) {
@@ -422,7 +422,7 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
   Environment &old_env   = env;
   env                    = *local_env;
 
-  auto Cleanup           = [&]() {
+  auto Cleanup = [&]() {
     UnbindArguments();
     local_env->ClearFalseBindings();
   };
@@ -496,7 +496,7 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
     result = left_result;
     return;
   }
-  auto *left_type     = left_result.GetFirst();
+  auto *left_type = left_result.GetFirst();
 
   auto element_result = [&]() -> TypecheckResult {
     if (auto *array_type = llvm::dyn_cast<ArrayType>(left_type);
@@ -621,7 +621,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
     if (!right_result) {
       return right_result.GetSecond();
     }
-    auto *right_type   = right_result.GetFirst();
+    auto *right_type = right_result.GetFirst();
 
     std::string errmsg = "No implementation of unop [";
     errmsg             += unop->GetOp();
@@ -632,7 +632,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   }();
   auto &implementation = implementation_result.GetFirst();
 
-  auto *result_type    = implementation.second->GetReturnType();
+  auto *result_type = implementation.second->GetReturnType();
   unop->SetCachedType(result_type);
   result = result_type;
 }

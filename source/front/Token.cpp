@@ -17,9 +17,6 @@ auto TokenToString(const Token token) -> std::string {
   case Token::Id: {
     return {"Token::Id"};
   }
-  case Token::FullyQualifiedId: {
-    return {"Token::FullyQualifiedId"};
-  }
   case Token::Op: {
     return {"Token::Op"};
   }

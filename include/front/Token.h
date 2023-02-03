@@ -17,9 +17,8 @@ enum class Token {
   Error, // an erroneous token
   End,   // EOF
 
-  Id,               // [a-zA-Z_][a-zA-Z0-9_]*
-  FullyQualifiedId, // Id (:: Id)+
-  Op,               // [+\-*\\%<=>&|\^!~@$]+
+  Id, // [a-zA-Z_][a-zA-Z0-9_]*
+  Op, // [+\-*\\%<=>&|\^!~@$]+
 
   Dot,       // '.'
   Comma,     // ','

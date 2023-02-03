@@ -16,8 +16,7 @@ class Environment;
  * @brief pointer to a function which can be used to generate an implementation
  * of a given unop
  */
-using UnopCodegenFn = llvm::Value *(*)(llvm::Value       *term,
-                                       const Environment &env);
+using UnopCodegenFn = llvm::Value *(*)(llvm::Value *term, Environment &env);
 
 class UnopCodegen {
 private:

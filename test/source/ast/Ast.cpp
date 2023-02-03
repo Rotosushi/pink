@@ -23,13 +23,23 @@ static auto RandomLocation() -> pink::Location {
           distribution(generator), distribution(generator)};
 }
 
-static auto IntegerChild() -> pink::Ast::Pointer {
+/*
+static auto RandomIntegerChild() -> pink::Ast::Pointer {
   pink::Location                           location;
   std::mt19937                             generator;
   std::uniform_int_distribution<long long> distribution(0);
   long long                                value = distribution(generator);
   return std::make_unique<pink::Integer>(location, value);
 }
+
+static auto RandomBooleanChild() -> pink::Ast::Pointer {
+  pink::Location              location;
+  std::mt19937                generator;
+  std::bernoulli_distribution distribution;
+  bool                        value = distribution(generator);
+  return std::make_unique<pink::Boolean>(location, value);
+}
+*/
 
 TEST_CASE("ast/Application", "[unit][ast]") {
   pink::Location               location = RandomLocation();

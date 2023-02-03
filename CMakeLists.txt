@@ -258,6 +258,8 @@ add_executable(tests
 
   test/source/ast/Ast.cpp
 
+  test/source/type/Type.cpp
+
   test/source/aux/Error.cpp
   test/source/aux/InternalFlags.cpp
   test/source/aux/Location.cpp
@@ -266,7 +268,12 @@ add_executable(tests
   test/source/aux/SymbolTable.cpp
   test/source/aux/TypeInterner.cpp
 
-  test/source/type/Type.cpp
+  test/source/front/Token.cpp
+  test/source/front/Lexer.cpp
+
+  test/source/ops/Binops.cpp
+  test/source/ops/Unops.cpp
+
 )
 
 target_include_directories(tests PUBLIC 

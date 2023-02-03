@@ -164,7 +164,7 @@ type = "Nil"
      | "Array" template
      | type {"->" type}
 
-template = "<" type {"," type} "<"
+template = "<" type {"," type} ">"
 
 identifier = [a-zA-Z_][a-zA-Z0-9_]*
 integer = [0-9]+

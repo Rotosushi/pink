@@ -29,7 +29,7 @@ private:
   Associativity              associativity;
 
 public:
-  BinopLiteral() noexcept  = default;
+  BinopLiteral() noexcept  = delete;
   ~BinopLiteral() noexcept = default;
   BinopLiteral(Precedence precedence, Associativity associativity) noexcept;
   BinopLiteral(Precedence precedence, Associativity associativity,

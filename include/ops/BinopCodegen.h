@@ -16,16 +16,16 @@ class Environment;
 
 using BinopCodegenFn = llvm::Value *(*)(llvm::Type *lty, llvm::Value *left,
                                         llvm::Type *rty, llvm::Value *right,
-                                        const Environment &env);
+                                        Environment &env);
 
 /**
  * @brief Represents an implementation of a particular Binop
  */
 class BinopCodegen {
-public:
   Type::Pointer  result_type;
   BinopCodegenFn generate;
 
+public:
   BinopCodegen() noexcept  = delete;
   ~BinopCodegen() noexcept = default;
   BinopCodegen(Type::Pointer ret_t, BinopCodegenFn fn_p) noexcept
@@ -35,5 +35,10 @@ public:
   auto operator=(const BinopCodegen &other) noexcept
       -> BinopCodegen                                           & = default;
   auto operator=(BinopCodegen &&other) noexcept -> BinopCodegen & = default;
+
+  [[nodiscard]] auto GetReturnType() const -> Type::Pointer {
+    return result_type;
+  }
+  [[nodiscard]] auto GetGenerateFn() const -> BinopCodegenFn { return generate; }
 };
 } // namespace pink

@@ -3,7 +3,7 @@
 
 namespace pink {
 auto BinopIntAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                 llvm::Value *right, const Environment &env) -> llvm::Value * {
+                 llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -13,7 +13,7 @@ auto BinopIntAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntSub(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                 llvm::Value *right, const Environment &env) -> llvm::Value * {
+                 llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -23,7 +23,7 @@ auto BinopIntSub(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntMul(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                 llvm::Value *right, const Environment &env) -> llvm::Value * {
+                 llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -33,7 +33,7 @@ auto BinopIntMul(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntSDiv(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                  llvm::Value *right, const Environment &env) -> llvm::Value * {
+                  llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -43,7 +43,7 @@ auto BinopIntSDiv(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntMod(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                 llvm::Value *right, const Environment &env) -> llvm::Value * {
+                 llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -53,7 +53,7 @@ auto BinopIntMod(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                llvm::Value *right, const Environment &env) -> llvm::Value * {
+                llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -63,7 +63,7 @@ auto BinopIntEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopBoolEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                 llvm::Value *right, const Environment &env) -> llvm::Value * {
+                 llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -73,7 +73,7 @@ auto BinopBoolEq(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                llvm::Value *right, const Environment &env) -> llvm::Value * {
+                llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -83,7 +83,7 @@ auto BinopIntNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopBoolNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                 llvm::Value *right, const Environment &env) -> llvm::Value * {
+                 llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -93,7 +93,7 @@ auto BinopBoolNe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntGt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                llvm::Value *right, const Environment &env) -> llvm::Value * {
+                llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -103,7 +103,7 @@ auto BinopIntGt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntGe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                llvm::Value *right, const Environment &env) -> llvm::Value * {
+                llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -113,7 +113,7 @@ auto BinopIntGe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntLt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                llvm::Value *right, const Environment &env) -> llvm::Value * {
+                llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -123,7 +123,7 @@ auto BinopIntLt(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopIntLe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                llvm::Value *right, const Environment &env) -> llvm::Value * {
+                llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -133,7 +133,7 @@ auto BinopIntLe(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopBoolAnd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                  llvm::Value *right, const Environment &env) -> llvm::Value * {
+                  llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -143,7 +143,7 @@ auto BinopBoolAnd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 }
 
 auto BinopBoolOr(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
-                 llvm::Value *right, const Environment &env) -> llvm::Value * {
+                 llvm::Value *right, Environment &env) -> llvm::Value * {
   assert(lty != nullptr);
   assert(rty != nullptr);
   assert(left != nullptr);
@@ -189,32 +189,32 @@ void InitializeBinopPrimitives(const Environment &env) {
           + -       : 4
           * / %     : 5
   */
-  InternedString minus     = env.operators->Intern("-");
-  InternedString plus      = env.operators->Intern("+");
-  InternedString mul       = env.operators->Intern("*");
-  InternedString div       = env.operators->Intern("/");
-  InternedString mod       = env.operators->Intern("%");
-  InternedString land      = env.operators->Intern("&");
-  InternedString lor       = env.operators->Intern("|");
-  InternedString cmpeq     = env.operators->Intern("==");
-  InternedString cmpne     = env.operators->Intern("!=");
-  InternedString cmplt     = env.operators->Intern("<");
-  InternedString cmple     = env.operators->Intern("<=");
-  InternedString cmpgt     = env.operators->Intern(">");
-  InternedString cmpge     = env.operators->Intern(">=");
+  InternedString minus = env.operators->Intern("-");
+  InternedString plus  = env.operators->Intern("+");
+  InternedString mul   = env.operators->Intern("*");
+  InternedString div   = env.operators->Intern("/");
+  InternedString mod   = env.operators->Intern("%");
+  InternedString land  = env.operators->Intern("&");
+  InternedString lor   = env.operators->Intern("|");
+  InternedString cmpeq = env.operators->Intern("==");
+  InternedString cmpne = env.operators->Intern("!=");
+  InternedString cmplt = env.operators->Intern("<");
+  InternedString cmple = env.operators->Intern("<=");
+  InternedString cmpgt = env.operators->Intern(">");
+  InternedString cmpge = env.operators->Intern(">=");
 
-  Type::Pointer int_ty     = env.types->GetIntType();
-  Type::Pointer bool_ty    = env.types->GetBoolType();
+  Type::Pointer int_ty  = env.types->GetIntType();
+  Type::Pointer bool_ty = env.types->GetBoolType();
   // Type *int_slice_ty       = env.types->GetSliceType(int_ty);
   // Type *bool_slice_ty      = env.types->GetSliceType(bool_ty);
 
   Associativity left_assoc = Associativity::Left;
   // Associativity right_assoc = Associativity::Right;
-  Precedence    one        = 1;
-  Precedence    two        = 2;
-  Precedence    three      = 3;
-  Precedence    four       = 4;
-  Precedence    five       = 5;
+  Precedence    one   = 1;
+  Precedence    two   = 2;
+  Precedence    three = 3;
+  Precedence    four  = 4;
+  Precedence    five  = 5;
 
   env.binops->Register(cmpeq, one, left_assoc, int_ty, int_ty, bool_ty,
                        BinopIntEq);
