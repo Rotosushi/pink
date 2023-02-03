@@ -2,7 +2,7 @@
 
 #include "aux/InternalFlags.h"
 
-TEST_CASE("aux/pink::InternalFlags", "[unit][aux]") {
+TEST_CASE("aux/InternalFlags", "[unit][aux]") {
   pink::InternalFlags flags;
 
   REQUIRE(flags.OnTheLHSOfAssignment() == false);

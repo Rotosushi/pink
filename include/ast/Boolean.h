@@ -22,13 +22,13 @@ private:
   bool value;
 
 public:
-  Boolean(const Location &location, const bool value) noexcept
+  Boolean(const Location &location, bool value) noexcept
       : Ast(Ast::Kind::Boolean, location), value(value) {}
-  ~Boolean() noexcept override = default;
-  Boolean(const Boolean &other) noexcept = delete;
-  Boolean(Boolean &&other) noexcept = default;
+  ~Boolean() noexcept override                               = default;
+  Boolean(const Boolean &other) noexcept                     = delete;
+  Boolean(Boolean &&other) noexcept                          = default;
   auto operator=(const Boolean &other) noexcept -> Boolean & = delete;
-  auto operator=(Boolean &&other) noexcept -> Boolean & = default;
+  auto operator=(Boolean &&other) noexcept -> Boolean      & = default;
 
   static auto classof(const Ast *ast) noexcept -> bool {
     return Ast::Kind::Boolean == ast->GetKind();

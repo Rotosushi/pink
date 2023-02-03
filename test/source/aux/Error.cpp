@@ -51,7 +51,7 @@ static auto ProperlyUnderlined(std::string    &description,
   }
 }
 
-TEST_CASE("aux/pink::Error", "[unit][aux]") {
+TEST_CASE("aux/Error", "[unit][aux]") {
   std::string  bad_source = "some erroneous input text";
   std::mt19937 generator;
 

@@ -4,7 +4,7 @@
 
 #include <random>
 
-TEST_CASE("aux/pink::Location", "[unit][aux]") {
+TEST_CASE("aux/Location", "[unit][aux]") {
   std::mt19937                          generator;
   std::uniform_int_distribution<size_t> distribution(0);
 

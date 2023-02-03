@@ -106,11 +106,11 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
 }
 
 /*
-  The layout of an IntegerType is an integer of width 32
+  The layout of an IntegerType is an integer of width 64
 */
 void ToLLVMVisitor::Visit(const IntegerType *integer_type) const noexcept {
   assert(integer_type != nullptr);
-  result = env.instruction_builder->getInt32Ty();
+  result = env.instruction_builder->getInt64Ty();
 }
 
 /*

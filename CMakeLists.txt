@@ -256,13 +256,17 @@ target_include_directories(pink PUBLIC
 
 add_executable(tests 
 
+  test/source/ast/Ast.cpp
+
   test/source/aux/Error.cpp
   test/source/aux/InternalFlags.cpp
   test/source/aux/Location.cpp
   test/source/aux/Outcome.cpp
   test/source/aux/StringInterner.cpp
+  test/source/aux/SymbolTable.cpp
   test/source/aux/TypeInterner.cpp
 
+  test/source/type/Type.cpp
 )
 
 target_include_directories(tests PUBLIC 

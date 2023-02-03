@@ -2,7 +2,7 @@
 
 #include "aux/TypeInterner.h"
 
-TEST_CASE("aux/pink::TypeInterner", "[unit][aux]") {
+TEST_CASE("aux/TypeInterner", "[unit][aux]") {
   pink::TypeInterner interner;
 
   // NilType equality

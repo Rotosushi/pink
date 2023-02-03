@@ -2,7 +2,7 @@
 
 #include "aux/StringInterner.h"
 
-TEST_CASE("aux/pink::StringInterner", "[unit][aux]") {
+TEST_CASE("aux/StringInterner", "[unit][aux]") {
   pink::StringInterner interner;
   std::string          string1 = "some_variable";
   std::string          string2 = "another_variable";

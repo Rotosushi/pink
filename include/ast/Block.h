@@ -16,18 +16,18 @@ namespace pink {
  */
 class Block : public Ast {
 public:
-  using ExpressionsType = std::vector<Ast::Pointer>;
-  using iterator = ExpressionsType::iterator;
-  using const_iterator = ExpressionsType::const_iterator;
+  using Expressions = std::vector<Ast::Pointer>;
+  using iterator = Expressions::iterator;
+  using const_iterator = Expressions::const_iterator;
 
 private:
-  ExpressionsType expressions;
+  Expressions expressions;
   mutable SymbolTable::Pointer scope;
 
 public:
   Block(const Location &location, SymbolTable *outer_scope) noexcept
       : Ast(Ast::Kind::Block, location), scope(outer_scope) {}
-  Block(const Location &location, ExpressionsType expressions,
+  Block(const Location &location, Expressions expressions,
         SymbolTable *outer_scope) noexcept
       : Ast(Ast::Kind::Block, location), expressions(std::move(expressions)),
         scope(outer_scope) {}
@@ -39,8 +39,8 @@ public:
 
   auto IsEmpty() const noexcept -> bool { return begin() == end(); }
 
-  auto GetExpressions() noexcept -> ExpressionsType & { return expressions; }
-  auto GetExpressions() const noexcept -> const ExpressionsType & {
+  auto GetExpressions() noexcept -> Expressions & { return expressions; }
+  auto GetExpressions() const noexcept -> const Expressions & {
     return expressions;
   }
   auto GetScope() noexcept -> SymbolTable::Pointer & { return scope; }

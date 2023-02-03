@@ -2,7 +2,7 @@
 
 #include "aux/Outcome.h"
 
-TEST_CASE("aux/pink::Outcome", "[unit][aux]") {
+TEST_CASE("aux/Outcome", "[unit][aux]") {
   pink::Outcome<int, bool> outcome;
 
   REQUIRE(outcome.GetWhich() == false);
