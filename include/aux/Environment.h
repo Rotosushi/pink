@@ -80,6 +80,48 @@ namespace pink {
  * of the core llvm data structures. such as the uniqued types and values.)
  * so, since we want to use pointers, and we want ownsership, owning pointers
  * seemed the best solution.
+ *
+ * #NOTE 2/3/2023
+ * After some more reflection on this,
+ * This solution require needless memory allocations.
+ * this is because
+ * A) a single llvm::LLVMContext is not threadsafe.
+ * we have to construct a new LLVMContext per thread. This means
+ * that when we want to add multiple source file compilation we
+ * are going to need a single LLVMContext per source file.
+ * Thus, it makes sense to have a single Environment per thread.
+ * Thus, it is actually strange to store the CLIOptions class in the
+ * environment, given that it is going to hold a list of all of the
+ * source files requested by the command line arguments.
+ * Thus instead the Environment should get the options
+ * it needs to do it's work on a single file.
+ * B) the solution to nesting scopes is cumbersome, as currently
+ * Ast nodes keep track of their own scopes. (Functions, Blocks)
+ * it would be cleaner and more convienient if the Environment
+ * kept track of a stack of scopes, and handled the bookeeping of
+ * binding names to the current top of the stack. Then code
+ * in the Typechecker and Codegen visitors could simply Push and
+ * Pop scopes when needed.
+ * Given that the Environment keeps track of the scopes, and
+ * code interfacing with the scopes does not need to construct a
+ * new environment to represent an environment with a new scope,
+ * we don't need to store these scopes via a shared_ptr.
+ * (as the shared_ptrs are there to avoid making unnecessary copies
+ * of every Environment member when binding a new scope) This
+ * means that we don't need a shared_ptr holding the SymbolTable,
+ * but it also means we don't need a shared_ptr holding any of the
+ * members of the environment at all. Because we never actually
+ * need to copy an environment. Thus we can make all members im
+ * place in the environment. This means we truly only have a
+ * single Environment allocation per source file, instead of
+ * an environment allocation per scope being processed within
+ * a given source file.
+ * Overall I think this reduces the number and size of allocations,
+ * so it's might be a performance win, as well as simplify the
+ * code.
+ * I still think it's good design to hide Environment construction
+ * behind a static method, as this allows said static method to
+ * initialize the LLVM data structures correctly for compilation.
  */
 class Environment {
 public:
@@ -413,6 +455,7 @@ public:
   void PrintErrorWithSourceText(std::ostream &out, const Error &error);
   void ClearFalseBindings() noexcept;
 
+  /*
   void PushScope();
   void PopScope();
 
@@ -422,7 +465,7 @@ public:
       -> llvm::Optional<SymbolTable::Value>;
   void Bind(SymbolTable::Key symbol, Type::Pointer type, llvm::Value *value);
   void Unbind(SymbolTable::Key symbol);
-
+  */
   /**
    * @brief Constructs a new global Environment. With all members initialized
    * for native codegeneration.

@@ -431,7 +431,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   assert(body_value != nullptr);
 
   if (is_main) {
-    CodegenSysExit(body_value, env);
+    SysExit(body_value, env);
     env.instruction_builder->CreateRetVoid();
   } else {
     if (llvm_return_type->isSingleValueType()) {

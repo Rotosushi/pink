@@ -48,11 +48,11 @@ namespace pink {
 // in this particular case, we are calling exit(), which does
 // not return into our program.
 //
-void CodegenSysExit(llvm::Value *exit_code, const Environment &env) {
+void SysExit(llvm::Value *exit_code, const Environment &env) {
   assert(exit_code != nullptr);
 
   llvm::Type *int64Ty = env.instruction_builder->getInt64Ty();
-  llvm::Type *voidTy = env.instruction_builder->getVoidTy();
+  llvm::Type *voidTy  = env.instruction_builder->getVoidTy();
 
   std::vector<llvm::Type *> noArgsTy = {};
 

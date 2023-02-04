@@ -19,8 +19,8 @@
         and use getopt_long(...) to parse the options provided
         to the program.
 
-        This works fantastically on unix like operating systems, and
-        this header file should be available on almost any conceivable
+        This works on unix like operating systems, and
+        the header file should be available on almost any conceivable
         POSIX operating system. Which shouldn't limit this programs
         distributability within the wide array of flavors of Linux.
 
@@ -29,8 +29,8 @@
         compiler to be available cross platform, using getopt might not
         facilitate that directly. On windows in particular there are several
         workarounds, like MinGW/CygWin (whichever is still supported) or the
-        Windows Subsystem for Linux, which runs a full linux OS within the
-        host windows system. For apple devices it seems like there is a
+        Windows Subsystem for Linux.
+        For apple devices it seems like there is a
         workaround with macports?
         https://stackoverflow.com/questions/402377/using-getopts-to-process-long-and-short-command-line-options
         This requires an additional dependency for installation on OSX computers

@@ -16,9 +16,9 @@ namespace pink {
  * @param env the environment of this compilation unit
  * @return llvm::Value* the exit code of the call to sys_write
  */
-auto CodegenWriteSlice(llvm::Value *file_descriptor,
-                       llvm::StructType *slice_type, llvm::Value *slice_ptr,
-                       const Environment &env) -> llvm::Value *;
+auto SysWriteSlice(llvm::Value *file_descriptor, llvm::StructType *slice_type,
+                   llvm::Value *slice_ptr, const Environment &env)
+    -> llvm::Value *;
 
 /**
  * @brief Calls sys_write passing in the data from a given text allocation
@@ -29,8 +29,8 @@ auto CodegenWriteSlice(llvm::Value *file_descriptor,
  * @param env the environment of this compilation unit
  * @return llvm::Value* the exit code of the call to sys_write
  */
-auto CodegenWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
-                      llvm::Value *text_ptr, const Environment &env)
+auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
+                  llvm::Value *text_ptr, const Environment &env)
     -> llvm::Value *;
 
 /**
@@ -43,7 +43,6 @@ auto CodegenWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
  * @param env the environment of this compilation unit
  * @return llvm::Value* the exit code of the call to sys_write
  */
-auto CodegenSysWrite(llvm::Value *file_descriptor, llvm::Value *size,
-                     llvm::Value *buffer, const Environment &env)
-    -> llvm::Value *;
+auto SysWrite(llvm::Value *file_descriptor, llvm::Value *size,
+              llvm::Value *buffer, const Environment &env) -> llvm::Value *;
 } // namespace pink

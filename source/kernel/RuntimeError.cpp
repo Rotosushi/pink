@@ -27,7 +27,7 @@ void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
     #NOTE #CONCERN:
       Here we allocate global text (the way we handle it should work for
       both ascii and utf-8) however, how do we ensure that we are using
-      the correct type between AllocateGlobalText and CodegenWriteText?
+      the correct type between AllocateGlobalText and SysWriteText?
 
   */
   auto *error_string   = AllocateGlobalText(Gensym(), error_description, env);
@@ -36,7 +36,7 @@ void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
   auto *string_type    = llvm::cast<llvm::StructType>(
       ToLLVM(env.types->GetArrayType(size, character_type), env));
   auto *stderr_fd = env.instruction_builder->getInt64(2);
-  CodegenWriteText(stderr_fd, string_type, error_string, env);
-  CodegenSysExit(exit_code, env);
+  SysWriteText(stderr_fd, string_type, error_string, env);
+  SysExit(exit_code, env);
 }
 } // namespace pink

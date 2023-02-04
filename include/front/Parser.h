@@ -81,7 +81,6 @@ type = "Nil"
      | "Boolean"
      | "(" type {"," type} ")"
      | "[" type "x" integer "]"
-     | "ptr" type
      | "Ptr" "<" type ">"
 
 // these are the regular expressions used by re2c
@@ -93,6 +92,18 @@ integer = [0-9]+
  */
 
 /*
+  an interesting thing we could do is allow all statements 
+  to appear at the tope level. (as one would do in a REPL like 
+  language such as Python), and to answer the question of 
+  when these statements are evaluated, we could answer with
+  at compile time. This would be instead of (or maybe in addition 
+  to) a comptime keyword. This would allow for more complex initialization 
+  of global variables. However, since globals are bad design
+  it might simply be better to continue to not even parse 
+  disallowed top-level statements and simply add a comptime 
+  keyword, which would allow for initialization at compile
+  time. Of course this discussion is theoretical.
+
   what about this EBNF grammar?
 
 top = declaration ";"
