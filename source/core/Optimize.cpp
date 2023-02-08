@@ -5,7 +5,7 @@
 namespace pink {
 auto Optimize(std::ostream &out, Environment &env) -> int {
   assert(out.good());
-  if (env.options->optimization_level != llvm::OptimizationLevel::O0) {
+  if (env.cli_options->optimization_level != llvm::OptimizationLevel::O0) {
     llvm::LoopAnalysisManager     LAM;
     llvm::FunctionAnalysisManager FAM;
     llvm::CGSCCAnalysisManager    CGAM;
@@ -27,10 +27,10 @@ auto Optimize(std::ostream &out, Environment &env) -> int {
     passBuilder.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
     llvm::ModulePassManager MPM = passBuilder.buildPerModuleDefaultPipeline(
-        env.options->optimization_level);
+        env.cli_options->optimization_level);
 
     // Run the optimizer agains the IR
-    MPM.run(*env.llvm_module, MAM);
+    MPM.run(*env.module, MAM);
   }
   return EXIT_SUCCESS;
 }

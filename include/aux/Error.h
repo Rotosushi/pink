@@ -78,6 +78,7 @@ public:
 
     // semantic errors
     OutOfBounds,
+    IntegerOutOfBounds,
     ValueCannotBeAssigned,
     NonConstGlobalInit,
     NonConstArrayInit,
@@ -92,18 +93,27 @@ public:
    * @brief The error code of this particular error
    *
    */
-  Code code = Error::Code::None;
+  Code code;
 
   /**
    * @brief the syntactic location of this particular error
    *
    */
-  Location loc = Location();
+  Location location;
 
   /**
    * @brief the text representing information about the error generated at the
    * time of the errors creation.
    *
+   * \note it would be really nice if we could make this member a std::string_view.
+   * for both time and space efficiency. However, there are instances where we 
+   * construct more elaborate error messages using strings constructed at the 
+   * point where the error is found. In this case we must hold the dynamic 
+   * allocation of the string, and not simply a reference to text held somewhere 
+   * else. if we could store the strings elsewhere, then the error structure itself 
+   * could be made smaller and thus faster to return. But the issue arises 
+   * precisely because we must store the string computed for it to be processed 
+   * higher up the call stack. (when the error is handled.)
    */
   std::string text;
 
@@ -115,11 +125,11 @@ public:
    * own to truly help the user locate and correct the error, they are simply
    * the common parts of each error message, stored seperately from any
    * particular error message to help reduce the size of any particular error
-   * as it is passed around. (it would be faster to only store a reference 
-   * to the complete message in some lookup table, but it would really only 
-   * reduce some stack traffic, as we *want* highly context dependent information 
-   * only knowable at the particular place the error was generated to be 
-   * propagated out to help compose the error message. )
+   * as it is passed around. (it would be faster to only store a reference
+   * to the complete message in some lookup table, but it would really only
+   * reduce some stack traffic, as we *want* highly context dependent
+   * information only knowable at the particular place the error was generated
+   * to be propagated out to help compose the error message. )
    *
    * \warning it is unsafe to write to any message returned from this routine,
    * as all messages are globally stored c-strings
@@ -134,7 +144,7 @@ public:
    * and empty text
    *
    */
-  Error() = default;
+  Error() : code(Error::Code::None) {}
 
   /**
    * @brief Destroy the Error object
@@ -159,7 +169,7 @@ public:
    * @brief Construct a new Error.
    *
    * @param code the code this error represents.
-   * @param l the textual location of this error.
+   * @param location the textual location of this error.
    * @param text contextual text relevant to this particular error.
    */
   Error(Code code, Location location, std::string text = "");
@@ -181,17 +191,12 @@ public:
   auto operator=(Error &&other) -> Error & = default;
 
   /**
-   * @brief converts this particular error to a single string of text.
+   * @brief convert this error to a string representing the error
    *
-   * @param txt the line of text which created this error (can be empty)
-   * @return std::string the text representing this particular error..
+   * @param bad_source the line of source causing the error
+   * @return std::string
    */
-  auto ToString(const char *txt) const -> std::string;
-
-  /**
-   * @copydoc Error::ToString(const char* txt)
-   */
-  auto ToString(std::string &txt) const -> std::string;
+  [[nodiscard]] auto ToString(std::string_view bad_source) const -> std::string;
 
   /**
    * @brief print this particular error to the given output stream.
@@ -200,12 +205,8 @@ public:
    * @param txt the line of text which created this error
    * @return std::ostream& the output stream given
    */
-  auto Print(std::ostream &out, std::string &txt) const -> std::ostream &;
-
-  /**
-   * @copydoc Error::Print(std::ostream& out, std::string& txt)
-   */
-  auto Print(std::ostream &out, const char *txt) const -> std::ostream &;
+  auto Print(std::ostream &out, std::string_view bad_source) const
+      -> std::ostream &;
 };
 
 /**

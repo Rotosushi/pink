@@ -1,9 +1,11 @@
-#include "kernel/StoreValue.h"
-#include "kernel/StoreAggregate.h"
+#include "runtime/StoreValue.h"
+#include "runtime/StoreAggregate.h"
 
 namespace pink {
-void StoreValue(llvm::Type *type, llvm::Value *destination, llvm::Value *source,
-                const Environment &env) {
+void StoreValue(llvm::Type  *type,
+                llvm::Value *destination,
+                llvm::Value *source,
+                Environment &env) {
   assert(type != nullptr);
   assert(destination != nullptr);
   assert(source != nullptr);

@@ -17,6 +17,6 @@ namespace pink {
  * @return llvm::GlobalVariable* the newly allocated text.
  */
 auto AllocateGlobalText(const std::string &name, const std::string &text,
-                        const Environment &env) -> llvm::GlobalVariable *;
+                        Environment &env) -> llvm::GlobalVariable *;
 
 } // namespace pink

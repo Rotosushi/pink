@@ -155,6 +155,7 @@ add_library(common STATIC
 	source/aux/Outcome.cpp
 	source/aux/StringInterner.cpp
 	source/aux/SymbolTable.cpp
+  source/aux/ScopeStack.cpp
 	source/aux/TypeInterner.cpp
 	source/aux/InternalFlags.cpp
 
@@ -176,28 +177,26 @@ add_library(common STATIC
 		
 	# the 'kernel' directory is for files which implement functionality 
 	# of the language itself
-	source/kernel/ops/BinopPrimitives.cpp
-	source/kernel/ops/UnopPrimitives.cpp
-	source/kernel/sys/SysExit.cpp
-	source/kernel/sys/SysWrite.cpp
-	source/kernel/Cast.cpp
-	source/kernel/StoreAggregate.cpp
-	source/kernel/StoreValue.cpp
-	source/kernel/LoadValue.cpp
-	source/kernel/AllocateVariable.cpp 
-	source/kernel/AllocateText.cpp
-	source/kernel/RuntimeError.cpp
-	source/kernel/SliceSubscript.cpp
-	source/kernel/ArraySubscript.cpp
+	source/runtime/ops/BinopPrimitives.cpp
+	source/runtime/ops/UnopPrimitives.cpp
+	source/runtime/sys/SysExit.cpp
+	source/runtime/sys/SysWrite.cpp
+	source/runtime/StaticCast.cpp
+	source/runtime/StoreAggregate.cpp
+	source/runtime/StoreValue.cpp
+	source/runtime/LoadValue.cpp
+	source/runtime/AllocateVariable.cpp 
+	source/runtime/AllocateText.cpp
+	source/runtime/RuntimeError.cpp
+	source/runtime/SliceSubscript.cpp
+	source/runtime/ArraySubscript.cpp
 
 
-	# the 'support' directory is for files which define necessary or convenient 
-	# subroutines, which are too small to justify their own class.
+	# the 'support' directory is for files which define small, 
+  # self-contained, and necessary or convienent header files
 	source/support/LLVMErrorToString.cpp
 	source/support/LLVMValueToString.cpp
-	source/support/LLVMTypeToString.cpp 
-	source/support/EmitFile.cpp
-	source/support/Gensym.cpp
+	source/support/LLVMTypeToString.cpp
 
   # the 'visitor' directory is for the visitor interfaces
   source/visitor/VisitorResult.cpp 
@@ -256,6 +255,8 @@ target_include_directories(pink PUBLIC
 
 add_executable(tests 
 
+  test/source/core/main.cpp
+
   test/source/ast/Ast.cpp
 
   test/source/type/Type.cpp
@@ -270,9 +271,11 @@ add_executable(tests
 
   test/source/front/Token.cpp
   test/source/front/Lexer.cpp
+  test/source/front/Parser.cpp
 
   test/source/ops/Binops.cpp
   test/source/ops/Unops.cpp
+
 
 )
 
@@ -281,7 +284,7 @@ target_include_directories(tests PUBLIC
 )
 
 target_link_libraries(tests
-PRIVATE Catch2::Catch2WithMain
+PRIVATE Catch2::Catch2
 PUBLIC common
 )
 

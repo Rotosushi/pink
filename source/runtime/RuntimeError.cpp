@@ -1,7 +1,7 @@
-#include "kernel/RuntimeError.h"
-#include "kernel/AllocateText.h"
-#include "kernel/sys/SysExit.h"
-#include "kernel/sys/SysWrite.h"
+#include "runtime/RuntimeError.h"
+#include "runtime/AllocateText.h"
+#include "runtime/sys/SysExit.h"
+#include "runtime/sys/SysWrite.h"
 
 #include "support/Gensym.h"
 
@@ -20,21 +20,13 @@ namespace pink {
 // information into the error string produced. To do that we must allocate the
 // contextual information as well, and the RuntimeError mechanism must
 // emit both strings. (similar to how we handle Syntax/Type/Semantic Errors.)
-void RuntimeError(const std::string &error_description, llvm::Value *exit_code,
-                  Environment &env) {
+void RuntimeError(const std::string &description,
+                  llvm::Value       *exit_code,
+                  Environment       &env) {
   assert(exit_code != nullptr);
-  /*
-    #NOTE #CONCERN:
-      Here we allocate global text (the way we handle it should work for
-      both ascii and utf-8) however, how do we ensure that we are using
-      the correct type between AllocateGlobalText and SysWriteText?
-
-  */
-  auto *error_string   = AllocateGlobalText(Gensym(), error_description, env);
-  auto  size           = error_description.size() + 1;
-  auto *character_type = env.types->GetCharacterType();
-  auto *string_type    = llvm::cast<llvm::StructType>(
-      ToLLVM(env.types->GetArrayType(size, character_type), env));
+  auto *error_string{AllocateGlobalText(Gensym(), description, env)};
+  auto *array_type{env.type_interner.GetTextType(description.size())};
+  auto *string_type{llvm::cast<llvm::StructType>(ToLLVM(array_type, env))};
   auto *stderr_fd = env.instruction_builder->getInt64(2);
   SysWriteText(stderr_fd, string_type, error_string, env);
   SysExit(exit_code, env);

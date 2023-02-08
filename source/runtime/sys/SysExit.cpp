@@ -1,5 +1,5 @@
-#include "kernel/sys/SysExit.h"
-#include "kernel/Cast.h"
+#include "runtime/sys/SysExit.h"
+#include "runtime/StaticCast.h"
 
 #include "support/LLVMErrorToString.h"
 
@@ -48,7 +48,7 @@ namespace pink {
 // in this particular case, we are calling exit(), which does
 // not return into our program.
 //
-void SysExit(llvm::Value *exit_code, const Environment &env) {
+void SysExit(llvm::Value *exit_code, Environment &env) {
   assert(exit_code != nullptr);
 
   llvm::Type *int64Ty = env.instruction_builder->getInt64Ty();
@@ -70,7 +70,8 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
     }
 
     mov_rdi = llvm::InlineAsm::get(
-        mov_rdi_type, "mov rdi, $1",
+        mov_rdi_type,
+        "mov rdi, $1",
         "={rdi},i", // this says the instruction writes an argument,
                     // which is an immediate integer, to rdi
         true,       // hasSideEffects
@@ -86,7 +87,8 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
     }
 
     mov_rdi = llvm::InlineAsm::get(
-        mov_rdi_type, "mov rdi, $1",
+        mov_rdi_type,
+        "mov rdi, $1",
         "={rdi},r", // this says the instruction writes an argument,
                     // which is a register, to rdi
         true,       // hasSideEffects
@@ -108,7 +110,8 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
   }
 
   llvm::InlineAsm *mov_rax = llvm::InlineAsm::get(
-      mov_rax_type, "mov rax, 60",
+      mov_rax_type,
+      "mov rax, 60",
       "={rax}", // this says the instruction writes an immediate int to rax
       true,     // hasSideEffects
       false,    // isAlignStack
@@ -116,7 +119,8 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
       false); // canThrow
 
   llvm::InlineAsm *syscall = llvm::InlineAsm::get(
-      syscall_type, "syscall",
+      syscall_type,
+      "syscall",
       "",    // syscall uses no data, and does not return in this case,
              // other times it's return value is within rax.
       true,  // hasSideEffect
@@ -124,10 +128,12 @@ void SysExit(llvm::Value *exit_code, const Environment &env) {
       llvm::InlineAsm::AsmDialect::AD_Intel,
       false); // canThrow
 
-  Outcome<llvm::Value *, Error> cast_result = Cast(exit_code, int64Ty, env);
+  Outcome<llvm::Value *, Error> cast_result =
+      StaticCast(exit_code, int64Ty, env);
   assert(cast_result);
 
-  env.instruction_builder->CreateCall(mov_rdi_type, mov_rdi,
+  env.instruction_builder->CreateCall(mov_rdi_type,
+                                      mov_rdi,
                                       {cast_result.GetFirst()});
   env.instruction_builder->CreateCall(mov_rax_type, mov_rax);
   env.instruction_builder->CreateCall(syscall_type, syscall);

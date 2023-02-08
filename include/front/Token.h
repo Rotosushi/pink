@@ -40,7 +40,7 @@ enum class Token {
   True,        // "true"
   False,       // "false"
   BooleanType, // "Boolean"
-  Ptr,         // "ptr"
+  Pointer,     // "Pointer"
 
   Fn,    // 'fn'
   Var,   // 'var'

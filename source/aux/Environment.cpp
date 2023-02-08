@@ -2,8 +2,8 @@
 
 #include "aux/Environment.h"
 
-#include "kernel/ops/BinopPrimitives.h"
-#include "kernel/ops/UnopPrimitives.h"
+#include "runtime/ops/BinopPrimitives.h"
+#include "runtime/ops/UnopPrimitives.h"
 
 #include "llvm/Support/Host.h"
 #include "llvm/Support/TargetSelect.h"
@@ -14,125 +14,80 @@
 
 #include "llvm/Passes/OptimizationLevel.h"
 
+#include "llvm/IR/LegacyPassManager.h"
+
 namespace pink {
-Environment::Environment(
-    std::shared_ptr<InternalFlags> flags, std::shared_ptr<CLIOptions> options,
-    std::shared_ptr<Parser> parser, std::shared_ptr<StringInterner> symbols,
-    std::shared_ptr<StringInterner> operators,
-    std::shared_ptr<TypeInterner> types, std::shared_ptr<SymbolTable> bindings,
-    std::shared_ptr<BinopTable> binops, std::shared_ptr<UnopTable> unops,
-    std::shared_ptr<llvm::LLVMContext> context,
-    std::shared_ptr<llvm::Module>      llvm_module,
-    std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
-    // std::shared_ptr<llvm::DIBuilder>             debug_builder,
-    const llvm::Target *target, llvm::TargetMachine *target_machine,
-    const llvm::DataLayout &data_layout)
-    : false_bindings(std::make_shared<std::vector<InternedString>>()),
-      flags(std::move(flags)), options(std::move(options)),
-      parser(std::move(parser)), symbols(std::move(symbols)),
-      operators(std::move(operators)), types(std::move(types)),
-      bindings(std::move(bindings)), binops(std::move(binops)),
-      unops(std::move(unops)), context(std::move(context)),
-      llvm_module(std::move(llvm_module)),
-      instruction_builder(std::move(instruction_builder)),
-      // debug_builder(debug_builder),
-      target(target), target_machine(target_machine), data_layout(data_layout),
-      current_function(nullptr) {}
-
-Environment::Environment(const Environment           &env,
-                         std::shared_ptr<SymbolTable> bindings)
-    : false_bindings(std::make_shared<std::vector<InternedString>>()),
-      flags(env.flags), options(env.options), parser(env.parser),
-      symbols(env.symbols), operators(env.operators), types(env.types),
-      bindings(std::move(bindings)), binops(env.binops), unops(env.unops),
-      context(env.context), llvm_module(env.llvm_module),
-      instruction_builder(env.instruction_builder),
-      // debug_builder(env.debug_builder),
-      target(env.target), target_machine(env.target_machine),
-      data_layout(env.data_layout), current_function(env.current_function) {}
-
-Environment::Environment(const Environment                 &env,
-                         std::shared_ptr<SymbolTable>       bindings,
-                         std::shared_ptr<llvm::IRBuilder<>> instruction_builder,
-                         llvm::Function                    *current_function)
-    : false_bindings(std::make_shared<std::vector<InternedString>>()),
-      flags(env.flags), options(env.options), parser(env.parser),
-      symbols(env.symbols), operators(env.operators), types(env.types),
-      bindings(std::move(bindings)), binops(env.binops), unops(env.unops),
-      context(env.context), llvm_module(env.llvm_module),
-      instruction_builder(std::move(instruction_builder)),
-      // debug_builder(env.debug_builder),
-      target(env.target), target_machine(env.target_machine),
-      data_layout(env.data_layout), current_function(current_function) {}
-
-Environment::Environment(const Environment                 &env,
-                         std::shared_ptr<llvm::IRBuilder<>> builder)
-    : false_bindings(std::make_shared<std::vector<InternedString>>()),
-      flags(env.flags), options(env.options), parser(env.parser),
-      symbols(env.symbols), operators(env.operators), types(env.types),
-      bindings(env.bindings), binops(env.binops), unops(env.unops),
-      context(env.context), llvm_module(env.llvm_module),
-      instruction_builder(std::move(builder)), target(env.target),
-      target_machine(env.target_machine), data_layout(env.data_layout),
-      current_function(env.current_function) {}
-
-void Environment::PrintErrorWithSourceText(std::ostream &out,
-                                           const Error  &error) {
-  auto bad_source = parser->ExtractLine(error.loc);
-  error.Print(out, bad_source);
+auto Environment::Gensym(std::string_view prefix) -> InternedString {
+  auto generate = [&]() {
+    std::string sym{prefix};
+    sym += std::to_string(gensym_counter);
+    sym += "__";
+    return sym;
+  };
+  const auto *candidate{variable_interner.Intern(generate())};
+  while (scopes.LookupLocal(candidate).has_value()) {
+    candidate = variable_interner.Intern(generate());
+  }
+  return candidate;
 }
 
-void Environment::ClearFalseBindings() noexcept {
-  for (const auto *binding : *false_bindings) {
-    bindings->Unbind(binding);
+auto Environment::EmitFiles(std::ostream &err) const -> int {
+  if (cli_options.flags.EmitObject()) {
+    if (EmitObjectFile(err) == EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
   }
 
-  false_bindings->clear();
+  if (cli_options.flags.EmitAssembly()) {
+    if (EmitAssemblyFile(err) == EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
+  }
+  return EXIT_SUCCESS;
 }
 
-auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options)
-    -> std::unique_ptr<Environment> {
-  return NewGlobalEnv(std::move(options), &std::cin);
-}
-
-auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
-                               std::istream               *instream)
-    -> std::unique_ptr<Environment> {
-  auto flags     = std::make_shared<InternalFlags>();
-  auto parser    = std::make_shared<Parser>(instream);
-  auto symbols   = std::make_shared<StringInterner>();
-  auto operators = std::make_shared<StringInterner>();
-  auto types     = std::make_shared<TypeInterner>();
-  auto bindings  = std::make_shared<SymbolTable>();
-  auto binops    = std::make_shared<BinopTable>();
-  auto unops     = std::make_shared<UnopTable>();
-
-  std::shared_ptr<llvm::LLVMContext> context =
-      std::make_shared<llvm::LLVMContext>();
-
-  // This works for native code generation.
-  // because the compiler is a process running
-  // on the host machine. so the processTriple would be a
-  // target triple suitable to generating code for the host machine.
-  // that is, native code generation.
-  // then cross platform codegeneration would be specified via the
-  // command line, and as such we can write a switch over known and
-  // supported generation targets to select the correct target_triple.
-  // (and cpu, cpu features, and any other target specific information.)
-  std::string target_triple = llvm::sys::getProcessTriple();
-
-  std::string         error;
-  const llvm::Target *target =
-      llvm::TargetRegistry::lookupTarget(target_triple, error);
-
-  if (target == nullptr) {
-    FatalError(error.data(), __FILE__, __LINE__);
+auto Environment::EmitObjectFile(std::ostream &err) const -> int {
+  auto                 filename = cli_options.GetLLVMFilename();
+  std::error_code      outfile_error;
+  llvm::raw_fd_ostream outfile{filename, outfile_error};
+  if (outfile_error) {
+    err << "Couldn't open output file [" << filename << "] " << outfile_error
+        << "\n";
+    return EXIT_FAILURE;
   }
 
-  // get the native CPU name.
-  std::string cpu = llvm::sys::getHostCPUName().str();
+  module->print(outfile, nullptr);
+  return EXIT_SUCCESS;
+}
 
-  // get the native CPU features.
+auto Environment::EmitAssemblyFile(std::ostream &err) const -> int {
+  auto                 filename = cli_options.GetAsmFilename();
+  std::error_code      outfile_error{};
+  llvm::raw_fd_ostream outfile{filename, outfile_error};
+  if (outfile_error) {
+    err << "Couldn't open output file [" << filename << "]" << outfile_error
+        << "\n";
+    return EXIT_FAILURE;
+  }
+
+  llvm::legacy::PassManager AssemblyPrinter;
+  auto                      failed{target_machine->addPassesToEmitFile(
+      AssemblyPrinter,
+      outfile,
+      nullptr,
+      llvm::CodeGenFileType::CGFT_AssemblyFile)};
+
+  if (failed) {
+    err << "Target machine [" << target_machine->getTargetCPU().data() << ","
+        << target_machine->getTargetTriple().str()
+        << "] cannot write an assembly file.\n";
+    return EXIT_FAILURE;
+  }
+  AssemblyPrinter.run(module.operator*());
+  return EXIT_SUCCESS;
+}
+
+auto Environment::NativeCPUFeatures() noexcept -> std::string {
   std::string           cpu_features;
   llvm::StringMap<bool> features;
 
@@ -143,19 +98,15 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
     unsigned jdx      = 0;
 
     while (idx != end) {
-      // the StringMap<bool> maps strings (keys) to bools (values)
-      // where the bool is true if the feature string is available on the target
-      // and the bool is false if the feature string is unavailable on the
-      // target. each feature available (and specified within the feature
-      // string) must be prefixed with '+', and similarly unavailable features
-      // must be prefixed with '-'.
       if ((*idx).getValue()) {
-        cpu_features += std::string("+") + (*idx).getKeyData();
+        cpu_features += std::string("+");
+        cpu_features += idx->getKeyData();
       } else {
-        cpu_features += std::string("-") + (*idx).getKeyData();
+        cpu_features += std::string("-");
+        cpu_features += idx->getKeyData();
       }
 
-      if (jdx < (numElems - 1)) { // comma separate the features
+      if (jdx < (numElems - 1)) {
         cpu_features += ",";
       }
 
@@ -163,102 +114,50 @@ auto Environment::NewGlobalEnv(std::shared_ptr<CLIOptions> options,
       jdx++;
     }
   }
-  // #TODO: TargetOptions works fine default constructed, but
-  // reading the docs, and the class definition, this
-  // structure seems like it is used for
-  // optimization/profiling and specifying extra rules
-  // for compilation, like what floating point rules to
-  // use, and such. This might be useful when considering
-  // optimizations to turn on or specific optimization flags
-  // available to the user. 1/9/2023
-  llvm::TargetOptions    target_options;
-  // #TODO: position independant code is a fine default,
-  // however we should allow the user to change this via the command line
-  // 1/9/2023
-  llvm::Reloc::Model     code_relocation_model = llvm::Reloc::Model::PIC_;
-  // #TODO: the Small x86-64 code model is a fine default for x86-64,
-  // however this must change if the code being compiled becomes larger
-  // than 2GB, or if the data within the code or being processed by the
-  // code becomes larger than 2GB. So we should add an option on the
-  // command line to select between models. 1/9/2023
-  // NOTE: this is something to look at for the future, does the
-  // codegeneration fail if we don't meet the uder 2GB requirement?
-  // would our program be able to recover from such an error?
-  llvm::CodeModel::Model code_model = llvm::CodeModel::Model::Small;
 
-  llvm::TargetMachine *target_machine = nullptr;
-  target_machine                      = target->createTargetMachine(
-      target_triple, cpu, cpu_features, target_options, code_relocation_model,
-      code_model);
+  return cpu_features;
+}
 
-  llvm::DataLayout data_layout = target_machine->createDataLayout();
+auto Environment::CreateNativeGlobalEnv(CLIOptions cli_options) -> Environment {
+  auto        context       = std::make_unique<llvm::LLVMContext>();
+  std::string target_triple = llvm::sys::getProcessTriple();
 
-  auto instruction_builder = std::make_shared<llvm::IRBuilder<>>(*context);
-  auto llvm_module =
-      std::make_shared<llvm::Module>(options->input_file, *context);
+  std::string         error;
+  const llvm::Target *target =
+      llvm::TargetRegistry::lookupTarget(target_triple, error);
+  if (target == nullptr) {
+    FatalError(error.data(), __FILE__, __LINE__);
+  }
 
-  llvm_module->setSourceFileName(options->input_file);
-  llvm_module->setDataLayout(data_layout);
-  llvm_module->setTargetTriple(target_triple);
+  auto *target_machine =
+      target->createTargetMachine(target_triple,
+                                  llvm::sys::getHostCPUName().str(),
+                                  NativeCPUFeatures(),
+                                  llvm::TargetOptions{},
+                                  llvm::Reloc::Model::PIC_,
+                                  llvm::CodeModel::Model::Small);
+  auto data_layout = target_machine->createDataLayout();
 
-  // #TODO: construct classes which are used to generate
-  // debugging information for a given source unit.
-  // 1/16/2023: this todo is on hold for now,
-  // because adding debug information requires us to tell the
-  // debugger how to call our functions.
+  auto instruction_builder = std::make_unique<llvm::IRBuilder<>>(*context);
+  auto module =
+      std::make_unique<llvm::Module>(cli_options.input_file, *context);
+  module->setSourceFileName(cli_options.input_file);
+  module->setDataLayout(data_layout);
+  module->setTargetTriple(target_triple);
 
-  // a minor gripe about the DIBuilder class, the class itself takes
-  // as an argument a pointer to a DICompileUnit, which makes complete
-  // sense, to associate the Builder of debug info with a class
-  // which holds data common to debugging information, the DICompileUnit.
-  // the issue is that DIBuilder is also the class with a method to
-  // construct a DICompileUnit from arguments. yet no way to set the constructed
-  // compile unit as the current one associated with the class?
-  // to me it seems that the most natural way of constructing these two classes
-  // is to create the CompileUnit and then the DIBuilder, so then why
-  // does DIBuilder hold a method for constructing a DICompileUnit?
-  // Is the intended flow to construct a DIBuilder, use it to make a
-  // DICompileUnit, then make another DIBuilder associated with the
-  // DICompileUnit? It seems like there is a redundant step in there.
-  //
+  Environment env{std::move(cli_options),
+                  std::move(context),
+                  std::move(module),
+                  std::move(instruction_builder),
+                  target_machine};
 
-  // const llvm::DIBuilder temp_debug_builder(*llvm_module);
-  // llvm::DICompileUnit* debug_compile_unit =
-  // temp_debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C);
-
-  // std::shared_ptr<llvm::DIBuilder> debug_builder =
-  // std::make_shared<llvm::DIBuilder>(*llvm_module, /* allowUnresolved = */
-  // true, debug_compile_unit);
-
-  auto env = std::unique_ptr<Environment>(new Environment(
-      flags, std::move(options), parser, symbols, operators, types, bindings,
-      binops, unops, context, llvm_module, instruction_builder, target,
-      target_machine, data_layout));
-
-  InitializeBinopPrimitives(*env);
-  InitializeUnopPrimitives(*env);
+  InitializeBinopPrimitives(env);
+  InitializeUnopPrimitives(env);
 
   return env;
 }
 
-auto Environment::NewLocalEnv(const Environment           &outer,
-                              std::shared_ptr<SymbolTable> bindings)
-    -> std::unique_ptr<Environment> {
-  return std::unique_ptr<Environment>(new Environment(outer, bindings));
-}
-
-auto Environment::NewLocalEnv(const Environment                 &outer,
-                              std::shared_ptr<SymbolTable>       bindings,
-                              std::shared_ptr<llvm::IRBuilder<>> builder,
-                              llvm::Function                    *function)
-    -> std::unique_ptr<Environment> {
-  return std::unique_ptr<Environment>(
-      new Environment(outer, bindings, builder, function));
-}
-
-auto Environment::NewLocalEnv(const Environment                 &outer,
-                              std::shared_ptr<llvm::IRBuilder<>> builder)
-    -> std::unique_ptr<Environment> {
-  return std::unique_ptr<Environment>(new Environment(outer, builder));
+auto Environment::CreateNativeGlobalEnv() -> Environment {
+  return CreateNativeGlobalEnv(CLIOptions{});
 }
 } // namespace pink

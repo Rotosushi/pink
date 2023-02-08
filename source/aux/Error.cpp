@@ -1,39 +1,29 @@
 #include "aux/Error.h"
 
-namespace pink {
-Error::Error(Error::Code code, Location loc, std::string text)
-    : code(code), loc(loc), text(std::move(text)) {}
+#include <sstream>
 
-auto Error::ToString(const char *txt) const -> std::string {
-  std::string tmp = txt;
-  return ToString(tmp);
+namespace pink {
+Error::Error(Error::Code code, Location location, std::string text)
+    : code(code), location(location), text(std::move(text)) {}
+
+auto Error::ToString(std::string_view bad_source) const -> std::string {
+  std::stringstream stream;
+  Print(stream, bad_source);
+  return stream.str(); // how can we avoid a copy here?
 }
 
-auto Error::ToString(std::string &errtxt) const -> std::string {
-  std::string result;
-
-  result += CodeToErrText(code) + std::string(": ") + std::string(text) + "\n";
-  result += errtxt + "\n";
-
-  for (size_t i = 0; i < errtxt.size(); i++) {
-    if ((i < loc.firstColumn) || (i >= loc.lastColumn)) {
-      result += " ";
+auto Error::Print(std::ostream &out, std::string_view bad_source) const
+    -> std::ostream & {
+  out << CodeToErrText(code) << ": " << text << "\n";
+  out << bad_source << "\n";
+  for (std::size_t i = 0; i < bad_source.size(); i++) {
+    if ((i < location.firstColumn) || (i >= location.lastColumn)) {
+      out << " ";
     } else {
-      result += "^";
+      out << "^";
     }
   }
-  result += "\n";
-
-  return result;
-}
-
-auto Error::Print(std::ostream &out, std::string &txt) const -> std::ostream & {
-  out << ToString(txt);
-  return out;
-}
-
-auto Error::Print(std::ostream &out, const char *txt) const -> std::ostream & {
-  out << ToString(txt);
+  out << "\n";
   return out;
 }
 

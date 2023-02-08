@@ -4,10 +4,10 @@
  * @version 0.1
  */
 #pragma once
-#include <memory>  // std::unique_ptr
-#include <utility> // std::pair
+#include <memory>   // std::unique_ptr
+#include <optional> // std::optional
+#include <utility>  // std::pair
 
-#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 
 #include "aux/StringInterner.h"
@@ -36,6 +36,6 @@ public:
                 UnopCodegenFn fn_p) -> std::pair<InternedString, UnopLiteral *>;
   void Unregister(InternedString opr);
   auto Lookup(InternedString opr)
-      -> llvm::Optional<std::pair<InternedString, UnopLiteral *>>;
+      -> std::optional<std::pair<InternedString, UnopLiteral *>>;
 };
 } // namespace pink

@@ -22,7 +22,7 @@ void UnopLiteral::Unregister(Type::Pointer arg_t) {
 }
 
 auto UnopLiteral::Lookup(Type::Pointer arg_t)
-    -> llvm::Optional<std::pair<Type::Pointer, UnopCodegen *>> {
+    -> std::optional<std::pair<Type::Pointer, UnopCodegen *>> {
   auto iter = overloads.find(arg_t);
 
   if (iter == overloads.end()) {

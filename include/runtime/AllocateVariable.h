@@ -22,7 +22,7 @@ namespace pink {
  * @return llvm::Value* the pointer to the newly allocated variable
  */
 auto AllocateVariable(const std::string &name, llvm::Type *type,
-                      const Environment &env,
+                      Environment &env,
                       llvm::Value *initializer = nullptr) -> llvm::Value *;
 
 /**
@@ -36,7 +36,7 @@ auto AllocateVariable(const std::string &name, llvm::Type *type,
  * @return llvm::GlobalVariable* the newly allocated global variable
  */
 auto AllocateGlobal(const std::string &name, llvm::Type *type,
-                    const Environment &env, llvm::Value *initializer = nullptr)
+                    Environment &env, llvm::Value *initializer = nullptr)
     -> llvm::GlobalVariable *;
 
 /**
@@ -53,7 +53,7 @@ auto AllocateGlobal(const std::string &name, llvm::Type *type,
  * @return llvm::AllocaInst* the newly allocated local variable
  */
 auto AllocateLocal(const std::string &name, llvm::Type *type,
-                   const Environment &env, llvm::Value *initializer = nullptr)
+                   Environment &env, llvm::Value *initializer = nullptr)
     -> llvm::AllocaInst *;
 
 } // namespace pink

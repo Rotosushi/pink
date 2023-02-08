@@ -4,10 +4,10 @@
  * @version 0.1
  */
 #pragma once
-#include <memory>  // std::unique_ptr
-#include <utility> // std::pair
+#include <memory>   // std::unique_ptr
+#include <optional> // std::optional
+#include <utility>  // std::pair
 
-#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 
 #include "ops/BinopCodegen.h"
@@ -58,6 +58,6 @@ public:
   void Unregister(Type::Pointer left_t, Type::Pointer right_t);
 
   auto Lookup(Type::Pointer left_t, Type::Pointer right_t)
-      -> llvm::Optional<std::pair<Key, BinopCodegen *>>;
+      -> std::optional<std::pair<Key, BinopCodegen *>>;
 };
 } // namespace pink

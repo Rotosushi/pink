@@ -1,4 +1,4 @@
-#include "kernel/StoreAggregate.h"
+#include "runtime/StoreAggregate.h"
 
 namespace pink {
 /*
@@ -17,9 +17,9 @@ namespace pink {
  *  through every single valued element in an iterative solution as well, the
  *  potential cost of this recursive solution is not too expensive in terms
  *  of space or time, compared to an imagined fully iterative solution.
- * 
- *  note that this solution is meant to be used in conjunction with calls to 
- *  memcpy. As a call to memcpy for larger types is more efficient than this 
+ *
+ *  note that this solution is meant to be used in conjunction with calls to
+ *  memcpy. As a call to memcpy for larger types is more efficient than this
  *  solution. (I believe, have not tested).
  *
  *  there are two distinct cases that cannot be mixed however, and that is
@@ -29,11 +29,11 @@ namespace pink {
  *  variables with a constant. Now this is not useful for initializing
  *  GlobalVariables, as they can already be given aggregate llvm::Constant*
  *  as initializers, but it does come in handy when considering initializing
- *  a local variable with a constant initializer. The other case comes when 
- *  we need to lower something like tuple assignment. When we want to store 
- *  the value at some location into another location. This happens when we pass 
- *  arguments to procedures, or return arguments from procedures (copy-elision 
- *  is an optimization, I am speaking about the base semantics), or when we 
+ *  a local variable with a constant initializer. The other case comes when
+ *  we need to lower something like tuple assignment. When we want to store
+ *  the value at some location into another location. This happens when we pass
+ *  arguments to procedures, or return arguments from procedures (copy-elision
+ *  is an optimization, I am speaking about the base semantics), or when we
  *  want to assign or bind an aggregate value to another variable.
  *
  *
@@ -41,7 +41,7 @@ namespace pink {
  *  if ... else ... clause, we are going to split the procedure into
  *  two functions. one for storing a llvm::Constant* Aggregate into
  *  a memory location, and one for storing the contents of one memory
- *  location into another. 
+ *  location into another.
  *
  *  Input Constraints:
  *   -) type of src and dest must be equivalent, and each must have type
@@ -86,8 +86,10 @@ namespace pink {
 
 
 */
-void StoreAggregate(llvm::Type *type, llvm::Value *destination,
-                    llvm::Value *source, const Environment &env) {
+void StoreAggregate(llvm::Type  *type,
+                    llvm::Value *destination,
+                    llvm::Value *source,
+                    Environment &env) {
   assert(type != nullptr);
   assert(destination != nullptr);
   assert(source != nullptr);
@@ -99,8 +101,10 @@ void StoreAggregate(llvm::Type *type, llvm::Value *destination,
   }
 }
 
-void StoreConstAggregate(llvm::Type *type, llvm::Value *destination,
-                         llvm::Constant *source, const Environment &env) {
+void StoreConstAggregate(llvm::Type     *type,
+                         llvm::Value    *destination,
+                         llvm::Constant *source,
+                         Environment    &env) {
   assert(type != nullptr);
   assert(destination != nullptr);
   assert(source != nullptr);
@@ -127,16 +131,22 @@ void StoreConstAggregate(llvm::Type *type, llvm::Value *destination,
         // forth. the fourth argument is the index into the type given,
         // so this would be an element of the array given, the first elem
         // is at offset 0, then offset 1 is the second element and so on.
-        llvm::Value *elemPtr = env.instruction_builder->CreateConstGEP2_32(
-            array_type, destination, 0, i);
+        llvm::Value *elemPtr =
+            env.instruction_builder->CreateConstGEP2_32(array_type,
+                                                        destination,
+                                                        0,
+                                                        i);
         env.instruction_builder->CreateStore(source->getAggregateElement(i),
                                              elemPtr);
       }
     } else {
       size_t length = array_type->getNumElements();
       for (size_t i = 0; i < length; i++) {
-        llvm::Value *elemPtr = env.instruction_builder->CreateConstGEP2_32(
-            array_type, destination, 0, i);
+        llvm::Value *elemPtr =
+            env.instruction_builder->CreateConstGEP2_32(array_type,
+                                                        destination,
+                                                        0,
+                                                        i);
         // We have a pointer to the element we are going to store into, but
         // because that element is itself an aggregate we call
         // StoreConstAggregate to perform the storing of that particular
@@ -145,8 +155,10 @@ void StoreConstAggregate(llvm::Type *type, llvm::Value *destination,
         // type of constant element held within the constant array. Thus,
         // we can pass in the llvm::Constant* to that element itself as the
         // source for the new call to StoreConstAggregate.
-        StoreConstAggregate(array_type->getElementType(), elemPtr,
-                            source->getAggregateElement(i), env);
+        StoreConstAggregate(array_type->getElementType(),
+                            elemPtr,
+                            source->getAggregateElement(i),
+                            env);
       }
     }
   } else if (auto *struct_type = llvm::dyn_cast<llvm::StructType>(type)) {
@@ -157,8 +169,11 @@ void StoreConstAggregate(llvm::Type *type, llvm::Value *destination,
 
     size_t idx = 0;
     while (llvm::Constant *src_element = source->getAggregateElement(idx)) {
-      llvm::Value *dest_elem_ptr = env.instruction_builder->CreateConstGEP2_32(
-          struct_type, destination, 0, idx);
+      llvm::Value *dest_elem_ptr =
+          env.instruction_builder->CreateConstGEP2_32(struct_type,
+                                                      destination,
+                                                      0,
+                                                      idx);
       llvm::Type *elem_type = src_element->getType();
 
       if (elem_type->isSingleValueType()) {
@@ -172,12 +187,15 @@ void StoreConstAggregate(llvm::Type *type, llvm::Value *destination,
 
   } else {
     FatalError("Unsupported Aggregate Type passed to StoreConstAggregate",
-               __FILE__, __LINE__);
+               __FILE__,
+               __LINE__);
   }
 }
 
-void StoreValueAggregate(llvm::Type *type, llvm::Value *destination,
-                         llvm::Value *source, const Environment &env) {
+void StoreValueAggregate(llvm::Type  *type,
+                         llvm::Value *destination,
+                         llvm::Value *source,
+                         Environment &env) {
   assert(type != nullptr);
   assert(destination != nullptr);
   assert(source != nullptr);
@@ -186,12 +204,18 @@ void StoreValueAggregate(llvm::Type *type, llvm::Value *destination,
 
     if (elem_ty->isSingleValueType()) {
       size_t length = array_type->getNumElements();
-      size_t idx = 0;
+      size_t idx    = 0;
       while (idx < length) {
-        llvm::Value *dst_elem_ptr = env.instruction_builder->CreateConstGEP2_32(
-            array_type, destination, 0, idx);
-        llvm::Value *src_elem_ptr = env.instruction_builder->CreateConstGEP2_32(
-            array_type, source, 0, idx);
+        llvm::Value *dst_elem_ptr =
+            env.instruction_builder->CreateConstGEP2_32(array_type,
+                                                        destination,
+                                                        0,
+                                                        idx);
+        llvm::Value *src_elem_ptr =
+            env.instruction_builder->CreateConstGEP2_32(array_type,
+                                                        source,
+                                                        0,
+                                                        idx);
 
         llvm::Value *src_value =
             env.instruction_builder->CreateLoad(elem_ty, src_elem_ptr);
@@ -201,12 +225,18 @@ void StoreValueAggregate(llvm::Type *type, llvm::Value *destination,
       }
     } else {
       size_t length = array_type->getNumElements();
-      size_t idx = 0;
+      size_t idx    = 0;
       while (idx < length) {
-        llvm::Value *dst_elem_ptr = env.instruction_builder->CreateConstGEP2_32(
-            array_type, destination, 0, idx);
-        llvm::Value *src_elem_ptr = env.instruction_builder->CreateConstGEP2_32(
-            array_type, source, 0, idx);
+        llvm::Value *dst_elem_ptr =
+            env.instruction_builder->CreateConstGEP2_32(array_type,
+                                                        destination,
+                                                        0,
+                                                        idx);
+        llvm::Value *src_elem_ptr =
+            env.instruction_builder->CreateConstGEP2_32(array_type,
+                                                        source,
+                                                        0,
+                                                        idx);
 
         StoreValueAggregate(elem_ty, dst_elem_ptr, src_elem_ptr, env);
         idx += 1;
@@ -214,13 +244,19 @@ void StoreValueAggregate(llvm::Type *type, llvm::Value *destination,
     }
   } else if (auto *struct_type = llvm::dyn_cast<llvm::StructType>(type)) {
     size_t length = struct_type->getNumElements();
-    size_t idx = 0;
+    size_t idx    = 0;
     while (idx < length) {
-      llvm::Type *elem_ty = struct_type->getElementType(idx);
-      llvm::Value *dst_elem_ptr = env.instruction_builder->CreateConstGEP2_32(
-          struct_type, destination, 0, idx);
-      llvm::Value *src_elem_ptr = env.instruction_builder->CreateConstGEP2_32(
-          struct_type, source, 0, idx);
+      llvm::Type  *elem_ty = struct_type->getElementType(idx);
+      llvm::Value *dst_elem_ptr =
+          env.instruction_builder->CreateConstGEP2_32(struct_type,
+                                                      destination,
+                                                      0,
+                                                      idx);
+      llvm::Value *src_elem_ptr =
+          env.instruction_builder->CreateConstGEP2_32(struct_type,
+                                                      source,
+                                                      0,
+                                                      idx);
 
       if (elem_ty->isSingleValueType()) {
         llvm::Value *src_value =
@@ -234,7 +270,8 @@ void StoreValueAggregate(llvm::Type *type, llvm::Value *destination,
     }
   } else {
     FatalError("Unsupported Aggregate Type passed to StoreValueAggregate",
-               __FILE__, __LINE__);
+               __FILE__,
+               __LINE__);
   }
 }
 } // namespace pink

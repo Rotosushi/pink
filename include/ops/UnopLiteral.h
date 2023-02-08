@@ -4,10 +4,10 @@
  * @version 0.1
  */
 #pragma once
-#include <memory>  // std::shared_ptr
-#include <utility> // std::pair
+#include <memory>   // std::shared_ptr
+#include <optional> // std::optional
+#include <utility>  // std::pair
 
-#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/DenseMap.h"
 
 #include "ops/UnopCodegen.h"
@@ -37,7 +37,7 @@ public:
       -> std::pair<Type::Pointer, UnopCodegen *>;
   void Unregister(Type::Pointer arg_t);
   auto Lookup(Type::Pointer arg_t)
-      -> llvm::Optional<std::pair<Type::Pointer, UnopCodegen *>>;
+      -> std::optional<std::pair<Type::Pointer, UnopCodegen *>>;
 };
 
 } // namespace pink

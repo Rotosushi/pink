@@ -1,4 +1,4 @@
-#include "kernel/Cast.h"
+#include "runtime/StaticCast.h"
 
 #include "llvm/IR/DerivedTypes.h"
 
@@ -58,7 +58,7 @@ namespace pink {
 // emit the uitofp instruction
 //
 //
-auto Cast(llvm::Value *value, llvm::Type *target_type, const Environment &env)
+auto StaticCast(llvm::Value *value, llvm::Type *target_type, Environment &env)
     -> Outcome<llvm::Value *, Error> {
   llvm::Type *value_type = value->getType();
 
@@ -81,7 +81,7 @@ auto Cast(llvm::Value *value, llvm::Type *target_type, const Environment &env)
     //
     if (auto *to_type = llvm::dyn_cast<llvm::IntegerType>(target_type)) {
       unsigned from_bitwidth = from_type->getBitWidth();
-      unsigned to_bitwidth = to_type->getBitWidth();
+      unsigned to_bitwidth   = to_type->getBitWidth();
 
       // if the value being extended is a positive integer, then the sign bit
       // is zero and a zext will result in the correct number in the resulting
@@ -114,7 +114,8 @@ auto Cast(llvm::Value *value, llvm::Type *target_type, const Environment &env)
       }
 
       // from_bitwidth == to_bitwidth
-      return {env.instruction_builder->CreateBitCast(value, target_type,
+      return {env.instruction_builder->CreateBitCast(value,
+                                                     target_type,
                                                      "bitcast")};
     }
     // else if (llvm::PointerType* to_type =

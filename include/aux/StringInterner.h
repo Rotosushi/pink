@@ -59,12 +59,7 @@ public:
    * @param str the string to intern
    * @return InternedString the InternedString representing the string passed in
    */
-  auto Intern(const char *str) -> InternedString;
-
-  /**
-   * @copydoc StringInterner::Intern(const char* str)
-   */
-  auto Intern(std::string &str) -> InternedString;
+  auto Intern(std::string_view str) -> InternedString;
 };
 
 } // namespace pink

@@ -40,7 +40,7 @@ void UnopTable::Unregister(InternedString opr) {
 }
 
 auto UnopTable::Lookup(InternedString opr)
-    -> llvm::Optional<std::pair<InternedString, UnopLiteral *>> {
+    -> std::optional<std::pair<InternedString, UnopLiteral *>> {
   auto iter = table.find(opr);
 
   if (iter == table.end()) {

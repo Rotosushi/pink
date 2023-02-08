@@ -3,8 +3,6 @@
 #include "core/Compile.h"
 #include "core/Link.h"
 
-#include "support/EmitFile.h"
-
 #include "aux/Error.h" // pink::FatalError
 
 #include "ast/action/Codegen.h"
@@ -17,20 +15,20 @@ namespace pink {
 auto Compile(std::ostream &err, Environment &env) -> int;
 
 auto Compile(int argc, char **argv) -> int {
-  auto &out     = std::cout;
-  auto &err     = std::cerr;
-  auto  options = pink::ParseCLIOptions(err, argc, argv);
-  auto  env     = Environment::NewGlobalEnv(options);
+  auto &out         = std::cout;
+  auto &err         = std::cerr;
+  auto  cli_options = pink::ParseCLIOptions(err, argc, argv);
+  auto  env         = Environment::CreateNativeGlobalEnv(cli_options);
 
-  if (Compile(err, *env) == EXIT_FAILURE) {
+  if (Compile(err, env) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 
-  if (EmitFiles(err, *env) == EXIT_FAILURE) {
+  if (env.EmitFiles(err) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 
-  return Link(out, err, *env);
+  return Link(out, err, env);
 }
 
 auto Compile(std::ostream &err, Environment &env) -> int {
@@ -38,15 +36,15 @@ auto Compile(std::ostream &err, Environment &env) -> int {
 
   { // empty scope, to destroy infile after we are done using it.
     std::fstream infile;
-    infile.open(env.options->input_file);
+    infile.open(env.cli_options.input_file);
     if (!infile.is_open()) {
-      err << "Could not open input file " << env.options->input_file;
+      err << "Could not open input file " << env.cli_options.input_file;
       return EXIT_FAILURE;
     }
-    env.parser->SetIStream(&infile);
+    env.parser.SetIStream(&infile);
 
-    while (!env.parser->EndOfInput()) {
-      auto term_result = env.parser->Parse(env);
+    while (!env.parser.EndOfInput()) {
+      auto term_result = env.parser.Parse(env);
       if (!term_result) {
         auto &error = term_result.GetSecond();
         if ((error.code == Error::Code::EndOfFile) && (!valid_terms.empty())) {
@@ -66,7 +64,9 @@ auto Compile(std::ostream &err, Environment &env) -> int {
 
       valid_terms.emplace_back(std::move(term));
     }
-    env.ClearFalseBindings();
+
+    env.scopes.PopScope();
+    env.scopes.PushScope();
   }
 
   for (auto &term : valid_terms) {

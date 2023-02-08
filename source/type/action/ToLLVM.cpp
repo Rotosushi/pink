@@ -7,10 +7,10 @@
 #include "llvm/IR/DerivedTypes.h"
 
 namespace pink {
-class ToLLVMVisitor
-    : public ConstVisitorResult<ToLLVMVisitor, const Type::Pointer,
-                                llvm::Type *>,
-      public ConstTypeVisitor {
+class ToLLVMVisitor : public ConstVisitorResult<ToLLVMVisitor,
+                                                const Type::Pointer,
+                                                llvm::Type *>,
+                      public ConstTypeVisitor {
 private:
   Environment &env;
 
@@ -26,7 +26,9 @@ public:
   void Visit(const TupleType *tuple_type) const noexcept override;
   void Visit(const VoidType *void_type) const noexcept override;
 
-  ToLLVMVisitor(Environment &env) noexcept : ConstVisitorResult(), env(env) {}
+  ToLLVMVisitor(Environment &env) noexcept
+      : ConstVisitorResult(),
+        env(env) {}
   ~ToLLVMVisitor() noexcept override                 = default;
   ToLLVMVisitor(const ToLLVMVisitor &other) noexcept = default;
   ToLLVMVisitor(ToLLVMVisitor &&other) noexcept      = default;
@@ -42,7 +44,7 @@ public:
 void ToLLVMVisitor::Visit(const ArrayType *array_type) const noexcept {
   assert(array_type != nullptr);
   auto *llvm_element_type = Compute(array_type->GetElementType(), this);
-  auto *llvm_integer_type = Compute(env.types->GetIntType(), this);
+  auto *llvm_integer_type = Compute(env.type_interner.GetIntType(), this);
   result                  = llvm::StructType::get(*env.context,
                                                   {llvm_integer_type, llvm_element_type});
 }
@@ -77,7 +79,7 @@ void ToLLVMVisitor::Visit(const CharacterType *character_type) const noexcept {
 */
 void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
   assert(function_type != nullptr);
-  auto address_space = env.data_layout.getAllocaAddrSpace();
+  auto address_space = env.module->getDataLayout().getAllocaAddrSpace();
   std::vector<llvm::Type *> llvm_argument_types(
       function_type->GetArguments().size());
 
@@ -89,8 +91,10 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
     return env.instruction_builder->getPtrTy(address_space);
   };
 
-  std::transform(function_type->begin(), function_type->end(),
-                 llvm_argument_types.begin(), transform_argument);
+  std::transform(function_type->begin(),
+                 function_type->end(),
+                 llvm_argument_types.begin(),
+                 transform_argument);
 
   auto *llvm_return_type = Compute(function_type->GetReturnType(), this);
   if (llvm_return_type->isSingleValueType() || llvm_return_type->isVoidTy()) {
@@ -102,7 +106,8 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
   llvm_argument_types.insert(llvm_argument_types.begin(),
                              env.instruction_builder->getPtrTy(address_space));
   result = llvm::FunctionType::get(env.instruction_builder->getVoidTy(),
-                                   llvm_argument_types, false);
+                                   llvm_argument_types,
+                                   false);
 }
 
 /*
@@ -138,7 +143,7 @@ void ToLLVMVisitor::Visit(const PointerType *pointer_type) const noexcept {
 */
 void ToLLVMVisitor::Visit(const SliceType *slice_type) const noexcept {
   assert(slice_type != nullptr);
-  auto *integer_type = Compute(env.types->GetIntType(), this);
+  auto *integer_type = Compute(env.type_interner.GetIntType(), this);
   auto *pointer_type = env.instruction_builder->getPtrTy();
   result             = llvm::StructType::get(*env.context,
                                              {integer_type, integer_type, pointer_type});
@@ -151,8 +156,10 @@ void ToLLVMVisitor::Visit(const TupleType *tuple_type) const noexcept {
   auto transform_element = [&](Type::Pointer type) {
     return Compute(type, this);
   };
-  std::transform(tuple_type->begin(), tuple_type->end(),
-                 llvm_element_types.begin(), transform_element);
+  std::transform(tuple_type->begin(),
+                 tuple_type->end(),
+                 llvm_element_types.begin(),
+                 transform_element);
   result = llvm::StructType::get(*env.context, llvm_element_types);
 }
 

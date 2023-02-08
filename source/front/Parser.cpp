@@ -1,5 +1,7 @@
 #include "front/Parser.h"
 
+#include <charconv> // std::from_chars
+
 #include "aux/Environment.h"
 
 // Syntactic Forms
@@ -33,11 +35,26 @@
 #include "type/PointerType.h"
 #include "type/TupleType.h"
 
+// We cannot replace this with a template function,
+// as we need the return statement to be in the scope
+// this snippet of code is inserted into.
+#define TRY(result, variable, function, ...)                                   \
+  auto result = function(__VA_ARGS__);                                         \
+  if (!result) {                                                               \
+    return result;                                                             \
+  }                                                                            \
+  auto &variable = result.GetFirst();
+
 namespace pink {
-Parser::Parser() : tok(Token::End), loc(1, 0, 1, 0), input_stream(&std::cin) {}
+Parser::Parser()
+    : input_stream(&std::cin),
+      token(Token::End),
+      location(1, 0, 1, 0) {}
 
 Parser::Parser(std::istream *input_stream)
-    : tok(Token::End), loc(1, 0, 1, 0), input_stream(input_stream) {
+    : input_stream(input_stream),
+      token(Token::End),
+      location(1, 0, 1, 0) {
   assert(input_stream != nullptr);
 }
 
@@ -52,23 +69,38 @@ auto Parser::EndOfInput() const -> bool {
   return lexer.EndOfInput() && input_stream->eof();
 }
 
-void Parser::yyfill() { lexer.Getline(*input_stream); }
+auto Parser::Getline() -> std::string {
+  std::string buffer;
+  char        character = '\0';
+
+  do {
+    character = static_cast<char>(input_stream->get());
+
+    if (input_stream->eof()) {
+      break;
+    }
+
+    buffer += character;
+  } while (character != '\n');
+  return buffer;
+}
 
 void Parser::nexttok() {
-  tok = lexer.yylex(); // this statement advances the lexer's internal state.
-  loc = lexer.yyloc();
-  txt = lexer.yytxt();
+  token = lexer.yylex(); // this statement advances the lexer's internal state.
+  location = lexer.yyloc();
+  text     = lexer.yytxt();
 
   while (lexer.EndOfInput() && !input_stream->eof()) {
-    yyfill();
-    tok = lexer.yylex();
-    loc = lexer.yyloc();
-    txt = lexer.yytxt();
+    auto line = Getline();
+    lexer.AppendToBuffer(line);
+    token    = lexer.yylex();
+    location = lexer.yyloc();
+    text     = lexer.yytxt();
   }
 }
 
-auto Parser::Expect(Token token) -> bool {
-  if (tok == token) {
+auto Parser::Expect(Token expected) -> bool {
+  if (token == expected) {
     nexttok();
     return true;
   }
@@ -76,20 +108,20 @@ auto Parser::Expect(Token token) -> bool {
   return false;
 }
 
-auto Parser::Peek(Token token) -> bool { return tok == token; }
+auto Parser::Peek(Token expected) -> bool { return token == expected; }
 
 /*
   Extract the n'th line of source text from the buffer,
-  where n = loc.firstLine
+  where n = location.firstLine
 */
-auto Parser::ExtractLine(const Location &loc) const -> std::string {
-  const auto &buf    = lexer.GetBuf();
-  auto        cursor = buf.begin();
-  auto        end    = buf.end();
+auto Parser::ExtractLine(const Location &location) const -> std::string_view {
+  const auto  buf    = lexer.GetBufferView();
+  const auto *cursor = buf.begin();
+  const auto *end    = buf.end();
 
-  size_t lines_seen  = 1;
+  size_t lines_seen = 1;
 
-  while ((lines_seen < loc.firstLine) && (cursor != end)) {
+  while ((lines_seen < location.firstLine) && (cursor != end)) {
     if (*cursor == '\n') {
       lines_seen++;
     }
@@ -98,23 +130,28 @@ auto Parser::ExtractLine(const Location &loc) const -> std::string {
   }
 
   if (cursor != end) {
-    auto eol = cursor;
+    const auto *eol = cursor;
 
     while (eol != end && *eol != '\n') {
       eol++;
     }
-
-    // #NOTE eol points to end or to a newline char
-    // either way the constructor we are using
-    // uses to range [first, last), so we will
-    // not copy the newline into the new string.
     return {cursor, eol};
   }
   return {};
 }
 
-auto Parser::Parse(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+static auto ToInteger(std::string_view text)
+    -> Outcome<Integer::Value, std::errc> {
+  Integer::Value value{};
+  auto [ptr,
+        errc]{std::from_chars<Integer::Value>(text.begin(), text.end(), value)};
+  if (errc == std::errc()) {
+    return {value};
+  }
+  return {errc};
+}
+
+auto Parser::Parse(Environment &env) -> Parser::Result {
   // prime the lexer with the first token from the input stream;
   // only if we are not already parsing an input stream.
   if (Peek(Token::End) && lexer.EndOfInput() && !input_stream->eof()) {
@@ -123,7 +160,7 @@ auto Parser::Parse(const Environment &env)
 
   // if there is no more source return EndOfFile.
   if (Peek(Token::End) && input_stream->eof()) {
-    return {Error(Error::Code::EndOfFile, loc)};
+    return {Error(Error::Code::EndOfFile, location)};
   }
 
   return ParseTop(env);
@@ -133,8 +170,7 @@ auto Parser::Parse(const Environment &env)
   top = function
       | bind ';'
 */
-auto Parser::ParseTop(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseTop(Environment &env) -> Parser::Result {
   if (Peek(Token::Fn)) {
     return ParseFunction(env);
   }
@@ -142,55 +178,58 @@ auto Parser::ParseTop(const Environment &env)
   if (Peek(Token::Id) || Peek(Token::Var)) {
     auto outcome = ParseBind(env);
     if (!outcome) {
-      return {outcome.GetSecond()};
+      // So, we cannot simply [return outcome]
+      // because the return statement selects
+      // the copy constructor of
+      return outcome;
     }
 
     if (!Expect(Token::Semicolon)) {
-      std::string errtxt = "instead saw: " + txt;
-      return {Error(Error::MissingSemicolon, loc, errtxt)};
+      return {Error(Error::MissingSemicolon, location, std::string(text))};
     }
 
-    return {std::move(outcome.GetFirst())};
+    return outcome;
   }
   /// \note  is it worth it to attempt to parse the bad expression
   /// such that we don't leave the parser at the error we encountered?
   /// as it stands now we can only handle a single parse error before
   /// we bail. if we wanted to display more than the first error
   /// we encountered, we would need to do something along these lines.
-  /// otherwise when we reentered the parser we would parse the exact
-  /// same error.
+  /// otherwise when we reentered the parser we will parse the exact
+  /// same error, as if we were entering the parse tree from the beginning.
   return {
-      Error(Error::Code::BadTopLevelExpression, loc,
+      Error(Error::Code::BadTopLevelExpression,
+            location,
             "only variables and functions may be declared at global scope")};
 }
 
 /*
   bind = ("var")? id ":=" affix ";"
 */
-auto Parser::ParseBind(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
-  Location lhs_loc = loc;
+auto Parser::ParseBind(Environment &env) -> Parser::Result {
+  Location lhs_loc = location;
 
   if (Peek(Token::Var)) {
     nexttok(); // eat 'var'
   }
 
   if (!Peek(Token::Id)) {
-    return Error(Error::Code::MissingBindId, loc, "parsed: " + txt);
+    return Error(Error::Code::MissingBindId, location, std::string(text));
   }
 
-  const auto *name = env.symbols->Intern(txt);
+  const auto *name = env.variable_interner.Intern(text);
 
   nexttok(); // eat id
 
   return ParseBind(name, lhs_loc, env);
 }
 
-auto Parser::ParseBind(InternedString name, Location lhs_location,
-                       const Environment &env)
+auto Parser::ParseBind(InternedString name,
+                       Location       lhs_location,
+                       Environment   &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
   if (!Expect(Token::ColonEq)) {
-    return Error(Error::Code::MissingBindColonEq, loc, "parsed: " + txt);
+    return Error(Error::Code::MissingBindColonEq, location, std::string(text));
   }
 
   auto affix = ParseAffix(env);
@@ -198,33 +237,34 @@ auto Parser::ParseBind(InternedString name, Location lhs_location,
     return {affix.GetSecond()};
   }
 
-  Location bind_loc(lhs_location.firstLine, lhs_location.firstColumn,
-                    loc.lastLine, loc.lastColumn);
+  Location bind_loc(lhs_location.firstLine,
+                    lhs_location.firstColumn,
+                    location.lastLine,
+                    location.lastColumn);
   return {std::make_unique<Bind>(bind_loc, name, std::move(affix.GetFirst()))};
 }
 
 /*
   function = "fn" id "(" [arg {"," arg}] ")" block
 */
-auto Parser::ParseFunction(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
-  InternedString       name = nullptr;
-  Function::Arguments  args;
-  std::unique_ptr<Ast> body(nullptr);
-  Location             lhs_loc = loc;
+auto Parser::ParseFunction(Environment &env) -> Parser::Result {
+  InternedString      name = nullptr;
+  Function::Arguments args;
+  Ast::Pointer        body(nullptr);
+  Location            lhs_loc = location;
 
   nexttok(); // eat 'fn'
 
   if (!Peek(Token::Id)) {
-    return Error(Error::Code::MissingFnName, loc);
+    return Error(Error::Code::MissingFnName, location, std::string(text));
   }
 
-  name = env.symbols->Intern(txt); // intern the functions name
+  name = env.variable_interner.Intern(text); // intern the functions name
 
   nexttok(); // eat 'id'
 
   if (!Expect(Token::LParen)) {
-    return Error(Error::Code::MissingLParen, loc);
+    return Error(Error::Code::MissingLParen, location, std::string(text));
   }
 
   // #RULE a functions argument list is optional
@@ -241,15 +281,12 @@ auto Parser::ParseFunction(const Environment &env)
   }
 
   if (!Expect(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, loc);
+    return Error(Error::Code::MissingRParen, location, std::string(text));
   }
 
   // #PROPOSAL we could easily parse functions which have no
   // block expression if we allow the alternative
   // to be affix ';'
-  if (!Peek(Token::LBrace)) {
-    return Error(Error::Code::MissingLBrace, loc);
-  }
 
   // parse the body of the function.
   auto body_res = ParseBlock(env);
@@ -259,34 +296,37 @@ auto Parser::ParseFunction(const Environment &env)
 
   const Location &rhs_loc = body_res.GetFirst()->GetLocation();
 
-  Location fn_loc = {lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  Location fn_loc = {lhs_loc.firstLine,
+                     lhs_loc.firstColumn,
+                     rhs_loc.lastLine,
                      rhs_loc.lastColumn};
 
-  // we have all the parts, build the function.
-  return {std::make_unique<Function>(
-      fn_loc, name, args, std::move(body_res.GetFirst()), env.bindings.get())};
+  return {std::make_unique<Function>(fn_loc,
+                                     name,
+                                     args,
+                                     std::move(body_res.GetFirst()))};
 }
 
 /*
   arg = id ":" type
 */
-auto Parser::ParseArgument(const Environment &env)
+auto Parser::ParseArgument(Environment &env)
     -> Outcome<std::pair<InternedString, Type::Pointer>, Error> {
 
   if (!Peek(Token::Id)) {
-    return Error(Error::Code::MissingArgName, loc);
+    return Error(Error::Code::MissingArgName, location, std::string(text));
   }
 
-  const auto *name = env.symbols->Intern(txt);
+  const auto *name = env.variable_interner.Intern(text);
 
   nexttok(); // eat 'Id'
 
   if (!Expect(Token::Colon)) {
-    Error(Error::Code::MissingArgColon, loc);
+    Error(Error::Code::MissingArgColon, location, std::string(text));
   }
 
   if (Peek(Token::Comma) || Peek(Token::RParen)) {
-    return Error(Error::Code::MissingArgType, loc);
+    return Error(Error::Code::MissingArgType, location, std::string(text));
   }
 
   auto type_result = ParseType(env);
@@ -301,32 +341,37 @@ auto Parser::ParseArgument(const Environment &env)
   block = "{" {term} "}"
 */
 
-auto Parser::ParseBlock(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
-  std::vector<std::unique_ptr<Ast>>    stmnts;
-  Outcome<std::unique_ptr<Ast>, Error> result   = Error();
-  Location                             left_loc = loc;
+auto Parser::ParseBlock(Environment &env) -> Parser::Result {
+  std::vector<Ast::Pointer> expressions;
+  Parser::Result            expression_result;
+  Location                  left_loc = location;
+
+  if (!Peek(Token::LBrace)) {
+    return Error(Error::Code::MissingLBrace, location, std::string(text));
+  }
 
   nexttok(); // eat '{'
 
   do {
-    result = ParseTerm(env);
-    if (!result) {
-      return result.GetSecond();
+    expression_result = ParseTerm(env);
+    if (!expression_result) {
+      return expression_result.GetSecond();
     }
+    auto &expression = expression_result.GetFirst();
 
-    stmnts.emplace_back(std::move(result.GetFirst()));
+    expressions.emplace_back(std::move(expression));
   } while (!Peek(Token::RBrace));
 
   // the rhs location of the block is the right curly brace
-  Location rhs_loc = loc;
+  Location rhs_loc = location;
 
   nexttok(); // eat '}'
 
-  Location block_loc(left_loc.firstLine, left_loc.firstColumn, rhs_loc.lastLine,
+  Location block_loc(left_loc.firstLine,
+                     left_loc.firstColumn,
+                     rhs_loc.lastLine,
                      rhs_loc.lastColumn);
-  return {std::make_unique<Block>(block_loc, std::move(stmnts),
-                                  env.bindings.get())};
+  return {std::make_unique<Block>(block_loc, std::move(expressions))};
 }
 
 /*
@@ -335,8 +380,7 @@ auto Parser::ParseBlock(const Environment &env)
        | bind
        | affix ";"
 */
-auto Parser::ParseTerm(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseTerm(Environment &env) -> Parser::Result {
   if (Peek(Token::If)) {
     return ParseConditional(env);
   }
@@ -350,76 +394,73 @@ auto Parser::ParseTerm(const Environment &env)
   }
 
   // else assume this is an affix term
-  auto affix = ParseAffix(env);
-  if (!affix) {
-    return affix.GetSecond();
+  auto affix_result = ParseAffix(env);
+  if (!affix_result) {
+    return affix_result.GetSecond();
   }
+  auto &affix = affix_result.GetFirst();
 
   if (!Expect(Token::Semicolon)) {
-    return {Error(Error::Code::MissingSemicolon, loc, "instead parsed " + txt)};
+    return {Error(Error::Code::MissingSemicolon, location, std::string(text))};
   }
 
-  return {std::move(affix.GetFirst())};
+  return {std::move(affix)};
 }
 
 /*
   conditional = "if" "(" affix ")" block "else" block
 */
-auto Parser::ParseConditional(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
-  Location lhs_loc = loc;
+auto Parser::ParseConditional(Environment &env) -> Parser::Result {
+  Location lhs_loc = location;
 
   nexttok(); // eat "if"
 
   if (!Expect(Token::LParen)) {
-    return Error(Error::Code::MissingLParen, loc);
+    return Error(Error::Code::MissingLParen, location, std::string(text));
   }
 
   auto test_term = ParseAffix(env);
   if (!test_term) {
     return {test_term.GetSecond()};
   }
+  auto &test = test_term.GetFirst();
 
   if (!Expect(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, loc);
-  }
-
-  if (!Peek(Token::LBrace)) {
-    return Error(Error::Code::MissingLBrace, loc);
+    return Error(Error::Code::MissingRParen, location, std::string(text));
   }
 
   auto then_term = ParseBlock(env);
   if (!then_term) {
     return {then_term.GetSecond()};
   }
+  auto &then = then_term.GetFirst();
 
   if (!Expect(Token::Else)) {
-    return Error(Error::Code::MissingElse, loc);
-  }
-
-  if (!Peek(Token::LBrace)) {
-    return Error(Error::Code::MissingLBrace, loc);
+    return Error(Error::Code::MissingElse, location, std::string(text));
   }
 
   auto else_term = ParseBlock(env);
   if (!else_term) {
     return {else_term.GetSecond()};
   }
+  auto &els = else_term.GetFirst();
 
-  const Location &rhs_loc = else_term.GetFirst()->GetLocation();
-  Location condloc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  const Location &rhs_loc = els->GetLocation();
+  Location        condloc(lhs_loc.firstLine,
+                   lhs_loc.firstColumn,
+                   rhs_loc.lastLine,
                    rhs_loc.lastColumn);
-  return {std::make_unique<Conditional>(
-      condloc, std::move(test_term.GetFirst()), std::move(then_term.GetFirst()),
-      std::move(else_term.GetFirst()))};
+  return {std::make_unique<Conditional>(condloc,
+                                        std::move(test),
+                                        std::move(then),
+                                        std::move(els))};
 }
 
 /*
   while = "while" "(" affix ")" block
 */
-auto Parser::ParseWhile(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
-  Location lhs_loc = loc;
+auto Parser::ParseWhile(Environment &env) -> Parser::Result {
+  Location lhs_loc = location;
   nexttok(); // eat 'while'
 
   auto test_result = ParseAffix(env);
@@ -429,17 +470,19 @@ auto Parser::ParseWhile(const Environment &env)
   auto &test = test_result.GetFirst();
 
   if (!Expect(Token::Do)) {
-    return Error(Error::Code::MissingDo, loc);
+    return Error(Error::Code::MissingDo, location, std::string(text));
   }
 
   auto body_term = ParseBlock(env);
   if (!body_term) {
     return body_term.GetSecond();
   }
-  auto &body              = body_term.GetFirst();
+  auto &body = body_term.GetFirst();
 
   const Location &rhs_loc = body_term.GetFirst()->GetLocation();
-  Location whileloc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  Location        whileloc(lhs_loc.firstLine,
+                    lhs_loc.firstColumn,
+                    rhs_loc.lastLine,
                     rhs_loc.lastColumn);
   return {std::make_unique<While>(whileloc, std::move(test), std::move(body))};
 }
@@ -449,7 +492,7 @@ auto Parser::ParseWhile(const Environment &env)
         | composite "(" [affix {"," affix}] ")"
         | composite
 */
-auto Parser::ParseAffix(const Environment &env)
+auto Parser::ParseAffix(Environment &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
   auto composite_term = ParseComposite(env);
   if (!composite_term) {
@@ -459,12 +502,12 @@ auto Parser::ParseAffix(const Environment &env)
 
   // composite "=" affix
   if (Peek(Token::Equals)) {
-    return ParseAssignment(env, std::move(composite));
+    return ParseAssignment(std::move(composite), env);
   }
 
   // composite "(" [affix {"," affix}] ")"
   if (Peek(Token::LParen)) {
-    return ParseApplication(env, std::move(composite));
+    return ParseApplication(std::move(composite), env);
   }
 
   // composite
@@ -474,35 +517,36 @@ auto Parser::ParseAffix(const Environment &env)
 /*
   composite '=' affix
 */
-auto Parser::ParseAssignment(const Environment   &env,
-                             std::unique_ptr<Ast> composite)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseAssignment(Ast::Pointer composite, Environment &env)
+    -> Parser::Result {
   nexttok(); // eat "="
 
   auto rhs_term = ParseAffix(env);
   if (!rhs_term) {
     return rhs_term.GetSecond();
   }
-  auto &rhs               = rhs_term.GetFirst();
+  auto &rhs = rhs_term.GetFirst();
 
   const Location &lhs_loc = composite->GetLocation();
   const Location &rhs_loc = rhs_term.GetFirst()->GetLocation();
-  Location assign_loc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  Location        assign_loc(lhs_loc.firstLine,
+                      lhs_loc.firstColumn,
+                      rhs_loc.lastLine,
                       rhs_loc.lastColumn);
-  return {std::make_unique<Assignment>(assign_loc, std::move(composite),
+  return {std::make_unique<Assignment>(assign_loc,
+                                       std::move(composite),
                                        std::move(rhs))};
 }
 
 /*
   composite "(" [affix {"," affix}] ")"
 */
-auto Parser::ParseApplication(const Environment   &env,
-                              std::unique_ptr<Ast> composite)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseApplication(Ast::Pointer composite, Environment &env)
+    -> Parser::Result {
   Location rhs_loc;
   nexttok(); // eat '('
 
-  std::vector<std::unique_ptr<Ast>> args;
+  std::vector<Ast::Pointer> args;
 
   if (!Peek(Token::RParen)) {
     // parse the argument list
@@ -518,28 +562,31 @@ auto Parser::ParseApplication(const Environment   &env,
 
       args.emplace_back(std::move(arg.GetFirst()));
 
-    } while (tok == Token::Comma);
+    } while (token == Token::Comma);
 
     // finish parsing the argument list
     if (!Peek(Token::RParen)) {
-      return Error(Error::Code::MissingRParen, loc);
+      return Error(Error::Code::MissingRParen, location, std::string(text));
     }
 
-    rhs_loc = loc;
+    rhs_loc = location;
 
     nexttok(); // eat ')'
-  } else {     // tok == Token::RParen
+  } else {     // token == Token::RParen
 
-    rhs_loc = loc;
+    rhs_loc = location;
 
     nexttok(); // eat ')'
     // the argument list is empty, but this is still an application term.
   }
 
   const Location &lhs_loc = composite->GetLocation();
-  Location app_loc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  Location        app_loc(lhs_loc.firstLine,
+                   lhs_loc.firstColumn,
+                   rhs_loc.lastLine,
                    rhs_loc.lastColumn);
-  return {std::make_unique<Application>(app_loc, std::move(composite),
+  return {std::make_unique<Application>(app_loc,
+                                        std::move(composite),
                                         std::move(args))};
 }
 
@@ -547,8 +594,7 @@ auto Parser::ParseApplication(const Environment   &env,
   composite = accessor operator infix-parser
             | accessor
 */
-auto Parser::ParseComposite(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseComposite(Environment &env) -> Parser::Result {
   auto accessor_term = ParseAccessor(env);
   if (!accessor_term) {
     return accessor_term.GetSecond();
@@ -568,8 +614,7 @@ auto Parser::ParseComposite(const Environment &env)
   accessor = basic { ("." basic | "[" basic "]") }
            | basic
 */
-auto Parser::ParseAccessor(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseAccessor(Environment &env) -> Parser::Result {
   auto left_term = ParseBasic(env);
   if (!left_term) {
     return left_term.GetSecond();
@@ -578,9 +623,9 @@ auto Parser::ParseAccessor(const Environment &env)
 
   do {
     if (Peek(Token::Dot)) {
-      left_term = ParseDot(env, std::move(left));
+      left_term = ParseDot(std::move(left), env);
     } else if (Peek(Token::LBracket)) {
-      left_term = ParseSubscript(env, std::move(left));
+      left_term = ParseSubscript(std::move(left), env);
     }
 
   } while (Peek(Token::Dot) || Peek(Token::LBracket));
@@ -591,8 +636,7 @@ auto Parser::ParseAccessor(const Environment &env)
 /*
  dot = basic "." basic
 */
-auto Parser::ParseDot(const Environment &env, std::unique_ptr<Ast> left)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseDot(Ast::Pointer left, Environment &env) -> Parser::Result {
   auto lhs_loc = left->GetLocation();
   nexttok(); // eat '.'
 
@@ -600,10 +644,12 @@ auto Parser::ParseDot(const Environment &env, std::unique_ptr<Ast> left)
   if (!right_term) {
     return {right_term.GetSecond()};
   }
-  auto &right             = right_term.GetFirst();
+  auto &right = right_term.GetFirst();
 
   const Location &rhs_loc = right->GetLocation();
-  Location dotloc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  Location        dotloc(lhs_loc.firstLine,
+                  lhs_loc.firstColumn,
+                  rhs_loc.lastLine,
                   rhs_loc.lastColumn);
   return {std::make_unique<Dot>(dotloc, std::move(left), std::move(right))};
 }
@@ -611,8 +657,8 @@ auto Parser::ParseDot(const Environment &env, std::unique_ptr<Ast> left)
 /*
  subscript = basic "[" basic "]"
 */
-auto Parser::ParseSubscript(const Environment &env, std::unique_ptr<Ast> left)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseSubscript(Ast::Pointer left, Environment &env)
+    -> Parser::Result {
   auto lhs_loc = left->GetLocation();
   nexttok(); // eat '['
 
@@ -623,11 +669,13 @@ auto Parser::ParseSubscript(const Environment &env, std::unique_ptr<Ast> left)
   auto &right = right_term.GetFirst();
 
   if (!Expect(Token::RBracket)) { // eat ']'
-    return {Error(Error::Code::MissingRBracket, loc, txt)};
+    return {Error(Error::Code::MissingRBracket, location, std::string(text))};
   }
 
-  auto     rhs_loc = loc;
-  Location location(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  auto     rhs_loc = location;
+  Location location(lhs_loc.firstLine,
+                    lhs_loc.firstColumn,
+                    rhs_loc.lastLine,
                     rhs_loc.lastColumn);
   return {
       std::make_unique<Subscript>(location, std::move(left), std::move(right))};
@@ -638,56 +686,68 @@ auto Parser::ParseSubscript(const Environment &env, std::unique_ptr<Ast> left)
     going from this pseudo-code:
     https://en.wikipedia.org/wiki/Operator-precedence_parser
 */
-auto Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence,
-                        const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
-  Outcome<std::unique_ptr<Ast>, Error> result(std::move(lhs));
+auto Parser::ParseInfix(Ast::Pointer lhs,
+                        Precedence   precedence,
+                        Environment &env) -> Parser::Result {
+  Parser::Result result(std::move(lhs));
+  InternedString peek_str = nullptr;
+  std::optional<std::pair<InternedString, BinopLiteral *>> peek_opt;
+  BinopLiteral                                            *peek_lit = nullptr;
+  InternedString                                           op_str   = nullptr;
+  BinopLiteral                                            *op_lit   = nullptr;
+  Location                                                 op_loc;
 
-  InternedString                                            peek_str = nullptr;
-  llvm::Optional<std::pair<InternedString, BinopLiteral *>> peek_opt;
-  BinopLiteral                                             *peek_lit = nullptr;
+  auto PredictsBinop = [&]() -> bool {
+    return (token == Token::Op) &&
+           ((peek_str = env.operator_interner.Intern(text)) != nullptr) &&
+           (peek_opt = env.binop_table.Lookup(peek_str)) &&
+           (peek_opt.has_value()) &&
+           ((peek_lit = peek_opt->second) != nullptr) &&
+           (peek_lit->GetPrecedence() >= precedence);
+  };
 
-  //
-  while ((tok == Token::Op) &&
-         ((peek_str = env.operators->Intern(txt)) != nullptr) &&
-         (peek_opt = env.binops->Lookup(peek_str)) && (peek_opt.has_value()) &&
-         ((peek_lit = peek_opt->second) != nullptr) &&
-         (peek_lit->GetPrecedence() >= precedence)) {
-    InternedString op_str = peek_str;
-    BinopLiteral  *op_lit = peek_lit;
-    Location       op_loc = loc;
-
-    nexttok(); // eat the 'operator'
-
-    Outcome<std::unique_ptr<Ast>, Error> rhs = ParseAccessor(env);
-    if (!rhs) {
-      return rhs.GetSecond();
-    }
-
-    while ((tok == Token::Op) &&
-           ((peek_str = env.operators->Intern(txt)) != nullptr) &&
-           (peek_opt = env.binops->Lookup(peek_str)) &&
+  auto PredictsHigherPrecedenceOrRightAssociativeBinop = [&]() -> bool {
+    return (token == Token::Op) &&
+           ((peek_str = env.operator_interner.Intern(text)) != nullptr) &&
+           (peek_opt = env.binop_table.Lookup(peek_str)) &&
            (peek_opt.has_value()) &&
            ((peek_lit = peek_opt->second) != nullptr) &&
            ((peek_lit->GetPrecedence() > op_lit->GetPrecedence()) ||
             ((peek_lit->GetAssociativity() == Associativity::Right) &&
-             (peek_lit->GetPrecedence() == op_lit->GetPrecedence())))) {
+             (peek_lit->GetPrecedence() == op_lit->GetPrecedence())));
+  };
+
+  while (PredictsBinop()) {
+    op_str = peek_str;
+    op_lit = peek_lit;
+    op_loc = location;
+
+    nexttok(); // eat the 'operator'
+
+    Parser::Result rhs = ParseAccessor(env);
+    if (!rhs) {
+      return rhs.GetSecond();
+    }
+
+    while (PredictsHigherPrecedenceOrRightAssociativeBinop()) {
       auto temp =
           ParseInfix(std::move(rhs.GetFirst()), peek_lit->GetPrecedence(), env);
       if (!temp) {
         return temp.GetSecond();
       }
-      // get overload resolution to select move assignment
-      // rhs = Outcome<std::unique_ptr<Ast>, Error>(std::move(temp.GetFirst()));
       rhs = std::move(temp.GetFirst());
     }
 
     const Location &rhs_loc = rhs.GetFirst()->GetLocation();
-    Location binop_loc(op_loc.firstLine, op_loc.firstColumn, rhs_loc.lastLine,
+    Location        binop_loc(op_loc.firstLine,
+                       op_loc.firstColumn,
+                       rhs_loc.lastLine,
                        rhs_loc.lastColumn);
-    result = Outcome<std::unique_ptr<Ast>, Error>(
-        std::make_unique<Binop>(binop_loc, op_str, std::move(result.GetFirst()),
-                                std::move(rhs.GetFirst())));
+    result =
+        Parser::Result(std::make_unique<Binop>(binop_loc,
+                                               op_str,
+                                               std::move(result.GetFirst()),
+                                               std::move(rhs.GetFirst())));
   }
 
   return {std::move(result.GetFirst())};
@@ -703,12 +763,11 @@ auto Parser::ParseInfix(std::unique_ptr<Ast> lhs, Precedence precedence,
         | "[" affix {"," affix} "]"
 
 */
-auto Parser::ParseBasic(const Environment &env)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
-  switch (tok) {
+auto Parser::ParseBasic(Environment &env) -> Parser::Result {
+  switch (token) {
   case Token::Id: {
-    Location       lhs_loc = loc;
-    InternedString symbol  = env.symbols->Intern(txt);
+    Location       lhs_loc = location;
+    InternedString symbol  = env.variable_interner.Intern(text);
 
     nexttok(); // eat the identifier
 
@@ -721,8 +780,8 @@ auto Parser::ParseBasic(const Environment &env)
 
   // #RULE: an operator appearing in the basic position is a unop
   case Token::Op: {
-    Location       lhs_loc = loc;
-    InternedString opr     = env.operators->Intern(txt);
+    Location       lhs_loc{location};
+    InternedString opr{env.operator_interner.Intern(text)};
 
     nexttok(); // eat op
 
@@ -739,9 +798,11 @@ auto Parser::ParseBasic(const Environment &env)
       return rhs.GetSecond();
     }
 
-    const Location &rhs_loc = rhs.GetFirst()->GetLocation();
-    Location unop_loc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
-                      rhs_loc.lastColumn);
+    const Location &rhs_loc{rhs.GetFirst()->GetLocation()};
+    Location        unop_loc{lhs_loc.firstLine,
+                      lhs_loc.firstColumn,
+                      rhs_loc.lastLine,
+                      rhs_loc.lastColumn};
     return {std::make_unique<Unop>(unop_loc, opr, std::move(rhs.GetFirst()))};
   }
 
@@ -752,102 +813,124 @@ auto Parser::ParseBasic(const Environment &env)
   {
     nexttok(); // eat the '('
 
-    auto result = ParseAffix(env);
-    if (!result) {
-      return result.GetSecond();
+    // wrap this sequence of steps into a MACRO
+    auto expression_result = ParseAffix(env);
+    if (!expression_result) {
+      return expression_result.GetSecond();
     }
+    auto &expression = expression_result.GetFirst();
 
     if (Peek(Token::Comma)) {
-      return ParseTuple(env, std::move(result.GetFirst()));
+      return ParseTuple(std::move(expression), env);
     }
     // else we parsed a parenthised expression
     if (!Expect(Token::RParen)) {
-      return {Error(Error::Code::MissingRParen, loc, txt)};
+      return {Error(Error::Code::MissingRParen, location, std::string(text))};
     }
 
-    return {std::move(result.GetFirst())};
+    return {std::move(expression)};
   }
 
   // #RULE a bracket appearing in basic position is an array literal
-  case Token::LBracket: // '['
-  {
-    Location lhs_loc = loc;
-    nexttok(); // eat '['
-
-    std::vector<std::unique_ptr<Ast>> members;
-
-    do {
-      if (Peek(Token::Comma)) {
-        nexttok(); // eat ','
-      }
-
-      auto member = ParseAffix(env);
-      if (!member) {
-        return member.GetSecond();
-      }
-
-      members.emplace_back(std::move(member.GetFirst()));
-    } while (tok == Token::Comma);
-
-    if (tok != Token::RBracket) {
-      return Error(Error::Code::MissingRBracket, loc, txt);
-    }
-
-    Location rhs_loc = loc;
-
-    nexttok(); // eat ']'
-
-    Location array_loc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
-                       rhs_loc.lastColumn);
-    return {std::make_unique<Array>(array_loc, std::move(members))};
+  case Token::LBracket: {
+    return ParseArray(env);
   }
 
   // #RULE Token::Nil at basic position is the literal nil
   case Token::Nil: {
-    Location lhs_loc = loc;
+    Location lhs_loc = location;
     nexttok(); // eat 'nil'
     return {std::make_unique<Nil>(lhs_loc)};
   }
 
   // #RULE Token::Int at basic position is a literal integer
   case Token::Integer: {
-    Location lhs_loc = loc;
-    int      value   = std::stoi(txt);
-    nexttok(); // eat '[0-9]+'
-    return {std::make_unique<Integer>(lhs_loc, value)};
+    Location lhs_loc       = location;
+    auto     maybe_integer = ToInteger(text);
+    if (maybe_integer) {
+      nexttok(); // eat [0-9]+
+      return {std::make_unique<Integer>(lhs_loc, maybe_integer.GetFirst())};
+    }
+
+    auto errc = maybe_integer.GetSecond();
+    if (errc == std::errc::result_out_of_range) {
+      return {
+          Error(Error::Code::IntegerOutOfBounds, location, std::string(text))};
+    }
+
+    if (errc == std::errc::invalid_argument) {
+      FatalError("Lexed [0-9]+ that std::from_chars doesn't recognize",
+                 __FILE__,
+                 __LINE__);
+    }
+
+    FatalError("Unhandled std::errc returned by from_chars",
+               __FILE__,
+               __LINE__);
   }
 
   // #RULE Token::True at basic position is the literal true
   case Token::True: {
-    Location lhs_loc = loc;
+    Location lhs_loc = location;
     nexttok(); // Eat "true"
     return {std::make_unique<Boolean>(lhs_loc, true)};
   }
 
   // #RULE Token::False at basic position is the literal false
   case Token::False: {
-    Location lhs_loc = loc;
+    Location lhs_loc = location;
     nexttok(); // Eat "false"
     return {std::make_unique<Boolean>(lhs_loc, false)};
   }
 
   default: {
-    return {Error(Error::Code::UnknownBasicToken, loc, txt)};
+    return {Error(Error::Code::UnknownBasicToken, location, std::string(text))};
   }
-  } // !switch(tok)
+  } // !switch(token)
 }
 
-auto Parser::ParseTuple(const Environment   &env,
-                        std::unique_ptr<Ast> first_element)
-    -> Outcome<std::unique_ptr<Ast>, Error> {
+auto Parser::ParseArray(Environment &env) -> Result {
+  Location lhs_loc = location;
+  nexttok(); // eat '['
 
-  const Location                      &lhs_loc = first_element->GetLocation();
-  Outcome<std::unique_ptr<Ast>, Error> result  = Error();
-  std::vector<std::unique_ptr<Ast>>    elements;
+  std::vector<Ast::Pointer> members;
+
+  do {
+    if (Peek(Token::Comma)) {
+      nexttok(); // eat ','
+    }
+
+    auto member = ParseAffix(env);
+    if (!member) {
+      return member.GetSecond();
+    }
+
+    members.emplace_back(std::move(member.GetFirst()));
+  } while (token == Token::Comma);
+
+  if (token != Token::RBracket) {
+    return Error(Error::Code::MissingRBracket, location, std::string(text));
+  }
+
+  Location rhs_loc = location;
+  nexttok(); // eat ']'
+
+  Location array_loc(lhs_loc.firstLine,
+                     lhs_loc.firstColumn,
+                     rhs_loc.lastLine,
+                     rhs_loc.lastColumn);
+  return {std::make_unique<Array>(array_loc, std::move(members))};
+}
+
+auto Parser::ParseTuple(Ast::Pointer first_element, Environment &env)
+    -> Parser::Result {
+  const Location           &lhs_loc = first_element->GetLocation();
+  Parser::Result            result;
+  std::vector<Ast::Pointer> elements;
   elements.emplace_back(std::move(first_element));
 
   while (Expect(Token::Comma)) {
-    result = Outcome<std::unique_ptr<Ast>, Error>(ParseAffix(env));
+    result = Parser::Result(ParseAffix(env));
 
     if (!result) {
       return result.GetSecond();
@@ -857,14 +940,16 @@ auto Parser::ParseTuple(const Environment   &env,
   }
 
   if (!Peek(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, loc, txt);
+    return Error(Error::Code::MissingRParen, location, std::string(text));
   }
 
-  Location rhs_loc = loc;
+  Location rhs_loc = location;
 
   nexttok(); // eat ')'
 
-  Location tupleloc(lhs_loc.firstLine, lhs_loc.firstColumn, rhs_loc.lastLine,
+  Location tupleloc(lhs_loc.firstLine,
+                    lhs_loc.firstColumn,
+                    rhs_loc.lastLine,
                     rhs_loc.lastColumn);
   return {std::make_unique<Tuple>(tupleloc, std::move(elements))};
 }
@@ -875,117 +960,141 @@ auto Parser::ParseTuple(const Environment   &env,
        | "Bool"
        | "(" type {"," type} ")"
        | "[" type ";" int "]"
-       | "Ptr" "<" type ">"
+       | "Pointer" type
 */
-auto Parser::ParseType(const Environment &env)
-    -> Outcome<Type::Pointer, Error> {
-  switch (tok) {
+auto Parser::ParseType(Environment &env) -> Parser::TypeResult {
+  switch (token) {
   // #RULE Token::NilType is the type Nil
   case Token::NilType: {
     nexttok(); // eat 'Nil'
-    return {env.types->GetNilType()};
+    return {env.type_interner.GetNilType()};
     break;
   }
 
   // #RULE Token::IntegerType is the type Int
   case Token::IntegerType: {
     nexttok(); // Eat "Int"
-    return {env.types->GetIntType()};
+    return {env.type_interner.GetIntType()};
     break;
   }
 
   // #RULE Token::BooleanType is the type Bool
   case Token::BooleanType: {
     nexttok(); // Eat "Bool"
-    return {env.types->GetBoolType()};
+    return {env.type_interner.GetBoolType()};
     break;
   }
 
   // #RULE Token::LParen predicts the type Tuple
   case Token::LParen: {
-    nexttok(); // eat '('
-    auto left = ParseType(env);
-
-    if (!left) {
-      return left;
-    }
-
-    if (tok == Token::Comma) {
-      std::vector<Type::Pointer> elem_tys = {left.GetFirst()};
-      do {
-        nexttok(); // eat ','
-
-        auto elem_ty = ParseType(env);
-        if (!elem_ty) {
-          return elem_ty;
-        }
-
-        elem_tys.push_back(elem_ty.GetFirst());
-      } while (tok == Token::Comma);
-
-      left = env.types->GetTupleType(elem_tys);
-    }
-
-    if (!Expect(Token::RParen)) {
-      return Error(Error::Code::MissingRParen, loc, txt);
-    }
-
-    return left;
+    return ParseTupleType(env);
   }
 
   // #RULE Token::LBracket predicts the type Array
   case Token::LBracket: {
-    nexttok(); // eat '['
-
-    auto array_type_result = ParseType(env);
-
-    if (!array_type_result) {
-      return array_type_result;
-    }
-
-    auto &array_type = array_type_result.GetFirst();
-
-    if (!Expect(Token::Semicolon)) {
-      return {Error(Error::Code::MissingArraySemicolon, loc, txt)};
-    }
-
-    if (!Peek(Token::Integer)) {
-      return {Error(Error::Code::MissingArrayNum, loc, txt)};
-    }
-
-    size_t num = std::stoi(txt);
-
-    nexttok(); // eat '[0-9]+'
-
-    if (!Expect(Token::RBracket)) {
-      return {Error(Error::Code::MissingRBracket, loc, txt)};
-    }
-
-    return {env.types->GetArrayType(num, array_type)};
+    return ParseArrayType(env);
   }
 
-  // #RULE Token::Ptr predicts the type of a pointer
-  case Token::Ptr: {
-    nexttok(); // eat "Ptr"
-
-    // if we don't see "<" that's a misformed Ptr Type literal.
-    if (!Peek(Token::Op) || (strcmp("<", txt.c_str()) != 0)) {
-      return {Error(Error::MissingLessThan, loc, txt)};
-    }
-
-    auto type = ParseType(env);
-
-    if (!type) {
-      return type;
-    }
-
-    return {env.types->GetPointerType(type.GetFirst())};
+  // #RULE Token::Pointer predicts the type of a pointer
+  case Token::Pointer: {
+    return ParsePointerType(env);
   }
 
   default: {
-    return Error(Error::Code::UnknownTypeToken, loc, txt);
+    return {Error(Error::Code::UnknownTypeToken, location, std::string(text))};
   }
   }
+}
+
+auto Parser::ParseTupleType(Environment &env) -> TypeResult {
+  nexttok(); // eat '('
+  auto left = ParseType(env);
+
+  if (!left) {
+    return left;
+  }
+
+  if (token == Token::Comma) {
+    std::vector<Type::Pointer> elem_tys = {left.GetFirst()};
+    do {
+      nexttok(); // eat ','
+
+      auto elem_ty = ParseType(env);
+      if (!elem_ty) {
+        return elem_ty;
+      }
+
+      elem_tys.push_back(elem_ty.GetFirst());
+    } while (token == Token::Comma);
+
+    left = env.type_interner.GetTupleType(elem_tys);
+  }
+
+  if (!Expect(Token::RParen)) {
+    return Error(Error::Code::MissingRParen, location, std::string(text));
+  }
+
+  return left;
+}
+
+auto Parser::ParseArrayType(Environment &env) -> TypeResult {
+  nexttok(); // eat '['
+
+  auto array_type_result = ParseType(env);
+
+  if (!array_type_result) {
+    return array_type_result;
+  }
+
+  auto &array_type = array_type_result.GetFirst();
+
+  if (!Expect(Token::Semicolon)) {
+    return {
+        Error(Error::Code::MissingArraySemicolon, location, std::string(text))};
+  }
+
+  if (!Peek(Token::Integer)) {
+    return {Error(Error::Code::MissingArrayNum, location, std::string(text))};
+  }
+
+  auto maybe_integer = ToInteger(text);
+  if (!maybe_integer) {
+    auto errc = maybe_integer.GetSecond();
+    if (errc == std::errc::result_out_of_range) {
+      return {
+          Error(Error::Code::IntegerOutOfBounds, location, std::string(text))};
+    }
+
+    if (errc == std::errc::invalid_argument) {
+      FatalError("Lexed [0-9]+ that std::from_chars doesn't recognize",
+                 __FILE__,
+                 __LINE__);
+    }
+
+    FatalError("Unhandled std::errc returned by from_chars",
+               __FILE__,
+               __LINE__);
+  }
+
+  nexttok(); // eat [0-9]+
+
+  if (!Expect(Token::RBracket)) {
+    return {Error(Error::Code::MissingRBracket, location, std::string(text))};
+  }
+
+  return {env.type_interner.GetArrayType(maybe_integer.GetFirst(), array_type)};
+}
+
+auto Parser::ParsePointerType(Environment &env) -> TypeResult {
+  nexttok(); // eat "Pointer"
+
+  auto type = ParseType(env);
+
+  if (!type) {
+    return type;
+  }
+
+  return {env.type_interner.GetPointerType(type.GetFirst())};
 }
 
 } // namespace pink

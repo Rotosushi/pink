@@ -81,7 +81,7 @@ type = "Nil"
      | "Boolean"
      | "(" type {"," type} ")"
      | "[" type "x" integer "]"
-     | "Ptr" "<" type ">"
+     | "Pointer" type
 
 // these are the regular expressions used by re2c
 id = [a-zA-Z_][a-zA-Z0-9_]*
@@ -92,30 +92,19 @@ integer = [0-9]+
  */
 
 /*
-  an interesting thing we could do is allow all statements 
-  to appear at the tope level. (as one would do in a REPL like 
-  language such as Python), and to answer the question of 
-  when these statements are evaluated, we could answer with
-  at compile time. This would be instead of (or maybe in addition 
-  to) a comptime keyword. This would allow for more complex initialization 
-  of global variables. However, since globals are bad design
-  it might simply be better to continue to not even parse 
-  disallowed top-level statements and simply add a comptime 
-  keyword, which would allow for initialization at compile
-  time. Of course this discussion is theoretical.
-
-  what about this EBNF grammar?
+what about this EBNF grammar?
 
 top = declaration ";"
 
-declaration = variable
+declaration = bind
             | function
             | type
 
-variable = identifier
-         | identifier ":" type ["<-" affix]
-         | identifier ":" "<-" affix
-         | identifier ":<-" affix
+bind = identifier ":" [constness] [type] "=" affix ";"
+     | identifier ":" [constness] [type] ["=" affix] ";"
+
+constness = "var"
+          | "const"
 
 function = "fn" identifier argument-list block
 
@@ -182,50 +171,25 @@ integer = [0-9]+
 */
 
 class Parser {
+public:
+  using Result     = Outcome<Ast::Pointer, Error>;
+  using TypeResult = Outcome<Type::Pointer, Error>;
+
 private:
-  /**
-   * @brief The Lexer used to translate input text into Tokens.
-   *
-   */
-  Lexer lexer;
-
-  /**
-   * @brief The current Token being processed
-   *
-   */
-  Token tok;
-
-  /**
-   * @brief The textual location of the current Token
-   *
-   */
-  Location loc;
-
-  /**
-   * @brief The text which caused the Lexer to return the current Token
-   *
-   */
-  std::string txt;
-
-  /**
-   * @brief The input stream to pull more input from.
-   *
-   */
   std::istream *input_stream;
+  Lexer         lexer;
 
-  /**
-   * @brief Called to append another line of source text to the processing
-   * buffer.
-   *
-   * Calling this procedure is handled by nexttok
-   */
-  void yyfill();
+  Token            token;
+  Location         location;
+  std::string_view text;
+
+  [[nodiscard]] auto Getline() -> std::string;
 
   /**
    * @brief Get the next Token from the input stream.
    *
-   * stores the next Token in tok, as well as filling
-   * loc and txt with their data.
+   * stores the next Token in token, as well as filling
+   * location and text with their data.
    */
   void nexttok();
 
@@ -234,7 +198,7 @@ private:
    * when *true*
    *
    * \warning This function calls [nexttok](#Parser::nexttok) if
-   * [tok](#Parser::tok) *equals* token
+   * [token](#Parser::token) *equals* token
    *
    * @param token the token to compare
    * @return true the current token *was* equal to token, advances parser state
@@ -248,8 +212,8 @@ private:
    * state
    *
    * @param token the token to compare
-   * @return true tok == token
-   * @return false tok != token
+   * @return true token == token
+   * @return false token != token
    */
   auto Peek(Token token) -> bool;
 
@@ -265,7 +229,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseTop(const Environment &env) -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseTop(Environment &env) -> Result;
 
   /**
    * @brief Parses Function expressions
@@ -283,8 +247,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseFunction(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseFunction(Environment &env) -> Result;
 
   /**
    * @brief Parses a Bind expression
@@ -297,8 +260,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBind(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseBind(Environment &env) -> Result;
 
   /**
    * @brief Parses a Bind expression
@@ -312,9 +274,8 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBind(InternedString name, Location lhs_location,
-                 const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseBind(InternedString name, Location lhs_location, Environment &env)
+      -> Result;
 
   /**
    * @brief Parses Argument expressions
@@ -327,9 +288,8 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseArgument(const Environment &env)
+  auto ParseArgument(Environment &env)
       -> Outcome<std::pair<InternedString, Type::Pointer>, Error>;
-
   /**
    * @brief Parses Block expressions
    *
@@ -341,8 +301,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBlock(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseBlock(Environment &env) -> Result;
 
   /**
    * @brief Parses Term expressions
@@ -358,8 +317,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseTerm(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseTerm(Environment &env) -> Result;
 
   /**
    * @brief Parses Conditional expressions
@@ -372,8 +330,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseConditional(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseConditional(Environment &env) -> Result;
 
   /**
    * @brief Parses While expressions
@@ -386,8 +343,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseWhile(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseWhile(Environment &env) -> Result;
 
   /**
    * @brief Parses Affix expressions
@@ -402,8 +358,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseAffix(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseAffix(Environment &env) -> Result;
 
   /**
    * @brief Parses Assignment expressions
@@ -417,8 +372,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseAssignment(const Environment &env, std::unique_ptr<Ast> composite)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseAssignment(Ast::Pointer composite, Environment &env) -> Result;
 
   /**
    * @brief Parses an Application expression
@@ -432,8 +386,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseApplication(const Environment &env, std::unique_ptr<Ast> composite)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseApplication(Ast::Pointer composite, Environment &env) -> Result;
 
   /**
    * @brief Parses Composite expressions
@@ -450,8 +403,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseComposite(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseComposite(Environment &env) -> Result;
 
   /**
    * @brief Parses accessor expressions
@@ -472,8 +424,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseAccessor(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseAccessor(Environment &env) -> Result;
 
   /**
    * @brief Parses member access expressions
@@ -486,8 +437,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseDot(const Environment &env, std::unique_ptr<Ast> left)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseDot(Ast::Pointer left, Environment &env) -> Result;
 
   /**
    * @brief Parses subscript access expressions
@@ -500,8 +450,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseSubscript(const Environment &env, std::unique_ptr<Ast> left)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseSubscript(Ast::Pointer left, Environment &env) -> Result;
 
   /**
    * @brief Parses Infix expressions
@@ -517,9 +466,9 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseInfix(std::unique_ptr<Ast> left, Precedence precedence,
-                  const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseInfix(std::unique_ptr<Ast> left,
+                  Precedence           precedence,
+                  Environment         &env) -> Result;
 
   /**
    * @brief Parses Basic expressions
@@ -538,8 +487,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBasic(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseBasic(Environment &env) -> Result;
 
   /**
    * @brief Parses a Tuple
@@ -555,8 +503,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseTuple(const Environment &env, std::unique_ptr<Ast> first_element)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseTuple(Ast::Pointer first_element, Environment &env) -> Result;
 
   /**
    * @brief Parses an Array
@@ -569,8 +516,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseArray(const Environment &env)
-      -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto ParseArray(Environment &env) -> Result;
 
   /**
    * @brief Parses Type expressions
@@ -580,43 +526,27 @@ private:
            | "Boolean"
            | "(" type {"," type} ")"
            | "[" type "x" int "]"
-           | "ptr" type
+           | "Pointer" type
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseType(const Environment &env) -> Outcome<Type::Pointer, Error>;
+  auto ParseType(Environment &env) -> TypeResult;
+
+  auto ParseArrayType(Environment &env) -> TypeResult;
+  auto ParseTupleType(Environment &env) -> TypeResult;
+  auto ParsePointerType(Environment &env) -> TypeResult;
 
 public:
-  /**
-   * @brief Construct a new Parser
-   *
-   * the default initialization of the input stream is std::cin
-   */
   Parser();
-
-  /**
-   * @brief Construct a new Parser
-   *
-   * @param input_stream the input stream; *CANNOT* be nullptr.
-   */
   Parser(std::istream *input_stream);
-
-  /**
-   * @brief Destroy the Parser
-   *
-   */
-  ~Parser()                           = default;
-
-  Parser(const Parser &other)         = delete;
-
-  Parser(Parser &&other)              = delete;
-
-  auto operator=(const Parser &other) = delete;
-
-  auto operator=(Parser &&other)      = delete;
+  ~Parser()                                       = default;
+  Parser(const Parser &other)                     = delete;
+  Parser(Parser &&other)                          = default;
+  auto operator=(const Parser &other) -> Parser & = delete;
+  auto operator=(Parser &&other) -> Parser      & = default;
 
   /**
    * @brief Test if the Parser is at the end of it's input
@@ -633,9 +563,6 @@ public:
    * [firstLine](#Location::firstLine) till the next newline character,
    * from the buffer held by the Lexer.
    *
-   * \note this function could also return the string from firstLine
-   * to the end of lastLine, but I don't know which behavior is more
-   * useful for the error reporting function.
    *
    * \note this function only works because we buffer the -entire- file as
    * we read it. Were we to use a fixed buffer which slides in more text
@@ -646,11 +573,12 @@ public:
    * \note this function takes O(N) time, because it actually has to scan the
    * buffer until it gets to the line
    *
-   * @param loc the location to search for
+   * @param location the location to search for
    * @return std::string the line we were searching for, or if that couldn't
    * be found then the empty string
    */
-  [[nodiscard]] auto ExtractLine(const Location &loc) const -> std::string;
+  [[nodiscard]] auto ExtractLine(const Location &location) const
+      -> std::string_view;
 
   /**
    * @brief Get the input stream
@@ -673,14 +601,10 @@ public:
    * which boils down to the fact that it never has
    * to reparse any of the input it reads.
    *
-   * \note this class would be easy to adapt to be able to
-   * reparse it's input if it buffered all of the tokens that
-   * it read
-   *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto Parse(const Environment &env) -> Outcome<std::unique_ptr<Ast>, Error>;
+  auto Parse(Environment &env) -> Result;
 };
 } // namespace pink

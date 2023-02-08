@@ -29,18 +29,15 @@ public:
   using const_iterator = Arguments::const_iterator;
 
 private:
-  InternedString               name;
-  Arguments                    arguments;
-  Ast::Pointer                 body;
-  mutable SymbolTable::Pointer scope;
+  InternedString name;
+  Arguments      arguments;
+  Ast::Pointer   body;
 
 public:
   Function(const Location &location, const InternedString name,
-           Arguments arguments, Ast::Pointer body,
-           SymbolTable *outer_scope) noexcept
+           Arguments arguments, Ast::Pointer body) noexcept
       : Ast(Ast::Kind::Function, location), name(name),
-        arguments(std::move(arguments)), body(std::move(body)),
-        scope(outer_scope) {}
+        arguments(std::move(arguments)), body(std::move(body)) {}
   ~Function() noexcept override                                = default;
   Function(const Function &other) noexcept                     = delete;
   Function(Function &&other) noexcept                          = default;
@@ -53,10 +50,6 @@ public:
   auto GetArguments() const noexcept -> const Arguments & { return arguments; }
   auto GetBody() noexcept -> Ast::Pointer & { return body; }
   auto GetBody() const noexcept -> const Ast::Pointer & { return body; }
-  auto GetScope() noexcept -> SymbolTable::Pointer & { return scope; }
-  auto GetScope() const noexcept -> const SymbolTable::Pointer & {
-    return scope;
-  }
 
   [[nodiscard]] auto begin() noexcept -> iterator { return arguments.begin(); }
   [[nodiscard]] auto begin() const noexcept -> const_iterator {

@@ -17,21 +17,20 @@
 
 #include "aux/Environment.h"
 
-#include "kernel/AllocateVariable.h"
-#include "kernel/ArraySubscript.h"
-#include "kernel/LoadValue.h"
-#include "kernel/SliceSubscript.h"
-#include "kernel/StoreValue.h"
-
-#include "kernel/sys/SysExit.h"
+#include "runtime/AllocateVariable.h"
+#include "runtime/ArraySubscript.h"
+#include "runtime/LoadValue.h"
+#include "runtime/SliceSubscript.h"
+#include "runtime/StoreValue.h"
+#include "runtime/sys/SysExit.h"
 
 #include "llvm/IR/Verifier.h"
 
 namespace pink {
-class CodegenVisitor
-    : public ConstVisitorResult<CodegenVisitor, const Ast::Pointer &,
-                                CodegenResult>,
-      public ConstAstVisitor {
+class CodegenVisitor : public ConstVisitorResult<CodegenVisitor,
+                                                 const Ast::Pointer &,
+                                                 CodegenResult>,
+                       public ConstAstVisitor {
 private:
   Environment &env;
 
@@ -54,7 +53,9 @@ public:
   void Visit(const Variable *variable) const noexcept override;
   void Visit(const While *loop) const noexcept override;
 
-  CodegenVisitor(Environment &env) noexcept : ConstVisitorResult(), env(env) {}
+  CodegenVisitor(Environment &env) noexcept
+      : ConstVisitorResult(),
+        env(env) {}
   ~CodegenVisitor() noexcept override                  = default;
   CodegenVisitor(const CodegenVisitor &other) noexcept = default;
   CodegenVisitor(CodegenVisitor &&other) noexcept      = default;
@@ -171,9 +172,9 @@ void CodegenVisitor::Visit(const Array *array) const noexcept {
   We lower and assignment expression to a store expression.
 */
 void CodegenVisitor::Visit(const Assignment *assignment) const noexcept {
-  env.flags->OnTheLHSOfAssignment(true);
+  env.internal_flags.OnTheLHSOfAssignment(true);
   auto *left_value = Compute(assignment->GetLeft(), this);
-  env.flags->OnTheLHSOfAssignment(false);
+  env.internal_flags.OnTheLHSOfAssignment(false);
   assert(left_value != nullptr);
 
   auto *right_value = Compute(assignment->GetRight(), this);
@@ -187,20 +188,26 @@ void CodegenVisitor::Visit(const Assignment *assignment) const noexcept {
   We lower bind expressions to an alloca plus a StoreValue.
 */
 void CodegenVisitor::Visit(const Bind *bind) const noexcept {
-  auto bound = env.bindings->LookupLocal(bind->GetSymbol());
-  assert(!bound.has_value());
+  auto found = env.scopes.LookupLocal(bind->GetSymbol());
+  assert(!found);
 
   auto affix_type_cache = bind->GetAffix()->GetCachedType();
   assert(affix_type_cache.has_value());
   auto *affix_type = affix_type_cache.value();
 
+  env.internal_flags.WithinBindExpression(true);
   auto *affix_value = Compute(bind->GetAffix(), this);
   assert(affix_value != nullptr);
+  env.internal_flags.WithinBindExpression(false);
 
-  auto *alloca = AllocateVariable(bind->GetSymbol(), affix_value->getType(),
-                                  env, affix_value);
+  // #TODO 2/6/2023 move the responsibilty of allocation
+  // into the affix expression.
+  auto *alloca = AllocateVariable(bind->GetSymbol(),
+                                  affix_value->getType(),
+                                  env,
+                                  affix_value);
 
-  env.bindings->Bind(bind->GetSymbol(), affix_type, alloca);
+  env.scopes.Bind(bind->GetSymbol(), affix_type, alloca);
   result = affix_value;
 }
 
@@ -211,13 +218,13 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
 void CodegenVisitor::Visit(const Binop *binop) const noexcept {
   auto left_cache = binop->GetLeft()->GetCachedType();
   assert(left_cache.has_value());
-  auto *left_type      = left_cache.value();
-  auto *llvm_left_type = ToLLVM(left_type, env);
+  const auto *left_type      = left_cache.value();
+  auto       *llvm_left_type = ToLLVM(left_type, env);
 
   auto right_cache = binop->GetRight()->GetCachedType();
   assert(right_cache.has_value());
-  auto *right_type      = right_cache.value();
-  auto *llvm_right_type = ToLLVM(right_type, env);
+  const auto *right_type      = right_cache.value();
+  auto       *llvm_right_type = ToLLVM(right_type, env);
 
   auto *left_value = Compute(binop->GetLeft(), this);
   assert(left_value != nullptr);
@@ -225,13 +232,16 @@ void CodegenVisitor::Visit(const Binop *binop) const noexcept {
   auto *right_value = Compute(binop->GetRight(), this);
   assert(right_value != nullptr);
 
-  auto literal = env.binops->Lookup(binop->GetOp());
+  auto literal = env.binop_table.Lookup(binop->GetOp());
   assert(literal.has_value());
 
   auto implementation = literal->second->Lookup(left_type, right_type);
   assert(implementation.has_value());
-  result = implementation->second->GetGenerateFn()(
-      llvm_left_type, left_value, llvm_right_type, right_value, env);
+  result = implementation->second->GetGenerateFn()(llvm_left_type,
+                                                   left_value,
+                                                   llvm_right_type,
+                                                   right_value,
+                                                   env);
 }
 
 /*
@@ -308,9 +318,11 @@ void CodegenVisitor::Visit(const Dot *dot) const noexcept {
 
   auto *index = llvm::dyn_cast<Integer>(dot->GetRight().get());
   assert(index != nullptr);
-  auto *struct_type = llvm::cast<llvm::StructType>(left_value->getType());
-  auto *gep         = env.instruction_builder->CreateConstGEP2_32(
-      struct_type, left_value, 0, index->GetValue());
+  auto *struct_type  = llvm::cast<llvm::StructType>(left_value->getType());
+  auto *gep          = env.instruction_builder->CreateConstGEP2_32(struct_type,
+                                                          left_value,
+                                                          0,
+                                                          index->GetValue());
   auto *element_type = struct_type->getTypeAtIndex(index->GetValue());
   result             = LoadValue(element_type, gep, env);
 }
@@ -329,16 +341,18 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
   auto *llvm_function_type = [&]() {
     if (is_main) {
-      auto *main_function_type = env.types->GetFunctionType(
-          env.types->GetVoidType(), pink_function_type->GetArguments());
+      const auto *main_function_type =
+          env.type_interner.GetFunctionType(env.type_interner.GetVoidType(),
+                                            pink_function_type->GetArguments());
       return llvm::cast<llvm::FunctionType>(ToLLVM(main_function_type, env));
     }
     return llvm::cast<llvm::FunctionType>(ToLLVM(pink_function_type, env));
   }();
 
-  auto *llvm_function = llvm::Function::Create(
-      llvm_function_type, llvm::Function::ExternalLinkage, function->GetName(),
-      *env.llvm_module);
+  auto *llvm_function = llvm::Function::Create(llvm_function_type,
+                                               llvm::Function::ExternalLinkage,
+                                               function->GetName(),
+                                               *env.module);
 
   /*
     if this function returns a structure then we
@@ -376,14 +390,13 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     }
   }
 
-  auto *entry_BB = llvm::BasicBlock::Create(
-      *env.context, function->GetName() + std::string("_entry"), llvm_function);
-  auto entry_point = entry_BB->getFirstInsertionPt();
+  auto *entry_BB =
+      llvm::BasicBlock::Create(*env.context,
+                               function->GetName() + std::string("entry"),
+                               llvm_function);
 
-  auto local_builder =
-      std::make_shared<llvm::IRBuilder<>>(entry_BB, entry_point);
-  auto local_env = Environment::NewLocalEnv(env, function->GetScope(),
-                                            local_builder, llvm_function);
+  env.instruction_builder->SetInsertPoint(entry_BB);
+  env.scopes.PushScope();
 
   // Set up the arguments within the function's first BasicBlock,
   // A) Allocate all arguments
@@ -395,10 +408,13 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   arg_allocas.reserve(function->GetArguments().size());
   auto allocate_argument = [&](const llvm::Argument &arg) {
     arg_allocas.emplace_back(env.instruction_builder->CreateAlloca(
-        arg.getType(), env.data_layout.getAllocaAddrSpace(), nullptr,
+        arg.getType(),
+        env.module->getDataLayout().getAllocaAddrSpace(),
+        nullptr,
         arg.getName()));
   };
-  std::for_each(llvm_function->arg_begin(), llvm_function->arg_end(),
+  std::for_each(llvm_function->arg_begin(),
+                llvm_function->arg_end(),
                 allocate_argument);
 
   auto alloc_cursor    = arg_allocas.begin();
@@ -410,7 +426,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     const auto &pink_arg = *pink_arg_cursor;
 
     StoreValue(llvm_arg.getType(), alloc, &llvm_arg, env);
-    env.bindings->Bind(pink_arg.first, pink_arg.second, alloc);
+    env.scopes.Bind(pink_arg.first, pink_arg.second, alloc);
 
     alloc_cursor++;
     pink_arg_cursor++;
@@ -424,10 +440,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   // from the Ast, and implementing a Stack of Scopes
   // then pushing/poping a scope can be a method of
   // the environment. much cleaner!
-  Environment &old_env = env;
-  env                  = *local_env;
-  auto *body_value     = Compute(function->GetBody(), this);
-  env                  = old_env;
+  auto *body_value = Compute(function->GetBody(), this);
   assert(body_value != nullptr);
 
   if (is_main) {
@@ -435,10 +448,9 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     env.instruction_builder->CreateRetVoid();
   } else {
     if (llvm_return_type->isSingleValueType()) {
-      local_builder->CreateRet(body_value);
+      env.instruction_builder->CreateRet(body_value);
     } else {
-      StoreValue(llvm_return_type, llvm_function->getArg(0), body_value,
-                 *local_env);
+      StoreValue(llvm_return_type, llvm_function->getArg(0), body_value, env);
     }
   }
 
@@ -447,8 +459,12 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   if (llvm::verifyFunction(*llvm_function, &out)) {
     FatalError(buffer, __FILE__, __LINE__);
   }
-
-  env.bindings->Bind(function->GetName(), pink_function_type, llvm_function);
+  // We just emitted a function, so we know we
+  // are about to enter global scope, and we cannot
+  // emit instructions into global scope, so we must
+  // clear the insertion point.
+  env.instruction_builder->ClearInsertionPoint();
+  env.scopes.Bind(function->GetName(), pink_function_type, llvm_function);
   result = llvm_function;
 }
 
@@ -467,26 +483,14 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
 
   auto left_cache = subscript->GetLeft()->GetCachedType();
   assert(left_cache.has_value());
-  auto *left_type = left_cache.value();
+  const auto *left_type = left_cache.value();
 
   auto *right_value = [&]() {
     CodegenResult res;
-    // this seems fine for now, and works. But it feels
-    // like this pattern could become hard to understand
-    // and maintain if we have to keep adding flags and
-    // checks like these for each place it matters. as
-    // it is both hard-coded and necessary
-    // in multiple locations. maybe some kind of flags
-    // bitset that was available in each Ast node,
-    // it could keep track of const, ownership, others,.
-    // wait, that might not be apropo of this particular
-    // problem, as the Ast isn't necessarily concerned
-    // with what is above it in the Ast? this flag is
-    // only used in the code generation visitor.
-    if (env.flags->OnTheLHSOfAssignment()) {
-      env.flags->OnTheLHSOfAssignment(false);
+    if (env.internal_flags.OnTheLHSOfAssignment()) {
+      env.internal_flags.OnTheLHSOfAssignment(false);
       res = Compute(subscript->GetRight(), this);
-      env.flags->OnTheLHSOfAssignment(true);
+      env.internal_flags.OnTheLHSOfAssignment(true);
     } else {
       res = Compute(subscript->GetRight(), this);
     }
@@ -498,8 +502,11 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
     auto *llvm_array_type =
         llvm::cast<llvm::StructType>(ToLLVM(array_type, env));
     auto *llvm_element_type = ToLLVM(array_type->GetElementType(), env);
-    result = ArraySubscript(llvm_array_type, llvm_element_type, left_value,
-                            right_value, env);
+    result                  = ArraySubscript(llvm_array_type,
+                            llvm_element_type,
+                            left_value,
+                            right_value,
+                            env);
     return;
   }
 
@@ -508,8 +515,11 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
     auto *llvm_slice_type =
         llvm::cast<llvm::StructType>(ToLLVM(slice_type, env));
     auto *llvm_element_type = ToLLVM(slice_type->GetPointeeType(), env);
-    result = SliceSubscript(llvm_slice_type, llvm_element_type, left_value,
-                            right_value, env);
+    result                  = SliceSubscript(llvm_slice_type,
+                            llvm_element_type,
+                            left_value,
+                            right_value,
+                            env);
     return;
   }
 
@@ -546,30 +556,32 @@ void CodegenVisitor::Visit(const Tuple *tuple) const noexcept {
   result = llvm::ConstantStruct::get(struct_type, celements);
 }
 
-static auto CodegenUnopAddressOf(const Unop *unop, Environment &env,
+static auto CodegenUnopAddressOf(const Unop           *unop,
+                                 Environment          &env,
                                  const CodegenVisitor *visitor)
     -> CodegenResult {
-  env.flags->WithinAddressOf(true);
+  env.internal_flags.WithinAddressOf(true);
   auto *right_result = visitor->Compute(unop->GetRight(), visitor);
-  env.flags->WithinAddressOf(false);
+  env.internal_flags.WithinAddressOf(false);
   assert(right_result != nullptr);
   return right_result;
 };
 
-static auto
-CodegenUnopDereferencePointer(const Unop *unop, Type::Pointer right_type,
-                              Environment &env, const CodegenVisitor *visitor)
+static auto CodegenUnopDereferencePointer(const Unop           *unop,
+                                          Type::Pointer         right_type,
+                                          Environment          &env,
+                                          const CodegenVisitor *visitor)
     -> CodegenResult {
   // if we are dereferencing on the left of an assignment
   // expression, we want to suppress a single load instruction,
   // so we pretend we aren't under a dereference operation
-  if (env.flags->OnTheLHSOfAssignment()) {
+  if (env.internal_flags.OnTheLHSOfAssignment()) {
     return visitor->Compute(unop->GetRight(), visitor);
   }
 
-  env.flags->WithinDereferencePtr(true);
+  env.internal_flags.WithinDereferencePtr(true);
   auto *right_value = visitor->Compute(unop->GetRight(), visitor);
-  env.flags->WithinDereferencePtr(false);
+  env.internal_flags.WithinDereferencePtr(false);
   assert(right_value != nullptr);
 
   // we know this is a pointer type, because we can
@@ -600,7 +612,7 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   }();
   assert(right_value != nullptr);
 
-  auto literal = env.unops->Lookup(unop->GetOp());
+  auto literal = env.unop_table.Lookup(unop->GetOp());
   assert(literal.has_value());
 
   auto implementation = literal->second->Lookup(right_type);
@@ -613,7 +625,7 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   We lower a variable into whatever llvm::Value it is bound to.
 */
 void CodegenVisitor::Visit(const Variable *variable) const noexcept {
-  auto bound = env.bindings->Lookup(variable->GetSymbol());
+  auto bound = env.scopes.Lookup(variable->GetSymbol());
   assert(bound.has_value());
   assert(bound->second != nullptr);
   result = LoadValue(ToLLVM(bound->first, env), bound->second, env);

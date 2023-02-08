@@ -38,7 +38,7 @@ void BinopLiteral::Unregister(Type::Pointer left_t, Type::Pointer right_t) {
 }
 
 auto BinopLiteral::Lookup(Type::Pointer left_t, Type::Pointer right_t)
-    -> llvm::Optional<std::pair<Key, BinopCodegen *>> {
+    -> std::optional<std::pair<Key, BinopCodegen *>> {
   auto iter = overloads.find(std::make_pair(left_t, right_t));
 
   if (iter == overloads.end()) {

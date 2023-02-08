@@ -44,7 +44,7 @@ void BinopTable::Unregister(InternedString opr) {
 }
 
 auto BinopTable::Lookup(InternedString opr)
-    -> llvm::Optional<std::pair<InternedString, BinopLiteral *>> {
+    -> std::optional<std::pair<InternedString, BinopLiteral *>> {
   auto iter = table.find(opr);
 
   if (iter == table.end()) {

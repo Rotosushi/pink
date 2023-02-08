@@ -16,36 +16,28 @@ namespace pink {
  */
 class Block : public Ast {
 public:
-  using Expressions = std::vector<Ast::Pointer>;
-  using iterator = Expressions::iterator;
+  using Expressions    = std::vector<Ast::Pointer>;
+  using iterator       = Expressions::iterator;
   using const_iterator = Expressions::const_iterator;
 
 private:
   Expressions expressions;
-  mutable SymbolTable::Pointer scope;
 
 public:
-  Block(const Location &location, SymbolTable *outer_scope) noexcept
-      : Ast(Ast::Kind::Block, location), scope(outer_scope) {}
-  Block(const Location &location, Expressions expressions,
-        SymbolTable *outer_scope) noexcept
-      : Ast(Ast::Kind::Block, location), expressions(std::move(expressions)),
-        scope(outer_scope) {}
-  ~Block() noexcept override = default;
-  Block(const Block &other) noexcept = delete;
-  Block(Block &&other) noexcept = default;
+  Block(const Location &location) noexcept : Ast(Ast::Kind::Block, location) {}
+  Block(const Location &location, Expressions expressions) noexcept
+      : Ast(Ast::Kind::Block, location), expressions(std::move(expressions)) {}
+  ~Block() noexcept override                             = default;
+  Block(const Block &other) noexcept                     = delete;
+  Block(Block &&other) noexcept                          = default;
   auto operator=(const Block &other) noexcept -> Block & = delete;
-  auto operator=(Block &&other) noexcept -> Block & = default;
+  auto operator=(Block &&other) noexcept -> Block      & = default;
 
   auto IsEmpty() const noexcept -> bool { return begin() == end(); }
 
   auto GetExpressions() noexcept -> Expressions & { return expressions; }
   auto GetExpressions() const noexcept -> const Expressions & {
     return expressions;
-  }
-  auto GetScope() noexcept -> SymbolTable::Pointer & { return scope; }
-  auto GetScope() const noexcept -> const SymbolTable::Pointer & {
-    return scope;
   }
 
   [[nodiscard]] auto begin() noexcept -> iterator {

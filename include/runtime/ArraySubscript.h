@@ -17,7 +17,9 @@ namespace pink {
  * @param env the environment of this compilation unit
  * @return llvm::Value* the value held at the index within the array
  */
-auto ArraySubscript(llvm::StructType *array_type, llvm::Type *element_type,
-                    llvm::Value *array, llvm::Value *index,
-                    const Environment &env) -> llvm::Value *;
+auto ArraySubscript(llvm::StructType *array_type,
+                    llvm::Type       *element_type,
+                    llvm::Value      *array,
+                    llvm::Value      *index,
+                    Environment      &env) -> llvm::Value *;
 } // namespace pink

@@ -46,8 +46,8 @@ auto TypeInterner::GetVoidType() -> VoidType::Pointer {
   return void_type.get();
 }
 
-auto TypeInterner::GetFunctionType(Type::Pointer return_type,
-                                   std::vector<Type::Pointer> const &arg_types)
+auto TypeInterner::GetFunctionType(Type::Pointer                  return_type,
+                                   FunctionType::Arguments const &arg_types)
     -> FunctionType::Pointer {
   auto possible = std::make_unique<FunctionType>(return_type, arg_types);
   FunctionType *possible_result = possible.get();
@@ -65,8 +65,8 @@ auto TypeInterner::GetFunctionType(Type::Pointer return_type,
   return found->get();
 }
 
-auto TypeInterner::GetFunctionType(Type::Pointer                return_type,
-                                   std::vector<Type::Pointer> &&arg_types)
+auto TypeInterner::GetFunctionType(Type::Pointer             return_type,
+                                   FunctionType::Arguments &&arg_types)
     -> FunctionType::Pointer {
   auto possible =
       std::make_unique<FunctionType>(return_type, std::move(arg_types));
@@ -101,22 +101,6 @@ auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
   return result;
 }
 
-auto TypeInterner::GetArrayType(size_t size, Type::Pointer member_type)
-    -> ArrayType::Pointer {
-  auto possible = std::make_unique<ArrayType>(size, member_type);
-
-  for (auto &array_type : array_types) {
-    if (StructuralEquality(array_type.get(), possible.get())) {
-      return array_type.get();
-    }
-  }
-
-  ArrayType *result = possible.get();
-  array_types.emplace_back(std::move(possible));
-
-  return result;
-}
-
 auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
     -> SliceType::Pointer {
   auto  possible        = std::make_unique<SliceType>(pointee_type);
@@ -135,7 +119,23 @@ auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
   return found->get();
 }
 
-auto TypeInterner::GetTupleType(std::vector<Type::Pointer> const &member_types)
+auto TypeInterner::GetArrayType(std::size_t size, Type::Pointer member_type)
+    -> ArrayType::Pointer {
+  auto possible = std::make_unique<ArrayType>(size, member_type);
+
+  for (auto &array_type : array_types) {
+    if (StructuralEquality(array_type.get(), possible.get())) {
+      return array_type.get();
+    }
+  }
+
+  ArrayType *result = possible.get();
+  array_types.emplace_back(std::move(possible));
+
+  return result;
+}
+
+auto TypeInterner::GetTupleType(TupleType::Elements const &member_types)
     -> TupleType::Pointer {
   auto possible = std::make_unique<TupleType>(member_types);
 
@@ -150,7 +150,7 @@ auto TypeInterner::GetTupleType(std::vector<Type::Pointer> const &member_types)
   return result;
 }
 
-auto TypeInterner::GetTupleType(std::vector<Type::Pointer> &&member_types)
+auto TypeInterner::GetTupleType(TupleType::Elements &&member_types)
     -> TupleType::Pointer {
   auto possible = std::make_unique<TupleType>(std::move(member_types));
 
@@ -163,5 +163,9 @@ auto TypeInterner::GetTupleType(std::vector<Type::Pointer> &&member_types)
   TupleType *result = possible.get();
   tuple_types.emplace_back(std::move(possible));
   return result;
+}
+
+auto TypeInterner::GetTextType(std::size_t length) -> ArrayType::Pointer {
+  return GetArrayType(length + 1, GetCharacterType());
 }
 } // namespace pink

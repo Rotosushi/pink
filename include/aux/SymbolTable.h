@@ -54,9 +54,8 @@ namespace pink {
  */
 class SymbolTable {
 public:
-  using Key     = InternedString;
-  using Value   = std::pair<Type::Pointer, llvm::Value *>;
-  using Pointer = std::shared_ptr<SymbolTable>;
+  using Key   = InternedString;
+  using Value = std::pair<Type::Pointer, llvm::Value *>;
 
 private:
   /**
@@ -112,7 +111,7 @@ public:
    * otherwise the symbol could not be resolved within this scope or any scope
    * this scope is within.
    */
-  auto Lookup(InternedString symbol) const -> llvm::Optional<Value>;
+  auto Lookup(InternedString symbol) const -> std::optional<Value>;
 
   /**
    * @brief Attempts to resolve the given symbol to it's bound type and value.
@@ -127,7 +126,7 @@ public:
    * contains anything it is the resolved type and value of the symbol.
    * otherwise the symbol could not be resolved within the local scope.
    */
-  auto LookupLocal(InternedString symbol) const -> llvm::Optional<Value>;
+  auto LookupLocal(InternedString symbol) const -> std::optional<Value>;
 
   /**
    * @brief Bind a given symbol within this table to the given type and value

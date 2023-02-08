@@ -79,8 +79,8 @@ auto TokenToString(const Token token) -> std::string {
   case Token::BooleanType: {
     return {"Token::BooleanType"};
   }
-  case Token::Ptr: {
-    return {"Token::Ptr"};
+  case Token::Pointer: {
+    return {"Token::Pointer"};
   }
 
   case Token::Fn: {

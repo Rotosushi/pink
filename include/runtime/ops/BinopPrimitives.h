@@ -13,5 +13,5 @@ namespace pink {
  *
  * @param env The env holding the BinopTable to initialize
  */
-void InitializeBinopPrimitives(const Environment &env);
+void InitializeBinopPrimitives(Environment &env);
 } // namespace pink

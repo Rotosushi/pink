@@ -24,22 +24,25 @@ namespace pink {
  *
  */
 class Integer : public Ast {
+public:
+  using Value = long;
+
 private:
   /**
    * @brief holds the integer being represented.
    */
-  long long value;
+  Value value;
 
 public:
-  Integer(const Location &location, const long long value) noexcept
+  Integer(const Location &location, Value value) noexcept
       : Ast(Ast::Kind::Integer, location), value(value) {}
-  ~Integer() noexcept override = default;
-  Integer(const Integer &other) noexcept = delete;
-  Integer(Integer &&other) noexcept = default;
+  ~Integer() noexcept override                               = default;
+  Integer(const Integer &other) noexcept                     = delete;
+  Integer(Integer &&other) noexcept                          = default;
   auto operator=(const Integer &other) noexcept -> Integer & = delete;
-  auto operator=(Integer &&other) noexcept -> Integer & = default;
+  auto operator=(Integer &&other) noexcept -> Integer      & = default;
 
-  auto GetValue() const noexcept -> long long { return value; }
+  auto GetValue() const noexcept -> Value { return value; }
 
   static auto classof(const Ast *ast) -> bool {
     return Ast::Kind::Integer == ast->GetKind();

@@ -1,7 +1,7 @@
-#include "kernel/LoadValue.h"
+#include "runtime/LoadValue.h"
 
 namespace pink {
-auto LoadValue(llvm::Type *type, llvm::Value *value, const Environment &env)
+auto LoadValue(llvm::Type *type, llvm::Value *value, Environment &env)
     -> llvm::Value * {
   assert(type != nullptr);
   assert(value != nullptr);
@@ -10,7 +10,8 @@ auto LoadValue(llvm::Type *type, llvm::Value *value, const Environment &env)
   if (type->isSingleValueType()) {
     // #RULE assignment needs a pointer on the left to perform assignment
     // #RULE address of converts the single value type to it's pointer
-    if (env.flags->OnTheLHSOfAssignment() || env.flags->WithinAddressOf()) {
+    if (env.internal_flags.OnTheLHSOfAssignment() ||
+        env.internal_flags.WithinAddressOf()) {
       return value;
     }
     return env.instruction_builder->CreateLoad(type, value);

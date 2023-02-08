@@ -29,7 +29,7 @@ private:
    *
    * the Location of the lexer starts at (1, 0, 1, 0)
    */
-  Location loc;
+  Location location;
 
   /**
    * @brief The buffer holding the sequence of input characters to be Lexed
@@ -75,7 +75,7 @@ private:
    * in sync with the iterator positions of the lexer.
    *
    */
-  void UpdateLoc();
+  void UpdateLocation();
 
 public:
   /**
@@ -88,23 +88,28 @@ public:
   /**
    * @brief Construct a new Lexer.
    *
-   * @param buf the new buffer contents.
+   * @param text the new buffer contents.
    */
-  Lexer(std::string &buf);
+  Lexer(std::string_view text);
+  ~Lexer()                                      = default;
+  Lexer(const Lexer &other)                     = delete;
+  Lexer(Lexer &&other)                          = default;
+  auto operator=(const Lexer &other) -> Lexer & = delete;
+  auto operator=(Lexer &&other) -> Lexer      & = default;
 
   /**
    * @brief Getter for Buf.
    *
-   * @return const std::string& the contents of the buffer.
+   * @return const std::string_view into the contents of the buffer.
    */
-  [[nodiscard]] auto GetBuf() const -> const std::string &;
+  [[nodiscard]] auto GetBufferView() const -> const std::string_view;
 
   /**
    * @brief Setter for Buf.
    *
-   * @param buf the new buffer contents.
+   * @param text the new buffer contents.
    */
-  void SetBuf(std::string &buf);
+  void SetBuffer(std::string_view text);
 
   /**
    * @brief Appends the given text onto the buffer
@@ -115,14 +120,7 @@ public:
    *
    * @param text the text to append to the current buffer
    */
-  void AppendBuf(const char *text);
-
-  /**
-   * @copydoc Lexer::AppendBuf(const char* text)
-   */
-  void AppendBuf(std::string &text);
-
-  void Getline(std::istream &input);
+  void AppendToBuffer(std::string_view text);
 
   /**
    * @brief Reset the Lexer to a default constructed state.
@@ -160,7 +158,7 @@ public:
    *
    * @return std::string the text corresponding to the *current* token.
    */
-  auto yytxt() -> std::string;
+  auto yytxt() -> std::string_view;
 
   /**
    * @brief Get the Location of the *current* Token.

@@ -14,10 +14,10 @@
 
 namespace pink {
 
-class TypecheckVisitor
-    : public ConstVisitorResult<TypecheckVisitor, const Ast::Pointer &,
-                                TypecheckResult>,
-      public ConstAstVisitor {
+class TypecheckVisitor : public ConstVisitorResult<TypecheckVisitor,
+                                                   const Ast::Pointer &,
+                                                   TypecheckResult>,
+                         public ConstAstVisitor {
 private:
   Environment &env;
 
@@ -40,7 +40,8 @@ public:
   void Visit(const Variable *variable) const noexcept override;
   void Visit(const While *loop) const noexcept override;
 
-  TypecheckVisitor(Environment &env) noexcept : env(env) {}
+  TypecheckVisitor(Environment &env) noexcept
+      : env(env) {}
   ~TypecheckVisitor() noexcept override                    = default;
   TypecheckVisitor(const TypecheckVisitor &other) noexcept = default;
   TypecheckVisitor(TypecheckVisitor &&other) noexcept      = default;
@@ -64,7 +65,8 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
   }
   auto *callee_type = llvm::dyn_cast<FunctionType>(callee_result.GetFirst());
   if (callee_type == nullptr) {
-    result = Error(Error::Code::TypeCannotBeCalled, application->GetLocation(),
+    result = Error(Error::Code::TypeCannotBeCalled,
+                   application->GetLocation(),
                    ToString(callee_result.GetFirst()));
     return;
   }
@@ -93,8 +95,10 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
   }
 
   auto cmp = [](Type::Pointer one, Type::Pointer two) { return one != two; };
-  auto mismatch = FindBetween(callee_type->begin(), callee_type->end(),
-                              computed_argument_types.cbegin(), cmp);
+  auto mismatch = FindBetween(callee_type->begin(),
+                              callee_type->end(),
+                              computed_argument_types.cbegin(),
+                              cmp);
 
   if (mismatch.first != callee_type->end()) {
     std::string errmsg = "Expected argument type [";
@@ -138,13 +142,15 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
       errmsg += ToString(computed_element_types[0]);
       errmsg += "]";
       result = Error(Error::Code::ArrayMemberTypeMismatch,
-                     element->GetLocation(), errmsg);
+                     element->GetLocation(),
+                     errmsg);
       return;
     }
   }
 
-  auto *result_type = env.types->GetArrayType(array->GetElements().size(),
-                                              computed_element_types[0]);
+  auto *result_type =
+      env.type_interner.GetArrayType(array->GetElements().size(),
+                                     computed_element_types[0]);
   array->SetCachedType(result_type);
   result = {result_type};
 }
@@ -154,9 +160,9 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
   if and only if the left hand side is the same type.
 */
 void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
-  env.flags->OnTheLHSOfAssignment(true);
+  env.internal_flags.OnTheLHSOfAssignment(true);
   auto left_outcome = Compute(assignment->GetLeft(), this);
-  env.flags->OnTheLHSOfAssignment(false);
+  env.internal_flags.OnTheLHSOfAssignment(false);
   if (!left_outcome) {
     result = left_outcome;
     return;
@@ -176,7 +182,8 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
     errmsg             += "] does not match right type [";
     errmsg             += ToString(right_type);
     errmsg             += "]";
-    result = Error(Error::Code::AssigneeTypeMismatch, assignment->GetLocation(),
+    result             = Error(Error::Code::AssigneeTypeMismatch,
+                   assignment->GetLocation(),
                    errmsg);
     return;
   }
@@ -190,7 +197,7 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
   if and only if the name being bound is not already bound.
 */
 void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
-  auto bound = env.bindings->LookupLocal(bind->GetSymbol());
+  auto bound = env.scopes.LookupLocal(bind->GetSymbol());
 
   if (bound.has_value()) {
     std::string errmsg = "symbol [";
@@ -198,20 +205,22 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
     errmsg             += "] is already bound to type [";
     errmsg             += ToString(bound->first);
     errmsg             += "]";
-    result = Error(Error::Code::NameAlreadyBoundInScope, bind->GetLocation(),
+    result             = Error(Error::Code::NameAlreadyBoundInScope,
+                   bind->GetLocation(),
                    errmsg);
     return;
   }
 
+  env.internal_flags.WithinBindExpression(true);
   auto affix_result = Compute(bind->GetAffix(), this);
   if (!affix_result) {
     result = affix_result;
     return;
   }
   auto *affix_type = affix_result.GetFirst();
+  env.internal_flags.WithinBindExpression(false);
 
-  env.false_bindings->push_back(bind->GetSymbol());
-  env.bindings->Bind(bind->GetSymbol(), affix_type, nullptr);
+  env.scopes.Bind(bind->GetSymbol(), affix_type, nullptr);
 
   bind->SetCachedType(affix_type);
   result = affix_type;
@@ -238,7 +247,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
   }
   auto *right_type = right_result.GetFirst();
 
-  auto literal = env.binops->Lookup(binop->GetOp());
+  auto literal = env.binop_table.Lookup(binop->GetOp());
 
   if (!literal || literal->second->NumOverloads() == 0) {
     std::string errmsg = "Unknown binop [";
@@ -273,28 +282,29 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
 */
 void TypecheckVisitor::Visit(const Block *block) const noexcept {
   if (block->IsEmpty()) {
-    result = env.types->GetNilType();
-    block->SetCachedType(env.types->GetNilType());
+    auto *nil_type = env.type_interner.GetNilType();
+    result         = nil_type;
+    block->SetCachedType(nil_type);
     return;
   }
 
-  auto             local_env = Environment::NewLocalEnv(env, block->GetScope());
-  TypecheckVisitor local_visitor(*local_env);
-
+  env.scopes.PushScope();
   for (const auto &expression : *block) {
-    result = Compute(expression, &local_visitor);
+    result = Compute(expression, this);
 
     if (!result) {
+      env.scopes.PopScope();
       return;
     }
   }
+  env.scopes.PopScope();
 }
 
 /* 1/24/2023
   The type of a boolean literal is Boolean.
 */
 void TypecheckVisitor::Visit(const Boolean *boolean) const noexcept {
-  auto *result_type = env.types->GetBoolType();
+  auto *result_type = env.type_interner.GetBoolType();
   boolean->SetCachedType(result_type);
   result = result_type;
 }
@@ -312,12 +322,13 @@ void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {
   }
   auto *test_type = test_result.GetFirst();
 
-  if (test_type != env.types->GetBoolType()) {
+  if (test_type != env.type_interner.GetBoolType()) {
     std::string errmsg = "Test expression has type [";
     errmsg             += ToString(test_type);
     errmsg             += "] expected type [Boolean]";
     result             = Error(Error::Code::CondTestExprTypeMismatch,
-                               conditional->GetTest()->GetLocation(), errmsg);
+                   conditional->GetTest()->GetLocation(),
+                   errmsg);
     return;
   }
 
@@ -334,6 +345,18 @@ void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {
     return;
   }
   auto *second_type = second_result.GetFirst();
+
+  if (first_type != second_type) {
+    std::string errmsg = "first type [";
+    errmsg             += ToString(first_type);
+    errmsg             += "] second type [";
+    errmsg             += ToString(second_type);
+    errmsg             += "]";
+    result             = Error(Error::Code::CondBodyExprTypeMismatch,
+                   conditional->GetLocation(),
+                   errmsg);
+    return;
+  }
 
   conditional->SetCachedType(second_type);
   result = first_type;
@@ -369,7 +392,8 @@ void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
     errmsg             += ToString(left_type);
     errmsg             += "] which is not an accessable type.";
     result             = Error(Error::Code::DotLeftIsNotATuple,
-                               dot->GetLeft()->GetLocation(), errmsg);
+                   dot->GetLeft()->GetLocation(),
+                   errmsg);
     return;
   }
 
@@ -380,7 +404,8 @@ void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
     errmsg             += ToString(dot->GetRight());
     errmsg             += "] is not an Integer literal.";
     result             = Error(Error::Code::DotRightIsNotAnInt,
-                               dot->GetRight()->GetLocation(), errmsg);
+                   dot->GetRight()->GetLocation(),
+                   errmsg);
     return;
   }
 
@@ -406,46 +431,33 @@ void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
   are bound to their respective types.
 */
 void TypecheckVisitor::Visit(const Function *function) const noexcept {
-  auto BindArguments = [*this, function]() {
-    for (const auto &argument : *function) {
-      function->GetScope()->Bind(argument.first, argument.second, nullptr);
-    }
-  };
 
-  auto UnbindArguments = [*this, function]() {
-    for (const auto &argument : *function) {
-      function->GetScope()->Unbind(argument.first);
-    }
-  };
+  env.scopes.PushScope();
 
-  auto         local_env = Environment::NewLocalEnv(env, function->GetScope());
-  Environment &old_env   = env;
-  env                    = *local_env;
+  for (const auto &argument : *function) {
+    env.scopes.Bind(argument.first, argument.second, nullptr);
+  }
 
-  auto Cleanup = [&]() {
-    UnbindArguments();
-    local_env->ClearFalseBindings();
-  };
-
-  BindArguments();
   auto body_result = Compute(function->GetBody(), this);
   if (!body_result) {
     result = body_result;
-    Cleanup();
+    env.scopes.PopScope();
     return;
   }
-  Cleanup();
-  env             = old_env;
-  auto *body_type = body_result.GetFirst();
+  const auto *body_type = body_result.GetFirst();
+  env.scopes.PopScope();
 
   std::vector<Type::Pointer> argument_types(function->GetArguments().size());
   auto                       GetType = [](const Function::Argument &argument) {
     return argument.second;
   };
-  std::transform(function->begin(), function->end(), argument_types.begin(),
+  std::transform(function->begin(),
+                 function->end(),
+                 argument_types.begin(),
                  GetType);
 
-  auto *result_type = env.types->GetFunctionType(body_type, argument_types);
+  const auto *result_type =
+      env.type_interner.GetFunctionType(body_type, argument_types);
   function->SetCachedType(result_type);
   result = result_type;
 }
@@ -454,7 +466,7 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
   The type of an integer literal is Integer
 */
 void TypecheckVisitor::Visit(const Integer *integer) const noexcept {
-  auto *result_type = env.types->GetIntType();
+  const auto *result_type = env.type_interner.GetIntType();
   integer->SetCachedType(result_type);
   result = result_type;
 }
@@ -463,7 +475,7 @@ void TypecheckVisitor::Visit(const Integer *integer) const noexcept {
   The type of the nil literal is Nil.
 */
 void TypecheckVisitor::Visit(const Nil *nil) const noexcept {
-  auto *result_type = env.types->GetNilType();
+  const auto *result_type = env.type_interner.GetNilType();
   nil->SetCachedType(result_type);
   result = result_type;
 }
@@ -480,14 +492,15 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
     result = right_result;
     return;
   }
-  auto *right_type = right_result.GetFirst();
+  const auto *right_type = right_result.GetFirst();
 
   if ((llvm::dyn_cast<IntegerType>(right_type)) == nullptr) {
     std::string errmsg = "Cannot use type [";
     errmsg             += ToString(right_type);
     errmsg             += "] as an index.";
     result             = Error(Error::Code::SubscriptRightIsNotAnIndex,
-                               subscript->GetRight()->GetLocation(), errmsg);
+                   subscript->GetRight()->GetLocation(),
+                   errmsg);
     return;
   }
 
@@ -513,14 +526,14 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
     errmsg             += ToString(left_type);
     errmsg             += "]";
     return Error(Error::Code::SubscriptLeftIsNotSubscriptable,
-                 subscript->GetLeft()->GetLocation(), errmsg);
+                 subscript->GetLeft()->GetLocation(),
+                 errmsg);
   }();
   if (!element_result) {
     result = element_result;
     return;
   }
-  auto *element_type = element_result.GetFirst();
-
+  const auto *element_type = element_result.GetFirst();
   subscript->SetCachedType(element_type);
   result = element_type;
 }
@@ -543,7 +556,7 @@ void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
     element_types.emplace_back(element_result.GetFirst());
   }
 
-  auto *result_type = env.types->GetTupleType(element_types);
+  const auto *result_type = env.type_interner.GetTupleType(element_types);
   tuple->SetCachedType(result_type);
   result = result_type;
 }
@@ -566,7 +579,7 @@ void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
   treat the pointer to some allocation.
 */
 void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
-  auto literal = env.unops->Lookup(unop->GetOp());
+  auto literal = env.unop_table.Lookup(unop->GetOp());
   if (!literal) {
     std::string errmsg = "Unknown unop [";
     errmsg             += unop->GetOp();
@@ -578,9 +591,9 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   auto implementation_result =
       [&]() -> Outcome<std::pair<Type::Pointer, UnopCodegen *>, Error> {
     if (strcmp(unop->GetOp(), "*") == 0) {
-      env.flags->WithinDereferencePtr(true);
+      env.internal_flags.WithinDereferencePtr(true);
       auto right_result = Compute(unop->GetRight(), this);
-      env.flags->WithinDereferencePtr(false);
+      env.internal_flags.WithinDereferencePtr(false);
       if (!right_result) {
         return right_result.GetSecond();
       }
@@ -588,32 +601,34 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
       // create a new instance of the dereference op
       // with the same body as every other dereference op.
       auto  dereference_integer =
-          literal->second->Lookup(env.types->GetIntType());
+          literal->second->Lookup(env.type_interner.GetIntType());
       assert(dereference_integer.has_value());
       return literal->second->Register(
-          env.types->GetPointerType(right_type), right_type,
+          env.type_interner.GetPointerType(right_type),
+          right_type,
           dereference_integer->second->GetGenerateFn());
     }
 
     if (strcmp(unop->GetOp(), "&") == 0) {
-      if (env.flags->OnTheLHSOfAssignment()) {
+      if (env.internal_flags.OnTheLHSOfAssignment()) {
         // we cannot assign to an address value.
         // that is like assignment to a number
         return Error(Error::Code::ValueCannotBeAssigned, unop->GetLocation());
       }
-      env.flags->WithinAddressOf(true);
+      env.internal_flags.WithinAddressOf(true);
       auto right_result = Compute(unop->GetRight(), this);
-      env.flags->WithinAddressOf(false);
+      env.internal_flags.WithinAddressOf(false);
       if (!right_result) {
         return right_result.GetSecond();
       }
       auto *right_type = right_result.GetFirst();
 
       auto address_of_integer =
-          literal->second->Lookup(env.types->GetIntType());
+          literal->second->Lookup(env.type_interner.GetIntType());
       assert(address_of_integer.has_value());
       return literal->second->Register(
-          right_type, env.types->GetPointerType(right_type),
+          right_type,
+          env.type_interner.GetPointerType(right_type),
           address_of_integer->second->GetGenerateFn());
     }
 
@@ -632,7 +647,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   }();
   auto &implementation = implementation_result.GetFirst();
 
-  auto *result_type = implementation.second->GetReturnType();
+  const auto *result_type = implementation.second->GetReturnType();
   unop->SetCachedType(result_type);
   result = result_type;
 }
@@ -643,7 +658,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   in scope.
 */
 void TypecheckVisitor::Visit(const Variable *variable) const noexcept {
-  auto bound = env.bindings->Lookup(variable->GetSymbol());
+  auto bound = env.scopes.Lookup(variable->GetSymbol());
 
   if (bound.has_value()) {
     variable->SetCachedType(bound->first);
@@ -669,14 +684,15 @@ void TypecheckVisitor::Visit(const While *loop) const noexcept {
     result = test_result;
     return;
   }
-  auto *test_type = test_result.GetFirst();
+  const auto *test_type = test_result.GetFirst();
 
-  if (test_type != env.types->GetBoolType()) {
+  if (test_type != env.type_interner.GetBoolType()) {
     std::string errmsg = "Test expression has type [";
     errmsg             += ToString(test_type);
     errmsg             += "]. expected type [Boolean]";
     result             = Error(Error::Code::WhileTestTypeMismatch,
-                               loop->GetTest()->GetLocation(), errmsg);
+                   loop->GetTest()->GetLocation(),
+                   errmsg);
     return;
   }
 
@@ -685,7 +701,7 @@ void TypecheckVisitor::Visit(const While *loop) const noexcept {
     result = body_result;
     return;
   }
-  auto *result_type = env.types->GetNilType();
+  const auto *result_type = env.type_interner.GetNilType();
   loop->SetCachedType(result_type);
   result = result_type;
 }

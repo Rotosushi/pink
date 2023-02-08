@@ -7,7 +7,7 @@
 #pragma once
 #include <bitset>
 
-#include "support/Support.h"
+#include "support/BitsPerByte.h"
 
 namespace pink {
 
@@ -29,7 +29,7 @@ private:
    * position of each flag. that is, the first enum member defined gets position
    * 0, the next position 1, and so on.
    */
-  enum Kind : char {
+  enum Kind : uint8_t {
     LHSOfAssignment,
     inAddressOf,
     inDereferencePtr,

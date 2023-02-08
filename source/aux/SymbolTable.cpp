@@ -3,15 +3,17 @@
 #include "aux/SymbolTable.h"
 
 namespace pink {
-SymbolTable::SymbolTable() : outer(nullptr) {}
+SymbolTable::SymbolTable()
+    : outer(nullptr) {}
 
-SymbolTable::SymbolTable(SymbolTable *outer_scope) : outer(outer_scope) {}
+SymbolTable::SymbolTable(SymbolTable *outer_scope)
+    : outer(outer_scope) {}
 
 auto SymbolTable::OuterScope() const -> SymbolTable * { return outer; }
 
 auto SymbolTable::IsGlobal() const -> bool { return outer == nullptr; }
 
-auto SymbolTable::Lookup(InternedString symbol) const -> llvm::Optional<Value> {
+auto SymbolTable::Lookup(InternedString symbol) const -> std::optional<Value> {
   auto iter = map.find(symbol);
   if (iter == map.end()) {
     // attempt to find the symbol in the outer scope.
@@ -25,7 +27,7 @@ auto SymbolTable::Lookup(InternedString symbol) const -> llvm::Optional<Value> {
 }
 
 auto SymbolTable::LookupLocal(InternedString symbol) const
-    -> llvm::Optional<Value> {
+    -> std::optional<Value> {
   auto iter = map.find(symbol);
   if (iter == map.end()) {
     return {};
@@ -33,8 +35,9 @@ auto SymbolTable::LookupLocal(InternedString symbol) const
   return {iter->second};
 }
 
-void SymbolTable::Bind(InternedString symbol, Type::Pointer type,
-                       llvm::Value *term) {
+void SymbolTable::Bind(InternedString symbol,
+                       Type::Pointer  type,
+                       llvm::Value   *term) {
   map.insert(std::make_pair(symbol, std::make_pair(type, term)));
 }
 
