@@ -18,7 +18,9 @@ namespace pink {
  * @param env the environment of this compilation unit
  * @return llvm::Value* the element at the index within the array
  */
-auto SliceSubscript(llvm::StructType *slice_type, llvm::Type *element_type,
-                    llvm::Value *slice, llvm::Value *index,
-                    const Environment &env) -> llvm::Value *;
+auto SliceSubscript(llvm::StructType *slice_type,
+                    llvm::Type       *element_type,
+                    llvm::Value      *slice,
+                    llvm::Value      *index,
+                    Environment      &env) -> llvm::Value *;
 } // namespace pink

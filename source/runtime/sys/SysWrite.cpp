@@ -45,10 +45,10 @@ auto SysWriteSlice(llvm::Value      *file_descriptor,
   return SysWrite(file_descriptor, write_size, buffer_ptr, env);
 }
 
-auto SysWriteText(llvm::Value       *file_descriptor,
-                  llvm::StructType  *text_type,
-                  llvm::Value       *text_ptr,
-                  const Environment &env) -> llvm::Value * {
+auto SysWriteText(llvm::Value      *file_descriptor,
+                  llvm::StructType *text_type,
+                  llvm::Value      *text_ptr,
+                  Environment      &env) -> llvm::Value * {
   assert(file_descriptor != nullptr);
   assert(text_type != nullptr);
   assert(text_ptr != nullptr);
@@ -80,10 +80,10 @@ auto SysWriteText(llvm::Value       *file_descriptor,
 // mov rax, 1                ; "={rax},i"
 // syscall                   ; "={rax}"
 // ; then rax holds the result
-auto SysWrite(llvm::Value       *file_descriptor,
-              llvm::Value       *size,
-              llvm::Value       *buffer,
-              const Environment &env) -> llvm::Value * {
+auto SysWrite(llvm::Value *file_descriptor,
+              llvm::Value *size,
+              llvm::Value *buffer,
+              Environment &env) -> llvm::Value * {
   assert(file_descriptor != nullptr);
   assert(size != nullptr);
   assert(buffer != nullptr);

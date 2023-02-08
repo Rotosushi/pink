@@ -19,8 +19,10 @@
 static auto RandomLocation() -> pink::Location {
   std::mt19937                          generator;
   std::uniform_int_distribution<size_t> distribution(0);
-  return {distribution(generator), distribution(generator),
-          distribution(generator), distribution(generator)};
+  return {distribution(generator),
+          distribution(generator),
+          distribution(generator),
+          distribution(generator)};
 }
 
 /*
@@ -47,8 +49,10 @@ TEST_CASE("ast/Application", "[unit][ast]") {
   pink::Application::Arguments arguments;
   arguments.emplace_back(nullptr);
   arguments.emplace_back(nullptr);
-  pink::Ast::Pointer ast = std::make_unique<pink::Application>(
-      location, std::move(callee), std::move(arguments));
+  pink::Ast::Pointer ast =
+      std::make_unique<pink::Application>(location,
+                                          std::move(callee),
+                                          std::move(arguments));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Application);
   REQUIRE(ast->GetLocation() == location);
   REQUIRE(llvm::isa<pink::Application>(ast));
@@ -82,8 +86,9 @@ TEST_CASE("ast/Assignment", "[unit][ast]") {
   pink::Location     location = RandomLocation();
   pink::Ast::Pointer left;
   pink::Ast::Pointer right;
-  pink::Ast::Pointer ast = std::make_unique<pink::Assignment>(
-      location, std::move(left), std::move(right));
+  pink::Ast::Pointer ast = std::make_unique<pink::Assignment>(location,
+                                                              std::move(left),
+                                                              std::move(right));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Assignment);
   REQUIRE(ast->GetLocation() == location);
   REQUIRE(llvm::isa<pink::Assignment>(ast));
@@ -113,8 +118,10 @@ TEST_CASE("ast/Binop", "[unit][ast]") {
   pink::InternedString op       = "+";
   pink::Ast::Pointer   left;
   pink::Ast::Pointer   right;
-  pink::Ast::Pointer   ast = std::make_unique<pink::Binop>(
-      location, op, std::move(left), std::move(right));
+  pink::Ast::Pointer   ast = std::make_unique<pink::Binop>(location,
+                                                         op,
+                                                         std::move(left),
+                                                         std::move(right));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Binop);
   REQUIRE(ast->GetLocation() == location);
   REQUIRE(llvm::isa<pink::Binop>(ast));
@@ -132,7 +139,7 @@ TEST_CASE("ast/Block", "[unit][ast]") {
   expressions.emplace_back(nullptr);
   expressions.emplace_back(nullptr);
   pink::Ast::Pointer ast =
-      std::make_unique<pink::Block>(location, std::move(expressions), nullptr);
+      std::make_unique<pink::Block>(location, std::move(expressions));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Block);
   REQUIRE(ast->GetLocation() == location);
   REQUIRE(llvm::isa<pink::Block>(ast));
@@ -161,8 +168,11 @@ TEST_CASE("ast/Conditional", "[unit][ast]") {
   pink::Ast::Pointer test;
   pink::Ast::Pointer first;
   pink::Ast::Pointer second;
-  pink::Ast::Pointer ast = std::make_unique<pink::Conditional>(
-      location, std::move(test), std::move(first), std::move(second));
+  pink::Ast::Pointer ast =
+      std::make_unique<pink::Conditional>(location,
+                                          std::move(test),
+                                          std::move(first),
+                                          std::move(second));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Conditional);
   REQUIRE(ast->GetLocation() == location);
   REQUIRE(llvm::isa<pink::Conditional>(ast));
@@ -195,8 +205,11 @@ TEST_CASE("ast/Function", "[unit][ast]") {
   arguments.emplace_back(nullptr, nullptr);
   arguments.emplace_back(nullptr, nullptr);
   pink::Ast::Pointer body;
-  pink::Ast::Pointer ast = std::make_unique<pink::Function>(
-      location, name, std::move(arguments), std::move(body), nullptr);
+  pink::Ast::Pointer ast =
+      std::make_unique<pink::Function>(location,
+                                       name,
+                                       std::move(arguments),
+                                       std::move(body));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Function);
   REQUIRE(ast->GetLocation() == location);
   REQUIRE(llvm::isa<pink::Function>(ast));
@@ -236,8 +249,9 @@ TEST_CASE("ast/Subscript", "[unit][ast]") {
   pink::Location     location = RandomLocation();
   pink::Ast::Pointer left;
   pink::Ast::Pointer right;
-  pink::Ast::Pointer ast = std::make_unique<pink::Subscript>(
-      location, std::move(left), std::move(right));
+  pink::Ast::Pointer ast = std::make_unique<pink::Subscript>(location,
+                                                             std::move(left),
+                                                             std::move(right));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Subscript);
   REQUIRE(ast->GetLocation() == location);
   REQUIRE(llvm::isa<pink::Subscript>(ast));

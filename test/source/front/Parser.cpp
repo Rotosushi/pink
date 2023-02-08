@@ -15,7 +15,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -30,7 +30,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -45,7 +45,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -60,7 +60,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -75,7 +75,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -90,7 +90,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -105,7 +105,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -120,7 +120,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -135,7 +135,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -150,7 +150,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -165,7 +165,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -180,7 +180,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -198,7 +198,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -216,7 +216,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -234,7 +234,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -252,7 +252,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -270,7 +270,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -288,7 +288,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -306,7 +306,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -324,7 +324,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -342,7 +342,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -352,7 +352,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     REQUIRE(block != nullptr);
     auto cursor = block->begin();
     REQUIRE(cursor != block->end());
-    REQUIRE(llvm::dyn_cast<pink::Boolean>(cursor->get()));
+    REQUIRE(llvm::dyn_cast<pink::Binop>(cursor->get()));
   }
 
   SECTION("fn f () { x = 56; }") {
@@ -360,7 +360,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
     pink::Location    location{1, 0, 1, line.length() - 1};
     std::stringstream stream{std::move(line)};
     env.parser.SetIStream(&stream);
-    auto parse_result = env.parser.Parse(*env);
+    auto parse_result = env.parser.Parse(env);
     REQUIRE(parse_result);
     auto *expression = parse_result.GetFirst().get();
     CHECK(expression->GetLocation() == location);
@@ -370,6 +370,6 @@ TEST_CASE("front/Parser", "[unit][front]") {
     REQUIRE(block != nullptr);
     auto cursor = block->begin();
     REQUIRE(cursor != block->end());
-    REQUIRE(llvm::dyn_cast<pink::Boolean>(cursor->get()));
+    REQUIRE(llvm::dyn_cast<pink::Assignment>(cursor->get()));
   }
 }

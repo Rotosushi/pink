@@ -12,5 +12,5 @@ namespace pink {
  * @param exit_code the exit code to pass to sys_exit
  * @param env the environment of this compilation unit
  */
-void SysExit(llvm::Value *exit_code, const Environment &env);
+void SysExit(llvm::Value *exit_code, Environment &env);
 } // namespace pink

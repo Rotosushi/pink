@@ -12,6 +12,6 @@ namespace pink {
  * @param env the environment of this compilation unit
  * @return llvm::Value* the loaded variable
  */
-auto LoadValue(llvm::Type *type, llvm::Value *variable, const Environment &env)
+auto LoadValue(llvm::Type *type, llvm::Value *variable, Environment &env)
     -> llvm::Value *;
 } // namespace pink

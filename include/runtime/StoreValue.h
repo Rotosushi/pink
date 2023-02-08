@@ -14,6 +14,8 @@ namespace pink {
  * @param source the source to store (must be already loaded)
  * @param env the environment of this compilation unit
  */
-void StoreValue(llvm::Type *type, llvm::Value *destination, llvm::Value *source,
-                const Environment &env);
+void StoreValue(llvm::Type  *type,
+                llvm::Value *destination,
+                llvm::Value *source,
+                Environment &env);
 } // namespace pink

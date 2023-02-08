@@ -24,8 +24,10 @@ namespace pink {
  * type ty, already initialized
  * @param env The environment of this compilation unit
  */
-void StoreConstAggregate(llvm::Type *type, llvm::Value *dest,
-                         llvm::Constant *src, const Environment &env);
+void StoreConstAggregate(llvm::Type     *type,
+                         llvm::Value    *dest,
+                         llvm::Constant *src,
+                         Environment    &env);
 
 /**
  * @brief Store src into dest
@@ -37,8 +39,10 @@ void StoreConstAggregate(llvm::Type *type, llvm::Value *dest,
  * enough to store ty, and already initialized
  * @param env the environment of this compilation unit
  */
-void StoreValueAggregate(llvm::Type *type, llvm::Value *dest, llvm::Value *src,
-                         const Environment &env);
+void StoreValueAggregate(llvm::Type  *type,
+                         llvm::Value *dest,
+                         llvm::Value *src,
+                         Environment &env);
 
 /**
  * @brief Store src into dest
@@ -55,8 +59,10 @@ void StoreValueAggregate(llvm::Type *type, llvm::Value *dest, llvm::Value *src,
  * a pointer to an initialized constant.
  * @param env the environment of this compilation unit.
  */
-void StoreAggregate(llvm::Type *type, llvm::Value *dest, llvm::Value *src,
-                    const Environment &env);
+void StoreAggregate(llvm::Type  *type,
+                    llvm::Value *dest,
+                    llvm::Value *src,
+                    Environment &env);
 
 } // namespace pink
 

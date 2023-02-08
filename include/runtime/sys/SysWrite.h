@@ -16,9 +16,10 @@ namespace pink {
  * @param env the environment of this compilation unit
  * @return llvm::Value* the exit code of the call to sys_write
  */
-auto SysWriteSlice(llvm::Value *file_descriptor, llvm::StructType *slice_type,
-                   llvm::Value *slice_ptr, const Environment &env)
-    -> llvm::Value *;
+auto SysWriteSlice(llvm::Value      *file_descriptor,
+                   llvm::StructType *slice_type,
+                   llvm::Value      *slice_ptr,
+                   Environment      &env) -> llvm::Value *;
 
 /**
  * @brief Calls sys_write passing in the data from a given text allocation
@@ -29,9 +30,10 @@ auto SysWriteSlice(llvm::Value *file_descriptor, llvm::StructType *slice_type,
  * @param env the environment of this compilation unit
  * @return llvm::Value* the exit code of the call to sys_write
  */
-auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
-                  llvm::Value *text_ptr, const Environment &env)
-    -> llvm::Value *;
+auto SysWriteText(llvm::Value      *file_descriptor,
+                  llvm::StructType *text_type,
+                  llvm::Value      *text_ptr,
+                  Environment      &env) -> llvm::Value *;
 
 /**
  * @brief Emits the inline assembly to call the sys_write x86-64 linux system
@@ -43,6 +45,8 @@ auto SysWriteText(llvm::Value *file_descriptor, llvm::StructType *text_type,
  * @param env the environment of this compilation unit
  * @return llvm::Value* the exit code of the call to sys_write
  */
-auto SysWrite(llvm::Value *file_descriptor, llvm::Value *size,
-              llvm::Value *buffer, const Environment &env) -> llvm::Value *;
+auto SysWrite(llvm::Value *file_descriptor,
+              llvm::Value *size,
+              llvm::Value *buffer,
+              Environment &env) -> llvm::Value *;
 } // namespace pink
