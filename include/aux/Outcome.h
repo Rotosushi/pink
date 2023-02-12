@@ -13,7 +13,6 @@ namespace pink {
 /**
  * @brief A container holding one of two alternatives, but not both.
  *
- *
  * @tparam T the first alternative's type
  * @tparam U the second alternative's type
  */
@@ -40,40 +39,46 @@ public:
    *
    * @param one the value of the first alternative
    */
-  Outcome(const T &one) noexcept : member(one) {}
+  Outcome(const T &one) noexcept
+      : member(one) {}
 
   /**
    * @brief Construct a new Outcome, holding a first alternative equal to t
    *
    * @param one the value of the first alternative
    */
-  Outcome(T &&one) noexcept : member(std::forward<T>(one)) {}
+  Outcome(T &&one) noexcept
+      : member(std::forward<T>(one)) {}
 
   /**
    * @brief Construct a new Outcome, holding a second alternative equal to u
    *
    * @param two the value of the second alternative
    */
-  Outcome(const U &two) noexcept : member(two) {}
+  Outcome(const U &two) noexcept
+      : member(two) {}
 
   /**
    * @brief Construct a new Outcome, holding a second alternative equal to u
    *
    * @param two the value of the second alternative
    */
-  Outcome(U &&two) noexcept : member(std::forward<U>(two)) {}
+  Outcome(U &&two) noexcept
+      : member(std::forward<U>(two)) {}
 
   /**
    * @brief Construct a new Outcome, equal to another outcome
    *
    * @param other the other Outcome to copy the contents of
    */
-  Outcome(const Outcome &other) noexcept : member(other.member) {}
+  Outcome(const Outcome &other) noexcept
+      : member(other.member) {}
 
   /**
    * @copydoc Outcome::Outcome(const Outcome& other)
    */
-  Outcome(Outcome &&other) noexcept : member(std::move(other.member)) {}
+  Outcome(Outcome &&other) noexcept
+      : member(std::move(other.member)) {}
 
   /**
    * @brief Assign this Outcome to the value of the given first alternative t
@@ -162,4 +167,5 @@ public:
     return std::get<U>(member);
   }
 };
+
 } // namespace pink

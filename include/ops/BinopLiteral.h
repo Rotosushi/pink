@@ -24,6 +24,7 @@ public:
   using Value = std::unique_ptr<BinopCodegen>;
 
 private:
+  static constexpr auto      initial_size = 5;
   llvm::DenseMap<Key, Value> overloads;
   Precedence                 precedence;
   Associativity              associativity;
@@ -32,8 +33,11 @@ public:
   BinopLiteral() noexcept  = delete;
   ~BinopLiteral() noexcept = default;
   BinopLiteral(Precedence precedence, Associativity associativity) noexcept;
-  BinopLiteral(Precedence precedence, Associativity associativity,
-               Type::Pointer left_t, Type::Pointer right_t, Type::Pointer ret_t,
+  BinopLiteral(Precedence     precedence,
+               Associativity  associativity,
+               Type::Pointer  left_t,
+               Type::Pointer  right_t,
+               Type::Pointer  ret_t,
                BinopCodegenFn fn_p);
   BinopLiteral(const BinopLiteral &other) noexcept = delete;
   BinopLiteral(BinopLiteral &&other) noexcept      = default;
@@ -52,12 +56,13 @@ public:
     return associativity;
   }
 
-  auto Register(Type::Pointer left_t, Type::Pointer right_t,
-                Type::Pointer ret_t, BinopCodegenFn fn_p)
-      -> std::pair<Key, BinopCodegen *>;
+  auto Register(Type::Pointer  left_t,
+                Type::Pointer  right_t,
+                Type::Pointer  ret_t,
+                BinopCodegenFn fn_p) -> BinopCodegen *;
   void Unregister(Type::Pointer left_t, Type::Pointer right_t);
 
   auto Lookup(Type::Pointer left_t, Type::Pointer right_t)
-      -> std::optional<std::pair<Key, BinopCodegen *>>;
+      -> std::optional<BinopCodegen *>;
 };
 } // namespace pink

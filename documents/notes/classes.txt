@@ -52,3 +52,17 @@ so, layout wise what is a class?
   namespace for free functions, then if that turns up empty 
   query the class member namespace for member functions?
   and visa-versa for member call syntax
+
+
+what if we give some syntax to export the public interface of a member 
+of a class/structure into the current scope.
+that is we could have a private member and with a single keyword simply 
+export all it's member functions as if they were member functions 
+of the containing structure/class operating over that data member.
+
+then you could compose together classes into larger structures while maintaining 
+the interface of each member object. Saving on writing out all functions explicitly
+each time. This both saves time, and effort, but is also less bug prone because you 
+are sure you are exporting the entire public interface each time, and if the member 
+object changes, you don't have to edit the source file of the containing object for 
+the parent object to keep up with the changes, allowing for ease of maintainability.

@@ -5,14 +5,15 @@
 #include "aux/Error.h"
 
 namespace pink {
-auto CLIOptions::RemoveTrailingExtensions(std::string filename) -> std::string {
+auto CLIOptions::RemoveTrailingExtensions(std::string_view filename)
+    -> std::string {
   auto        first_extension = filename.end();
   std::string search_string("/");
   // find the -last- occurance of "/" in the filename
-  auto        last_directory = std::find_end(filename.begin(),
-                                      filename.end(),
-                                      search_string.begin(),
-                                      search_string.end());
+  const auto *last_directory = std::find_end(filename.begin(),
+                                             filename.end(),
+                                             search_string.begin(),
+                                             search_string.end());
   // if "/" did not appear in the filename
   if (last_directory == filename.end()) {
     first_extension = std::find(filename.begin(), filename.end(), '.');
@@ -44,9 +45,8 @@ auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
       << "\n\t\t 0 (none),\n\t\t 1 (limited),\n\t\t 2 (regular),"
       << "\n\t\t 3 (high, may affect compile times),\n\t\t s (small code size),"
       << " \n\t\t z (very small code size at performance cost)\n"
-      << "-l --emit-llvm: emit llvm IR instead of an executable\n"
+      << "-c --emit-object: emit llvm IR instead of an executable\n"
       << "-s --emit-asm: emit assembly instead of an executable\n"
-      << "-c --emit-obj: emit an object file instead of an executable\n"
       << "\n";
   return out;
 }
@@ -61,17 +61,13 @@ auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
     platform is needed.
 */
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
-  unsigned    numopt        = 0; // count of how many options we parsed
-  const char *short_options = "hvi:o:O:lcs";
+  int         numopt        = 0; // count of how many options we parsed
+  const char *short_options = "hvi:o:O:ls";
 
   std::string             input_file;
   std::string             output_file;
   CLIFlags                flags;
   llvm::OptimizationLevel optimization_level = llvm::OptimizationLevel::O0;
-
-  // the default behavior of the compiler
-  flags.EmitObject(true);
-  flags.Link(true);
 
   // note: we have to use a c style array here because of the api of
   // getopt_long(3) NOLINTBEGIN(modernize-avoid-c-arrays)
@@ -83,9 +79,10 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       {"outfile", required_argument, nullptr, 'o'},
       {"output", required_argument, nullptr, 'o'},
       {"optimize", required_argument, nullptr, 'O'},
-      {"emit-llvm", no_argument, nullptr, 'l'},
-      {"emit-asm", no_argument, nullptr, 's'},
+      {"emit-object", no_argument, nullptr, 'c'},
       {"emit-obj", no_argument, nullptr, 'c'},
+      {"emit-assembly", no_argument, nullptr, 's'},
+      {"emit-asm", no_argument, nullptr, 's'},
       {nullptr, 0, nullptr, 0}};
   // NOLINTEND(modernize-avoid-c-arrays)
 
@@ -129,23 +126,15 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       break;
     }
 
-    case 'l': {
-      flags.EmitLLVM(true);
-      flags.EmitObject(false);
-      flags.Link(false);
-      break;
-    }
-
     case 'c': {
-      flags.EmitObject(true);
-      flags.Link(false);
+      flags.DoEmitObject(true);
+      flags.DoLink(false);
       break;
     }
 
     case 's': {
-      flags.EmitAssembly(true);
-      flags.EmitObject(false);
-      flags.Link(false);
+      flags.DoEmitAssembly(true);
+      flags.DoLink(false);
       break;
     }
 
@@ -225,19 +214,5 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   }
 
   return {input_file, output_file, flags, optimization_level};
-}
-
-auto CLIOptions::GetExeFilename() const -> std::string { return output_file; }
-
-auto CLIOptions::GetObjFilename() const -> std::string {
-  return output_file + ".o";
-}
-
-auto CLIOptions::GetAsmFilename() const -> std::string {
-  return output_file + ".s";
-}
-
-auto CLIOptions::GetLLVMFilename() const -> std::string {
-  return output_file + ".ll";
 }
 } // namespace pink

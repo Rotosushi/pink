@@ -23,7 +23,7 @@ void RuntimeError(const std::string &description,
                   Environment       &env) {
   assert(exit_code != nullptr);
   auto *error_string{AllocateGlobalText(env.Gensym(), description, env)};
-  auto *array_type{env.type_interner.GetTextType(description.size())};
+  auto *array_type{env.GetTextType(description.size())};
   auto *string_type{llvm::cast<llvm::StructType>(ToLLVM(array_type, env))};
   auto *stderr_fd = env.instruction_builder->getInt64(2);
   SysWriteText(stderr_fd, string_type, error_string, env);

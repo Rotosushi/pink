@@ -80,7 +80,7 @@ type = "Nil"
      | "Integer"
      | "Boolean"
      | "(" type {"," type} ")"
-     | "[" type "x" integer "]"
+     | "[" type ";" integer "]"
      | "Pointer" type
 
 // these are the regular expressions used by re2c
@@ -524,9 +524,11 @@ private:
    * \verbatim
       type = "Integer"
            | "Boolean"
-           | "(" type {"," type} ")"
-           | "[" type "x" int "]"
            | "Pointer" type
+           | "Slice" type
+           | "(" type {"," type} ")"
+           | "[" type ";" int "]"
+
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
@@ -538,6 +540,7 @@ private:
   auto ParseArrayType(Environment &env) -> TypeResult;
   auto ParseTupleType(Environment &env) -> TypeResult;
   auto ParsePointerType(Environment &env) -> TypeResult;
+  auto ParseSliceType(Environment &env) -> TypeResult;
 
 public:
   Parser();
@@ -577,7 +580,7 @@ public:
    * @return std::string the line we were searching for, or if that couldn't
    * be found then the empty string
    */
-  [[nodiscard]] auto ExtractLine(const Location &location) const
+  [[nodiscard]] auto ExtractSourceLine(const Location &location) const
       -> std::string_view;
 
   /**

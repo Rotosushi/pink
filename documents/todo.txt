@@ -1,8 +1,0 @@
-# Test the Parser, Typecheck and Codegen 
-
-# Rewrite the Parser to a new cleaner grammar
-
-# Rewrite the Environment and the Ast nodes such that the 
-  environment is a single allocation per translation unit,
-  and the Ast's no long keep track of the allocations of their 
-  inner scopes

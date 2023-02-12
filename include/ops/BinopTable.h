@@ -30,18 +30,20 @@ public:
   auto operator=(const BinopTable &other) noexcept -> BinopTable & = delete;
   auto operator=(BinopTable &&other) noexcept -> BinopTable      & = default;
 
-  auto Register(InternedString opr, Precedence precedence,
-                Associativity associativity)
-      -> std::pair<InternedString, BinopLiteral *>;
+  auto Register(InternedString opr,
+                Precedence     precedence,
+                Associativity  associativity) -> BinopLiteral *;
 
-  auto Register(InternedString opr, Precedence precedence,
-                Associativity associativity, Type::Pointer left_t,
-                Type::Pointer right_t, Type::Pointer ret_t, BinopCodegenFn fn_p)
-      -> std::pair<InternedString, BinopLiteral *>;
+  auto Register(InternedString opr,
+                Precedence     precedence,
+                Associativity  associativity,
+                Type::Pointer  left_t,
+                Type::Pointer  right_t,
+                Type::Pointer  ret_t,
+                BinopCodegenFn fn_p) -> BinopLiteral *;
 
   void Unregister(InternedString opr);
 
-  auto Lookup(InternedString opr)
-      -> std::optional<std::pair<InternedString, BinopLiteral *>>;
+  auto Lookup(InternedString opr) -> std::optional<BinopLiteral *>;
 };
 } // namespace pink

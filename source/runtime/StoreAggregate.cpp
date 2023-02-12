@@ -66,26 +66,9 @@ namespace pink {
  *   Output constraints:
  *    -) none, this function returns void
  *
-  #NOTE: #ASIDE:
-  you could support named scoping, with symboltable lookup by simply always
-  prepending the current scope name to each lookup. then following the exact
-  same procedure as currently implemented, if that lookup fails we simply
-  ask the scope above.
-  as long as each variable is constructed by prepending the current scope name
-  before binding that string to the symboltable, variable lookup would continue
-  as usual. except that you would need a new kind of identifier from the lexer,
-  which parsed fully qualified scope names, and then if the variable had a
-  fully qualified scope name you would have to look for the symboltable with
-  the corresponding scope name before lookup, and call a protected lookup
- procedure on the scope whos only difference is that you avoid the string
- concatenation of normal lookup. (and the problem of exctracting the last id
- from the scope)
-
-  although we can lex fully qualified identifiers with a regular expression:
-    id ('::' id)+
-
-
 */
+
+
 void StoreAggregate(llvm::Type  *type,
                     llvm::Value *destination,
                     llvm::Value *source,
@@ -192,6 +175,7 @@ void StoreConstAggregate(llvm::Type     *type,
   }
 }
 
+// #TODO: de-nest these if statements
 void StoreValueAggregate(llvm::Type  *type,
                          llvm::Value *destination,
                          llvm::Value *source,

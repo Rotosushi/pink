@@ -1,0 +1,15 @@
+# Fix all the bugs
+
+# Test[Parser(check), Typecheck, Codegen]
+
+# Rewrite the Parser to a new grammar (maybe entirely, maybe just a little)
+  # rewrite operators such that they are treated as tokens in their own right.
+    (no more user defined operators, it makes the language hard to parse)
+  # parenthesis-less call syntax. (more functional style)
+  # optional type annotations in bind expressions
+  # const-ness and mutability specifiers (I think these have to define new types?
+    still considering the implementation of this tbch)
+  # optional else clauses on conditionals
+  # optional blocks in conditionals, loops, and functions.
+    (can have a single affix expression instead)
+

@@ -10,8 +10,10 @@
 
 NOWARN(
     "-Wunused-parameter",
-    auto BinopCodegenFunction(llvm::Type *left_type, llvm::Value *left_value,
-                              llvm::Type *right_type, llvm::Value *right_value,
+    auto BinopCodegenFunction(llvm::Type        *left_type,
+                              llvm::Value       *left_value,
+                              llvm::Type        *right_type,
+                              llvm::Value       *right_value,
                               pink::Environment &env)
         ->llvm::Value * { return nullptr; })
 
@@ -35,22 +37,20 @@ TEST_CASE("ops/BinopLiteral", "[unit][ops]") {
   REQUIRE(binop_literal.GetPrecedence() == precedence);
   REQUIRE(binop_literal.GetAssociativity() == associativity);
 
-  auto pair = binop_literal.Register(integer_type, integer_type, integer_type,
-                                     BinopCodegenFunction);
+  auto *implementation = binop_literal.Register(integer_type,
+                                                integer_type,
+                                                integer_type,
+                                                BinopCodegenFunction);
   REQUIRE(binop_literal.NumOverloads() == 1);
-  REQUIRE(pair.first.first == integer_type);
-  REQUIRE(pair.first.second == integer_type);
-  REQUIRE(pair.second != nullptr);
-  REQUIRE(pair.second->GetReturnType() == integer_type);
-  REQUIRE(pair.second->GetGenerateFn() == BinopCodegenFunction);
+  REQUIRE(implementation != nullptr);
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == BinopCodegenFunction);
 
   auto found = binop_literal.Lookup(integer_type, integer_type);
   REQUIRE(found.has_value());
-  REQUIRE(found->first.first == integer_type);
-  REQUIRE(found->first.first == integer_type);
-  REQUIRE(found->second != nullptr);
-  REQUIRE(found->second->GetReturnType() == integer_type);
-  REQUIRE(found->second->GetGenerateFn() == BinopCodegenFunction);
+  implementation = found.value();
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == BinopCodegenFunction);
 
   binop_literal.Unregister(integer_type, integer_type);
   REQUIRE(binop_literal.NumOverloads() == 0);
@@ -66,36 +66,37 @@ TEST_CASE("ops/BinopTable", "[unit][ops]") {
   pink::InternedString op            = "+";
 
   pink::BinopTable binop_table;
-  auto             pair =
-      binop_table.Register(op, precedence, associativity, integer_type,
-                           integer_type, integer_type, BinopCodegenFunction);
-  REQUIRE(pair.first == op);
-  REQUIRE(pair.second != nullptr);
-  REQUIRE(pair.second->NumOverloads() == 1);
-  REQUIRE(pair.second->GetAssociativity() == associativity);
-  REQUIRE(pair.second->GetPrecedence() == precedence);
-  auto literal = pair.second->Lookup(integer_type, integer_type);
-  REQUIRE(literal.has_value());
-  REQUIRE(literal->first.first == integer_type);
-  REQUIRE(literal->first.first == integer_type);
-  REQUIRE(literal->second != nullptr);
-  REQUIRE(literal->second->GetReturnType() == integer_type);
-  REQUIRE(literal->second->GetGenerateFn() == BinopCodegenFunction);
+  auto             literal = binop_table.Register(op,
+                                      precedence,
+                                      associativity,
+                                      integer_type,
+                                      integer_type,
+                                      integer_type,
+                                      BinopCodegenFunction);
+  REQUIRE(literal != nullptr);
+  REQUIRE(literal->NumOverloads() == 1);
+  REQUIRE(literal->GetAssociativity() == associativity);
+  REQUIRE(literal->GetPrecedence() == precedence);
+  auto optional_implementation = literal->Lookup(integer_type, integer_type);
+  REQUIRE(optional_implementation.has_value());
+  auto implementation = optional_implementation.value();
+  REQUIRE(implementation != nullptr);
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == BinopCodegenFunction);
 
-  auto found = binop_table.Lookup(op);
-  REQUIRE(found.has_value());
-  REQUIRE(found->first == op);
-  REQUIRE(found->second != nullptr);
-  REQUIRE(found->second->NumOverloads() == 1);
-  REQUIRE(found->second->GetAssociativity() == associativity);
-  REQUIRE(found->second->GetPrecedence() == precedence);
-  literal = found->second->Lookup(integer_type, integer_type);
-  REQUIRE(literal.has_value());
-  REQUIRE(literal->first.first == integer_type);
-  REQUIRE(literal->first.first == integer_type);
-  REQUIRE(literal->second != nullptr);
-  REQUIRE(literal->second->GetReturnType() == integer_type);
-  REQUIRE(literal->second->GetGenerateFn() == BinopCodegenFunction);
+  auto optional_literal = binop_table.Lookup(op);
+  REQUIRE(optional_literal.has_value());
+  literal = optional_literal.value();
+  REQUIRE(literal != nullptr);
+  REQUIRE(literal->NumOverloads() == 1);
+  REQUIRE(literal->GetAssociativity() == associativity);
+  REQUIRE(literal->GetPrecedence() == precedence);
+  optional_implementation = literal->Lookup(integer_type, integer_type);
+  REQUIRE(optional_implementation.has_value());
+  implementation = optional_implementation.value();
+  REQUIRE(implementation != nullptr);
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == BinopCodegenFunction);
 
   // apparantly this test fails, even though this has
   // the same exactl implementation as BinopLiteral,

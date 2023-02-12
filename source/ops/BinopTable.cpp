@@ -2,37 +2,45 @@
 
 namespace pink {
 
-auto BinopTable::Register(InternedString opr, Precedence precedence,
-                          Associativity associativity)
-    -> std::pair<InternedString, BinopLiteral *> {
+auto BinopTable::Register(InternedString opr,
+                          Precedence     precedence,
+                          Associativity  associativity) -> BinopLiteral * {
   auto iter = table.find(opr);
 
   if (iter == table.end()) {
     auto pair = table.insert(std::make_pair(
-        opr, std::make_unique<BinopLiteral>(precedence, associativity)));
-    return std::make_pair(pair.first->first, pair.first->second.get());
+        opr,
+        std::make_unique<BinopLiteral>(precedence, associativity)));
+    return pair.first->second.get();
   }
 
-  return std::make_pair(iter->first, iter->second.get());
+  return iter->second.get();
 }
 
-auto BinopTable::Register(InternedString opr, Precedence precedence,
-                          Associativity associativity, Type::Pointer left_t,
-                          Type::Pointer right_t, Type::Pointer ret_t,
-                          BinopCodegenFn fn_p)
-    -> std::pair<InternedString, BinopLiteral *> {
+auto BinopTable::Register(InternedString opr,
+                          Precedence     precedence,
+                          Associativity  associativity,
+                          Type::Pointer  left_t,
+                          Type::Pointer  right_t,
+                          Type::Pointer  ret_t,
+                          BinopCodegenFn fn_p) -> BinopLiteral * {
   auto iter = table.find(opr);
 
   if (iter == table.end()) {
-    auto pair = table.insert(std::make_pair(
-        opr, std::make_unique<BinopLiteral>(precedence, associativity, left_t,
-                                            right_t, ret_t, fn_p)));
-    return std::make_pair(pair.first->first, pair.first->second.get());
+    auto pair = table.insert(
+        std::make_pair(opr,
+                       std::make_unique<BinopLiteral>(precedence,
+                                                      associativity,
+                                                      left_t,
+                                                      right_t,
+                                                      ret_t,
+                                                      fn_p)));
+    return pair.first->second.get();
   }
   // register the new overload to the already registered binop
   // as a convienience for the caller of this procedure.
   iter->second->Register(left_t, right_t, ret_t, fn_p);
-  return std::make_pair(iter->first, iter->second.get());
+  return iter->second.get();
 }
 
 void BinopTable::Unregister(InternedString opr) {
@@ -43,8 +51,7 @@ void BinopTable::Unregister(InternedString opr) {
   }
 }
 
-auto BinopTable::Lookup(InternedString opr)
-    -> std::optional<std::pair<InternedString, BinopLiteral *>> {
+auto BinopTable::Lookup(InternedString opr) -> std::optional<BinopLiteral *> {
   auto iter = table.find(opr);
 
   if (iter == table.end()) {
@@ -88,6 +95,6 @@ auto BinopTable::Lookup(InternedString opr)
     // default for real world operators.
     return {Register(opr, 3, Associativity::Left)};
   }
-  return {std::make_pair(iter->first, iter->second.get())};
+  return {iter->second.get()};
 }
 } // namespace pink

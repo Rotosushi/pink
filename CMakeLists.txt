@@ -261,6 +261,7 @@ add_executable(tests
 
   test/source/type/Type.cpp
 
+  test/source/aux/CLIOptions.cpp
   test/source/aux/Error.cpp
   test/source/aux/InternalFlags.cpp
   test/source/aux/Location.cpp

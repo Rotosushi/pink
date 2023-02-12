@@ -226,22 +226,22 @@ auto BinopSliceRightAdd(llvm::Type *lty, llvm::Value *left, llvm::Type *rty,
 */
 
 void InitializeBinopPrimitives(Environment &env) {
-  InternedString minus = env.operator_interner.Intern("-");
-  InternedString plus  = env.operator_interner.Intern("+");
-  InternedString mul   = env.operator_interner.Intern("*");
-  InternedString div   = env.operator_interner.Intern("/");
-  InternedString mod   = env.operator_interner.Intern("%");
-  InternedString land  = env.operator_interner.Intern("&");
-  InternedString lor   = env.operator_interner.Intern("|");
-  InternedString cmpeq = env.operator_interner.Intern("==");
-  InternedString cmpne = env.operator_interner.Intern("!=");
-  InternedString cmplt = env.operator_interner.Intern("<");
-  InternedString cmple = env.operator_interner.Intern("<=");
-  InternedString cmpgt = env.operator_interner.Intern(">");
-  InternedString cmpge = env.operator_interner.Intern(">=");
+  InternedString minus = env.InternOperator("-");
+  InternedString plus  = env.InternOperator("+");
+  InternedString mul   = env.InternOperator("*");
+  InternedString div   = env.InternOperator("/");
+  InternedString mod   = env.InternOperator("%");
+  InternedString land  = env.InternOperator("&");
+  InternedString lor   = env.InternOperator("|");
+  InternedString cmpeq = env.InternOperator("==");
+  InternedString cmpne = env.InternOperator("!=");
+  InternedString cmplt = env.InternOperator("<");
+  InternedString cmple = env.InternOperator("<=");
+  InternedString cmpgt = env.InternOperator(">");
+  InternedString cmpge = env.InternOperator(">=");
 
-  Type::Pointer int_ty  = env.type_interner.GetIntType();
-  Type::Pointer bool_ty = env.type_interner.GetBoolType();
+  Type::Pointer int_ty  = env.GetIntType();
+  Type::Pointer bool_ty = env.GetBoolType();
   // Type *int_slice_ty       = env.types->GetSliceType(int_ty);
   // Type *bool_slice_ty      = env.types->GetSliceType(bool_ty);
 
@@ -261,41 +261,99 @@ void InitializeBinopPrimitives(Environment &env) {
   Precedence    four  = 4;
   Precedence    five  = 5;
 
-  env.binop_table
-      .Register(cmpeq, one, left_assoc, int_ty, int_ty, bool_ty, BinopIntEq);
-  env.binop_table
-      .Register(cmpeq, one, left_assoc, bool_ty, bool_ty, bool_ty, BinopBoolEq);
-  env.binop_table
-      .Register(cmpne, two, left_assoc, int_ty, int_ty, bool_ty, BinopIntNe);
-  env.binop_table
-      .Register(cmpne, two, left_assoc, bool_ty, bool_ty, bool_ty, BinopBoolNe);
-  env.binop_table
-      .Register(cmplt, two, left_assoc, int_ty, int_ty, bool_ty, BinopIntLt);
-  env.binop_table
-      .Register(cmple, two, left_assoc, int_ty, int_ty, bool_ty, BinopIntLe);
-  env.binop_table
-      .Register(cmpgt, two, left_assoc, int_ty, int_ty, bool_ty, BinopIntGt);
-  env.binop_table
-      .Register(cmpge, two, left_assoc, int_ty, int_ty, bool_ty, BinopIntGe);
-  env.binop_table.Register(land,
-                           three,
-                           left_assoc,
-                           bool_ty,
-                           bool_ty,
-                           bool_ty,
-                           BinopBoolAnd);
-  env.binop_table
-      .Register(lor, three, left_assoc, bool_ty, bool_ty, bool_ty, BinopBoolOr);
-  env.binop_table
-      .Register(plus, four, left_assoc, int_ty, int_ty, int_ty, BinopIntAdd);
-  env.binop_table
-      .Register(minus, four, left_assoc, int_ty, int_ty, int_ty, BinopIntSub);
-  env.binop_table
-      .Register(mul, five, left_assoc, int_ty, int_ty, int_ty, BinopIntMul);
-  env.binop_table
-      .Register(div, five, left_assoc, int_ty, int_ty, int_ty, BinopIntSDiv);
-  env.binop_table
-      .Register(mod, five, left_assoc, int_ty, int_ty, int_ty, BinopIntMod);
+  env.RegisterBinop(cmpeq,
+                    one,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    bool_ty,
+                    BinopIntEq);
+  env.RegisterBinop(cmpeq,
+                    one,
+                    left_assoc,
+                    bool_ty,
+                    bool_ty,
+                    bool_ty,
+                    BinopBoolEq);
+  env.RegisterBinop(cmpne,
+                    two,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    bool_ty,
+                    BinopIntNe);
+  env.RegisterBinop(cmpne,
+                    two,
+                    left_assoc,
+                    bool_ty,
+                    bool_ty,
+                    bool_ty,
+                    BinopBoolNe);
+  env.RegisterBinop(cmplt,
+                    two,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    bool_ty,
+                    BinopIntLt);
+  env.RegisterBinop(cmple,
+                    two,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    bool_ty,
+                    BinopIntLe);
+  env.RegisterBinop(cmpgt,
+                    two,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    bool_ty,
+                    BinopIntGt);
+  env.RegisterBinop(cmpge,
+                    two,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    bool_ty,
+                    BinopIntGe);
+  env.RegisterBinop(land,
+                    three,
+                    left_assoc,
+                    bool_ty,
+                    bool_ty,
+                    bool_ty,
+                    BinopBoolAnd);
+  env.RegisterBinop(lor,
+                    three,
+                    left_assoc,
+                    bool_ty,
+                    bool_ty,
+                    bool_ty,
+                    BinopBoolOr);
+  env.RegisterBinop(plus,
+                    four,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    int_ty,
+                    BinopIntAdd);
+  env.RegisterBinop(minus,
+                    four,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    int_ty,
+                    BinopIntSub);
+  env.RegisterBinop(mul, five, left_assoc, int_ty, int_ty, int_ty, BinopIntMul);
+  env.RegisterBinop(div,
+                    five,
+                    left_assoc,
+                    int_ty,
+                    int_ty,
+                    int_ty,
+                    BinopIntSDiv);
+  env.RegisterBinop(mod, five, left_assoc, int_ty, int_ty, int_ty, BinopIntMod);
 
   /*
     env.binops.Register(plus, four, left_assoc, int_slice_ty, int_ty,

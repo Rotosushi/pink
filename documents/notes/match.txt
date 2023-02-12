@@ -1,0 +1,15 @@
+regardless of the keyword, how could a match expression be implemented?
+
+it should be easy to match over the active field in a union type!
+that is tagged unions by default. (force all fields to have a unique 
+name like a struct, and you can tell where to dispatch based upon 
+which branch has which name.)
+
+it should be easy to query over the data within the fields of record 
+types. (c++ structured binding.)
+
+exaustive listing of all possible values is a nice safety feature
+
+well, this depends upon how record types are implemented, because isn't 
+match a dispatch using the type being dispatched over as a guide for 
+the structure of the branches?

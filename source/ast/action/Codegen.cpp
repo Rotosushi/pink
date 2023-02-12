@@ -97,84 +97,63 @@ void CodegenVisitor::Visit(const Application *application) const noexcept {
   result = call;
 }
 
-/*
-  Okay, llvm::ConstantArray works great if the programmer
-  only ever wants to create constant arrays, but what about
-  implementing an array literal which composes the results
-  of an array of expressions? well, then we need an
-  array on the stack. that works, however it becomes
-  inefficient in two circumstances, underneath a bind
-  statement, and as temporary variables.
-  The Bind statement introduces an inefficiency when the Bind Statement
-  allocate's for the new local and copy's it's initializer.
-  Temporary variables introduce an inefficiency in that if we
-  were to implement them as full blown locals, since they only
-  get use in very local contexts we end up wasting space on
-  the stack leaving them allocated for the entire function
-  lifetime.
-  if an array literal appears in a larger expression, we
-  have to allocate a temporary, and if that expression is
-  a bind expression we have to avoid reallocating the space,
-  and we are no longer allocating a temporary for the array.
-  bind could very well receive a pointer to an allocation,
-  (which implies this routine is smaller and simpler), but
-  how does bind know not to allocate for an array type?
-  right now bind simply always allocates and stores,
-  and since Tuple and Array both construct constants
-  bind doesn't duplicate the space requirements.
-
-  we could implement temporaries if we kept track of
-  all the space we allocated when compiling any given
-  term, then in any given scope after compiling a single
-  term, we emit a deallocate stack space instruction equal
-  to the amount that the single Ast term allocated.
-  this could be communicated by way of a variable in the
-  environment relatively simply.
-  1) how do we know it's a temporary allocation?
-    A) use a flag [inBindExpression], because only objects
-    constructed underneath a bind expression are truly
-    local variables.
-*/
 void CodegenVisitor::Visit(const Array *array) const noexcept {
-  std::vector<llvm::Constant *> celements;
-  celements.reserve(array->GetElements().size());
-
-  for (const auto &element : *array) {
-    auto *element_value = Compute(element, this);
-    assert(element_value != nullptr);
-    auto *celement = llvm::dyn_cast<llvm::Constant>(element_value);
-    assert(celement != nullptr);
-
-    celements.emplace_back(celement);
-  }
-
   auto cached = array->GetCachedType();
   assert(cached.has_value());
-  auto *cached_type = cached.value();
+  const auto *cached_type = cached.value();
 
   auto *array_layout_type =
       llvm::cast<llvm::StructType>(ToLLVM(cached_type, env));
 
-  auto *integer_type = llvm::cast<llvm::IntegerType>(
-      array_layout_type->getTypeAtIndex((unsigned)0));
-  auto *array_type = llvm::cast<llvm::ArrayType>(
-      array_layout_type->getTypeAtIndex((unsigned)1));
+  auto *array_alloca = env.instruction_builder->CreateAlloca(array_layout_type);
 
-  auto *constant_array = llvm::ConstantArray::get(array_type, celements);
   auto *array_size =
-      llvm::ConstantInt::get(integer_type, array->GetElements().size());
+      env.instruction_builder->getInt64(array->GetElements().size());
+  auto *array_size_type = llvm::cast<llvm::IntegerType>(
+      array_layout_type->getTypeAtIndex((unsigned)0));
+  auto *array_elements_type = llvm::cast<llvm::ArrayType>(
+      array_layout_type->getTypeAtIndex((unsigned)1));
+  auto *element_type = array_elements_type->getArrayElementType();
 
-  result = llvm::ConstantStruct::get(array_layout_type,
-                                     {array_size, constant_array});
+  auto *array_size_pointer =
+      env.instruction_builder->CreateConstInBoundsGEP2_32(array_layout_type,
+                                                          array_alloca,
+                                                          0,
+                                                          0,
+                                                          "array_size");
+
+  auto *array_elements_pointer =
+      env.instruction_builder->CreateConstInBoundsGEP2_32(array_layout_type,
+                                                          array_alloca,
+                                                          0,
+                                                          0,
+                                                          "array_elements");
+
+  std::size_t index = 0;
+  for (const auto &element : *array) {
+    auto *element_value = Compute(element, this);
+    assert(element_value != nullptr);
+    auto *element_pointer = env.instruction_builder->CreateConstInBoundsGEP2_32(
+        array_elements_type,
+        array_elements_pointer,
+        0,
+        index);
+    StoreValue(element_type, element_pointer, element_value, env);
+    index += 1;
+  }
+
+  StoreValue(array_size_type, array_size_pointer, array_size, env);
+
+  result = array_alloca;
 }
 
 /*
   We lower and assignment expression to a store expression.
 */
 void CodegenVisitor::Visit(const Assignment *assignment) const noexcept {
-  env.internal_flags.OnTheLHSOfAssignment(true);
+  env.OnTheLHSOfAssignment(true);
   auto *left_value = Compute(assignment->GetLeft(), this);
-  env.internal_flags.OnTheLHSOfAssignment(false);
+  env.OnTheLHSOfAssignment(false);
   assert(left_value != nullptr);
 
   auto *right_value = Compute(assignment->GetRight(), this);
@@ -188,26 +167,19 @@ void CodegenVisitor::Visit(const Assignment *assignment) const noexcept {
   We lower bind expressions to an alloca plus a StoreValue.
 */
 void CodegenVisitor::Visit(const Bind *bind) const noexcept {
-  auto found = env.scopes.LookupLocal(bind->GetSymbol());
+  auto found = env.LookupLocalVariable(bind->GetSymbol());
   assert(!found);
 
   auto affix_type_cache = bind->GetAffix()->GetCachedType();
   assert(affix_type_cache.has_value());
-  auto *affix_type = affix_type_cache.value();
+  const auto *affix_type = affix_type_cache.value();
 
-  env.internal_flags.WithinBindExpression(true);
+  env.WithinBindExpression(true);
   auto *affix_value = Compute(bind->GetAffix(), this);
   assert(affix_value != nullptr);
-  env.internal_flags.WithinBindExpression(false);
+  env.WithinBindExpression(false);
 
-  // #TODO 2/6/2023 move the responsibilty of allocation
-  // into the affix expression.
-  auto *alloca = AllocateVariable(bind->GetSymbol(),
-                                  affix_value->getType(),
-                                  env,
-                                  affix_value);
-
-  env.scopes.Bind(bind->GetSymbol(), affix_type, alloca);
+  env.BindVariable(bind->GetSymbol(), affix_type, affix_value);
   result = affix_value;
 }
 
@@ -232,16 +204,19 @@ void CodegenVisitor::Visit(const Binop *binop) const noexcept {
   auto *right_value = Compute(binop->GetRight(), this);
   assert(right_value != nullptr);
 
-  auto literal = env.binop_table.Lookup(binop->GetOp());
-  assert(literal.has_value());
+  auto optional_literal = env.LookupBinop(binop->GetOp());
+  assert(optional_literal.has_value());
+  auto *literal = optional_literal.value();
 
-  auto implementation = literal->second->Lookup(left_type, right_type);
-  assert(implementation.has_value());
-  result = implementation->second->GetGenerateFn()(llvm_left_type,
-                                                   left_value,
-                                                   llvm_right_type,
-                                                   right_value,
-                                                   env);
+  auto optional_implementation = literal->Lookup(left_type, right_type);
+  assert(optional_implementation.has_value());
+  auto *implementation = optional_implementation.value();
+
+  result = implementation->GetGenerateFn()(llvm_left_type,
+                                           left_value,
+                                           llvm_right_type,
+                                           right_value,
+                                           env);
 }
 
 /*
@@ -335,15 +310,15 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
 
   auto cache = function->GetCachedType();
   assert(cache.has_value());
-  auto *cache_type         = cache.value();
-  auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
+  const auto *cache_type         = cache.value();
+  const auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
 
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
   auto *llvm_function_type = [&]() {
     if (is_main) {
       const auto *main_function_type =
-          env.type_interner.GetFunctionType(env.type_interner.GetVoidType(),
-                                            pink_function_type->GetArguments());
+          env.GetFunctionType(env.GetVoidType(),
+                              pink_function_type->GetArguments());
       return llvm::cast<llvm::FunctionType>(ToLLVM(main_function_type, env));
     }
     return llvm::cast<llvm::FunctionType>(ToLLVM(pink_function_type, env));
@@ -396,7 +371,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
                                llvm_function);
 
   env.instruction_builder->SetInsertPoint(entry_BB);
-  env.scopes.PushScope();
+  env.PushScope();
 
   // Set up the arguments within the function's first BasicBlock,
   // A) Allocate all arguments
@@ -426,7 +401,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     const auto &pink_arg = *pink_arg_cursor;
 
     StoreValue(llvm_arg.getType(), alloc, &llvm_arg, env);
-    env.scopes.Bind(pink_arg.first, pink_arg.second, alloc);
+    env.BindVariable(pink_arg.first, pink_arg.second, alloc);
 
     alloc_cursor++;
     pink_arg_cursor++;
@@ -464,7 +439,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   // emit instructions into global scope, so we must
   // clear the insertion point.
   env.instruction_builder->ClearInsertionPoint();
-  env.scopes.Bind(function->GetName(), pink_function_type, llvm_function);
+  env.BindVariable(function->GetName(), pink_function_type, llvm_function);
   result = llvm_function;
 }
 
@@ -486,18 +461,18 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
   const auto *left_type = left_cache.value();
 
   auto *right_value = [&]() {
-    CodegenResult res;
-    if (env.internal_flags.OnTheLHSOfAssignment()) {
-      env.internal_flags.OnTheLHSOfAssignment(false);
+    CodegenResult res = nullptr;
+    if (env.OnTheLHSOfAssignment()) {
+      env.OnTheLHSOfAssignment(false);
       res = Compute(subscript->GetRight(), this);
-      env.internal_flags.OnTheLHSOfAssignment(true);
+      env.OnTheLHSOfAssignment(true);
     } else {
       res = Compute(subscript->GetRight(), this);
     }
     return res;
   }();
 
-  if (auto *array_type = llvm::dyn_cast<ArrayType const>(left_type);
+  if (const auto *array_type = llvm::dyn_cast<ArrayType const>(left_type);
       array_type != nullptr) {
     auto *llvm_array_type =
         llvm::cast<llvm::StructType>(ToLLVM(array_type, env));
@@ -510,7 +485,7 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
     return;
   }
 
-  if (auto *slice_type = llvm::dyn_cast<SliceType const>(left_type);
+  if (const auto *slice_type = llvm::dyn_cast<SliceType const>(left_type);
       slice_type != nullptr) {
     auto *llvm_slice_type =
         llvm::cast<llvm::StructType>(ToLLVM(slice_type, env));
@@ -530,39 +505,35 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
 void CodegenVisitor::Visit(const Tuple *tuple) const noexcept {
   auto tuple_result = tuple->GetCachedType();
   assert(tuple_result.has_value());
-  auto *tuple_type = tuple_result.value();
+  const auto *tuple_type = tuple_result.value();
 
-  auto *struct_type = llvm::cast<llvm::StructType>(ToLLVM(tuple_type, env));
+  auto *tuple_layout_type =
+      llvm::cast<llvm::StructType>(ToLLVM(tuple_type, env));
+  auto *tuple_alloca = env.instruction_builder->CreateAlloca(tuple_layout_type);
 
-  std::vector<llvm::Constant *> celements;
-  celements.reserve(tuple->GetElements().size());
-
-  auto tuple_cursor     = tuple->begin();
-  auto tuple_end        = tuple->end();
-  auto celements_cursor = celements.begin();
-  auto celements_end    = celements.end();
-  while ((tuple_cursor != tuple_end) && (celements_cursor != celements_end)) {
-    auto *element_value = Compute(*tuple_cursor, this);
+  std::size_t index = 0;
+  for (const auto &element : *tuple) {
+    auto *element_value = Compute(element, this);
     assert(element_value != nullptr);
-
-    auto *initalizer = llvm::dyn_cast<llvm::Constant>(element_value);
-    assert(initalizer != nullptr);
-    celements.emplace_back(initalizer);
-
-    tuple_cursor++;
-    celements_cursor++;
+    auto *element_type = tuple_layout_type->getStructElementType(index);
+    auto *element_pointer =
+        env.instruction_builder->CreateConstInBoundsGEP2_32(tuple_layout_type,
+                                                            tuple_alloca,
+                                                            0,
+                                                            index);
+    StoreValue(element_type, element_pointer, element_value, env);
   }
 
-  result = llvm::ConstantStruct::get(struct_type, celements);
+  result = tuple_alloca;
 }
 
 static auto CodegenUnopAddressOf(const Unop           *unop,
                                  Environment          &env,
                                  const CodegenVisitor *visitor)
     -> CodegenResult {
-  env.internal_flags.WithinAddressOf(true);
+  env.WithinAddressOf(true);
   auto *right_result = visitor->Compute(unop->GetRight(), visitor);
-  env.internal_flags.WithinAddressOf(false);
+  env.WithinAddressOf(false);
   assert(right_result != nullptr);
   return right_result;
 };
@@ -575,20 +546,20 @@ static auto CodegenUnopDereferencePointer(const Unop           *unop,
   // if we are dereferencing on the left of an assignment
   // expression, we want to suppress a single load instruction,
   // so we pretend we aren't under a dereference operation
-  if (env.internal_flags.OnTheLHSOfAssignment()) {
+  if (env.OnTheLHSOfAssignment()) {
     return visitor->Compute(unop->GetRight(), visitor);
   }
 
-  env.internal_flags.WithinDereferencePtr(true);
+  env.WithinDereferencePtr(true);
   auto *right_value = visitor->Compute(unop->GetRight(), visitor);
-  env.internal_flags.WithinDereferencePtr(false);
+  env.WithinDereferencePtr(false);
   assert(right_value != nullptr);
 
   // we know this is a pointer type, because we can
   // only validly typecheck a dereference operation
   // on a PointerType
-  auto *pointer_type      = llvm::cast<pink::PointerType>(right_type);
-  auto *llvm_pointee_type = ToLLVM(pointer_type, env);
+  const auto *pointer_type      = llvm::cast<pink::PointerType>(right_type);
+  auto       *llvm_pointee_type = ToLLVM(pointer_type, env);
   // Note: this is the load for the dereference operation,
   // the generator expression is a no-op for address of and dereference.
   return LoadValue(llvm_pointee_type, right_value, env);
@@ -597,7 +568,7 @@ static auto CodegenUnopDereferencePointer(const Unop           *unop,
 void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   auto right_cache = unop->GetRight()->GetCachedType();
   assert(right_cache.has_value());
-  auto *right_type = right_cache.value();
+  const auto *right_type = right_cache.value();
 
   auto *right_value = [&]() -> CodegenResult {
     if (strcmp(unop->GetOp(), "&") == 0) {
@@ -612,20 +583,22 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   }();
   assert(right_value != nullptr);
 
-  auto literal = env.unop_table.Lookup(unop->GetOp());
-  assert(literal.has_value());
+  auto optional_literal = env.LookupUnop(unop->GetOp());
+  assert(optional_literal.has_value());
+  auto *literal = optional_literal.value();
 
-  auto implementation = literal->second->Lookup(right_type);
-  assert(implementation.has_value());
+  auto optional_implementation = literal->Lookup(right_type);
+  assert(optional_implementation.has_value());
+  auto *implementation = optional_implementation.value();
 
-  result = implementation->second->GetGenerateFn()(right_value, env);
+  result = implementation->GetGenerateFn()(right_value, env);
 }
 
 /*
   We lower a variable into whatever llvm::Value it is bound to.
 */
 void CodegenVisitor::Visit(const Variable *variable) const noexcept {
-  auto bound = env.scopes.Lookup(variable->GetSymbol());
+  auto bound = env.LookupVariable(variable->GetSymbol());
   assert(bound.has_value());
   assert(bound->second != nullptr);
   result = LoadValue(ToLLVM(bound->first, env), bound->second, env);

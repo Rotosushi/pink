@@ -102,7 +102,9 @@ public:
    *
    * @return const std::string_view into the contents of the buffer.
    */
-  [[nodiscard]] auto GetBufferView() const -> const std::string_view;
+  [[nodiscard]] auto GetBufferView() const -> std::string_view {
+    return buffer;
+  }
 
   /**
    * @brief Setter for Buf.
@@ -147,7 +149,7 @@ public:
    *
    * @return Token the *next* token from the buffer
    */
-  auto yylex() -> Token;
+  auto lex() -> Token;
 
   /**
    * @brief Get the text of the the *current* Token.
@@ -158,7 +160,7 @@ public:
    *
    * @return std::string the text corresponding to the *current* token.
    */
-  auto yytxt() -> std::string_view;
+  auto txt() -> std::string_view;
 
   /**
    * @brief Get the Location of the *current* Token.
@@ -169,6 +171,6 @@ public:
    *
    * @return Location the Location of the *current* Token
    */
-  auto yyloc() -> Location;
+  auto loc() -> Location;
 };
 } // namespace pink

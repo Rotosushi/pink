@@ -2,8 +2,8 @@
 
 #include "aux/InternalFlags.h"
 
-TEST_CASE("aux/InternalFlags", "[unit][aux]") {
-  pink::InternalFlags flags;
+TEST_CASE("aux/EnvironmentFlags", "[unit][aux]") {
+  pink::EnvironmentFlags flags;
 
   REQUIRE(flags.OnTheLHSOfAssignment() == false);
   REQUIRE(flags.WithinAddressOf() == false);

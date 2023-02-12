@@ -29,7 +29,7 @@ using CodegenResult = llvm::Value *;
  *
  * @param env The Environment to generate code against, an
  * [Environment](#Environment) set up as if by
- * [CreateNativeGlobalEnv](#CreateNativeGlobalEnv) is suitable
+ * [CreateNativeEnvironment](#CreateNativeEnvironment) is suitable
  * @return CodegenResult if the code generator could assign
  * this term a [value] then the Outcome holds this value, otherwise the
  * Outcome holds the [Error] the code generator constructed.

@@ -21,7 +21,7 @@ using TypecheckResult = Outcome<Type::Pointer, Error>;
  * @param ast the Ast to Typecheck
  * @param env The Environment to typecheck against, an
  * [Environment](#Environment) set up as if by
- * [CreateNativeGlobalEnv](#CreateNativeGlobalEnv) is suitable
+ * [CreateNativeEnvironment](#CreateNativeEnvironment) is suitable
  * @return Outcome<Type*, Error> if the type checking algorithm could assign
  * this term a [type](#Type) then the Outcome holds that type, otherwise the
  * Outcome holds the Error that the type checking algorithm encountered.

@@ -32,7 +32,9 @@ TEST_CASE("front/Lexer", "[unit][front]") {
 
     for (auto &line : source_lines) {
       line_number += 1;
-      source_locations.emplace_back(line_number, 0, line_number,
+      source_locations.emplace_back(line_number,
+                                    0,
+                                    line_number,
                                     strlen(line) - 1);
       test_text += line;
     }
@@ -50,8 +52,8 @@ TEST_CASE("front/Lexer", "[unit][front]") {
     auto &location = *location_cursor;
     auto  token    = *token_cursor;
 
-    auto lexed_token    = lexer.yylex();
-    auto lexed_location = lexer.yyloc();
+    auto lexed_token    = lexer.lex();
+    auto lexed_location = lexer.loc();
 
     REQUIRE(lexed_token == token);
     REQUIRE(lexed_location == location);

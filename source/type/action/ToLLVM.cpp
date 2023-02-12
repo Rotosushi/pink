@@ -44,7 +44,7 @@ public:
 void ToLLVMVisitor::Visit(const ArrayType *array_type) const noexcept {
   assert(array_type != nullptr);
   auto *llvm_element_type = Compute(array_type->GetElementType(), this);
-  auto *llvm_integer_type = Compute(env.type_interner.GetIntType(), this);
+  auto *llvm_integer_type = Compute(env.GetIntType(), this);
   result                  = llvm::StructType::get(*env.context,
                                                   {llvm_integer_type, llvm_element_type});
 }
@@ -143,7 +143,7 @@ void ToLLVMVisitor::Visit(const PointerType *pointer_type) const noexcept {
 */
 void ToLLVMVisitor::Visit(const SliceType *slice_type) const noexcept {
   assert(slice_type != nullptr);
-  auto *integer_type = Compute(env.type_interner.GetIntType(), this);
+  auto *integer_type = Compute(env.GetIntType(), this);
   auto *pointer_type = env.instruction_builder->getPtrTy();
   result             = llvm::StructType::get(*env.context,
                                              {integer_type, integer_type, pointer_type});

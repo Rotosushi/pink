@@ -21,36 +21,35 @@ private:
   enum Flags : uint8_t {
     emit_assembly,
     emit_object,
-    emit_llvm,
     link,
+    SIZE, // #NOTE! this -must- be the last member,
+          // no enums can have an assigned value.
   };
-
-  using Set = std::bitset<sizeof(Flags) * bits_per_byte>;
+  static constexpr auto bitset_size = Flags::SIZE;
+  using Set                         = std::bitset<bitset_size>;
 
   Set set;
 
 public:
-  [[nodiscard]] auto EmitAssembly() const noexcept -> bool {
+  CLIFlags() {
+    set[emit_object] = true;
+    set[link]        = true;
+  }
+
+  auto DoEmitAssembly(bool state) -> bool { return set[emit_assembly] = state; }
+  [[nodiscard]] auto DoEmitAssembly() const noexcept -> bool {
     return set[emit_assembly];
   }
-  auto EmitAssembly(bool state) noexcept -> bool {
-    return set[emit_assembly] = state;
-  }
 
-  [[nodiscard]] auto EmitObject() const noexcept -> bool {
-    return set[emit_object];
-  }
-  auto EmitObject(bool state) noexcept -> bool {
+  auto DoEmitObject(bool state) noexcept -> bool {
     return set[emit_object] = state;
   }
-
-  [[nodiscard]] auto EmitLLVM() const noexcept -> bool {
-    return set[emit_llvm];
+  [[nodiscard]] auto DoEmitObject() const noexcept -> bool {
+    return set[emit_object];
   }
-  auto EmitLLVM(bool state) noexcept -> bool { return set[emit_llvm] = state; }
 
-  [[nodiscard]] auto Link() const noexcept -> bool { return set[link]; }
-  auto Link(bool state) noexcept -> bool { return set[link] = state; }
+  auto DoLink(bool state) noexcept -> bool { return set[link] = state; }
+  [[nodiscard]] auto DoLink() const noexcept -> bool { return set[link]; }
 };
 
 /**
@@ -59,20 +58,25 @@ public:
  *
  */
 class CLIOptions {
-public:
+private:
   std::string             input_file;
   std::string             output_file;
+  std::string             assembly_file;
+  std::string             object_file;
   CLIFlags                flags;
   llvm::OptimizationLevel optimization_level;
 
+public:
   CLIOptions()
       : optimization_level(llvm::OptimizationLevel::O0) {}
-  CLIOptions(std::string             infile,
-             std::string             outfile,
+  CLIOptions(std::string_view        infile,
+             std::string_view        outfile,
              CLIFlags                flags,
              llvm::OptimizationLevel optimization_level)
-      : input_file{std::move(infile)},
-        output_file{std::move(outfile)},
+      : input_file{infile},
+        output_file{outfile},
+        assembly_file{output_file + ".s"},
+        object_file{output_file + ".ll"},
         flags{flags},
         optimization_level{optimization_level} {}
   ~CLIOptions() noexcept                                           = default;
@@ -93,38 +97,40 @@ public:
    * @param filename the filename to remove the extensions of
    * @return std::string the new filename with no extensions
    */
-  static auto RemoveTrailingExtensions(std::string filename) -> std::string;
+  static auto RemoveTrailingExtensions(std::string_view filename)
+      -> std::string;
 
   static auto PrintVersion(std::ostream &out) -> std::ostream &;
   static auto PrintHelp(std::ostream &out) -> std::ostream &;
 
-  /**
-   * @brief Get the exe file name
-   *
-   * @return std::string outfile + ""
-   */
-  [[nodiscard]] auto GetExeFilename() const -> std::string;
+  [[nodiscard]] auto DoEmitAssembly() const noexcept -> bool {
+    return flags.DoEmitAssembly();
+  }
 
-  /**
-   * @brief Get the obj file name
-   *
-   * @return std::string outfile + ".o"
-   */
-  [[nodiscard]] auto GetObjFilename() const -> std::string;
+  [[nodiscard]] auto DoEmitObject() const noexcept -> bool {
+    return flags.DoEmitObject();
+  }
 
-  /**
-   * @brief Get the asm file name
-   *
-   * @return std::string outfile + ".s"
-   */
-  [[nodiscard]] auto GetAsmFilename() const -> std::string;
+  [[nodiscard]] auto DoLink() const noexcept -> bool { return flags.DoLink(); }
 
-  /**
-   * @brief get the llvm file name
-   *
-   * @return std::string outfile + ".ll"
-   */
-  [[nodiscard]] auto GetLLVMFilename() const -> std::string;
+  [[nodiscard]] auto GetInputFilename() const -> std::string_view {
+    return input_file;
+  }
+
+  [[nodiscard]] auto GetExecutableFilename() const -> std::string_view {
+    return output_file;
+  }
+  [[nodiscard]] auto GetObjectFilename() const -> std::string_view {
+    return object_file;
+  }
+
+  [[nodiscard]] auto GetAssemblyFilename() const -> std::string_view {
+    return assembly_file;
+  }
+
+  [[nodiscard]] auto GetOptimizationLevel() const -> llvm::OptimizationLevel {
+    return optimization_level;
+  }
 };
 
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions;

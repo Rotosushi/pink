@@ -4,7 +4,9 @@
 
 namespace pink {
 Error::Error(Error::Code code, Location location, std::string text)
-    : code(code), location(location), text(std::move(text)) {}
+    : code(code),
+      location(location),
+      text(std::move(text)) {}
 
 auto Error::ToString(std::string_view bad_source) const -> std::string {
   std::stringstream stream;
@@ -75,7 +77,7 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
   case Error::Code::MissingWhile:
     return "Syntax Error: Missing 'while' in while expression";
   case Error::Code::MissingDo:
-    return "Syntax Error: Missind 'do' is while expression";
+    return "Syntax Error: Missing 'do' in while expression";
   case Error::Code::UnknownBinop:
     return "Syntax Error: Unknown binary operator";
   case Error::Code::UnknownUnop:

@@ -3,16 +3,17 @@
 #include "front/Lexer.h"
 
 namespace pink {
-Lexer::Lexer() : location(1, 0, 1, 0) {
+Lexer::Lexer()
+    : location(1, 0, 1, 0) {
   end = cursor = marker = token = buffer.end();
 }
 
-Lexer::Lexer(std::string_view text) : location(1, 0, 1, 0), buffer(text) {
+Lexer::Lexer(std::string_view text)
+    : location(1, 0, 1, 0),
+      buffer(text) {
   end    = buffer.end();
   cursor = marker = token = buffer.begin();
 }
-
-auto Lexer::GetBufferView() const -> const std::string_view { return buffer; }
 
 void Lexer::SetBuffer(std::string_view text) {
   buffer = text;
@@ -68,9 +69,9 @@ void Lexer::UpdateLocation() {
     taking a two iterators to construct the
     string from the characters from between that range.
 */
-auto Lexer::yytxt() -> std::string_view { return {token, cursor}; }
+auto Lexer::txt() -> std::string_view { return {token, cursor}; }
 
-auto Lexer::yyloc() -> Location { return location; }
+auto Lexer::loc() -> Location { return location; }
 
 /*
     These are the definitions of the parsing
@@ -115,18 +116,19 @@ auto Lexer::yyloc() -> Location { return location; }
 // #REASON: re2c uses gotos to implement the lexer and as all of the
 // gotos are from generated code we are trusting re2c to
 // use gotos in a safe and sane way here.
-auto Lexer::yylex() -> Token {
+auto Lexer::lex() -> Token {
   while (true) {
     token = cursor;
 
     /*!re2c
-        "nil"   { UpdateLocation(); return Token::Nil; }
-        "Nil"   { UpdateLocation(); return Token::NilType; }
-        "Integer"   { UpdateLocation(); return Token::IntegerType; }
-        "true"  { UpdateLocation(); return Token::True; }
-        "false" { UpdateLocation(); return Token::False; }
-        "Boolean"  { UpdateLocation(); return Token::BooleanType; }
-        "Pointer"   { UpdateLocation(); return Token::Pointer; }
+        "nil"     { UpdateLocation(); return Token::Nil; }
+        "Nil"     { UpdateLocation(); return Token::NilType; }
+        "Integer" { UpdateLocation(); return Token::IntegerType; }
+        "true"    { UpdateLocation(); return Token::True; }
+        "false"   { UpdateLocation(); return Token::False; }
+        "Boolean" { UpdateLocation(); return Token::BooleanType; }
+        "Pointer" { UpdateLocation(); return Token::Pointer; }
+        "Slice"   { UpdateLocation(); return Token::Slice; }
 
         "fn"	{ UpdateLocation(); return Token::Fn; }
         "var"   { UpdateLocation(); return Token::Var; }

@@ -1,5 +1,5 @@
  
-kay, so what about catching the specific error of use-before-definition,
+ so what about catching the specific error of use-before-definition,
 nd adding all of the terms which produce that error to a table which 
 oints to the false symbol table
 ntry that we make at each usage of a variable that we cannot find.

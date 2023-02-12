@@ -26,11 +26,11 @@ TEST_CASE("aux/SymbolTable", "[unit][aux]") {
   auto found_x = scope.Lookup(variable_x);
   REQUIRE(found_x.has_value());
 
-  // Resolve symbol in outer scope
+  // Resolve symbol in outer_scope scope
   found_x = inner_scope.Lookup(variable_x);
   REQUIRE(found_x.has_value());
 
-  // Don't resolve outer symbol when searching local scope
+  // Don't resolve outer_scope symbol when searching local scope
   found_x = inner_scope.LookupLocal(variable_x);
   REQUIRE(!found_x.has_value());
 
@@ -38,7 +38,7 @@ TEST_CASE("aux/SymbolTable", "[unit][aux]") {
   auto found_y = inner_scope.LookupLocal(variable_y);
   REQUIRE(found_y.has_value());
 
-  // Cannot resolve inner symbol from outer scope
+  // Cannot resolve inner symbol from outer_scope scope
   found_y = scope.Lookup(variable_y);
   REQUIRE(!found_y.has_value());
 

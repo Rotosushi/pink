@@ -225,4 +225,87 @@
   strictly evaluated implementations. the difficulty arises in the 
   choice from the set. (I think this is F-bounded polymorphism?))
 
+a few questions before we really have all the use cases down,
+how does a closure look from the perspective of passing one 
+as a parameter? 
+what if we say, a pointer, to the closure base class?
+
+when we construct a local closure we can allocate the closure 
+derived type. then when we pass it to a function we simply pass 
+by reference. this means that:
+A) at the construction site we have the function definition/declaration 
+available for the constructor.
+or
+B) have received the closure as an argument to the current scope, and 
+this is partial binding, (which requires more consideration.)
+
+so like, what does it mean for a function to take a closure as argument?
+well it means that there is a closure pointer in that parameter.
+
+and what does it mean to store a closure on the stack? 
+well, what if we say, a stack allocation of the closure object?
+
+then we can simply take it's address to pass it to a function.
+the callee will have a live reference for it's lifetime, because the 
+closure lives in the outer scopes stack.
+
+and then what about when we return a closure from a function?
+well, what if we say, ensure that the returned closure is 
+sitting in the return slot of a function, and we allow the 
+return slot of an applied function to be the return slot of 
+a callee.
+
+how could the caller know how much memory to allocate for the return 
+slot if the slot is meant to hold a reduced lambda object?
+we could not tell from outside if the inner scope needed to alloca 
+more space on the stack than it's calling signature says.
+which is a problem that needs to be solved if you wanted to support 
+that semantic.
+
+well, the inner scope would certainly know exactly 
+how much stack spack to store the closure it wanted to return,
+by the same reasoning that any scope knows how much space is needed 
+to construct a new closure. the question is about getting that information 
+to calling code. 
+
+say, if you were calling a closure parameter to get some 
+new closure, partially binding that new closure, then returning it as 
+the return value of the callee.
+sure you know to allocate the return slot of the function as a whole 
+to hold the returned value from the closure parameter, but that forces 
+the question, what is the size of the return slot of the passed in closure?
+if the static size of the closure being returned is larger 
+than can be derived from the static type of the call site,
+then it is undecidable how much space to allocate for the return slot.
+
+giving up partial application, still leaves the language with functions 
+as values however, which is neat.
+
+hold on, what about copying the closure? 
+or are closures simply move only reference types?
+
+well, copying is less of a problem if you always know the 
+calling signature of the closure and there is no partial application.
+for one) there is now no difference between a closure and a c function 
+pointer. c++ has captures at least. how is that accomplished?
+by way of objects! each lambda is it's own class type, and each lambda 
+thus defines a default constructor and copy constructor. thus the 
+problem is solved because when the inner function returns a lambda, 
+it exposes the lambda class type in the return type of it's calling 
+signature, thus any scope which can call the function can also allocate 
+a class of the correct lambda type.
+
+so, how about we implement objects then? well what,
+are we going to implement c++ now? 
+well, we don't have function overloading, so not quite.
+(or a truckload of other features) (and this language is LL(1))
+
+and we don't have to implement inhereitence right off the bat either.
+we can simply implement structures, and then constructors, and then inheritance.
+
+
+
+
+
+
 

@@ -7,7 +7,7 @@
 #pragma once
 #include <memory>
 #include <string>
-#include <list>
+#include <vector>
 
 #include "type/ArrayType.h"
 #include "type/BoolType.h"
@@ -80,34 +80,34 @@ private:
   std::unique_ptr<VoidType> void_type;
 
   /**
-   * @brief A list of all the unique FunctionTypes
+   * @brief A vector of all the unique FunctionTypes
    *
    */
-  std::list<std::unique_ptr<FunctionType>> function_types;
+  std::vector<std::unique_ptr<FunctionType>> function_types;
 
   /**
-   * @brief A list of all the unique PointerTypes
+   * @brief A vector of all the unique PointerTypes
    *
    */
-  std::list<std::unique_ptr<PointerType>> pointer_types;
+  std::vector<std::unique_ptr<PointerType>> pointer_types;
 
   /**
-   * @brief A list of all the unique ArrayTypes
+   * @brief A vector of all the unique ArrayTypes
    *
    */
-  std::list<std::unique_ptr<ArrayType>> array_types;
+  std::vector<std::unique_ptr<ArrayType>> array_types;
 
   /**
-   * @brief A list of all the unique SliceTypes
+   * @brief A vector of all the unique SliceTypes
    *
    */
-  std::list<std::unique_ptr<SliceType>> slice_types;
+  std::vector<std::unique_ptr<SliceType>> slice_types;
 
   /**
-   * @brief A list of all the unique TupleTypes
+   * @brief A vector of all the unique TupleTypes
    *
    */
-  std::list<std::unique_ptr<TupleType>> tuple_types;
+  std::vector<std::unique_ptr<TupleType>> tuple_types;
 
 public:
   TypeInterner()                                              = default;

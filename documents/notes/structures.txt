@@ -1,0 +1,11 @@
+structures are fairly simple, in that in their most basic form 
+they are essentially tuples with named member access instead of 
+numbered member access.
+layout is the same, and lifetime is the same.
+
+constructors are simply free functions with a this pointer as their 
+first arguments. same with copy/move constructors and the destructor 
+is simply stack deallocation. (because we have no heap yet)
+
+so lets solve the problem of when to allocate things.
+

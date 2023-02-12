@@ -32,13 +32,13 @@ auto Environment::Gensym(std::string_view prefix) -> InternedString {
 }
 
 auto Environment::EmitFiles(std::ostream &err) const -> int {
-  if (cli_options.flags.EmitObject()) {
+  if (cli_options.DoEmitObject()) {
     if (EmitObjectFile(err) == EXIT_FAILURE) {
       return EXIT_FAILURE;
     }
   }
 
-  if (cli_options.flags.EmitAssembly()) {
+  if (cli_options.DoEmitAssembly()) {
     if (EmitAssemblyFile(err) == EXIT_FAILURE) {
       return EXIT_FAILURE;
     }
@@ -47,7 +47,7 @@ auto Environment::EmitFiles(std::ostream &err) const -> int {
 }
 
 auto Environment::EmitObjectFile(std::ostream &err) const -> int {
-  auto                 filename = cli_options.GetLLVMFilename();
+  auto                 filename = cli_options.GetObjectFilename();
   std::error_code      outfile_error;
   llvm::raw_fd_ostream outfile{filename, outfile_error};
   if (outfile_error) {
@@ -61,7 +61,7 @@ auto Environment::EmitObjectFile(std::ostream &err) const -> int {
 }
 
 auto Environment::EmitAssemblyFile(std::ostream &err) const -> int {
-  auto                 filename = cli_options.GetAsmFilename();
+  auto                 filename = cli_options.GetAssemblyFilename();
   std::error_code      outfile_error{};
   llvm::raw_fd_ostream outfile{filename, outfile_error};
   if (outfile_error) {
@@ -118,7 +118,8 @@ auto Environment::NativeCPUFeatures() noexcept -> std::string {
   return cpu_features;
 }
 
-auto Environment::CreateNativeGlobalEnv(CLIOptions cli_options) -> Environment {
+auto Environment::CreateNativeEnvironment(CLIOptions cli_options)
+    -> Environment {
   auto        context       = std::make_unique<llvm::LLVMContext>();
   std::string target_triple = llvm::sys::getProcessTriple();
 
@@ -140,8 +141,8 @@ auto Environment::CreateNativeGlobalEnv(CLIOptions cli_options) -> Environment {
 
   auto instruction_builder = std::make_unique<llvm::IRBuilder<>>(*context);
   auto module =
-      std::make_unique<llvm::Module>(cli_options.input_file, *context);
-  module->setSourceFileName(cli_options.input_file);
+      std::make_unique<llvm::Module>(cli_options.GetInputFilename(), *context);
+  module->setSourceFileName(cli_options.GetInputFilename());
   module->setDataLayout(data_layout);
   module->setTargetTriple(target_triple);
 
@@ -157,7 +158,7 @@ auto Environment::CreateNativeGlobalEnv(CLIOptions cli_options) -> Environment {
   return env;
 }
 
-auto Environment::CreateNativeGlobalEnv() -> Environment {
-  return CreateNativeGlobalEnv(CLIOptions{});
+auto Environment::CreateNativeEnvironment() -> Environment {
+  return CreateNativeEnvironment(CLIOptions{});
 }
 } // namespace pink

@@ -44,11 +44,11 @@
  */
 namespace pink {
 /**
- * @brief Runs the process of Compilation given the command
- * line options.
+ * @brief Compile the source file represented by the given
+ * Environment.
  *
  * @param argc
  * @param argv
  */
-auto Compile(int argc, char **argv) -> int;
+auto Compile(std::ostream &err, Environment &env) -> int;
 } // namespace pink

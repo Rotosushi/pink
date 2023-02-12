@@ -28,23 +28,22 @@ TEST_CASE("ops/UnopLiteral", "[unit][ops]") {
   pink::Type::Pointer integer_type = type.get();
 
   pink::UnopLiteral unop_literal;
-  auto              pair =
+  auto              implementation =
       unop_literal.Register(integer_type, integer_type, UnopCodegenFunction);
-  REQUIRE(pair.first == integer_type);
-  REQUIRE(pair.second != nullptr);
-  REQUIRE(pair.second->GetReturnType() == integer_type);
-  REQUIRE(pair.second->GetGenerateFn() == UnopCodegenFunction);
+  REQUIRE(implementation != nullptr);
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == UnopCodegenFunction);
 
-  auto found = unop_literal.Lookup(integer_type);
-  REQUIRE(found.has_value());
-  REQUIRE(found->first == integer_type);
-  REQUIRE(found->second != nullptr);
-  REQUIRE(found->second->GetReturnType() == integer_type);
-  REQUIRE(found->second->GetGenerateFn() == UnopCodegenFunction);
+  auto optional_implementation = unop_literal.Lookup(integer_type);
+  REQUIRE(optional_implementation.has_value());
+  implementation = optional_implementation.value();
+  REQUIRE(implementation != nullptr);
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == UnopCodegenFunction);
 
   unop_literal.Unregister(integer_type);
-  found = unop_literal.Lookup(integer_type);
-  REQUIRE(!found.has_value());
+  optional_implementation = unop_literal.Lookup(integer_type);
+  REQUIRE(!optional_implementation.has_value());
 }
 
 TEST_CASE("ops/UnopTable", "[unit][ops]") {
@@ -53,29 +52,27 @@ TEST_CASE("ops/UnopTable", "[unit][ops]") {
   pink::Type::Pointer  integer_type = type.get();
 
   pink::UnopTable unop_table;
-  auto            pair =
+  auto            literal =
       unop_table.Register(op, integer_type, integer_type, UnopCodegenFunction);
-  REQUIRE(pair.first == op);
-  REQUIRE(pair.second != nullptr);
-  auto implementation = pair.second->Lookup(integer_type);
-  REQUIRE(implementation.has_value());
-  REQUIRE(implementation->first == integer_type);
-  REQUIRE(implementation->second != nullptr);
-  REQUIRE(implementation->second->GetReturnType() == integer_type);
-  REQUIRE(implementation->second->GetGenerateFn() == UnopCodegenFunction);
+  REQUIRE(literal != nullptr);
+  auto optional_implementation = literal->Lookup(integer_type);
+  REQUIRE(optional_implementation.has_value());
+  auto implementation = optional_implementation.value();
+  REQUIRE(implementation != nullptr);
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == UnopCodegenFunction);
 
-  auto found = unop_table.Lookup(op);
-  REQUIRE(found.has_value());
-  REQUIRE(found->first == op);
-  REQUIRE(found->second != nullptr);
-  implementation = found->second->Lookup(integer_type);
-  REQUIRE(implementation.has_value());
-  REQUIRE(implementation->first == integer_type);
-  REQUIRE(implementation->second != nullptr);
-  REQUIRE(implementation->second->GetReturnType() == integer_type);
-  REQUIRE(implementation->second->GetGenerateFn() == UnopCodegenFunction);
+  auto optional_literal = unop_table.Lookup(op);
+  REQUIRE(optional_literal != nullptr);
+  literal                 = optional_literal.value();
+  optional_implementation = literal->Lookup(integer_type);
+  REQUIRE(optional_implementation.has_value());
+  implementation = optional_implementation.value();
+  REQUIRE(implementation != nullptr);
+  REQUIRE(implementation->GetReturnType() == integer_type);
+  REQUIRE(implementation->GetGenerateFn() == UnopCodegenFunction);
 
   unop_table.Unregister(op);
-  found = unop_table.Lookup(op);
-  REQUIRE(!found.has_value());
+  optional_literal = unop_table.Lookup(op);
+  REQUIRE(!optional_literal.has_value());
 }

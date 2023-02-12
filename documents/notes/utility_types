@@ -1,0 +1,19 @@
+arrays
+  -> static text 
+  -> 
+
+tuples
+
+pointers (owning and non-owning)
+
+slices
+
+optionals
+
+structs
+
+unions
+  -> expected/result/outcome, (T or error union types)
+
+type-aliasing
+

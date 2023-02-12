@@ -21,17 +21,14 @@ namespace pink {
  * @param env
  */
 auto Link(std::ostream &out, std::ostream &err, const Environment &env) -> int {
-  auto objoutfilename = env.cli_options.GetLLVMFilename();
-  auto exeoutfilename = env.cli_options.GetExeFilename();
-
-  if (!env.cli_options.flags.Link()) {
-    return EXIT_SUCCESS;
-  }
-
-  if (!env.cli_options.flags.EmitLLVM()) {
+  if (!env.DoEmitObject()) {
+    auto objoutfilename = env.GetObjectFilename();
     err << "No object file [" << objoutfilename << "] exists to link.";
     return EXIT_FAILURE;
   }
+
+  auto objoutfilename = env.GetObjectFilename();
+  auto exeoutfilename = env.GetExecutableFilename();
 
   llvm::raw_os_ostream      llvm_err = err;
   llvm::raw_os_ostream      llvm_out = out;

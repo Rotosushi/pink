@@ -41,6 +41,7 @@ enum class Token {
   False,       // "false"
   BooleanType, // "Boolean"
   Pointer,     // "Pointer"
+  Slice,       // "Slice"
 
   Fn,    // 'fn'
   Var,   // 'var'

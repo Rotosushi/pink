@@ -82,6 +82,9 @@ auto TokenToString(const Token token) -> std::string {
   case Token::Pointer: {
     return {"Token::Pointer"};
   }
+  case Token::Slice: {
+    return {"Token::Slice"};
+  }
 
   case Token::Fn: {
     return {"Token::Fn"};

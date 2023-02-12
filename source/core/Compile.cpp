@@ -1,7 +1,6 @@
 #include <fstream> // std::fstream
 
 #include "core/Compile.h"
-#include "core/Link.h"
 
 #include "aux/Error.h" // pink::FatalError
 
@@ -12,39 +11,20 @@
 #include "llvm/Passes/PassBuilder.h"     // llvm::PassBuilder
 
 namespace pink {
-auto Compile(std::ostream &err, Environment &env) -> int;
-
-auto Compile(int argc, char **argv) -> int {
-  auto &out         = std::cout;
-  auto &err         = std::cerr;
-  auto  cli_options = pink::ParseCLIOptions(err, argc, argv);
-  auto  env         = Environment::CreateNativeGlobalEnv(cli_options);
-
-  if (Compile(err, env) == EXIT_FAILURE) {
-    return EXIT_FAILURE;
-  }
-
-  if (env.EmitFiles(err) == EXIT_FAILURE) {
-    return EXIT_FAILURE;
-  }
-
-  return Link(out, err, env);
-}
-
 auto Compile(std::ostream &err, Environment &env) -> int {
   std::vector<Ast::Pointer> valid_terms;
 
   { // empty scope, to destroy infile after we are done using it.
     std::fstream infile;
-    infile.open(env.cli_options.input_file);
+    infile.open(env.GetInputFilename().data());
     if (!infile.is_open()) {
-      err << "Could not open input file " << env.cli_options.input_file;
+      err << "Could not open input file " << env.GetInputFilename();
       return EXIT_FAILURE;
     }
-    env.parser.SetIStream(&infile);
+    env.SetIStream(&infile);
 
-    while (!env.parser.EndOfInput()) {
-      auto term_result = env.parser.Parse(env);
+    while (!env.EndOfInput()) {
+      auto term_result = env.Parse();
       if (!term_result) {
         auto &error = term_result.GetSecond();
         if ((error.code == Error::Code::EndOfFile) && (!valid_terms.empty())) {
@@ -65,8 +45,8 @@ auto Compile(std::ostream &err, Environment &env) -> int {
       valid_terms.emplace_back(std::move(term));
     }
 
-    env.scopes.PopScope();
-    env.scopes.PushScope();
+    env.PopScope();
+    env.PushScope();
   }
 
   for (auto &term : valid_terms) {

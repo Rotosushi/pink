@@ -50,19 +50,16 @@ auto TypeInterner::GetFunctionType(Type::Pointer                  return_type,
                                    FunctionType::Arguments const &arg_types)
     -> FunctionType::Pointer {
   auto possible = std::make_unique<FunctionType>(return_type, arg_types);
-  FunctionType *possible_result = possible.get();
 
-  auto types_equal = [possible_result](std::unique_ptr<FunctionType> &type) {
-    return StructuralEquality(possible_result, type.get());
-  };
-  auto found =
-      std::find_if(function_types.begin(), function_types.end(), types_equal);
-
-  if (found == function_types.end()) {
-    function_types.emplace_back(std::move(possible));
-    return possible_result;
+  for (auto &function_type : function_types) {
+    if (StructuralEquality(possible.get(), function_type.get())) {
+      return function_type.get();
+    }
   }
-  return found->get();
+
+  FunctionType::Pointer result = possible.get();
+  function_types.emplace_back(std::move(possible));
+  return result;
 }
 
 auto TypeInterner::GetFunctionType(Type::Pointer             return_type,
@@ -70,19 +67,16 @@ auto TypeInterner::GetFunctionType(Type::Pointer             return_type,
     -> FunctionType::Pointer {
   auto possible =
       std::make_unique<FunctionType>(return_type, std::move(arg_types));
-  FunctionType *possible_result = possible.get();
 
-  auto types_equal = [possible_result](std::unique_ptr<FunctionType> &type) {
-    return StructuralEquality(possible_result, type.get());
-  };
-  auto found =
-      std::find_if(function_types.begin(), function_types.end(), types_equal);
-
-  if (found == function_types.end()) {
-    function_types.emplace_back(std::move(possible));
-    return possible_result;
+  for (auto &function_type : function_types) {
+    if (StructuralEquality(possible.get(), function_type.get())) {
+      return function_type.get();
+    }
   }
-  return found->get();
+
+  FunctionType::Pointer result = possible.get();
+  function_types.emplace_back(std::move(possible));
+  return result;
 }
 
 auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
@@ -95,7 +89,7 @@ auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
     }
   }
 
-  PointerType *result = possible.get();
+  PointerType::Pointer result = possible.get();
   pointer_types.emplace_back(std::move(possible));
 
   return result;
@@ -103,20 +97,17 @@ auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
 
 auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
     -> SliceType::Pointer {
-  auto  possible        = std::make_unique<SliceType>(pointee_type);
-  auto *possible_result = possible.get();
+  auto possible = std::make_unique<SliceType>(pointee_type);
 
-  auto types_equal = [possible_result](std::unique_ptr<SliceType> &type) {
-    return StructuralEquality(possible_result, type.get());
-  };
-  auto found =
-      std::find_if(slice_types.begin(), slice_types.end(), types_equal);
-
-  if (found == slice_types.end()) {
-    slice_types.emplace_back(std::move(possible));
-    return possible_result;
+  for (auto &slice_type : slice_types) {
+    if (StructuralEquality(slice_type.get(), possible.get())) {
+      return slice_type.get();
+    }
   }
-  return found->get();
+
+  SliceType::Pointer result = possible.get();
+  slice_types.emplace_back(std::move(possible));
+  return result;
 }
 
 auto TypeInterner::GetArrayType(std::size_t size, Type::Pointer member_type)

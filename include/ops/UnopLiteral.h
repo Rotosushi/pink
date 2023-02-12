@@ -19,10 +19,13 @@ namespace pink {
  */
 class UnopLiteral {
 private:
+  static constexpr auto initial_size = 5;
+
   llvm::DenseMap<Type::Pointer, std::unique_ptr<UnopCodegen>> overloads;
 
 public:
-  UnopLiteral() noexcept  = default;
+  UnopLiteral() noexcept
+      : overloads(initial_size) {}
   ~UnopLiteral() noexcept = default;
   UnopLiteral(Type::Pointer arg_t, Type::Pointer ret_t, UnopCodegenFn fn_p) {
     overloads.insert(
@@ -34,10 +37,9 @@ public:
   auto operator=(UnopLiteral &&other) noexcept -> UnopLiteral      & = default;
 
   auto Register(Type::Pointer arg_t, Type::Pointer ret_t, UnopCodegenFn fn_p)
-      -> std::pair<Type::Pointer, UnopCodegen *>;
+      -> UnopCodegen *;
   void Unregister(Type::Pointer arg_t);
-  auto Lookup(Type::Pointer arg_t)
-      -> std::optional<std::pair<Type::Pointer, UnopCodegen *>>;
+  auto Lookup(Type::Pointer arg_t) -> std::optional<UnopCodegen *>;
 };
 
 } // namespace pink
