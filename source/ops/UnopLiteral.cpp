@@ -3,32 +3,25 @@
 
 namespace pink {
 
-auto UnopLiteral::Register(Type::Pointer arg_t, Type::Pointer ret_t,
-                           UnopCodegenFn fn_p)
-    -> UnopCodegen * {
-  auto pair = overloads.insert(
-      std::make_pair(arg_t, std::make_unique<UnopCodegen>(ret_t, fn_p)));
-  return pair.first->second.get();
+auto UnopLiteral::Register(Type::Pointer arg_t,
+                           Type::Pointer ret_t,
+                           UnopCodegenFn fn_p) -> UnopCodegen * {
+  auto &pair = overloads.emplace_back(arg_t, UnopCodegen{ret_t, fn_p});
+  return std::addressof(pair.second);
 }
 
-void UnopLiteral::Unregister(Type::Pointer arg_t) {
-  auto iter = overloads.find(arg_t);
+auto UnopLiteral::Lookup(Type::Pointer arg_t) -> std::optional<UnopCodegen *> {
+  auto iterator =
+      std::find_if(overloads.begin(),
+                   overloads.end(),
+                   [arg_t](const auto &overload) {
+                     return arg_t == std::get<Type::Pointer>(overload);
+                   });
 
-  if (iter != overloads.end()) {
-    // UnopLiteral manages the memory of the UnopCodegen instances
-    // behind the scenes of the consumer code via std::shared_ptrs
-    overloads.erase(iter);
-  }
-}
-
-auto UnopLiteral::Lookup(Type::Pointer arg_t)
-    -> std::optional<UnopCodegen *> {
-  auto iter = overloads.find(arg_t);
-
-  if (iter == overloads.end()) {
+  if (iterator == overloads.end()) {
     return {};
   }
 
-  return {iter->second.get()};
+  return {std::addressof(iterator->second)};
 }
 } // namespace pink

@@ -103,6 +103,13 @@ public:
   static auto CreateNativeEnvironment(CLIOptions cli_options) -> Environment;
   static auto CreateNativeEnvironment() -> Environment;
 
+  void DeclareVariable(std::string_view symbol,
+                       Type::Pointer    type,
+                       llvm::Value     *value = nullptr) {
+    const auto *name = variable_interner.Intern(symbol);
+    BindVariable(name, type, value);
+  }
+
   // exposing EnvironmentFlags interface
   [[nodiscard]] auto OnTheLHSOfAssignment() const -> bool {
     return internal_flags.OnTheLHSOfAssignment();
@@ -133,6 +140,9 @@ public:
   }
 
   // exposing CLIOptions interface
+  [[nodiscard]] auto DoVerbose() const noexcept -> bool {
+    return cli_options.DoVerbose();
+  }
   [[nodiscard]] auto DoLink() const noexcept -> bool {
     return cli_options.DoLink();
   }
@@ -142,17 +152,16 @@ public:
   [[nodiscard]] auto DoEmitAssembly() const noexcept -> bool {
     return cli_options.DoEmitAssembly();
   }
+
   [[nodiscard]] auto GetInputFilename() const -> std::string_view {
     return cli_options.GetInputFilename();
   }
-
   [[nodiscard]] auto GetExecutableFilename() const -> std::string_view {
     return cli_options.GetExecutableFilename();
   }
   [[nodiscard]] auto GetObjectFilename() const -> std::string_view {
     return cli_options.GetObjectFilename();
   }
-
   [[nodiscard]] auto GetAssemblyFilename() const -> std::string_view {
     return cli_options.GetAssemblyFilename();
   }
@@ -238,17 +247,16 @@ public:
   void PushScope() { scopes.PushScope(); }
   void PopScope() { scopes.PopScope(); }
 
-  auto LookupVariable(SymbolTable::Key symbol) const
+  auto LookupVariable(InternedString symbol) const
       -> std::optional<SymbolTable::Value> {
     return scopes.Lookup(symbol);
   }
-  auto LookupLocalVariable(SymbolTable::Key symbol) const
+  auto LookupLocalVariable(InternedString symbol) const
       -> std::optional<SymbolTable::Value> {
     return scopes.LookupLocal(symbol);
   }
-  void BindVariable(SymbolTable::Key symbol,
-                    Type::Pointer    type,
-                    llvm::Value     *value) {
+  void
+  BindVariable(InternedString symbol, Type::Pointer type, llvm::Value *value) {
     scopes.Bind(symbol, type, value);
   }
 

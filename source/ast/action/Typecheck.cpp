@@ -126,7 +126,7 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
     return;
   }
 
-  auto *result_type = function_type->GetReturnType();
+  const auto *result_type = function_type->GetReturnType();
   application->SetCachedType(result_type);
   result = result_type;
 }
@@ -207,7 +207,7 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
     std::string errmsg = "symbol [";
     errmsg             += bind->GetSymbol();
     errmsg             += "] is already bound to type [";
-    errmsg             += ToString(bound->first);
+    errmsg             += ToString(std::get<Type::Pointer>(*bound));
     errmsg             += "]";
     result             = Error(Error::Code::NameAlreadyBoundInScope,
                    bind->GetLocation(),
@@ -222,7 +222,7 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
            Compute,
            bind->GetAffix(),
            this);
-
+  env.WithinBindExpression(false);
   env.BindVariable(bind->GetSymbol(), affix_type, nullptr);
 
   bind->SetCachedType(affix_type);
@@ -481,12 +481,12 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
   TRY(left_result, left_type, Compute, subscript->GetLeft(), this);
 
   auto element_result = [&]() -> TypecheckResult {
-    if (auto *array_type = llvm::dyn_cast<ArrayType>(left_type);
+    if (const auto *array_type = llvm::dyn_cast<ArrayType>(left_type);
         array_type != nullptr) {
       return array_type->GetElementType();
     }
 
-    if (auto *slice_type = llvm::dyn_cast<SliceType>(left_type);
+    if (const auto *slice_type = llvm::dyn_cast<SliceType>(left_type);
         slice_type != nullptr) {
       return slice_type->GetPointeeType();
     }
@@ -601,7 +601,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
     if (!right_result) {
       return right_result.GetSecond();
     }
-    auto *right_type = right_result.GetFirst();
+    const auto *right_type = right_result.GetFirst();
 
     auto found = literal->Lookup(right_type);
 
@@ -631,8 +631,8 @@ void TypecheckVisitor::Visit(const Variable *variable) const noexcept {
   auto found = env.LookupVariable(variable->GetSymbol());
 
   if (found.has_value()) {
-    variable->SetCachedType(found->first);
-    result = found->first;
+    variable->SetCachedType(std::get<Type::Pointer>(*found));
+    result = std::get<Type::Pointer>(*found);
     return;
   }
 

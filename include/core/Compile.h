@@ -50,5 +50,5 @@ namespace pink {
  * @param argc
  * @param argv
  */
-auto Compile(std::ostream &err, Environment &env) -> int;
+auto Compile(int argc, char **argv) -> int;
 } // namespace pink

@@ -25,64 +25,15 @@ namespace pink {
 /**
  * @brief Interns Types, so that only one instance of each unique type is
  * constructed
- *
- * \note any atomic type essentially has no implementation
- * details, this means when we dynamically allocate them
- * they take up very little space. this is good, in theory.
- * however, since they are so small, if they are allocated
- * after other memory has been allocated, they will more
- * than likely be able to be allocated immediately after
- * any other dynamic allocation, and since these types
- * are going to be alive for the life of the TypeInterner
- * they can very easily cause heap fragmentation. so, it
- * might help performance if we could allocate all small
- * types at once such that all of the small types get allocated
- * one after another. This way, they are more likely to
- * forming a larger block of an allocation in the heap.
- * then any other allocations can occur after this block of types.
- * think about the situation where we are building up an Ast, and
- * we need a new atomic type, well, more than likely the allocation
- * for the type will go right next to whatever Ast allocations had been
- * occuring, fragmenting the Ast and Type allocations, which could build
- * to more of a slowdown if we have many small types. interleaved with
- * the Ast nodes.
  */
 class TypeInterner {
 private:
-  /**
-   * @brief The one instance of a NilType
-   *
-   */
-  std::unique_ptr<NilType> nil_type;
+  NilType       nil_type;
+  BooleanType   bool_type;
+  IntegerType   int_type;
+  CharacterType character_type;
+  VoidType      void_type;
 
-  /**
-   * @brief The one instance of a BooleanType
-   *
-   */
-  std::unique_ptr<BooleanType> bool_type;
-
-  /**
-   * @brief The one instance of an IntegerType
-   *
-   */
-  std::unique_ptr<IntegerType> int_type;
-
-  /**
-   * @brief The one instance of a CharacterType
-   *
-   */
-  std::unique_ptr<CharacterType> character_type;
-
-  /**
-   * @brief The one instance of a VoidType
-   *
-   */
-  std::unique_ptr<VoidType> void_type;
-
-  /**
-   * @brief A vector of all the unique FunctionTypes
-   *
-   */
   std::vector<std::unique_ptr<FunctionType>> function_types;
 
   /**

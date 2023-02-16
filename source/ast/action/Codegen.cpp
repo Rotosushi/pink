@@ -97,10 +97,11 @@ void CodegenVisitor::Visit(const Application *application) const noexcept {
   result = call;
 }
 
+/*
+
+*/
 void CodegenVisitor::Visit(const Array *array) const noexcept {
-  auto cached = array->GetCachedType();
-  assert(cached.has_value());
-  const auto *cached_type = cached.value();
+  const auto *cached_type = array->GetCachedTypeOrAssert();
 
   auto *array_layout_type =
       llvm::cast<llvm::StructType>(ToLLVM(cached_type, env));
@@ -167,12 +168,12 @@ void CodegenVisitor::Visit(const Assignment *assignment) const noexcept {
   We lower bind expressions to an alloca plus a StoreValue.
 */
 void CodegenVisitor::Visit(const Bind *bind) const noexcept {
+  // this check was done in typechecking, it isn't truly
+  // 'necessary' it is here more for code correctness.
   auto found = env.LookupLocalVariable(bind->GetSymbol());
   assert(!found);
 
-  auto affix_type_cache = bind->GetAffix()->GetCachedType();
-  assert(affix_type_cache.has_value());
-  const auto *affix_type = affix_type_cache.value();
+  const auto *affix_type = bind->GetAffix()->GetCachedTypeOrAssert();
 
   env.WithinBindExpression(true);
   auto *affix_value = Compute(bind->GetAffix(), this);
@@ -188,15 +189,13 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
   operations: add, multiply, divide, etc.
 */
 void CodegenVisitor::Visit(const Binop *binop) const noexcept {
-  auto left_cache = binop->GetLeft()->GetCachedType();
-  assert(left_cache.has_value());
-  const auto *left_type      = left_cache.value();
+  const auto *left_type      = binop->GetLeft()->GetCachedTypeOrAssert();
   auto       *llvm_left_type = ToLLVM(left_type, env);
+  assert(llvm_left_type != nullptr);
 
-  auto right_cache = binop->GetRight()->GetCachedType();
-  assert(right_cache.has_value());
-  const auto *right_type      = right_cache.value();
+  const auto *right_type      = binop->GetRight()->GetCachedTypeOrAssert();
   auto       *llvm_right_type = ToLLVM(right_type, env);
+  assert(llvm_right_type != nullptr);
 
   auto *left_value = Compute(binop->GetLeft(), this);
   assert(left_value != nullptr);
@@ -308,9 +307,7 @@ void CodegenVisitor::Visit(const Dot *dot) const noexcept {
 void CodegenVisitor::Visit(const Function *function) const noexcept {
   auto is_main = strcmp(function->GetName(), "main") == 0;
 
-  auto cache = function->GetCachedType();
-  assert(cache.has_value());
-  const auto *cache_type         = cache.value();
+  const auto *cache_type         = function->GetCachedTypeOrAssert();
   const auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
 
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
@@ -409,12 +406,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
       break;
     }
   }
-  // this is unfortunate code, the design of
-  // Environment needs updating. specifically
-  // removing the free-floating SymbolTable::Pointers
-  // from the Ast, and implementing a Stack of Scopes
-  // then pushing/poping a scope can be a method of
-  // the environment. much cleaner!
+
   auto *body_value = Compute(function->GetBody(), this);
   assert(body_value != nullptr);
 
@@ -600,8 +592,10 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
 void CodegenVisitor::Visit(const Variable *variable) const noexcept {
   auto bound = env.LookupVariable(variable->GetSymbol());
   assert(bound.has_value());
-  assert(bound->second != nullptr);
-  result = LoadValue(ToLLVM(bound->first, env), bound->second, env);
+  assert(std::get<llvm::Value *>(*bound) != nullptr);
+  result = LoadValue(ToLLVM(std::get<Type::Pointer>(*bound), env),
+                     std::get<llvm::Value *>(*bound),
+                     env);
 }
 
 /*

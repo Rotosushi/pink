@@ -693,6 +693,7 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
 
 /*
   basic = id (:= affix)?
+        | "nil"
         | integer
         | operator basic
         | "true"

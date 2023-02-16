@@ -149,6 +149,9 @@ void ToLLVMVisitor::Visit(const SliceType *slice_type) const noexcept {
                                              {integer_type, integer_type, pointer_type});
 }
 
+/*
+  A tuple type is an anonymous structure type.
+*/
 void ToLLVMVisitor::Visit(const TupleType *tuple_type) const noexcept {
   assert(tuple_type != nullptr);
   std::vector<llvm::Type *> llvm_element_types(
@@ -163,6 +166,9 @@ void ToLLVMVisitor::Visit(const TupleType *tuple_type) const noexcept {
   result = llvm::StructType::get(*env.context, llvm_element_types);
 }
 
+/*
+  void type is void type
+*/
 void ToLLVMVisitor::Visit(const VoidType *void_type) const noexcept {
   assert(void_type != nullptr);
   result = env.instruction_builder->getVoidTy();

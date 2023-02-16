@@ -4,11 +4,11 @@
  * @version 0.1
  */
 #pragma once
-#include <memory>   // std::unique_ptr
 #include <optional> // std::optional
 #include <utility>  // std::pair
+#include <vector>   // std::vector
 
-#include "llvm/ADT/DenseMap.h"
+// #include "llvm/ADT/DenseMap.h"
 
 #include "ops/BinopCodegen.h"
 #include "ops/PrecedenceAndAssociativity.h"
@@ -21,13 +21,13 @@ namespace pink {
 class BinopLiteral {
 public:
   using Key   = std::pair<Type::Pointer, Type::Pointer>;
-  using Value = std::unique_ptr<BinopCodegen>;
+  using Value = BinopCodegen;
 
 private:
-  static constexpr auto      initial_size = 5;
-  llvm::DenseMap<Key, Value> overloads;
-  Precedence                 precedence;
-  Associativity              associativity;
+  static constexpr auto              initial_size = 5;
+  std::vector<std::pair<Key, Value>> overloads;
+  Precedence                         precedence;
+  Associativity                      associativity;
 
 public:
   BinopLiteral() noexcept  = delete;
@@ -60,7 +60,6 @@ public:
                 Type::Pointer  right_t,
                 Type::Pointer  ret_t,
                 BinopCodegenFn fn_p) -> BinopCodegen *;
-  void Unregister(Type::Pointer left_t, Type::Pointer right_t);
 
   auto Lookup(Type::Pointer left_t, Type::Pointer right_t)
       -> std::optional<BinopCodegen *>;

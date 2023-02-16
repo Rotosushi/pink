@@ -3,10 +3,10 @@
 #include "type/All.h"
 
 namespace pink {
-class TypeToStringVisitor
-    : public ConstVisitorResult<TypeToStringVisitor, const Type::Pointer,
-                                std::string>,
-      public ConstTypeVisitor {
+class TypeToStringVisitor : public ConstVisitorResult<TypeToStringVisitor,
+                                                      const Type::Pointer,
+                                                      std::string>,
+                            public ConstTypeVisitor {
 public:
   void Visit(const ArrayType *array_type) const noexcept override;
   void Visit(const BooleanType *boolean_type) const noexcept override;
@@ -109,6 +109,7 @@ void TypeToStringVisitor::Visit(const VoidType *void_type) const noexcept {
 }
 
 [[nodiscard]] auto ToString(const Type::Pointer type) noexcept -> std::string {
+  assert(type != nullptr);
   TypeToStringVisitor visitor;
   return visitor.Compute(type, &visitor);
 }

@@ -13,10 +13,10 @@ using TypecheckResult = Outcome<Type::Pointer, Error>;
  * @brief Computes the [Type](#Type) of this [ast](#Ast)
  *
  * This function runs the, as far as I know, standard simple typing algorithm,
- * eagerly evaluated, with no implicit casting. There are currently
- * no syntactic forms which allow for user types. (other than functions)
+ * eagerly evaluated, with no implicit casting.
  *
- * \todo implement some form of user defined types
+ * \todo There are currently no syntactic forms
+ * which allow for user types. (other than functions)
  *
  * @param ast the Ast to Typecheck
  * @param env The Environment to typecheck against, an

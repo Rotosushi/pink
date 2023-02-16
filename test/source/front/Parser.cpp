@@ -1,5 +1,4 @@
 #include "catch2/catch_test_macros.hpp"
-#include "catch2/matchers/catch_matchers.hpp"
 
 #include <iostream>
 
@@ -16,8 +15,6 @@
   list of all valid forms in the language. (it probably
   isn't and will be updated with new interesting test cases.)
 */
-
-//
 #define BIND_AFFIX_IS(text, affix_type)                                        \
   std::string       line{text};                                                \
   pink::Location    location{1, 0, 1, line.length() - 1};                      \
@@ -191,4 +188,3 @@ TEST_CASE("front/Parser", "[unit][front]") {
                               env.GetArrayType(5, env.GetIntType()))
   }
 }
-

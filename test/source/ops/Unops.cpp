@@ -40,10 +40,6 @@ TEST_CASE("ops/UnopLiteral", "[unit][ops]") {
   REQUIRE(implementation != nullptr);
   REQUIRE(implementation->GetReturnType() == integer_type);
   REQUIRE(implementation->GetGenerateFn() == UnopCodegenFunction);
-
-  unop_literal.Unregister(integer_type);
-  optional_implementation = unop_literal.Lookup(integer_type);
-  REQUIRE(!optional_implementation.has_value());
 }
 
 TEST_CASE("ops/UnopTable", "[unit][ops]") {
@@ -71,8 +67,4 @@ TEST_CASE("ops/UnopTable", "[unit][ops]") {
   REQUIRE(implementation != nullptr);
   REQUIRE(implementation->GetReturnType() == integer_type);
   REQUIRE(implementation->GetGenerateFn() == UnopCodegenFunction);
-
-  unop_table.Unregister(op);
-  optional_literal = unop_table.Lookup(op);
-  REQUIRE(!optional_literal.has_value());
 }

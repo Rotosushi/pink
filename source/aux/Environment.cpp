@@ -120,6 +120,17 @@ auto Environment::NativeCPUFeatures() noexcept -> std::string {
 
 auto Environment::CreateNativeEnvironment(CLIOptions cli_options)
     -> Environment {
+  // llvm::InitializeAllTargetInfos();
+  // llvm::InitializeAllTargets();
+  // llvm::InitializeAllTargetMCs();
+  // llvm::InitializeAllAsmPrinters();
+  // llvm::InitializeAllAsmParsers();
+  // llvm::InitializeAllDisassemblers();
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetDisassembler();
+
   auto        context       = std::make_unique<llvm::LLVMContext>();
   std::string target_triple = llvm::sys::getProcessTriple();
 

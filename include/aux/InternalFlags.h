@@ -21,7 +21,7 @@ namespace pink {
  */
 class EnvironmentFlags {
 private:
-  enum Kind : uint8_t {
+  enum Kind {
     LHSOfAssignment,
     inAddressOf,
     inDereferencePtr,

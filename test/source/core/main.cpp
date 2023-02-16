@@ -6,10 +6,5 @@
 auto main(int argc, char *argv[]) -> int {
   llvm::InitLLVM llvm{argc, argv};
 
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetDisassembler();
-
   return Catch::Session{}.run(argc, argv);
 }

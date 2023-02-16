@@ -4,11 +4,11 @@
  * @version 0.1
  */
 #pragma once
-#include <memory>   // std::shared_ptr
 #include <optional> // std::optional
 #include <utility>  // std::pair
+#include <vector>   // std::vector
 
-#include "llvm/ADT/DenseMap.h"
+// #include "llvm/ADT/DenseMap.h"
 
 #include "ops/UnopCodegen.h"
 
@@ -19,17 +19,14 @@ namespace pink {
  */
 class UnopLiteral {
 private:
-  static constexpr auto initial_size = 5;
-
-  llvm::DenseMap<Type::Pointer, std::unique_ptr<UnopCodegen>> overloads;
+  static constexpr auto                              initial_size = 5;
+  std::vector<std::pair<Type::Pointer, UnopCodegen>> overloads;
 
 public:
-  UnopLiteral() noexcept
-      : overloads(initial_size) {}
+  UnopLiteral() noexcept  = default;
   ~UnopLiteral() noexcept = default;
   UnopLiteral(Type::Pointer arg_t, Type::Pointer ret_t, UnopCodegenFn fn_p) {
-    overloads.insert(
-        std::make_pair(arg_t, std::make_unique<UnopCodegen>(ret_t, fn_p)));
+    overloads.emplace_back(arg_t, UnopCodegen{ret_t, fn_p});
   }
   UnopLiteral(const UnopLiteral &other) noexcept                     = delete;
   UnopLiteral(UnopLiteral &&other) noexcept                          = default;
@@ -38,7 +35,6 @@ public:
 
   auto Register(Type::Pointer arg_t, Type::Pointer ret_t, UnopCodegenFn fn_p)
       -> UnopCodegen *;
-  void Unregister(Type::Pointer arg_t);
   auto Lookup(Type::Pointer arg_t) -> std::optional<UnopCodegen *>;
 };
 

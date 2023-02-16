@@ -18,7 +18,8 @@
 namespace pink {
 class CLIFlags {
 private:
-  enum Flags : uint8_t {
+  enum Flags {
+    verbose,
     emit_assembly,
     emit_object,
     link,
@@ -36,7 +37,12 @@ public:
     set[link]        = true;
   }
 
-  auto DoEmitAssembly(bool state) -> bool { return set[emit_assembly] = state; }
+  auto DoVerbose(bool state) noexcept -> bool { return set[verbose] = state; }
+  [[nodiscard]] auto DoVerbose() const noexcept -> bool { return set[verbose]; }
+
+  auto DoEmitAssembly(bool state) noexcept -> bool {
+    return set[emit_assembly] = state;
+  }
   [[nodiscard]] auto DoEmitAssembly() const noexcept -> bool {
     return set[emit_assembly];
   }
@@ -112,6 +118,10 @@ public:
   }
 
   [[nodiscard]] auto DoLink() const noexcept -> bool { return flags.DoLink(); }
+
+  [[nodiscard]] auto DoVerbose() const noexcept -> bool {
+    return flags.DoVerbose();
+  }
 
   [[nodiscard]] auto GetInputFilename() const -> std::string_view {
     return input_file;

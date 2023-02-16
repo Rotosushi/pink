@@ -24,15 +24,15 @@ public:
   void PushScope() { stack.emplace(&stack.top()); }
   void PopScope() { stack.pop(); }
 
-  auto Lookup(SymbolTable::Key symbol) const
+  auto Lookup(InternedString symbol) const
       -> std::optional<SymbolTable::Value> {
     return stack.top().Lookup(symbol);
   }
-  auto LookupLocal(SymbolTable::Key symbol) const
+  auto LookupLocal(InternedString symbol) const
       -> std::optional<SymbolTable::Value> {
     return stack.top().LookupLocal(symbol);
   }
-  void Bind(SymbolTable::Key symbol, Type::Pointer type, llvm::Value *value) {
+  void Bind(InternedString symbol, Type::Pointer type, llvm::Value *value) {
     stack.top().Bind(symbol, type, value);
   }
 };

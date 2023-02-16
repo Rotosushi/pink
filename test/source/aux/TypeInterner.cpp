@@ -80,23 +80,25 @@ TEST_CASE("aux/TypeInterner", "[unit][aux]") {
   REQUIRE(boolean_slice_type != integer_slice_type);
 
   // ArrayType equality
+  auto                five = 5;
+  auto                ten  = 10;
   pink::Type::Pointer five_integer_array_type =
-      interner.GetArrayType(5, integer_type);
+      interner.GetArrayType(five, integer_type);
   REQUIRE(five_integer_array_type != nullptr);
   REQUIRE(five_integer_array_type != integer_type);
 
   pink::Type::Pointer another_five_integer_array_type =
-      interner.GetArrayType(5, integer_type);
+      interner.GetArrayType(five, integer_type);
   REQUIRE(another_five_integer_array_type != nullptr);
   REQUIRE(another_five_integer_array_type == five_integer_array_type);
 
   pink::Type::Pointer ten_integer_array_type =
-      interner.GetArrayType(10, integer_type);
+      interner.GetArrayType(ten, integer_type);
   REQUIRE(ten_integer_array_type != nullptr);
   REQUIRE(ten_integer_array_type != five_integer_array_type);
 
   pink::Type::Pointer five_boolean_array_type =
-      interner.GetArrayType(5, boolean_type);
+      interner.GetArrayType(five, boolean_type);
   REQUIRE(five_boolean_array_type != nullptr);
   REQUIRE(five_boolean_array_type != five_integer_array_type);
 

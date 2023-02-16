@@ -2,9 +2,6 @@
 # general project properties
 cmake_minimum_required(VERSION 3.10)
 
-#set(CMAKE_C_COMPILER /usr/bin/clang++-14)
-#set(CMAKE_CXX_COMPILER /usr/bin/clang++-14)
-
 # we need to use LANGUAGES C CXX to get cmake to stop complaining 
 # about not finding the termInfo package. 
 project(pink LANGUAGES C CXX VERSION 0.1 DESCRIPTION "")
@@ -22,7 +19,21 @@ message(STATUS "using c++ standard: ${CXX_STANDARD}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
-add_compile_options(-O0 -gdwarf-4 -Wall -Wextra)
+add_compile_options(
+  -O1 
+  -gdwarf-4 
+  -Wall 
+  -Wextra 
+  -Wpedantic 
+  -Werror
+  #-fsanitize=address
+  -fsanitize=undefined
+)
+
+add_link_options(
+  #-fsanitize=address
+  -fsanitize=undefined
+)
 
 find_package(Catch2 3 REQUIRED)
 
@@ -117,8 +128,9 @@ add_library(common STATIC
 	source/ast/Variable.cpp
 	source/ast/While.cpp
 
+  # defines the interface for all AstVisitors
   source/ast/visitor/AstVisitor.cpp
-
+  # derived AstVisitors
   source/ast/action/ToString.cpp
   source/ast/action/Typecheck.cpp
   source/ast/action/Codegen.cpp
@@ -185,7 +197,7 @@ add_library(common STATIC
 	source/runtime/StoreAggregate.cpp
 	source/runtime/StoreValue.cpp
 	source/runtime/LoadValue.cpp
-	source/runtime/AllocateVariable.cpp 
+	source/runtime/AllocateVariable.cpp
 	source/runtime/AllocateText.cpp
 	source/runtime/RuntimeError.cpp
 	source/runtime/SliceSubscript.cpp
@@ -235,7 +247,7 @@ add_executable(pink
   source/core/Compile.cpp
   source/core/Link.cpp
   source/core/Optimize.cpp
-  source/core/Pink.cpp
+  source/core/main.cpp
 )
 
 target_link_options(pink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
@@ -258,6 +270,7 @@ add_executable(tests
   test/source/core/main.cpp
 
   test/source/ast/Ast.cpp
+  test/source/ast/Typecheck.cpp
 
   test/source/type/Type.cpp
 

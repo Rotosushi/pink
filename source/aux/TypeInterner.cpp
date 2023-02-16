@@ -6,45 +6,15 @@
 
 namespace pink {
 
-auto TypeInterner::GetNilType() -> NilType::Pointer {
-  if (nil_type == nullptr) {
-    nil_type = std::make_unique<NilType>();
-  }
-
-  return nil_type.get();
-}
-
-auto TypeInterner::GetBoolType() -> BooleanType::Pointer {
-  if (bool_type == nullptr) {
-    bool_type = std::make_unique<BooleanType>();
-  }
-
-  return bool_type.get();
-}
-
-auto TypeInterner::GetIntType() -> IntegerType::Pointer {
-  if (int_type == nullptr) {
-    int_type = std::make_unique<IntegerType>();
-  }
-
-  return int_type.get();
-}
+auto TypeInterner::GetNilType() -> NilType::Pointer { return &nil_type; }
+auto TypeInterner::GetBoolType() -> BooleanType::Pointer { return &bool_type; }
+auto TypeInterner::GetIntType() -> IntegerType::Pointer { return &int_type; }
 
 auto TypeInterner::GetCharacterType() -> CharacterType::Pointer {
-  if (character_type == nullptr) {
-    character_type = std::make_unique<CharacterType>();
-  }
-
-  return character_type.get();
+  return &character_type;
 }
 
-auto TypeInterner::GetVoidType() -> VoidType::Pointer {
-  if (void_type == nullptr) {
-    void_type = std::make_unique<VoidType>();
-  }
-
-  return void_type.get();
-}
+auto TypeInterner::GetVoidType() -> VoidType::Pointer { return &void_type; }
 
 auto TypeInterner::GetFunctionType(Type::Pointer                  return_type,
                                    FunctionType::Arguments const &arg_types)

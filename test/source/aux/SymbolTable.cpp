@@ -41,9 +41,4 @@ TEST_CASE("aux/SymbolTable", "[unit][aux]") {
   // Cannot resolve inner symbol from outer_scope scope
   found_y = scope.Lookup(variable_y);
   REQUIRE(!found_y.has_value());
-
-  // Unbound symbol cannot be resolved
-  scope.Unbind(variable_x);
-  found_x = scope.Lookup(variable_x);
-  REQUIRE(!found_x.has_value());
 }

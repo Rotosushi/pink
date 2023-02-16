@@ -16,36 +16,29 @@
 
 #include "aux/Location.h" // pink::Location
 
-#include "type/Type.h"
+#include "type/Type.h" // pink::Type
 
 #include "ast/visitor/AstVisitor.h"
 
 namespace pink {
 
 /*
-  Would it be faster to store the entire Ast into a vector?
-  to 'flatten' the tree, then would Typecheck and Compile
-  run faster?
-
-  a few problems:
-    - Pointers become invalidated if the vector
-    ever resizes, unfortunate when we are building up a tree
-    from source text and will be appending who knows how many
-    nodes before the tree is complete.
-
-    if you ever want to modify the tree now you have to copy
-    the entire thing to a new vector per modification.
-    and if you store a vector of unique_ptr, then how is
-    that any different than having the nodes themselves store
-    unique_ptr's?
-
-    - any node of the tree representing another sequence of terms
-    doesn't have a knowable size, and so would need to store a
-    set of pointers.
-
-    -
+  #TODO: what flags would we want to associate with a given
+  Ast?
+  mutability
 
 */
+class AstFlags {
+public:
+private:
+  enum Flags {
+    Mutable,
+    SIZE // must be the last enum value
+         // no enums may have an assigned value
+  };
+
+public:
+};
 
 /**
  * @brief Ast is the base class of all abstract syntax tree nodes
@@ -93,25 +86,20 @@ private:
   mutable Type::Pointer cached_type;
 
 public:
-  Ast(Kind kind, Location location) noexcept : kind(kind), location(location) {}
+  Ast(Kind kind, Location location) noexcept
+      : kind{kind},
+        location{location},
+        cached_type{nullptr} {}
   virtual ~Ast() noexcept                            = default;
   Ast(const Ast &other) noexcept                     = delete;
   Ast(Ast &&other) noexcept                          = default;
   auto operator=(const Ast &other) noexcept -> Ast & = delete;
   auto operator=(Ast &&other) noexcept -> Ast      & = default;
 
-  [[nodiscard]] auto GetKind() noexcept -> Kind { return kind; }
   [[nodiscard]] auto GetKind() const noexcept -> Kind { return kind; }
   [[nodiscard]] auto GetLocation() noexcept -> Location & { return location; }
   [[nodiscard]] auto GetLocation() const noexcept -> const Location & {
     return location;
-  }
-
-  [[nodiscard]] auto GetCachedType() noexcept -> std::optional<Type::Pointer> {
-    if (cached_type == nullptr) {
-      return {};
-    }
-    return {cached_type};
   }
 
   [[nodiscard]] auto GetCachedType() const noexcept

@@ -4,11 +4,9 @@
  * @version 0.1
  */
 #pragma once
-#include <memory>   // std::unique_ptr
 #include <optional> // std::optional
 #include <utility>  // std::pair
-
-#include "llvm/ADT/DenseMap.h"
+#include <vector>   // std::vector
 
 #include "aux/StringInterner.h"
 
@@ -20,13 +18,11 @@ namespace pink {
  */
 class UnopTable {
 private:
-  static constexpr auto initial_size = 5;
-
-  llvm::DenseMap<InternedString, std::unique_ptr<UnopLiteral>> map;
+  static constexpr auto                               initial_size = 5;
+  std::vector<std::pair<InternedString, UnopLiteral>> table;
 
 public:
-  UnopTable() noexcept
-      : map(initial_size){};
+  UnopTable() noexcept                                           = default;
   ~UnopTable() noexcept                                          = default;
   UnopTable(const UnopTable &other) noexcept                     = delete;
   UnopTable(UnopTable &&other) noexcept                          = default;
@@ -38,7 +34,6 @@ public:
                 Type::Pointer  arg_t,
                 Type::Pointer  ret_t,
                 UnopCodegenFn  fn_p) -> UnopLiteral *;
-  void Unregister(InternedString opr);
   auto Lookup(InternedString opr) -> std::optional<UnopLiteral *>;
 };
 } // namespace pink

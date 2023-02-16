@@ -6,10 +6,10 @@
  */
 #pragma once
 #include <optional> // std::optional
-#include <utility>  // std::pair
+#include <tuple>    // std::tuple
+#include <vector>   // std::vector
 
-#include "llvm/ADT/DenseMap.h" // llvm::DenseMap<...>
-#include "llvm/IR/Value.h"     // llvm::Value
+#include "llvm/IR/Value.h" // llvm::Value
 
 #include "aux/StringInterner.h" // pink::InternedString
 #include "type/Type.h"          // pink::Type
@@ -20,21 +20,20 @@ namespace pink {
  */
 class SymbolTable {
 public:
-  using Key   = InternedString;
-  using Value = std::pair<Type::Pointer, llvm::Value *>;
+  using Value = std::tuple<InternedString, Type::Pointer, llvm::Value *>;
 
 private:
   static constexpr auto initial_size = 5;
 
-  llvm::DenseMap<Key, Value> map;
-  SymbolTable               *outer_scope;
+  std::vector<Value> table;
+  SymbolTable       *outer_scope;
 
 public:
   SymbolTable()
-      : map(initial_size),
+      : table{initial_size},
         outer_scope{nullptr} {};
   SymbolTable(SymbolTable *outer_scope)
-      : map(initial_size),
+      : table{initial_size},
         outer_scope{outer_scope} {};
   ~SymbolTable()                                            = default;
   SymbolTable(const SymbolTable &other)                     = default;
@@ -52,6 +51,11 @@ public:
    * if the symbol was not within this table and this is not the global symbol
    * table then this function calls Lookup on the outer_scope symbol table, to
    * attempt to resolve the symbol at the higher scope.
+   *
+   * \note how weird is it to return a copy of the binding here?
+   * it is three pointers, so that's not really the issue. and
+   * it is by value, so the caller cannot modify the table by
+   * assigning to the returned value. So it seems fine?
    *
    * @param symbol the symbol to resolve
    * @return llvm::Optional<std::pair<Type*, llvm::Value*>>
@@ -80,15 +84,8 @@ public:
    * @param type the type of the symbol (cannot be nullptr)
    * @param term the value of the symbol (can be nullptr)
    */
-  void Bind(Key symbol, Type::Pointer type, llvm::Value *term) {
-    map.insert({symbol, {type, term}});
+  void Bind(InternedString symbol, Type::Pointer type, llvm::Value *term) {
+    table.emplace_back(symbol, type, term);
   }
-
-  /**
-   * @brief Unbind a given symbol within this table.
-   *
-   * @param symbol the symbol to remove from the table
-   */
-  void Unbind(Key symbol);
 };
 } // namespace pink
