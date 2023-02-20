@@ -44,7 +44,7 @@ public:
   auto operator=(const BinopLiteral &other) noexcept -> BinopLiteral & = delete;
   auto operator=(BinopLiteral &&other) noexcept -> BinopLiteral & = default;
 
-  [[nodiscard]] auto NumOverloads() const noexcept -> unsigned int {
+  [[nodiscard]] auto NumOverloads() const noexcept -> std::size_t {
     return overloads.size();
   }
 

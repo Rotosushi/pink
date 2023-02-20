@@ -1,0 +1,97 @@
+Broadly speaking the compiler takes 5 steps:
+1) Parse (input_file) -> Outcome<Ast, Error>
+  Parse lexes the input source in a "loop" until 
+  a "single" Abstract Syntax Tree is able to be 
+  constructed.
+
+2) Typecheck (Ast) -> Outcome<Type, Error>
+  Typecheck walks the Ast and ensures that you don't 
+  add booleans to integers, call a function with the 
+  incorrect number/type of arguments, and if successful 
+  returns the computed Type of the given Ast.
+
+
+3) Codegen (Ast) -> llvm::Value *
+  Codegen walks the Ast and converts it into LLVM IR 
+  living within a llvm::Module, using a llvm::IRBuilder 
+  to construct the aforementioned IR.
+
+
+4) module.print(output_file)
+  simply ask the module to print the IR to the output file.
+
+5) lld::eld::link(output_file)
+  simply ask lld to link the output file
+
+
+
+concerns:
+1.1) source files usually specify more than one Ast.
+  -) the parser has been designed so that 
+      one expression is one ast. 
+      This way the parse routine can be called in a loop
+      to generate a group of Ast's which the source file defined.
+    -) note: think, parse a whole function definition and return 
+      that. or parse a whole global declaration and return that.
+
+
+
+
+
+2.1) We need to catch Type errors present within the source code.
+  -) We define a Typecheck routine which can assign a Type to 
+    every well formed Ast expression. 
+    -) note: Functions get a function type. Variables get the type 
+      of their initializer. Literal values have implicit type. etc...
+  -) all expressions must be able to be statically typed.
+  -) no explicit casts (yet)
+  Types:
+  -) Nil 
+  -) Boolean 
+  -) Integer 
+  -) Function Types (incomplete)
+  -) Array Types (incomplete)
+  -) Tuple Types (incomplete)
+  -) Pointer Types (incomplete)
+  -) Slice Types (incomplete)
+  -) planned:
+    either 
+      -) Structure and Union Types
+    or 
+      -) Algebraic Data Types
+
+2.2) Not all imagined Ast's will necessarily need to have a type 
+  associated with them, for instance modules, and import/export 
+  facilities. A module does not have a Type conceptually, and will 
+  still need to be represented as an Ast.
+  -) Modules could be checked for consistency by the Typechecker
+    and be assigned a Type Nil. ditto for import/export statements.
+    -) however the routine which consumes these statements is not really 
+      a 'Typechecker' now. and instead invokes more of a sense 
+      of a 'Pass' on the source. How does this influence the design?
+      would we want to separate the logic which handles the modules 
+      process from the logic which types expressions? do we create 
+      a more complex type heirarchy to represent the difference between 
+      'expressions' and the more general 'Asts', like the difference 
+      between Module and Function?
+
+
+
+
+
+3.1) ideally Typecheck catches every possible error, and 
+      this routine can act simply as a translator, rather 
+      than a translator/verifier.
+  features:
+  -) c-style functions (incomplete)
+  -) global/local variables (incomplete)
+  -) array's know their size (incomplete)
+  -) no dynamic memory (yet)
+
+
+4.1) one module per source file 
+  -) one llvm::LLVMContext per thread.
+
+5.1) linker gets the name of the source file 
+  and attempts to construct an executable program 
+  from it.

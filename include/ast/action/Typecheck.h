@@ -9,6 +9,15 @@
 namespace pink {
 class Environment;
 using TypecheckResult = Outcome<Type::Pointer, Error>;
+
+/*
+  #TODO: 2/18/2023 we are changing the conceptualization of what 
+  the Typechecker is. as a result, it is going to make more sense 
+  to define the TypecheckVisitor class in the header file, instead 
+  of only exporting the single procedure. 
+  
+*/
+
 /**
  * @brief Computes the [Type](#Type) of this [ast](#Ast)
  *

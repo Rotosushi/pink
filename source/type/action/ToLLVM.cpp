@@ -115,7 +115,7 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
 */
 void ToLLVMVisitor::Visit(const IntegerType *integer_type) const noexcept {
   assert(integer_type != nullptr);
-  result = env.instruction_builder->getInt64Ty();
+  result = env.instruction_builder->getInt32Ty();
 }
 
 /*

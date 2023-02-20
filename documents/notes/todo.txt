@@ -1,6 +1,59 @@
 # Fix all the bugs
 
-# Test[Parser(check), Typecheck, Codegen]
+
+# Test[
+#  Parser(check),
+#  Typecheck(currently fixing a memory leak),
+#  Codegen
+# ]
+
+
+# Features [
+  Global Declarations,
+  Functions [
+    Expressions [
+      Local Declarations,
+      Operators [
+        Assignment(testing),
+        Member Accessor(testing),
+        Subscript Accessor(testing),
+        Binops(testing),
+        Unops(testing),
+      ],
+      Conditionals [
+        if-then-else(testing),
+        if-then(todo),
+        match(todo),
+      ],
+      Loops [
+        while-do(testing),
+        do-while(todo),
+        for-each(todo),
+      ],
+    ],
+  ],
+  Types [
+    Nil(testing),
+    Integer(testing),
+    Boolean(testing),
+    Float(todo),
+
+    Array*(testing),
+    Tuple(testing),
+    Pointer(testing),
+    Slice(todo),
+
+    Struct(todo),
+    Union**(todo),
+
+    Annotations [
+      Mutable,
+    ],
+  ],
+]
+
+# * Arrays have a size member. w/runtime panic
+# ** tagged Unions. w/runtime panic 
 
 # Rewrite the Parser to a new grammar (maybe entirely, maybe just a little)
   # rewrite operators such that they are treated as tokens in their own right.

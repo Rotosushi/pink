@@ -21,9 +21,11 @@ auto UnopTable::Register(InternedString opr,
                          Type::Pointer  arg_t,
                          Type::Pointer  ret_t,
                          UnopCodegenFn  fn_p) -> UnopLiteral * {
-  auto iterator =
-      std::find_if(table.begin(), table.end(), [opr](const auto &binop) {
-        return opr == std::get<InternedString>(binop);
+  auto iterator = std::find_if(
+      table.begin(),
+      table.end(),
+      [opr](const std::pair<InternedString, UnopLiteral> &implementation) {
+        return opr == std::get<InternedString>(implementation);
       });
 
   if (iterator != table.end()) {
@@ -36,9 +38,11 @@ auto UnopTable::Register(InternedString opr,
 }
 
 auto UnopTable::Lookup(InternedString opr) -> std::optional<UnopLiteral *> {
-  auto iterator =
-      std::find_if(table.begin(), table.end(), [opr](const auto &binop) {
-        return opr == std::get<InternedString>(binop);
+  auto iterator = std::find_if(
+      table.begin(),
+      table.end(),
+      [opr](const std::pair<InternedString, UnopLiteral> &implementation) {
+        return opr == std::get<InternedString>(implementation);
       });
 
   if (iterator == table.end()) {

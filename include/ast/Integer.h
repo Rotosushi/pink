@@ -20,12 +20,10 @@ namespace pink {
  * \todo The size of Integer is not selected dynamically based upon the target
  * machine
  *
- * \todo #CPP can be lowered to int
- *
  */
 class Integer : public Ast {
 public:
-  using Value = long;
+  using Value = unsigned;
 
 private:
   /**
@@ -35,7 +33,8 @@ private:
 
 public:
   Integer(const Location &location, Value value) noexcept
-      : Ast(Ast::Kind::Integer, location), value(value) {}
+      : Ast(Ast::Kind::Integer, location),
+        value(value) {}
   ~Integer() noexcept override                               = default;
   Integer(const Integer &other) noexcept                     = delete;
   Integer(Integer &&other) noexcept                          = default;

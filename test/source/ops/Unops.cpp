@@ -28,7 +28,7 @@ TEST_CASE("ops/UnopLiteral", "[unit][ops]") {
   pink::Type::Pointer integer_type = type.get();
 
   pink::UnopLiteral unop_literal;
-  auto              implementation =
+  auto             *implementation =
       unop_literal.Register(integer_type, integer_type, UnopCodegenFunction);
   REQUIRE(implementation != nullptr);
   REQUIRE(implementation->GetReturnType() == integer_type);

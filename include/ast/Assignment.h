@@ -16,15 +16,17 @@ private:
   Ast::Pointer right;
 
 public:
-  Assignment(const Location &location, Ast::Pointer left,
-             Ast::Pointer right) noexcept
-      : Ast(Ast::Kind::Assignment, location), left(std::move(left)),
+  Assignment(const Location &location,
+             Ast::Pointer    left,
+             Ast::Pointer    right) noexcept
+      : Ast(Ast::Kind::Assignment, location),
+        left(std::move(left)),
         right(std::move(right)) {}
-  ~Assignment() noexcept override = default;
-  Assignment(const Assignment &other) noexcept = delete;
-  Assignment(Assignment &&other) noexcept = default;
+  ~Assignment() noexcept override                                  = default;
+  Assignment(const Assignment &other) noexcept                     = delete;
+  Assignment(Assignment &&other) noexcept                          = default;
   auto operator=(const Assignment &other) noexcept -> Assignment & = delete;
-  auto operator=(Assignment &&other) noexcept -> Assignment & = default;
+  auto operator=(Assignment &&other) noexcept -> Assignment      & = default;
 
   auto GetLeft() noexcept -> Ast::Pointer & { return left; }
   auto GetLeft() const noexcept -> const Ast::Pointer & { return left; }

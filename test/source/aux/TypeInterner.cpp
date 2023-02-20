@@ -80,8 +80,8 @@ TEST_CASE("aux/TypeInterner", "[unit][aux]") {
   REQUIRE(boolean_slice_type != integer_slice_type);
 
   // ArrayType equality
-  auto                five = 5;
-  auto                ten  = 10;
+  std::size_t         five = 5;
+  std::size_t         ten  = 10;
   pink::Type::Pointer five_integer_array_type =
       interner.GetArrayType(five, integer_type);
   REQUIRE(five_integer_array_type != nullptr);

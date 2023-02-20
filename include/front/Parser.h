@@ -320,7 +320,7 @@ private:
   auto ParseTerm(Environment &env) -> Result;
 
   /**
-   * @brief Parses Conditional expressions
+   * @brief Parses IfThenElse expressions
    *
    * \verbatim
       conditional = "if" "(" affix ")" block "else" block

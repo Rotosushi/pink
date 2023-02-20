@@ -21,6 +21,17 @@
 #include "ast/visitor/AstVisitor.h"
 
 namespace pink {
+/*
+  #NOTE: 2/19/2023
+  -) We can probably make Ast (and Type) Header only.
+  -) Ast is getting a modification, We are adding two
+      new Derived Interfaces; Expression and Value.
+      Expressions are evaluated by the compiler.
+      Value is for Mutables and Constants
+    -) do we make Conditional and Loop interfaces for
+      the different constructs? or is that too many layers
+      for no good reason?
+*/
 
 /*
   #TODO: what flags would we want to associate with a given
@@ -61,23 +72,25 @@ public:
    *
    */
   enum class Kind {
+    // Expressions
     Application,
     Assignment,
     Bind,
     Binop,
     Block,
-    Boolean,
-    Array,
-    Conditional,
+    IfThenElse,
     Dot,
     Function,
-    Integer,
-    Nil,
     Subscript,
-    Tuple,
     Unop,
     Variable,
     While,
+    // Values
+    Nil,
+    Boolean,
+    Integer,
+    Array,
+    Tuple,
   };
 
 private:

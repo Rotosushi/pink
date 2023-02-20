@@ -1,6 +1,6 @@
 /**
- * @file Conditional.h
- * @brief Header for class Conditional
+ * @file IfThenElse.h
+ * @brief Header for class IfThenElse
  * @version 0.1
  */
 #pragma once
@@ -11,22 +11,26 @@ namespace pink {
 /**
  * @brief Represents an instance of a conditional expression
  */
-class Conditional : public Ast {
+class IfThenElse : public Ast {
 private:
   Ast::Pointer test;
   Ast::Pointer first;
   Ast::Pointer second;
 
 public:
-  Conditional(const Location &location, Ast::Pointer test, Ast::Pointer first,
-              Ast::Pointer second) noexcept
-      : Ast(Ast::Kind::Conditional, location), test(std::move(test)),
-        first(std::move(first)), second(std::move(second)) {}
-  ~Conditional() noexcept override = default;
-  Conditional(const Conditional &other) noexcept = delete;
-  Conditional(Conditional &&other) noexcept = default;
-  auto operator=(const Conditional &other) noexcept -> Conditional & = delete;
-  auto operator=(Conditional &&other) noexcept -> Conditional & = default;
+  IfThenElse(const Location &location,
+             Ast::Pointer    test,
+             Ast::Pointer    first,
+             Ast::Pointer    second) noexcept
+      : Ast(Ast::Kind::IfThenElse, location),
+        test(std::move(test)),
+        first(std::move(first)),
+        second(std::move(second)) {}
+  ~IfThenElse() noexcept override                                  = default;
+  IfThenElse(const IfThenElse &other) noexcept                     = delete;
+  IfThenElse(IfThenElse &&other) noexcept                          = default;
+  auto operator=(const IfThenElse &other) noexcept -> IfThenElse & = delete;
+  auto operator=(IfThenElse &&other) noexcept -> IfThenElse      & = default;
 
   auto GetTest() noexcept -> Ast::Pointer & { return test; }
   auto GetTest() const noexcept -> const Ast::Pointer & { return test; }
@@ -36,7 +40,7 @@ public:
   auto GetSecond() const noexcept -> const Ast::Pointer & { return second; }
 
   static auto classof(const Ast *ast) noexcept -> bool {
-    return Ast::Kind::Conditional == ast->GetKind();
+    return Ast::Kind::IfThenElse == ast->GetKind();
   }
 
   void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }

@@ -19,26 +19,120 @@ message(STATUS "using c++ standard: ${CXX_STANDARD}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
+# TODO: split build of project with build of tests 
+
+# TODO: split project build into a CMakeLists within 
+#       source, and tests build into a CMakeLists within 
+#       test, then this CMakeLists simply sets up global 
+#       state and applies the other two CMakeLists.
+
+# TODO: split debug with all sanitizers, -01, etc.
+# and release with no sanitizers, -O3, etc. 
+# TODO: check that the warnings enabled work for 
+# the compiler being used to build the project.
 add_compile_options(
   -O1 
   -gdwarf-4 
   -Wall 
+  -Wdeprecated
   -Wextra 
+  -Wmost 
   -Wpedantic 
+  -Wconversion 
+  -Wunused 
+  -Warray-bounds-pointer-arithmetic
+  -Warray-parameter
+  -Watomic-implicit-seq-cst
+  -Wbad-function-cast
+  -Wbitwise-op-parentheses
+  -Wbool-operation
+  -Wc++-compat 
+  -Wcast-align
+  -Wcast-function-type 
+  -Wcast-qual 
+  -Wchar-subscripts 
+  -Wcomma 
+  -Wcomment
+  -Wcompound-token-split 
+  -Wconditional-uninitialized
+  -Wctad-maybe-unsupported
+  -Wcustom-atomic-properties
+  -Wdelete-non-virtual-dtor 
+  -Wnon-virtual-dtor
+  -Wdeprecated-implementations
+  -Wdeprecated-writable-strings 
+  -Wdisabled-macro-expansion 
+  -Wdouble-promotion 
+  -Wdtor-name 
+  -Wduplicate-decl-specifier 
+  -Wduplicate-enum 
+  -Wduplicate-method-arg 
+  -Wduplicate-method-match 
+  -Wembedded-directive 
+  -Wempty-init-stmt 
+  -Wempty-translation-unit 
+  -Wenum-enum-conversion 
+  -Wenum-float-conversion 
+  -Wextra-semi 
+  -Wextra-semi-stmt 
+  -Wflexible-array-extensions 
+  -Wfloat-conversion 
+  -Wfloat-equal 
+  -Wfloat-overflow-conversion 
+  -Wfloat-zero-conversion 
+  -Wformat-nonliteral 
+  -Wformat-pedantic 
+  -Wformat-type-confusion 
+  -Wglobal-constructors 
+  -Wgnu 
+  -Wheader-hygiene 
+  -Wimplicit-fallthrough 
+  -Wimplicit-int-conversion 
+  -Wimplicit-int-float-conversion 
+  -Winfinite-recursion 
+  -Wint-in-bool-context 
+  -Wkeyword-macro 
+  -Wlanguage-extension-token 
+  -Wlogical-op-parentheses 
+  -Wloop-analysis 
+  -Wmain 
+  -Wmalformed-warning-check 
+  -Wmicrosoft 
+  -Wmisleading-indentation 
+  -Wmismatched-tags 
+  -Wmissing-braces 
+  -Wmissing-field-initializers 
+  -Wmissing-method-return-type 
+  -Wmissing-noreturn 
+  -Wmissing-variable-declarations 
+  -Wnested-anon-types 
+  -Wold-style-cast 
+  -Woption-ignored 
+  -Wover-aligned 
+  -Woverlength-strings 
+  -Woverloaded-virtual 
+  -Woverriding-method-mismatch 
+  -Wpacked 
+  -Wparentheses 
+  -Wredundant-parens 
+  -Wreorder-ctor 
   -Werror
-  #-fsanitize=address
+  -fsanitize=address
   -fsanitize=undefined
+  -fno-omit-frame-pointer
 )
 
 add_link_options(
-  #-fsanitize=address
+  -gdwarf-4
+  -fsanitize=address
   -fsanitize=undefined
+  -fno-omit-frame-pointer
 )
 
 find_package(Catch2 3 REQUIRED)
 
 # finding and setting up LLVM to be linked into this project
-find_package(LLVM 16 REQUIRED CONFIG)
+find_package(LLVM 17 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -53,7 +147,7 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 # link against all llvm libraries available.
 execute_process(
-	COMMAND llvm-config --libfiles 
+	COMMAND llvm-config --libs 
 	OUTPUT_VARIABLE llvm_libs
 	OUTPUT_STRIP_TRAILING_WHITESPACE
 )
@@ -157,7 +251,7 @@ add_library(common STATIC
   source/type/action/ToLLVM.cpp
 
 
-	# the 'aux' directory is for the classes which are necessary or convenient
+	# the 'aux' directory is for the classes which are necessary or convenient 
 	# for the functioning of the compiler, which are additionally small enough 
 	# to fit within a single source file.
 	source/aux/CLIOptions.cpp
@@ -186,7 +280,8 @@ add_library(common STATIC
 	source/front/Lexer.cpp 
 	source/front/Token.cpp
 	source/front/Parser.cpp
-		
+
+
 	# the 'kernel' directory is for files which implement functionality 
 	# of the language itself
 	source/runtime/ops/BinopPrimitives.cpp
@@ -228,18 +323,15 @@ set_property(
 	PROPERTY ADDITIONAL_CLEAN_FILES source/front/Lexer.cpp
 )
 
-add_link_options(-gdwarf-4)
-
-target_link_options(common PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
+target_link_options(common PUBLIC ${llvm_ldflags} ${llvm_libs} ${llvm_syslibs} -fuse-ld=lld)
 
 target_include_directories(common PUBLIC include ${LLVM_LIBRARY_DIRS})
 
 target_link_directories(common PUBLIC ${LLVM_LIBRARY_DIRS})
 
-target_link_libraries(common
-#${LLVM_LIBRARY_DIRS}/liblldCommon.a
-#${LLVM_LIBRARY_DIRS}/liblldELF.a
-${llvm_libs}
+target_link_libraries(common 
+${LLVM_LIBRARY_DIRS}/liblldCommon.a
+${LLVM_LIBRARY_DIRS}/liblldELF.a
 )
 
 add_executable(pink 

@@ -238,7 +238,7 @@ auto Parser::ParseBind(InternedString name,
     return Error(Error::Code::MissingBindColonEq, location, std::string(text));
   }
 
-  TRY(affix_result, affix, ParseAffix, env);
+  TRY(affix_result, affix, ParseAffix, env)
 
   Location bind_loc(lhs_location.firstLine,
                     lhs_location.firstColumn,
@@ -271,7 +271,7 @@ auto Parser::ParseFunction(Environment &env) -> Parser::Result {
   // #RULE a functions argument list is optional
   if (Peek(Token::Id)) {
     do {
-      TRY(arg_result, arg, ParseArgument, env);
+      TRY(arg_result, arg, ParseArgument, env)
 
       args.emplace_back(std::move(arg));
     } while (Expect(Token::Comma));
@@ -285,7 +285,7 @@ auto Parser::ParseFunction(Environment &env) -> Parser::Result {
   // block expression if we allow the alternative
   // to be affix ';'
 
-  TRY(body_result, body, ParseBlock, env);
+  TRY(body_result, body, ParseBlock, env)
 
   const Location &rhs_loc = body->GetLocation();
 
@@ -319,7 +319,7 @@ auto Parser::ParseArgument(Environment &env)
     return Error(Error::Code::MissingArgType, location, std::string(text));
   }
 
-  TRY(type_result, type, ParseType, env);
+  TRY(type_result, type, ParseType, env)
 
   return {std::make_pair(name, type)};
 }
@@ -340,7 +340,7 @@ auto Parser::ParseBlock(Environment &env) -> Parser::Result {
   nexttok(); // eat '{'
 
   do {
-    TRY(expression_result, expression, ParseTerm, env);
+    TRY(expression_result, expression, ParseTerm, env)
 
     expressions.emplace_back(std::move(expression));
   } while (!Peek(Token::RBrace));
@@ -376,7 +376,7 @@ auto Parser::ParseTerm(Environment &env) -> Parser::Result {
     return ParseBind(env);
   }
 
-  TRY(affix_result, affix, ParseAffix, env);
+  TRY(affix_result, affix, ParseAffix, env)
 
   if (!Expect(Token::Semicolon)) {
     return {Error(Error::Code::MissingSemicolon, location, std::string(text))};
@@ -397,29 +397,29 @@ auto Parser::ParseConditional(Environment &env) -> Parser::Result {
     return Error(Error::Code::MissingLParen, location, std::string(text));
   }
 
-  TRY(test_result, test_term, ParseAffix, env);
+  TRY(test_result, test_term, ParseAffix, env)
 
   if (!Expect(Token::RParen)) {
     return Error(Error::Code::MissingRParen, location, std::string(text));
   }
 
-  TRY(then_result, then_term, ParseBlock, env);
+  TRY(then_result, then_term, ParseBlock, env)
 
   if (!Expect(Token::Else)) {
     return Error(Error::Code::MissingElse, location, std::string(text));
   }
 
-  TRY(else_result, else_term, ParseBlock, env);
+  TRY(else_result, else_term, ParseBlock, env)
 
   const Location &rhs_loc = location;
   Location        condloc(lhs_loc.firstLine,
                    lhs_loc.firstColumn,
                    rhs_loc.lastLine,
                    rhs_loc.lastColumn);
-  return {std::make_unique<Conditional>(condloc,
-                                        std::move(test_term),
-                                        std::move(then_term),
-                                        std::move(else_term))};
+  return {std::make_unique<IfThenElse>(condloc,
+                                       std::move(test_term),
+                                       std::move(then_term),
+                                       std::move(else_term))};
 }
 
 /*
@@ -429,13 +429,13 @@ auto Parser::ParseWhile(Environment &env) -> Parser::Result {
   Location lhs_loc = location;
   nexttok(); // eat 'while'
 
-  TRY(test_result, test_term, ParseAffix, env);
+  TRY(test_result, test_term, ParseAffix, env)
 
   if (!Expect(Token::Do)) {
     return Error(Error::Code::MissingDo, location, std::string(text));
   }
 
-  TRY(body_result, body_term, ParseBlock, env);
+  TRY(body_result, body_term, ParseBlock, env)
 
   const Location &rhs_loc = location;
   Location        whileloc(lhs_loc.firstLine,
@@ -454,7 +454,7 @@ auto Parser::ParseWhile(Environment &env) -> Parser::Result {
 */
 auto Parser::ParseAffix(Environment &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
-  TRY(composite_result, composite, ParseComposite, env);
+  TRY(composite_result, composite, ParseComposite, env)
 
   // composite "=" affix
   if (Peek(Token::Equals)) {
@@ -477,7 +477,7 @@ auto Parser::ParseAssignment(Ast::Pointer composite, Environment &env)
     -> Parser::Result {
   nexttok(); // eat "="
 
-  TRY(right_result, right_term, ParseAffix, env);
+  TRY(right_result, right_term, ParseAffix, env)
 
   const Location &lhs_loc = composite->GetLocation();
   const Location &rhs_loc = right_term->GetLocation();
@@ -506,7 +506,7 @@ auto Parser::ParseApplication(Ast::Pointer composite, Environment &env)
         nexttok();
       }
 
-      TRY(arg_result, arg, ParseAffix, env);
+      TRY(arg_result, arg, ParseAffix, env)
 
       args.emplace_back(std::move(arg));
 
@@ -536,7 +536,7 @@ auto Parser::ParseApplication(Ast::Pointer composite, Environment &env)
             | accessor
 */
 auto Parser::ParseComposite(Environment &env) -> Parser::Result {
-  TRY(accessor_result, accessor, ParseAccessor, env);
+  TRY(accessor_result, accessor, ParseAccessor, env)
 
   if (Peek(Token::Op)) {
     return ParseInfix(std::move(accessor), 0, env);
@@ -550,7 +550,7 @@ auto Parser::ParseComposite(Environment &env) -> Parser::Result {
            | basic
 */
 auto Parser::ParseAccessor(Environment &env) -> Parser::Result {
-  TRY(left_result, left_term, ParseBasic, env);
+  TRY(left_result, left_term, ParseBasic, env)
 
   do {
     if (Peek(Token::Dot)) {
@@ -572,7 +572,7 @@ auto Parser::ParseDot(Ast::Pointer left, Environment &env) -> Parser::Result {
   auto lhs_loc = left->GetLocation();
   nexttok(); // eat '.'
 
-  TRY(right_result, right, ParseBasic, env);
+  TRY(right_result, right, ParseBasic, env)
 
   const Location &rhs_loc = right->GetLocation();
   Location        dotloc(lhs_loc.firstLine,
@@ -590,7 +590,7 @@ auto Parser::ParseSubscript(Ast::Pointer left, Environment &env)
   auto lhs_loc = left->GetLocation();
   nexttok(); // eat '['
 
-  TRY(right_result, right, ParseBasic, env);
+  TRY(right_result, right, ParseBasic, env)
 
   if (!Expect(Token::RBracket)) { // eat ']'
     return {Error(Error::Code::MissingRBracket, location, std::string(text))};
@@ -667,7 +667,7 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
 
     nexttok(); // eat the 'operator'
 
-    TRY(right_result, right, ParseAccessor, env);
+    TRY(right_result, right, ParseAccessor, env)
 
     while (PredictsHigherPrecedenceOrRightAssociativeBinop()) {
       auto temp = ParseInfix(std::move(right), peek_lit->GetPrecedence(), env);
@@ -725,7 +725,7 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
     nexttok(); // eat op
 
     // #RULE unops all bind to their immediate right hand side
-    TRY(right_result, right, ParseAccessor, env);
+    TRY(right_result, right, ParseAccessor, env)
 
     const Location &rhs_loc{right->GetLocation()};
     Location        unop_loc{lhs_loc.firstLine,
@@ -742,7 +742,7 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
   {
     nexttok(); // eat the '('
 
-    TRY(expression_result, expression, ParseAffix, env);
+    TRY(expression_result, expression, ParseAffix, env)
 
     if (Peek(Token::Comma)) {
       return ParseTuple(std::move(expression), env);
@@ -824,7 +824,7 @@ auto Parser::ParseArray(Environment &env) -> Result {
       nexttok(); // eat ','
     }
 
-    TRY(element_result, element, ParseAffix, env);
+    TRY(element_result, element, ParseAffix, env)
 
     elements.emplace_back(std::move(element));
   } while (token == Token::Comma);
@@ -850,7 +850,7 @@ auto Parser::ParseTuple(Ast::Pointer first_element, Environment &env)
   elements.emplace_back(std::move(first_element));
 
   while (Expect(Token::Comma)) {
-    TRY(element_result, element, ParseAffix, env);
+    TRY(element_result, element, ParseAffix, env)
     elements.emplace_back(std::move(element));
   }
 
@@ -929,14 +929,14 @@ auto Parser::ParseType(Environment &env) -> Parser::TypeResult {
 
 auto Parser::ParseTupleType(Environment &env) -> TypeResult {
   nexttok(); // eat '('
-  TRY(left_result, left, ParseType, env);
+  TRY(left_result, left, ParseType, env)
 
   if (token == Token::Comma) {
     std::vector<Type::Pointer> element_types = {left};
     do {
       nexttok(); // eat ','
 
-      TRY(element_type_result, element_type, ParseType, env);
+      TRY(element_type_result, element_type, ParseType, env)
       element_types.push_back(element_type);
     } while (token == Token::Comma);
 
@@ -953,7 +953,7 @@ auto Parser::ParseTupleType(Environment &env) -> TypeResult {
 auto Parser::ParseArrayType(Environment &env) -> TypeResult {
   nexttok(); // eat '['
 
-  TRY(array_type_result, array_type, ParseType, env);
+  TRY(array_type_result, array_type, ParseType, env)
 
   if (!Expect(Token::Semicolon)) {
     return {
@@ -995,7 +995,7 @@ auto Parser::ParseArrayType(Environment &env) -> TypeResult {
 auto Parser::ParsePointerType(Environment &env) -> TypeResult {
   nexttok(); // eat "Pointer"
 
-  TRY(type_result, type, ParseType, env);
+  TRY(type_result, type, ParseType, env)
 
   return {env.GetPointerType(type)};
 }
@@ -1003,7 +1003,7 @@ auto Parser::ParsePointerType(Environment &env) -> TypeResult {
 auto Parser::ParseSliceType(Environment &env) -> TypeResult {
   nexttok(); // eat "Slice"
 
-  TRY(type_result, type, ParseType, env);
+  TRY(type_result, type, ParseType, env)
 
   return {env.GetSliceType(type)};
 }

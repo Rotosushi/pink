@@ -1,10 +1,18 @@
 Checks: 
     bugprone-*,
+    -bugprone-easily-swappable-parameters,
     modernize-*,
+    -modernize-use-default-member-init,
     performance-*,
+
     portability-*,
+
     clang-analyzer-*,
+
     cppcoreguidelines-*,
+
+    cert-*,
+
     readability-*,
-    -readability-avoid-const-params-in-decls
+    -readability-redundant-member-init,
 

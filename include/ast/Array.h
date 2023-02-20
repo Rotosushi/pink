@@ -49,8 +49,8 @@ namespace pink {
  */
 class Array : public Ast {
 public:
-  using Elements = std::vector<Ast::Pointer>;
-  using iterator = Elements::iterator;
+  using Elements       = std::vector<Ast::Pointer>;
+  using iterator       = Elements::iterator;
   using const_iterator = Elements::const_iterator;
 
 private:
@@ -58,12 +58,13 @@ private:
 
 public:
   Array(const Location &location, Elements elements) noexcept
-      : Ast(Ast::Kind::Array, location), elements(std::move(elements)) {}
-  ~Array() noexcept override = default;
-  Array(const Array &other) noexcept = delete;
-  Array(Array &&other) noexcept = default;
+      : Ast(Ast::Kind::Array, location),
+        elements(std::move(elements)) {}
+  ~Array() noexcept override                             = default;
+  Array(const Array &other) noexcept                     = delete;
+  Array(Array &&other) noexcept                          = default;
   auto operator=(const Array &other) noexcept -> Array & = delete;
-  auto operator=(Array &&other) noexcept -> Array & = default;
+  auto operator=(Array &&other) noexcept -> Array      & = default;
 
   [[nodiscard]] auto GetElements() noexcept -> Elements & { return elements; }
 

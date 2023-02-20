@@ -31,10 +31,10 @@ private:
 public:
   SymbolTable()
       : table{initial_size},
-        outer_scope{nullptr} {};
+        outer_scope{nullptr} {}
   SymbolTable(SymbolTable *outer_scope)
       : table{initial_size},
-        outer_scope{outer_scope} {};
+        outer_scope{outer_scope} {}
   ~SymbolTable()                                            = default;
   SymbolTable(const SymbolTable &other)                     = default;
   SymbolTable(SymbolTable &&other)                          = default;

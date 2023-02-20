@@ -6,10 +6,10 @@
 #include "ast/All.h"
 
 namespace pink {
-class AstToStringVisitor
-    : public ConstVisitorResult<AstToStringVisitor, const Ast::Pointer &,
-                                std::string>,
-      public ConstAstVisitor {
+class AstToStringVisitor : public ConstVisitorResult<AstToStringVisitor,
+                                                     const Ast::Pointer &,
+                                                     std::string>,
+                           public ConstAstVisitor {
 public:
   void Visit(const Application *application) const noexcept override;
   void Visit(const Array *array) const noexcept override;
@@ -18,7 +18,7 @@ public:
   void Visit(const Binop *binop) const noexcept override;
   void Visit(const Block *block) const noexcept override;
   void Visit(const Boolean *boolean) const noexcept override;
-  void Visit(const Conditional *conditional) const noexcept override;
+  void Visit(const IfThenElse *conditional) const noexcept override;
   void Visit(const Dot *dot) const noexcept override;
   void Visit(const Function *function) const noexcept override;
   void Visit(const Integer *integer) const noexcept override;
@@ -113,7 +113,7 @@ void AstToStringVisitor::Visit(const Block *block) const noexcept {
   for (const auto &expression : block->GetExpressions()) {
     result += Compute(expression, this);
 
-    if (!llvm::isa<Conditional>(expression) && !llvm::isa<While>(expression)) {
+    if (!llvm::isa<IfThenElse>(expression) && !llvm::isa<While>(expression)) {
       result += "; ";
     } else {
       result += " ";
@@ -129,7 +129,7 @@ void AstToStringVisitor::Visit(const Boolean *boolean) const noexcept {
   result = "false";
 }
 
-void AstToStringVisitor::Visit(const Conditional *conditional) const noexcept {
+void AstToStringVisitor::Visit(const IfThenElse *conditional) const noexcept {
   result = "if (";
   result += Compute(conditional->GetTest(), this);
   result += ") ";

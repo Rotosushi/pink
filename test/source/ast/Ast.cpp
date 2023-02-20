@@ -163,20 +163,20 @@ TEST_CASE("ast/Boolean", "[unit][ast]") {
   REQUIRE(boolean->GetValue() == value);
 }
 
-TEST_CASE("ast/Conditional", "[unit][ast]") {
+TEST_CASE("ast/IfThenElse", "[unit][ast]") {
   pink::Location     location = RandomLocation();
   pink::Ast::Pointer test;
   pink::Ast::Pointer first;
   pink::Ast::Pointer second;
   pink::Ast::Pointer ast =
-      std::make_unique<pink::Conditional>(location,
-                                          std::move(test),
-                                          std::move(first),
-                                          std::move(second));
-  REQUIRE(ast->GetKind() == pink::Ast::Kind::Conditional);
+      std::make_unique<pink::IfThenElse>(location,
+                                         std::move(test),
+                                         std::move(first),
+                                         std::move(second));
+  REQUIRE(ast->GetKind() == pink::Ast::Kind::IfThenElse);
   REQUIRE(ast->GetLocation() == location);
-  REQUIRE(llvm::isa<pink::Conditional>(ast));
-  auto *conditional = llvm::dyn_cast<pink::Conditional>(ast.get());
+  REQUIRE(llvm::isa<pink::IfThenElse>(ast));
+  auto *conditional = llvm::dyn_cast<pink::IfThenElse>(ast.get());
   REQUIRE(conditional != nullptr);
   REQUIRE(conditional->GetTest() == nullptr);
   REQUIRE(conditional->GetFirst() == nullptr);

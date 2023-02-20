@@ -72,11 +72,21 @@ private:
               std::unique_ptr<llvm::Module>      module,
               std::unique_ptr<llvm::IRBuilder<>> instruction_builder,
               llvm::TargetMachine               *target_machine)
-      : cli_options(std::move(cli_options)),
-        context(std::move(context)),
-        module(std::move(module)),
-        instruction_builder(std::move(instruction_builder)),
-        target_machine(target_machine) {
+      : gensym_counter{0},
+        internal_flags{},
+        cli_options{std::move(cli_options)},
+        parser{},
+        variable_interner{},
+        operator_interner{},
+        type_interner{},
+        scopes{},
+        binop_table{},
+        unop_table{},
+        context{std::move(context)},
+        module{std::move(module)},
+        instruction_builder{std::move(instruction_builder)},
+        target_machine{target_machine},
+        current_function{nullptr} {
     assert(target_machine != nullptr);
   }
 

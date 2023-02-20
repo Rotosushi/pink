@@ -16,24 +16,26 @@ namespace pink {
  */
 class Application : public Ast {
 public:
-  using Arguments = std::vector<Ast::Pointer>;
-  using iterator = Arguments::iterator;
+  using Arguments      = std::vector<Ast::Pointer>;
+  using iterator       = Arguments::iterator;
   using const_iterator = Arguments::const_iterator;
 
 private:
   Ast::Pointer callee;
-  Arguments arguments;
+  Arguments    arguments;
 
 public:
-  Application(const Location &location, Ast::Pointer callee,
-              Arguments arguments) noexcept
-      : Ast(Ast::Kind::Application, location), callee(std::move(callee)),
+  Application(const Location &location,
+              Ast::Pointer    callee,
+              Arguments       arguments) noexcept
+      : Ast(Ast::Kind::Application, location),
+        callee(std::move(callee)),
         arguments(std::move(arguments)) {}
-  ~Application() noexcept override = default;
-  Application(const Application &other) noexcept = delete;
-  Application(Application &&other) noexcept = default;
+  ~Application() noexcept override                                   = default;
+  Application(const Application &other) noexcept                     = delete;
+  Application(Application &&other) noexcept                          = default;
   auto operator=(const Application &other) noexcept -> Application & = delete;
-  auto operator=(Application &&other) noexcept -> Application & = default;
+  auto operator=(Application &&other) noexcept -> Application      & = default;
 
   [[nodiscard]] auto GetCallee() noexcept -> Ast::Pointer & { return callee; }
   [[nodiscard]] auto GetCallee() const noexcept -> const Ast::Pointer & {

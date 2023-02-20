@@ -51,7 +51,7 @@ public:
   void Visit(const Binop *binop) const noexcept override;
   void Visit(const Block *block) const noexcept override;
   void Visit(const Boolean *boolean) const noexcept override;
-  void Visit(const Conditional *conditional) const noexcept override;
+  void Visit(const IfThenElse *conditional) const noexcept override;
   void Visit(const Dot *dot) const noexcept override;
   void Visit(const Function *function) const noexcept override;
   void Visit(const Integer *integer) const noexcept override;
@@ -80,7 +80,7 @@ public:
   present in the type of the callee function.
 */
 void TypecheckVisitor::Visit(const Application *application) const noexcept {
-  TRY(callee_result, callee_type, Compute, application->GetCallee(), this);
+  TRY(callee_result, callee_type, Compute, application->GetCallee(), this)
 
   auto *function_type = llvm::dyn_cast<FunctionType>(callee_result.GetFirst());
   if (callee_type == nullptr) {
@@ -105,7 +105,7 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
   FunctionType::Arguments computed_argument_types;
   computed_argument_types.reserve(application->GetArguments().size());
   for (const auto &argument : *application) {
-    TRY(agrument_result, argument_type, Compute, argument, this);
+    TRY(agrument_result, argument_type, Compute, argument, this)
     computed_argument_types.emplace_back(argument_type);
   }
 
@@ -142,7 +142,7 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
   computed_element_types.reserve(array->GetElements().size());
 
   for (const auto &element : *array) {
-    TRY(element_result, element_type, Compute, element, this);
+    TRY(element_result, element_type, Compute, element, this)
 
     computed_element_types.emplace_back(element_type);
 
@@ -176,9 +176,11 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
            env.OnTheLHSOfAssignment(false),
            Compute,
            assignment->GetLeft(),
-           this);
+           this)
 
-  TRY(right_result, right_type, Compute, assignment->GetRight(), this);
+  env.OnTheLHSOfAssignment(false);
+
+  TRY(right_result, right_type, Compute, assignment->GetRight(), this)
 
   if (left_type != right_type) {
     std::string errmsg = "left type [";
@@ -221,7 +223,7 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
            env.WithinBindExpression(false),
            Compute,
            bind->GetAffix(),
-           this);
+           this)
   env.WithinBindExpression(false);
   env.BindVariable(bind->GetSymbol(), affix_type, nullptr);
 
@@ -236,9 +238,9 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
   of the binop given the left and right expressions.
 */
 void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
-  TRY(left_result, left_type, Compute, binop->GetLeft(), this);
+  TRY(left_result, left_type, Compute, binop->GetLeft(), this)
 
-  TRY(right_result, right_type, Compute, binop->GetRight(), this);
+  TRY(right_result, right_type, Compute, binop->GetRight(), this)
 
   auto optional_literal = env.LookupBinop(binop->GetOp());
 
@@ -306,12 +308,12 @@ void TypecheckVisitor::Visit(const Boolean *boolean) const noexcept {
 }
 
 /* 1/24/2023
-  The type of a Conditional expression is the type of the first of it's
+  The type of a IfThenElse expression is the type of the first of it's
   alternative expressions if and only if the test expression has type
   Boolean, and both alternative expressions have the same type.
 */
-void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {
-  TRY(test_result, test_type, Compute, conditional->GetTest(), this);
+void TypecheckVisitor::Visit(const IfThenElse *conditional) const noexcept {
+  TRY(test_result, test_type, Compute, conditional->GetTest(), this)
 
   if (test_type != env.GetBoolType()) {
     std::string errmsg = "Test expression has type [";
@@ -323,8 +325,8 @@ void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {
     return;
   }
 
-  TRY(first_result, first_type, Compute, conditional->GetFirst(), this);
-  TRY(second_result, second_type, Compute, conditional->GetSecond(), this);
+  TRY(first_result, first_type, Compute, conditional->GetFirst(), this)
+  TRY(second_result, second_type, Compute, conditional->GetSecond(), this)
 
   if (first_type != second_type) {
     std::string errmsg = "first type [";
@@ -359,7 +361,7 @@ void TypecheckVisitor::Visit(const Conditional *conditional) const noexcept {
   efficient)
 */
 void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
-  TRY(left_result, left_type, Compute, dot->GetLeft(), this);
+  TRY(left_result, left_type, Compute, dot->GetLeft(), this)
 
   const auto *structure_type = llvm::dyn_cast<TupleType>(left_type);
   if (structure_type == nullptr) {
@@ -424,7 +426,7 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
            env.PopScope(),
            Compute,
            function->GetBody(),
-           this);
+           this)
   env.PopScope();
 
   std::vector<Type::Pointer> argument_types(function->GetArguments().size());
@@ -466,7 +468,7 @@ void TypecheckVisitor::Visit(const Nil *nil) const noexcept {
   has Integer type.
 */
 void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
-  TRY(right_result, right_type, Compute, subscript->GetRight(), this);
+  TRY(right_result, right_type, Compute, subscript->GetRight(), this)
 
   if ((llvm::dyn_cast<IntegerType>(right_type)) == nullptr) {
     std::string errmsg = "Cannot use type [";
@@ -478,7 +480,7 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
     return;
   }
 
-  TRY(left_result, left_type, Compute, subscript->GetLeft(), this);
+  TRY(left_result, left_type, Compute, subscript->GetLeft(), this)
 
   auto element_result = [&]() -> TypecheckResult {
     if (const auto *array_type = llvm::dyn_cast<ArrayType>(left_type);
@@ -517,7 +519,7 @@ void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
   element_types.reserve(tuple->GetElements().size());
 
   for (const auto &element : *tuple) {
-    TRY(element_result, element_type, Compute, element, this);
+    TRY(element_result, element_type, Compute, element, this)
     element_types.emplace_back(element_type);
   }
 
@@ -649,7 +651,7 @@ void TypecheckVisitor::Visit(const Variable *variable) const noexcept {
   is typeable.
 */
 void TypecheckVisitor::Visit(const While *loop) const noexcept {
-  TRY(test_result, test_type, Compute, loop->GetTest(), this);
+  TRY(test_result, test_type, Compute, loop->GetTest(), this)
 
   if (test_type != env.GetBoolType()) {
     std::string errmsg = "Test expression has type [";
@@ -661,7 +663,7 @@ void TypecheckVisitor::Visit(const While *loop) const noexcept {
     return;
   }
 
-  TRY(body_result, body_type, Compute, loop->GetBody(), this);
+  TRY(body_result, body_type, Compute, loop->GetBody(), this)
 
   const auto *result_type = env.GetNilType();
   loop->SetCachedType(result_type);

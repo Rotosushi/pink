@@ -108,10 +108,10 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Type Error: Array member does not have the same type as other "
            "array members";
   case Error::Code::CondTestExprTypeMismatch:
-    return "Type Error: Conditional expression's test expression must have "
+    return "Type Error: IfThenElse expression's test expression must have "
            "type Boolean";
   case Error::Code::CondBodyExprTypeMismatch:
-    return "Type Error: Conditional expression's body expressions must have "
+    return "Type Error: IfThenElse expression's body expressions must have "
            "identical type";
   case Error::Code::WhileTestTypeMismatch:
     return "Type Error: While loop's test expression must have type Boolean";

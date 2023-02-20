@@ -42,7 +42,7 @@ public:
   void Visit(const Binop *binop) const noexcept override;
   void Visit(const Block *block) const noexcept override;
   void Visit(const Boolean *boolean) const noexcept override;
-  void Visit(const Conditional *conditional) const noexcept override;
+  void Visit(const IfThenElse *conditional) const noexcept override;
   void Visit(const Dot *dot) const noexcept override;
   void Visit(const Function *function) const noexcept override;
   void Visit(const Integer *integer) const noexcept override;
@@ -110,10 +110,10 @@ void CodegenVisitor::Visit(const Array *array) const noexcept {
 
   auto *array_size =
       env.instruction_builder->getInt64(array->GetElements().size());
-  auto *array_size_type = llvm::cast<llvm::IntegerType>(
-      array_layout_type->getTypeAtIndex((unsigned)0));
-  auto *array_elements_type = llvm::cast<llvm::ArrayType>(
-      array_layout_type->getTypeAtIndex((unsigned)1));
+  auto *array_size_type =
+      llvm::cast<llvm::IntegerType>(array_layout_type->getTypeAtIndex(0U));
+  auto *array_elements_type =
+      llvm::cast<llvm::ArrayType>(array_layout_type->getTypeAtIndex(1U));
   auto *element_type = array_elements_type->getArrayElementType();
 
   auto *array_size_pointer =
@@ -130,7 +130,7 @@ void CodegenVisitor::Visit(const Array *array) const noexcept {
                                                           0,
                                                           "array_elements");
 
-  std::size_t index = 0;
+  unsigned index = 0;
   for (const auto &element : *array) {
     auto *element_value = Compute(element, this);
     assert(element_value != nullptr);
@@ -244,7 +244,7 @@ void CodegenVisitor::Visit(const Boolean *boolean) const noexcept {
 
   #TODO: add if blocks without else branches. (these have Type Nil)
 */
-void CodegenVisitor::Visit(const Conditional *conditional) const noexcept {
+void CodegenVisitor::Visit(const IfThenElse *conditional) const noexcept {
   assert(env.current_function != nullptr);
   auto *test_value = Compute(conditional->GetTest(), this);
   assert(test_value != nullptr);
@@ -292,13 +292,15 @@ void CodegenVisitor::Visit(const Dot *dot) const noexcept {
 
   auto *index = llvm::dyn_cast<Integer>(dot->GetRight().get());
   assert(index != nullptr);
-  auto *struct_type  = llvm::cast<llvm::StructType>(left_value->getType());
-  auto *gep          = env.instruction_builder->CreateConstGEP2_32(struct_type,
-                                                          left_value,
-                                                          0,
-                                                          index->GetValue());
-  auto *element_type = struct_type->getTypeAtIndex(index->GetValue());
-  result             = LoadValue(element_type, gep, env);
+  auto *struct_type = llvm::cast<llvm::StructType>(left_value->getType());
+  auto *gep         = env.instruction_builder->CreateConstGEP2_32(
+      struct_type,
+      left_value,
+      0,
+      static_cast<unsigned>(index->GetValue()));
+  auto *element_type =
+      struct_type->getTypeAtIndex(static_cast<unsigned>(index->GetValue()));
+  result = LoadValue(element_type, gep, env);
 }
 
 /*
@@ -341,14 +343,14 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     value simply sits in the return register and we can
     start counting arguments from 0.
   */
-  std::size_t index = [&]() {
+  unsigned index = [&]() {
     if (llvm_return_type->isSingleValueType()) {
       llvm::AttrBuilder return_attribute(*env.context);
       return_attribute.addStructRetAttr(llvm_return_type);
-      llvm_function->addParamAttrs((unsigned)0, return_attribute);
-      return 1;
+      llvm_function->addParamAttrs(0U, return_attribute);
+      return 1U;
     }
-    return 0;
+    return 0U;
   }();
 
   const auto &pink_arguments = pink_function_type->GetArguments();
@@ -503,7 +505,7 @@ void CodegenVisitor::Visit(const Tuple *tuple) const noexcept {
       llvm::cast<llvm::StructType>(ToLLVM(tuple_type, env));
   auto *tuple_alloca = env.instruction_builder->CreateAlloca(tuple_layout_type);
 
-  std::size_t index = 0;
+  unsigned index = 0;
   for (const auto &element : *tuple) {
     auto *element_value = Compute(element, this);
     assert(element_value != nullptr);
@@ -528,7 +530,7 @@ static auto CodegenUnopAddressOf(const Unop           *unop,
   env.WithinAddressOf(false);
   assert(right_result != nullptr);
   return right_result;
-};
+}
 
 static auto CodegenUnopDereferencePointer(const Unop           *unop,
                                           Type::Pointer         right_type,
@@ -555,7 +557,7 @@ static auto CodegenUnopDereferencePointer(const Unop           *unop,
   // Note: this is the load for the dereference operation,
   // the generator expression is a no-op for address of and dereference.
   return LoadValue(llvm_pointee_type, right_value, env);
-};
+}
 
 void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   auto right_cache = unop->GetRight()->GetCachedType();

@@ -8,6 +8,8 @@
 
 #include "ast/All.h"
 
+#include "llvm/Support/InitLLVM.h"
+
 /*
   The general idea is to ensure that all valid terms
   of the langauge we want to be semanitcally meaninfull,
@@ -23,6 +25,7 @@
   auto parse_result = env.Parse();                                             \
   if (!parse_result) {                                                         \
     env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());         \
+    FAIL("Unable to parse expression.");                                       \
   }                                                                            \
   REQUIRE(parse_result);                                                       \
   auto *expression = parse_result.GetFirst().get();                            \
@@ -40,6 +43,7 @@
   auto parse_result = env.Parse();                                             \
   if (!parse_result) {                                                         \
     env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());         \
+    FAIL("Unable to parse expression.");                                       \
   }                                                                            \
   REQUIRE(parse_result);                                                       \
   auto *expression = parse_result.GetFirst().get();                            \
@@ -60,6 +64,7 @@
   auto parse_result = env.Parse();                                             \
   if (!parse_result) {                                                         \
     env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());         \
+    FAIL("Unable to parse expression.");                                       \
   }                                                                            \
   REQUIRE(parse_result);                                                       \
   auto *expression = parse_result.GetFirst().get();                            \
@@ -77,7 +82,11 @@
   REQUIRE(arguments[0].second == (argument_type));
 
 TEST_CASE("front/Parser", "[unit][front]") {
-  auto env = pink::Environment::CreateNativeEnvironment();
+  int            argc   = 0;
+  char const    *args[] = {"tests", nullptr};
+  char const   **argv   = args;
+  llvm::InitLLVM llvm{argc, argv};
+  auto           env = pink::Environment::CreateNativeEnvironment();
 
   SECTION("a := 108;"){BIND_AFFIX_IS("a := 108;\n", pink::Integer)}
 
@@ -155,7 +164,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
 
   SECTION("fn f () { if (true) { 10; } else { 11; } }"){
       FUNCTION_BODY_IS("fn f () { if (true) { 10; } else { 11; } }\n",
-                       pink::Conditional)}
+                       pink::IfThenElse)}
 
   SECTION("fn f () { while (true) do { x = x + 1; } }"){
       FUNCTION_BODY_IS("fn f () { while (true) do { x = x + 1; } }\n",
