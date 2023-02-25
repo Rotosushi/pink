@@ -54,6 +54,7 @@ private:
   UnopTable        unop_table;
 
   // exposing llvm member interfaces (they are quite large)
+  // #TODO: make these private members.
 public:
   std::unique_ptr<llvm::LLVMContext> context;
   std::unique_ptr<llvm::Module>      module;
@@ -90,6 +91,23 @@ private:
     assert(target_machine != nullptr);
   }
 
+  Environment()
+      : gensym_counter{0},
+        internal_flags{},
+        cli_options{},
+        parser{},
+        variable_interner{},
+        operator_interner{},
+        type_interner{},
+        scopes{},
+        binop_table{},
+        unop_table{},
+        context{nullptr},
+        module{nullptr},
+        instruction_builder{nullptr},
+        target_machine{nullptr},
+        current_function{nullptr} {}
+
 public:
   ~Environment()                                            = default;
   Environment(const Environment &other)                     = delete;
@@ -112,6 +130,17 @@ public:
   static auto NativeCPUFeatures() noexcept -> std::string;
   static auto CreateNativeEnvironment(CLIOptions cli_options) -> Environment;
   static auto CreateNativeEnvironment() -> Environment;
+
+  /**
+   * @brief Create a Test Environment object
+   *
+   * \warning it is not safe to call any member function which
+   * requires the llvm::* members to be active from a TestEnvironment.
+   * this is a hack to track down a memory leak in the test rig.
+   *
+   * @return Environment
+   */
+  static auto CreateTestEnvironment() -> Environment { return {}; }
 
   void DeclareVariable(std::string_view symbol,
                        Type::Pointer    type,
@@ -192,6 +221,8 @@ public:
   void SetIStream(std::istream *input_stream) {
     return parser.SetIStream(input_stream);
   }
+  void AppendToBuffer(std::string_view text) { parser.AppendToBuffer(text); }
+  void SetBuffer(std::string_view text) { parser.SetBuffer(text); }
   auto Parse() -> Parser::Result { return parser.Parse(*this); }
 
   // exposing variable_interner's interface
@@ -254,6 +285,7 @@ public:
   }
 
   // exposing ScopeStack's interface
+  void ResetScopes() { scopes.Reset(); }
   void PushScope() { scopes.PushScope(); }
   void PopScope() { scopes.PopScope(); }
 
@@ -293,17 +325,16 @@ public:
   }
 
   // exposing UnopTable's interface
-  auto RegisterUnop(InternedString opr) -> UnopLiteral * {
-    return unop_table.Register(opr);
-  }
-  auto RegisterUnop(InternedString opr,
-                    Type::Pointer  arg_t,
-                    Type::Pointer  ret_t,
-                    UnopCodegenFn  fn_p) -> UnopLiteral * {
-    return unop_table.Register(opr, arg_t, ret_t, fn_p);
+  void RegisterUnop(InternedString        unop,
+                    Type::Pointer         argument_type,
+                    Type::Pointer         return_type,
+                    UnopCodegen::Function function) {
+    UnopLiteral literal;
+    literal.Register(argument_type, UnopCodegen{return_type, function});
+    unop_table.Register(unop, std::move(literal));
   }
 
-  auto LookupUnop(InternedString opr) -> std::optional<UnopLiteral *> {
+  auto LookupUnop(InternedString opr) -> std::optional<UnopTable::Element *> {
     return unop_table.Lookup(opr);
   }
 };

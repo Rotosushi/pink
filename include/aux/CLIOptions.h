@@ -11,7 +11,6 @@
 #include <string>
 
 #include "llvm/Passes/OptimizationLevel.h"
-#include "llvm/Passes/PassBuilder.h" // llvm::PassBuilder
 
 #include "support/BitsPerByte.h"
 
@@ -75,6 +74,9 @@ private:
 public:
   CLIOptions()
       : optimization_level(llvm::OptimizationLevel::O0) {}
+  // we can lazily construct assembly_file and object_file
+  // here for minor savings in the cases where we are not
+  // generating assembly or object files.
   CLIOptions(std::string_view        infile,
              std::string_view        outfile,
              CLIFlags                flags,
@@ -96,9 +98,8 @@ public:
    *
    * searches for the first '.' appearing after the last '/' in
    * the given input string and returns the string containing
-   * everything up to that point. if there is no '.' in the
-   * input string, then the entire string after the last '/ is
-   * returned.
+   * everything up to that point. if  no '.' is found then the
+   * entire string is returned.
    *
    * @param filename the filename to remove the extensions of
    * @return std::string the new filename with no extensions

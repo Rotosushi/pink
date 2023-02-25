@@ -554,9 +554,9 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
     result = Error(Error::Code::UnknownUnop, unop->GetLocation(), errmsg);
     return;
   }
-  auto *literal = optional_literal.value();
+  auto &literal = optional_literal.value()->second;
 
-  auto implementation_result = [&]() -> Outcome<UnopCodegen *, Error> {
+  auto return_type_result = [&]() -> Outcome<Type::Pointer, Error> {
     if (strcmp(unop->GetOp(), "*") == 0) {
       env.WithinDereferencePtr(true);
       auto right_result = Compute(unop->GetRight(), this);
@@ -568,13 +568,15 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
 
       // create a new instance of the dereference op
       // with the same body as every other dereference op.
-      auto optional_implementation = literal->Lookup(env.GetIntType());
+      // using the same codegeneration function as
+      auto optional_implementation = literal.Lookup(env.GetIntType());
       assert(optional_implementation.has_value());
-      auto *implementation = optional_implementation.value();
+      auto &implementation = optional_implementation.value()->second;
 
-      return literal->Register(env.GetPointerType(right_type),
-                               right_type,
-                               implementation->GetGenerateFn());
+      return literal
+          .Register(env.GetPointerType(right_type),
+                    UnopCodegen{right_type, implementation.GetFunction()})
+          ->second.GetReturnType();
     }
 
     if (strcmp(unop->GetOp(), "&") == 0) {
@@ -591,12 +593,14 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
       }
       const auto *right_type = right_result.GetFirst();
 
-      auto optional_implementation = literal->Lookup(env.GetIntType());
+      auto optional_implementation = literal.Lookup(env.GetIntType());
       assert(optional_implementation.has_value());
-      auto *implementation = optional_implementation.value();
-      return literal->Register(right_type,
-                               env.GetPointerType(right_type),
-                               implementation->GetGenerateFn());
+      auto &implementation = optional_implementation.value()->second;
+      return literal
+          .Register(right_type,
+                    UnopCodegen{env.GetPointerType(right_type),
+                                implementation.GetFunction()})
+          ->second.GetReturnType();
     }
 
     auto right_result = Compute(unop->GetRight(), this);
@@ -605,7 +609,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
     }
     const auto *right_type = right_result.GetFirst();
 
-    auto found = literal->Lookup(right_type);
+    auto found = literal.Lookup(right_type);
 
     if (!found) {
       std::string errmsg = "No implementation of unop [";
@@ -615,11 +619,11 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
       errmsg             += "]";
       return Error(Error::Code::ArgTypeMismatch, unop->GetLocation(), errmsg);
     }
-    return found.value();
+    auto *implementation = found.value();
+    return implementation->second.GetReturnType();
   }();
-  auto *implementation = implementation_result.GetFirst();
 
-  const auto *result_type = implementation->GetReturnType();
+  const auto *result_type = return_type_result.GetFirst();
   unop->SetCachedType(result_type);
   result = result_type;
 }

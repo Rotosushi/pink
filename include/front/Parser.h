@@ -598,6 +598,15 @@ public:
   void SetIStream(std::istream *input_stream);
 
   /**
+   * @brief appends text directly to the end of the buffer
+   * of the parser.
+   *
+   * @param text
+   */
+  void AppendToBuffer(std::string_view text) { lexer.AppendToBuffer(text); }
+
+  void SetBuffer(std::string_view text) { lexer.SetBuffer(text); }
+  /**
    * @brief The entry point of the LL(1) Parser
    *
    * \note This function is O(N) because it is LL(1)

@@ -26,7 +26,7 @@ void Lexer::AppendToBuffer(std::string_view txt) {
   auto marker_dist = std::distance(buffer.begin(), marker);
   auto token_dist  = std::distance(buffer.begin(), token);
 
-  buffer += txt;
+  buffer.append(txt);
 
   end    = buffer.end();
   cursor = buffer.begin() + cursor_dist;

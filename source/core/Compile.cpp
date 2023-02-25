@@ -98,7 +98,7 @@ static auto ParseAndTypecheckInputFile(std::ostream &err, Environment &env)
     std::fstream infile;
     infile.open(env.GetInputFilename().data());
     if (!infile.is_open()) {
-      err << "Could not open input file " << env.GetInputFilename();
+      err << "Could not open input file [" << env.GetInputFilename() << "]\n";
       return {};
     }
     env.SetIStream(&infile);
@@ -125,8 +125,15 @@ static auto ParseAndTypecheckInputFile(std::ostream &err, Environment &env)
       }
     }
 
-    env.PopScope();
-    env.PushScope();
+    // reset the scopes so that Codegen
+    // doesn't redeclare variables when
+    // it processes this env.
+    // #NOTE: 2/23/23
+    // This is a bit weird, and I am thinking
+    // about a better way to handle this
+    // issue of symbol redefinition between
+    // Typechecking and Codegeneration.
+    env.ResetScopes();
   }
   if (invalid_terms.empty()) {
     return {std::move(valid_terms), true};

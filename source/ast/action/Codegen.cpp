@@ -312,6 +312,8 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   const auto *cache_type         = function->GetCachedTypeOrAssert();
   const auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
 
+  std::cout << "pink type [" << ToString(pink_function_type) << "]\n";
+
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
   auto *llvm_function_type = [&]() {
     if (is_main) {
@@ -338,13 +340,24 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     this also means that the size of the argument list
     is off by one compared to the function type as in
     the source text. so we also have to start counting
-    the index from 1.
+    the index from 1. additionally, any non-SingleValueType
+    will have been converted to an opaque pointer type,
+    so we must use the arguments converted from the
+    pink::FunctionType one by one.
+    #NOTE: I would prefer to add parameter attributes
+    when we convert the FunctionType within ToLLVM(),
+    however the attributes themselves are associated
+    with each function, as llvm::FunctionTypes may
+    be shared among llvm::Functions. This means we
+    are forced to walk the list of arguments types
+    twice.
     if the function returns a singleValueType the return
     value simply sits in the return register and we can
     start counting arguments from 0.
   */
   unsigned index = [&]() {
-    if (llvm_return_type->isSingleValueType()) {
+    if (llvm_return_type->isSingleValueType() &&
+        !llvm_return_type->isVoidTy()) {
       llvm::AttrBuilder return_attribute(*env.context);
       return_attribute.addStructRetAttr(llvm_return_type);
       llvm_function->addParamAttrs(0U, return_attribute);
@@ -353,12 +366,13 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     return 0U;
   }();
 
-  const auto &pink_arguments = pink_function_type->GetArguments();
-  for (; index < llvm_function_type->getNumParams(); index++) {
+  const auto &arguments            = pink_function_type->GetArguments();
+  const auto  number_of_parameters = llvm_function_type->getNumParams();
+  for (; index < number_of_parameters; ++index) {
     llvm::AttrBuilder parameter_attribute(*env.context);
-    auto             *parameter_type = ToLLVM(pink_arguments[index], env);
+    auto             *parameter_type = ToLLVM(arguments[index], env);
 
-    if (!parameter_type->isSingleValueType()) {
+    if (!parameter_type->isSingleValueType() && !parameter_type->isVoidTy()) {
       parameter_attribute.addByValAttr(parameter_type);
       llvm_function->addParamAttrs(index, parameter_attribute);
     }
@@ -376,7 +390,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   // A) Allocate all arguments
   // B) Initialize all arguments
   // we must do A for all arguments before we can do B for any
-  // argument, because the llvm optimizer handles all allocas
+  // argument, because the llvm optimizer best handles all allocas
   // at the beginning of the functions first BasicBlock
   std::vector<llvm::AllocaInst *> arg_allocas;
   arg_allocas.reserve(function->GetArguments().size());
@@ -423,9 +437,15 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     }
   }
 
+  std::cerr << "number of function attributes ["
+            << llvm_function->getAttributes().getNumAttrSets() << "\n]";
+
   std::string              buffer;
   llvm::raw_string_ostream out(buffer);
   if (llvm::verifyFunction(*llvm_function, &out)) {
+    std::cerr << "llvm function [\n"
+              << LLVMValueToString(llvm_function) << "]\n"
+              << "llvm type [" << LLVMTypeToString(llvm_function_type) << "]\n";
     FatalError(buffer, __FILE__, __LINE__);
   }
   // We just emitted a function, so we know we
@@ -581,11 +601,11 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   assert(optional_literal.has_value());
   auto *literal = optional_literal.value();
 
-  auto optional_implementation = literal->Lookup(right_type);
+  auto optional_implementation = literal->second.Lookup(right_type);
   assert(optional_implementation.has_value());
-  auto *implementation = optional_implementation.value();
+  auto &implementation = optional_implementation.value()->second;
 
-  result = implementation->GetGenerateFn()(right_value, env);
+  result = implementation.GetFunction()(right_value, env);
 }
 
 /*

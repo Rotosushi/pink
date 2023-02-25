@@ -21,6 +21,12 @@ public:
   auto operator=(const ScopeStack &other) -> ScopeStack & = delete;
   auto operator=(ScopeStack &&other) -> ScopeStack      & = default;
 
+  void Reset() {
+    while (!stack.empty()) {
+      stack.pop();
+    }
+    stack.emplace();
+  }
   void PushScope() { stack.emplace(&stack.top()); }
   void PopScope() { stack.pop(); }
 

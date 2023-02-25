@@ -1,6 +1,7 @@
 #include "core/Optimize.h"
 
 #include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Passes/PassBuilder.h"
 
 namespace pink {
 auto DefaultAnalysis(std::ostream &err, Environment &env) -> int {

@@ -184,9 +184,6 @@ auto Parser::ParseTop(Environment &env) -> Parser::Result {
   if (Peek(Token::Id) || Peek(Token::Var)) {
     auto outcome = ParseBind(env);
     if (!outcome) {
-      // So, we cannot simply [return outcome]
-      // because the return statement selects
-      // the copy constructor of
       return outcome;
     }
 

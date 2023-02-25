@@ -24,6 +24,29 @@ Broadly speaking the compiler takes 5 steps:
   simply ask lld to link the output file
 
 
+thoughts:
+  Single sources of truth
+
+  when do you know those bits of information?
+    -) before compilation
+    -) during compilation 
+    -) at runtime
+
+  State <-> Behavior 
+
+  State 
+    -) Layout 
+    -) Atoms 
+
+  Behavior 
+    -) Functions 
+    -) Operations 
+    -) Conditionals 
+    -) Loops 
+    -) Modules 
+
+
+
 
 concerns:
 1.1) source files usually specify more than one Ast.

@@ -1,5 +1,8 @@
 #include <getopt.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "PinkConfig.h"
 #include "aux/CLIOptions.h"
 #include "aux/Error.h"
@@ -7,7 +10,7 @@
 namespace pink {
 auto CLIOptions::RemoveTrailingExtensions(std::string_view filename)
     -> std::string {
-  auto        first_extension = filename.end();
+  const char *first_extension = nullptr;
   std::string search_string("/");
   // find the -last- occurance of "/" in the filename
   const auto *last_directory = std::find_end(filename.begin(),
@@ -26,8 +29,9 @@ auto CLIOptions::RemoveTrailingExtensions(std::string_view filename)
 }
 
 auto CLIOptions::PrintVersion(std::ostream &out) -> std::ostream & {
-  out << "pink version: " << pink_VERSION_MAJOR << "." << pink_VERSION_MINOR
-      << "\n";
+  out << "pink version [" << pink_VERSION_MAJOR << "." << pink_VERSION_MINOR
+      << "]\n"
+      << "compiled on [" << __DATE__ << " @ " << __TIME__ << "]";
   return out;
 }
 
@@ -52,13 +56,7 @@ auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
 }
 
 /*
-  #NOTE: 2/7/2023
-    We cannot use getopt.h on windows or mac, if/when
-    that becomes an issue we will have to work around
-    it. The easy route long term might be to reimplement
-    the bare neccessary functionality of getopt_long by
-    hand. Then this function can be compiled on whatever
-    platform is needed.
+  #TODO: rewrite this using LLVM CommandLine
 */
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   int         numopt        = 0; // count of how many options we parsed
@@ -70,7 +68,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   llvm::OptimizationLevel optimization_level = llvm::OptimizationLevel::O0;
 
   // note: we have to use a c style array here because of the api of
-  // getopt_long(3) NOLINTBEGIN(modernize-avoid-c-arrays)
+  // getopt_long(3) NOLINTBEGIN
   static struct option long_options[] = {
       {"help", no_argument, nullptr, 'h'},
       {"version", no_argument, nullptr, 'v'},
@@ -84,7 +82,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       {"emit-assembly", no_argument, nullptr, 's'},
       {"emit-asm", no_argument, nullptr, 's'},
       {nullptr, 0, nullptr, 0}};
-  // NOLINTEND(modernize-avoid-c-arrays)
+  // NOLINTEND
 
   int option = 0;
   int optind = 0;

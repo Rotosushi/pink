@@ -42,8 +42,8 @@ public:
   [[nodiscard]] auto GetReturnType() const noexcept -> Type::Pointer {
     return return_type;
   }
-  [[nodiscard]] auto GetArguments() noexcept -> Arguments { return arguments; }
-  [[nodiscard]] auto GetArguments() const noexcept -> Arguments {
+  [[nodiscard]] auto GetArguments() noexcept -> Arguments& { return arguments; }
+  [[nodiscard]] auto GetArguments() const noexcept -> const Arguments& {
     return arguments;
   }
 

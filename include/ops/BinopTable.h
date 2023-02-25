@@ -17,6 +17,11 @@ namespace pink {
  * @brief Represents the table of all known binops
  */
 class BinopTable {
+public:
+  using Key = InternedString;
+  using Value = std::unique_ptr<BinopLiteral>;
+  using Element = std::pair<Key, Value>;
+
 private:
   std::vector<std::pair<InternedString, BinopLiteral>> table;
 

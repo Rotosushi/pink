@@ -19,7 +19,7 @@ message(STATUS "using c++ standard: ${CXX_STANDARD}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
-# TODO: split build of project with build of tests 
+# TODO: split build of project and build of tests 
 
 # TODO: split project build into a CMakeLists within 
 #       source, and tests build into a CMakeLists within 
@@ -33,6 +33,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 add_compile_options(
   -O1 
   -gdwarf-4 
+  -flto=thin
   -Wall 
   -Wdeprecated
   -Wextra 
@@ -96,6 +97,7 @@ add_compile_options(
   -Wlogical-op-parentheses 
   -Wloop-analysis 
   -Wmain 
+  -Wmove 
   -Wmalformed-warning-check 
   -Wmicrosoft 
   -Wmisleading-indentation 
@@ -104,7 +106,6 @@ add_compile_options(
   -Wmissing-field-initializers 
   -Wmissing-method-return-type 
   -Wmissing-noreturn 
-  -Wmissing-variable-declarations 
   -Wnested-anon-types 
   -Wold-style-cast 
   -Woption-ignored 
@@ -123,6 +124,7 @@ add_compile_options(
 )
 
 add_link_options(
+  -flto=thin
   -gdwarf-4
   -fsanitize=address
   -fsanitize=undefined
@@ -148,8 +150,8 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 # link against all llvm libraries available.
 execute_process(
 	COMMAND llvm-config --libs 
-	OUTPUT_VARIABLE llvm_libs
-	OUTPUT_STRIP_TRAILING_WHITESPACE
+	OUTPUT_VARIABLE llvm_libs 
+	OUTPUT_STRIP_TRAILING_WHITESPACE 
 )
 
 separate_arguments(llvm_libs)
@@ -195,6 +197,13 @@ add_custom_command(
 
 # building the actual project
 include_directories(include)
+
+set(build_type $<$<CONFIG:Debug>:DEBUG_BUILD>)
+if (build_type STREQUAL DEBUG_BUILD)
+  set(DEBUG 1)
+else() 
+  set(DEBUG 0)
+endif()
 
 configure_file(include/PinkConfig.h.in ../include/PinkConfig.h)
 

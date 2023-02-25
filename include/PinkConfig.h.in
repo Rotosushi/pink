@@ -1,4 +1,7 @@
 
-
+// clang-format off
 #define pink_VERSION_MAJOR @pink_VERSION_MAJOR@
 #define pink_VERSION_MINOR @pink_VERSION_MINOR@
+
+#define DEBUG_BUILD        @DEBUG@
+// clang-format on
