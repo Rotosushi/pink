@@ -1,6 +1,7 @@
 #include "front/Parser.h"
 
-#include <charconv> // std::from_chars
+#include <charconv> // std::from_chars, std::errc, std::error_code
+#include <sstream>  // std::stringstream
 
 #include "aux/Environment.h"
 
@@ -157,6 +158,30 @@ static auto ToInteger(std::string_view text)
   return {errc};
 }
 
+static auto HandleToIntegerError(std::errc        errc,
+                                 Location         location,
+                                 std::string_view text) -> Error {
+  // this makes sense as an error the programmer made
+  if (errc == std::errc::result_out_of_range) {
+    return {
+        Error(Error::Code::IntegerOutOfBounds, location, std::string(text))};
+  }
+
+  auto              code = std::make_error_code(errc);
+  std::stringstream description;
+
+  // this is clearly a problem with the lexer
+  if (errc == std::errc::invalid_argument) {
+    description
+        << "expected text like [0-9]+ that std::from_chars did not match ["
+        << text << "]";
+    FatalError(description.str(), __FILE__, __LINE__);
+  }
+
+  description << "Unhandled std::errc returned by from_chars [" << code << "]";
+  FatalError(description.str(), __FILE__, __LINE__);
+}
+
 auto Parser::Parse(Environment &env) -> Parser::Result {
   // prime the lexer with the first token from the input stream;
   // only if we are not already parsing an input stream.
@@ -280,7 +305,7 @@ auto Parser::ParseFunction(Environment &env) -> Parser::Result {
 
   // #PROPOSAL we could easily parse functions which have no
   // block expression if we allow the alternative
-  // to be affix ';'
+  // to be [affix ';'], though this means we cannot
 
   TRY(body_result, body, ParseBlock, env)
 
@@ -768,26 +793,12 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
   case Token::Integer: {
     Location lhs_loc       = location;
     auto     maybe_integer = ToInteger(text);
-    if (maybe_integer) {
-      nexttok(); // eat [0-9]+
-      return {std::make_unique<Integer>(lhs_loc, maybe_integer.GetFirst())};
+    if (!maybe_integer) {
+      return {HandleToIntegerError(maybe_integer.GetSecond(), location, text)};
     }
 
-    auto errc = maybe_integer.GetSecond();
-    if (errc == std::errc::result_out_of_range) {
-      return {
-          Error(Error::Code::IntegerOutOfBounds, location, std::string(text))};
-    }
-
-    if (errc == std::errc::invalid_argument) {
-      FatalError("Lexed [0-9]+ that std::from_chars doesn't recognize",
-                 __FILE__,
-                 __LINE__);
-    }
-
-    FatalError("Unhandled std::errc returned by from_chars",
-               __FILE__,
-               __LINE__);
+    nexttok(); // eat [0-9]+
+    return {std::make_unique<Integer>(lhs_loc, maybe_integer.GetFirst())};
   }
 
   // #RULE Token::True at basic position is the literal true
@@ -963,21 +974,7 @@ auto Parser::ParseArrayType(Environment &env) -> TypeResult {
 
   auto maybe_integer = ToInteger(text);
   if (!maybe_integer) {
-    auto errc = maybe_integer.GetSecond();
-    if (errc == std::errc::result_out_of_range) {
-      return {
-          Error(Error::Code::IntegerOutOfBounds, location, std::string(text))};
-    }
-
-    if (errc == std::errc::invalid_argument) {
-      FatalError("Lexed [0-9]+ that std::from_chars doesn't recognize",
-                 __FILE__,
-                 __LINE__);
-    }
-
-    FatalError("Unhandled std::errc returned by from_chars",
-               __FILE__,
-               __LINE__);
+    return {HandleToIntegerError(maybe_integer.GetSecond(), location, text)};
   }
 
   nexttok(); // eat [0-9]+

@@ -23,7 +23,7 @@ namespace pink {
  */
 class Integer : public Ast {
 public:
-  using Value = unsigned;
+  using Value = std::size_t;
 
 private:
   /**

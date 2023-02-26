@@ -10,11 +10,11 @@ public:
   using Key            = K;
   using Value          = V;
   using Element        = std::pair<Key, Value>;
-  using iterator       = typename std::vector<Element>::iterator;
-  using const_iterator = typename std::vector<Element>::const_iterator;
+  using iterator       = typename std::vector<Map::Element>::iterator;
+  using const_iterator = typename std::vector<Map::Element>::const_iterator;
 
 private:
-  std::vector<Element> map;
+  std::vector<Map::Element> map;
 
 public:
   Map() noexcept                                     = default;
@@ -47,15 +47,13 @@ public:
   // #NOTE: 2/24/2023
   // we have a not const version to allow for a map of maps.
   // otherwise the client could not call Element::Value::Lookup()
-  virtual auto Lookup(Key key) -> std::optional<Element *> {
-    auto found =
-        std::find_if(map.begin(), map.end(), [&](const Element &element) {
-          return element.first == key;
-        });
-    if (found == map.end()) {
-      return {};
+  virtual auto Lookup(Key key) -> std::optional<Map::Element *> {
+    for (auto &element : map) {
+      if (element.first == key) {
+        return std::optional<Map::Element *>(std::in_place, &element);
+      }
     }
-    return {std::to_address(found)};
+    return {};
   }
 };
 } // namespace pink

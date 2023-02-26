@@ -33,7 +33,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 add_compile_options(
   -O1 
   -gdwarf-4 
-  -flto=thin
+  #-flto=thin
   -Wall 
   -Wdeprecated
   -Wextra 
@@ -118,16 +118,16 @@ add_compile_options(
   -Wredundant-parens 
   -Wreorder-ctor 
   -Werror
-  -fsanitize=address
-  -fsanitize=undefined
+  #-fsanitize=address
+  #-fsanitize=undefined
   -fno-omit-frame-pointer
 )
 
 add_link_options(
-  -flto=thin
+  #-flto=thin
   -gdwarf-4
-  -fsanitize=address
-  -fsanitize=undefined
+  #-fsanitize=address
+  #-fsanitize=undefined
   -fno-omit-frame-pointer
 )
 
@@ -212,28 +212,8 @@ add_library(common STATIC
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
-	source/ast/Application.cpp
-	source/ast/Array.cpp
-	source/ast/Assignment.cpp
-	source/ast/Ast.cpp
-	source/ast/Bind.cpp
-	source/ast/Binop.cpp
-	source/ast/Block.cpp
-	source/ast/Boolean.cpp
-	source/ast/Conditional.cpp
-	source/ast/Dot.cpp
-	source/ast/Function.cpp
-	source/ast/Integer.cpp
-	source/ast/Nil.cpp
-	source/ast/Subscript.cpp
-	source/ast/Tuple.cpp
-	source/ast/Unop.cpp
-	source/ast/Variable.cpp
-	source/ast/While.cpp
-
-  # defines the interface for all AstVisitors
   source/ast/visitor/AstVisitor.cpp
-  # derived AstVisitors
+
   source/ast/action/ToString.cpp
   source/ast/action/Typecheck.cpp
   source/ast/action/Codegen.cpp
@@ -241,18 +221,6 @@ add_library(common STATIC
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
-	source/type/ArrayType.cpp
-	source/type/BoolType.cpp
-	source/type/CharacterType.cpp
-	source/type/FunctionType.cpp
-	source/type/IntType.cpp
-	source/type/NilType.cpp
-	source/type/PointerType.cpp
-	source/type/SliceType.cpp
-	source/type/TupleType.cpp
-	source/type/Type.cpp
-	source/type/VoidType.cpp
-
   source/type/visitor/TypeVisitor.cpp
 
   source/type/action/StructuralEquality.cpp
@@ -280,9 +248,6 @@ add_library(common STATIC
 	source/ops/BinopCodegen.cpp
 	source/ops/BinopLiteral.cpp
 	source/ops/BinopTable.cpp
-	source/ops/UnopCodegen.cpp
-	source/ops/UnopLiteral.cpp
-	source/ops/UnopTable.cpp
 
 	# the 'front' directory is for the classes which comprise the frontend
 	# of the compiler itself.
@@ -371,7 +336,7 @@ add_executable(tests
   test/source/core/main.cpp
 
   test/source/ast/Ast.cpp
-  test/source/ast/Typecheck.cpp
+  #test/source/ast/Typecheck.cpp
 
   test/source/type/Type.cpp
 

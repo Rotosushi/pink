@@ -44,10 +44,13 @@ public:
   };
 
 private:
-  Kind kind;
+  Kind                kind;
+  mutable llvm::Type *llvm_type;
 
 public:
-  Type(Kind kind) noexcept : kind(kind) {}
+  Type(Kind kind) noexcept
+      : kind{kind},
+        llvm_type{nullptr} {}
   virtual ~Type() noexcept                             = default;
   Type(const Type &other) noexcept                     = default;
   Type(Type &&other) noexcept                          = default;
@@ -55,6 +58,22 @@ public:
   auto operator=(Type &&other) noexcept -> Type      & = default;
 
   [[nodiscard]] auto GetKind() const -> Kind { return kind; }
+
+  void SetCachedLLVMType(llvm::Type *llvm_type) const noexcept {
+    this->llvm_type = llvm_type;
+  }
+
+  auto CachedLLVMType() const noexcept -> std::optional<llvm::Type *> {
+    if (llvm_type == nullptr) {
+      return {};
+    }
+    return {llvm_type};
+  }
+
+  auto CachedLLVMTypeOrAssert() const noexcept -> llvm::Type * {
+    assert(llvm_type != nullptr);
+    return llvm_type;
+  }
 
   virtual void Accept(TypeVisitor *vistor) noexcept             = 0;
   virtual void Accept(ConstTypeVisitor *visitor) const noexcept = 0;

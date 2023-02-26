@@ -4,14 +4,9 @@
  * @version 0.1
  */
 #pragma once
-#include <memory>   // std::unique_ptr
-#include <optional> // std::optional
-#include <utility>  // std::pair
-#include <vector>   // std::vector
+#include "llvm/IR/Value.h" // llvm::Value
 
-#include "llvm/IR/Value.h"
-
-#include "type/Type.h"
+#include "type/Type.h" // pink::Type
 
 #include "aux/Map.h"            // pink::Map<K, V>
 #include "aux/StringInterner.h" // pink::InternedString

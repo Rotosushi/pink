@@ -225,8 +225,8 @@ TEST_CASE("ast/Function", "[unit][ast]") {
 }
 
 TEST_CASE("ast/Integer", "[unit][ast]") {
-  long long          value    = 42;
-  pink::Location     location = RandomLocation();
+  const pink::Integer::Value value    = 42;
+  pink::Location             location = RandomLocation();
   pink::Ast::Pointer ast = std::make_unique<pink::Integer>(location, value);
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Integer);
   REQUIRE(ast->GetLocation() == location);

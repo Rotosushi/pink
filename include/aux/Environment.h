@@ -142,13 +142,6 @@ public:
    */
   static auto CreateTestEnvironment() -> Environment { return {}; }
 
-  void DeclareVariable(std::string_view symbol,
-                       Type::Pointer    type,
-                       llvm::Value     *value = nullptr) {
-    const auto *name = variable_interner.Intern(symbol);
-    BindVariable(name, type, value);
-  }
-
   // exposing EnvironmentFlags interface
   [[nodiscard]] auto OnTheLHSOfAssignment() const -> bool {
     return internal_flags.OnTheLHSOfAssignment();
@@ -289,12 +282,12 @@ public:
   void PushScope() { scopes.PushScope(); }
   void PopScope() { scopes.PopScope(); }
 
-  auto LookupVariable(InternedString symbol) const
-      -> std::optional<SymbolTable::Value> {
+  auto LookupVariable(InternedString symbol)
+      -> std::optional<ScopeStack::Symbol> {
     return scopes.Lookup(symbol);
   }
-  auto LookupLocalVariable(InternedString symbol) const
-      -> std::optional<SymbolTable::Value> {
+  auto LookupLocalVariable(InternedString symbol)
+      -> std::optional<ScopeStack::Symbol> {
     return scopes.LookupLocal(symbol);
   }
   void

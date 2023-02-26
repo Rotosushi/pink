@@ -180,6 +180,16 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
   assert(affix_value != nullptr);
   env.WithinBindExpression(false);
 
+  // #RULE we must allocate stack space for singleValueType()s
+  // #RULE We must not allocate space for non-singleValueType()s
+  // as the Codegen visitor for non-singleValueType() literals
+  // allocates stack space for them.
+  auto *llvm_type = ToLLVM(affix_type, env);
+  if (llvm_type->isSingleValueType()) {
+    affix_value =
+        AllocateVariable(bind->GetSymbol(), llvm_type, env, affix_value);
+  }
+
   env.BindVariable(bind->GetSymbol(), affix_type, affix_value);
   result = affix_value;
 }
@@ -458,7 +468,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
 }
 
 void CodegenVisitor::Visit(const Integer *integer) const noexcept {
-  result = env.instruction_builder->getInt32(integer->GetValue());
+  result = env.instruction_builder->getInt64(integer->GetValue());
 }
 
 void CodegenVisitor::Visit(const Nil *nil) const noexcept {
@@ -614,10 +624,8 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
 void CodegenVisitor::Visit(const Variable *variable) const noexcept {
   auto bound = env.LookupVariable(variable->GetSymbol());
   assert(bound.has_value());
-  assert(std::get<llvm::Value *>(*bound) != nullptr);
-  result = LoadValue(ToLLVM(std::get<Type::Pointer>(*bound), env),
-                     std::get<llvm::Value *>(*bound),
-                     env);
+  assert(bound->Value() != nullptr);
+  result = LoadValue(ToLLVM(bound->Type(), env), bound->Value(), env);
 }
 
 /*

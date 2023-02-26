@@ -1,7 +1,5 @@
 #include "catch2/catch_test_macros.hpp"
 
-#include "ops/UnopCodegen.h"
-#include "ops/UnopLiteral.h"
 #include "ops/UnopTable.h"
 
 #include "aux/Environment.h"

@@ -45,24 +45,29 @@ void ToLLVMVisitor::Visit(const ArrayType *array_type) const noexcept {
   assert(array_type != nullptr);
   auto *llvm_element_type = Compute(array_type->GetElementType(), this);
   auto *llvm_integer_type = Compute(env.GetIntType(), this);
-  result                  = llvm::StructType::get(*env.context,
-                                                  {llvm_integer_type, llvm_element_type});
+  auto *llvm_type =
+      llvm::StructType::get(*env.context,
+                            {llvm_integer_type, llvm_element_type});
+  array_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
   the layout of a BooleanType is an integer of width 1.
 */
 void ToLLVMVisitor::Visit(const BooleanType *boolean_type) const noexcept {
-  assert(boolean_type != nullptr);
-  result = env.instruction_builder->getInt1Ty();
+  auto *llvm_type = env.instruction_builder->getInt1Ty();
+  boolean_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
   the layout of a CharacterType is an integer of width 8
 */
 void ToLLVMVisitor::Visit(const CharacterType *character_type) const noexcept {
-  assert(character_type != nullptr);
-  result = env.instruction_builder->getInt8Ty();
+  auto *llvm_type = env.instruction_builder->getInt8Ty();
+  character_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
@@ -78,7 +83,6 @@ void ToLLVMVisitor::Visit(const CharacterType *character_type) const noexcept {
   a single value type.
 */
 void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
-  assert(function_type != nullptr);
   auto address_space = env.module->getDataLayout().getAllocaAddrSpace();
   std::vector<llvm::Type *> llvm_argument_types(
       function_type->GetArguments().size());
@@ -98,32 +102,39 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
 
   auto *llvm_return_type = Compute(function_type->GetReturnType(), this);
   if (llvm_return_type->isSingleValueType() || llvm_return_type->isVoidTy()) {
-    result =
+    auto *llvm_type =
         llvm::FunctionType::get(llvm_return_type, llvm_argument_types, false);
+    function_type->SetCachedLLVMType(llvm_type);
+    result = llvm_type;
     return;
   }
 
   llvm_argument_types.insert(llvm_argument_types.begin(),
                              env.instruction_builder->getPtrTy(address_space));
-  result = llvm::FunctionType::get(env.instruction_builder->getVoidTy(),
-                                   llvm_argument_types,
-                                   false);
+  auto *llvm_type =
+      llvm::FunctionType::get(env.instruction_builder->getVoidTy(),
+                              llvm_argument_types,
+                              false);
+  function_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
   The layout of an IntegerType is an integer of width 64
 */
 void ToLLVMVisitor::Visit(const IntegerType *integer_type) const noexcept {
-  assert(integer_type != nullptr);
-  result = env.instruction_builder->getInt32Ty();
+  auto *llvm_type = env.instruction_builder->getInt64Ty();
+  integer_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
   The layout of a NilType is an integer of width 1
 */
 void ToLLVMVisitor::Visit(const NilType *nil_type) const noexcept {
-  assert(nil_type != nullptr);
-  result = env.instruction_builder->getInt1Ty();
+  auto *llvm_type = env.instruction_builder->getInt1Ty();
+  nil_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
@@ -134,26 +145,28 @@ void ToLLVMVisitor::Visit(const NilType *nil_type) const noexcept {
   means smallest addressable unit of memory.)
 */
 void ToLLVMVisitor::Visit(const PointerType *pointer_type) const noexcept {
-  assert(pointer_type != nullptr);
-  result = env.instruction_builder->getPtrTy();
+  auto *llvm_type = env.instruction_builder->getPtrTy();
+  pointer_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
   a Slice is a tuple of (size, offset, pointer)
 */
 void ToLLVMVisitor::Visit(const SliceType *slice_type) const noexcept {
-  assert(slice_type != nullptr);
   auto *integer_type = Compute(env.GetIntType(), this);
   auto *pointer_type = env.instruction_builder->getPtrTy();
-  result             = llvm::StructType::get(*env.context,
-                                             {integer_type, integer_type, pointer_type});
+  auto *llvm_type =
+      llvm::StructType::get(*env.context,
+                            {integer_type, integer_type, pointer_type});
+  slice_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
   A tuple type is an anonymous structure type.
 */
 void ToLLVMVisitor::Visit(const TupleType *tuple_type) const noexcept {
-  assert(tuple_type != nullptr);
   std::vector<llvm::Type *> llvm_element_types(
       tuple_type->GetElements().size());
   auto transform_element = [&](Type::Pointer type) {
@@ -163,19 +176,27 @@ void ToLLVMVisitor::Visit(const TupleType *tuple_type) const noexcept {
                  tuple_type->end(),
                  llvm_element_types.begin(),
                  transform_element);
-  result = llvm::StructType::get(*env.context, llvm_element_types);
+  auto *llvm_type = llvm::StructType::get(*env.context, llvm_element_types);
+  tuple_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 /*
   void type is void type
 */
 void ToLLVMVisitor::Visit(const VoidType *void_type) const noexcept {
-  assert(void_type != nullptr);
-  result = env.instruction_builder->getVoidTy();
+  auto *llvm_type = env.instruction_builder->getVoidTy();
+  void_type->SetCachedLLVMType(llvm_type);
+  result = llvm_type;
 }
 
 [[nodiscard]] auto ToLLVM(Type::Pointer type, Environment &env) noexcept
     -> llvm::Type * {
+  auto cache = type->CachedLLVMType();
+  if (cache) {
+    return cache.value();
+  }
+
   ToLLVMVisitor visitor(env);
   return visitor.Compute(type, &visitor);
 }

@@ -209,7 +209,7 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
     std::string errmsg = "symbol [";
     errmsg             += bind->GetSymbol();
     errmsg             += "] is already bound to type [";
-    errmsg             += ToString(std::get<Type::Pointer>(*bound));
+    errmsg             += ToString(bound->Type());
     errmsg             += "]";
     result             = Error(Error::Code::NameAlreadyBoundInScope,
                    bind->GetLocation(),
@@ -637,8 +637,8 @@ void TypecheckVisitor::Visit(const Variable *variable) const noexcept {
   auto found = env.LookupVariable(variable->GetSymbol());
 
   if (found.has_value()) {
-    variable->SetCachedType(std::get<Type::Pointer>(*found));
-    result = std::get<Type::Pointer>(*found);
+    variable->SetCachedType(found->Type());
+    result = found->Type();
     return;
   }
 
