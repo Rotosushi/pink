@@ -215,17 +215,17 @@ void CodegenVisitor::Visit(const Binop *binop) const noexcept {
 
   auto optional_literal = env.LookupBinop(binop->GetOp());
   assert(optional_literal.has_value());
-  auto *literal = optional_literal.value();
+  auto literal = optional_literal.value();
 
-  auto optional_implementation = literal->Lookup(left_type, right_type);
+  auto optional_implementation = literal.Lookup(left_type, right_type);
   assert(optional_implementation.has_value());
-  auto *implementation = optional_implementation.value();
+  auto implementation = optional_implementation.value();
 
-  result = implementation->GetGenerateFn()(llvm_left_type,
-                                           left_value,
-                                           llvm_right_type,
-                                           right_value,
-                                           env);
+  result = implementation.Generate()(llvm_left_type,
+                                     left_value,
+                                     llvm_right_type,
+                                     right_value,
+                                     env);
 }
 
 /*
@@ -259,13 +259,17 @@ void CodegenVisitor::Visit(const IfThenElse *conditional) const noexcept {
   auto *test_value = Compute(conditional->GetTest(), this);
   assert(test_value != nullptr);
 
+  // #NOTE: 2/25/2023: We must not add the 'else' and 'merge'
+  // basic blocks to the function upon creation, as the Codegen
+  // for the first or second alternative may change which
+  // basic block is last in the function, and we want to append
+  // exclusively to the end of the functions basic block list.
   auto *then_BB =
       llvm::BasicBlock::Create(*env.context, "then", env.current_function);
   auto *else_BB  = llvm::BasicBlock::Create(*env.context, "else");
   auto *merge_BB = llvm::BasicBlock::Create(*env.context, "merge");
 
   env.instruction_builder->CreateCondBr(test_value, then_BB, else_BB);
-
   env.instruction_builder->SetInsertPoint(then_BB);
 
   auto *first_value = Compute(conditional->GetFirst(), this);
@@ -275,7 +279,6 @@ void CodegenVisitor::Visit(const IfThenElse *conditional) const noexcept {
   then_BB = env.instruction_builder->GetInsertBlock();
 
   env.current_function->insert(env.current_function->end(), else_BB);
-
   env.instruction_builder->SetInsertPoint(else_BB);
 
   auto *second_value = Compute(conditional->GetSecond(), this);
@@ -609,13 +612,13 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
 
   auto optional_literal = env.LookupUnop(unop->GetOp());
   assert(optional_literal.has_value());
-  auto *literal = optional_literal.value();
+  auto literal = optional_literal.value();
 
-  auto optional_implementation = literal->second.Lookup(right_type);
+  auto optional_implementation = literal.Lookup(right_type);
   assert(optional_implementation.has_value());
-  auto &implementation = optional_implementation.value()->second;
+  auto &implementation = optional_implementation.value();
 
-  result = implementation.GetFunction()(right_value, env);
+  result = implementation.Generate()(right_value, env);
 }
 
 /*

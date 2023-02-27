@@ -21,20 +21,18 @@ TEST_CASE("ops/UnopCodegen", "[unit][ops]") {
   REQUIRE(implementation.GetFunction() == UnopCodegenFunction);
 }
 
-TEST_CASE("ops/UnopLiteral", "[unit][ops]") {
+TEST_CASE("ops/UnopOverloadSet", "[unit][ops]") {
   auto                type         = std::make_unique<pink::IntegerType>();
   pink::Type::Pointer integer_type = type.get();
 
-  pink::UnopLiteral unop_literal;
-  unop_literal.Register(integer_type,
-                        pink::UnopCodegen{integer_type, UnopCodegenFunction});
+  pink::UnopOverloadSet unop_literal;
+  unop_literal.Register(integer_type, integer_type, UnopCodegenFunction);
 
   auto optional_implementation = unop_literal.Lookup(integer_type);
   REQUIRE(optional_implementation.has_value());
-  auto *implementation = optional_implementation.value();
-  REQUIRE(implementation != nullptr);
-  REQUIRE(implementation->second.GetReturnType() == integer_type);
-  REQUIRE(implementation->second.GetFunction() == UnopCodegenFunction);
+  auto implementation = optional_implementation.value();
+  REQUIRE(implementation.ReturnType() == integer_type);
+  REQUIRE(implementation.Generate() == UnopCodegenFunction);
 }
 
 TEST_CASE("ops/UnopTable", "[unit][ops]") {
@@ -42,20 +40,14 @@ TEST_CASE("ops/UnopTable", "[unit][ops]") {
   auto                 type         = std::make_unique<pink::IntegerType>();
   pink::Type::Pointer  integer_type = type.get();
 
-  pink::UnopLiteral unop_literal;
-  unop_literal.Register(integer_type,
-                        pink::UnopCodegen(integer_type, UnopCodegenFunction));
-
   pink::UnopTable unop_table;
-  unop_table.Register(op, std::move(unop_literal));
+  unop_table.Register(op, integer_type, integer_type, UnopCodegenFunction);
 
-  auto optional_literal = unop_table.Lookup(op);
-  REQUIRE(optional_literal != nullptr);
-  auto *literal                 = optional_literal.value();
-  auto  optional_implementation = literal->second.Lookup(integer_type);
+  auto optional_literal        = unop_table.Lookup(op);
+  auto literal                 = optional_literal.value();
+  auto optional_implementation = literal.Lookup(integer_type);
   REQUIRE(optional_implementation.has_value());
-  auto *implementation = optional_implementation.value();
-  REQUIRE(implementation != nullptr);
-  REQUIRE(implementation->second.GetReturnType() == integer_type);
-  REQUIRE(implementation->second.GetFunction() == UnopCodegenFunction);
+  auto implementation = optional_implementation.value();
+  REQUIRE(implementation.ReturnType() == integer_type);
+  REQUIRE(implementation.Generate() == UnopCodegenFunction);
 }

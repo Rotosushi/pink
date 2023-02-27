@@ -5,9 +5,7 @@
  *
  */
 #pragma once
-#include <string>
-
-#include <llvm/ADT/StringSet.h>
+#include "llvm/ADT/StringSet.h"
 
 namespace pink {
 using InternedString = char const *;
@@ -18,10 +16,7 @@ private:
 
 public:
   inline auto Intern(std::string_view str) -> InternedString {
-    // #NOTE: llvm::StringSet allocates a copy of the view
-    auto set_element = set.try_emplace(str);
-    auto view        = set_element.first->getKey();
-    return view.data();
+    return set.try_emplace(str).first->getKey().data();
   }
 };
 

@@ -3,8 +3,6 @@
 
 #include "ops/UnopTable.h"
 
-#include "support/DisableWarning.h"
-
 namespace pink {
 auto UnopIntNegate(llvm::Value *term, Environment &env) -> llvm::Value * {
   assert(term != nullptr);

@@ -236,18 +236,13 @@ add_library(common STATIC
 	source/aux/Error.cpp
 	source/aux/Location.cpp
 	source/aux/Outcome.cpp
-	source/aux/StringInterner.cpp
 	source/aux/SymbolTable.cpp
-  source/aux/ScopeStack.cpp
 	source/aux/TypeInterner.cpp
 	source/aux/InternalFlags.cpp
 
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 
 	# operators like assignment '=', member access '.', and subscript '[]')
-	source/ops/BinopCodegen.cpp
-	source/ops/BinopLiteral.cpp
-	source/ops/BinopTable.cpp
 
 	# the 'front' directory is for the classes which comprise the frontend
 	# of the compiler itself.
@@ -336,7 +331,7 @@ add_executable(tests
   test/source/core/main.cpp
 
   test/source/ast/Ast.cpp
-  #test/source/ast/Typecheck.cpp
+  test/source/ast/Typecheck.cpp
 
   test/source/type/Type.cpp
 

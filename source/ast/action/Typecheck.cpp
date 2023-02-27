@@ -244,7 +244,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
 
   auto optional_literal = env.LookupBinop(binop->GetOp());
 
-  if (!optional_literal || optional_literal.value()->NumOverloads() == 0) {
+  if (!optional_literal || optional_literal->Empty()) {
     std::string errmsg = "Unknown binop [";
     errmsg             += binop->GetOp();
     errmsg             += "]";
@@ -252,9 +252,9 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
     return;
   }
 
-  auto *literal = optional_literal.value();
+  auto literal = optional_literal.value();
 
-  auto optional_implementation = literal->Lookup(left_type, right_type);
+  auto optional_implementation = literal.Lookup(left_type, right_type);
   if (!optional_implementation.has_value()) {
     std::string errmsg = "Could not find an implementation of [";
     errmsg             += binop->GetOp();
@@ -266,9 +266,9 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
     result = Error(Error::Code::ArgTypeMismatch, binop->GetLocation(), errmsg);
     return;
   }
-  auto *implementation = optional_implementation.value();
+  auto implementation = optional_implementation.value();
 
-  const auto *result_type = implementation->GetReturnType();
+  const auto *result_type = implementation.ReturnType();
   binop->SetCachedType(result_type);
   result = result_type;
 }
@@ -554,7 +554,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
     result = Error(Error::Code::UnknownUnop, unop->GetLocation(), errmsg);
     return;
   }
-  auto &literal = optional_literal.value()->second;
+  auto &literal = optional_literal.value();
 
   auto return_type_result = [&]() -> Outcome<Type::Pointer, Error> {
     if (strcmp(unop->GetOp(), "*") == 0) {
@@ -571,12 +571,13 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
       // using the same codegeneration function as
       auto optional_implementation = literal.Lookup(env.GetIntType());
       assert(optional_implementation.has_value());
-      auto &implementation = optional_implementation.value()->second;
+      auto &implementation = optional_implementation.value();
 
       return literal
           .Register(env.GetPointerType(right_type),
-                    UnopCodegen{right_type, implementation.GetFunction()})
-          ->second.GetReturnType();
+                    right_type,
+                    implementation.Generate())
+          .ReturnType();
     }
 
     if (strcmp(unop->GetOp(), "&") == 0) {
@@ -595,12 +596,12 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
 
       auto optional_implementation = literal.Lookup(env.GetIntType());
       assert(optional_implementation.has_value());
-      auto &implementation = optional_implementation.value()->second;
+      auto &implementation = optional_implementation.value();
       return literal
           .Register(right_type,
-                    UnopCodegen{env.GetPointerType(right_type),
-                                implementation.GetFunction()})
-          ->second.GetReturnType();
+                    env.GetPointerType(right_type),
+                    implementation.Generate())
+          .ReturnType();
     }
 
     auto right_result = Compute(unop->GetRight(), this);
@@ -619,8 +620,8 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
       errmsg             += "]";
       return Error(Error::Code::ArgTypeMismatch, unop->GetLocation(), errmsg);
     }
-    auto *implementation = found.value();
-    return implementation->second.GetReturnType();
+    auto implementation = found.value();
+    return implementation.ReturnType();
   }();
 
   const auto *result_type = return_type_result.GetFirst();

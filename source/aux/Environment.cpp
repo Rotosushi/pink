@@ -172,4 +172,11 @@ auto Environment::CreateNativeEnvironment(CLIOptions cli_options)
 auto Environment::CreateNativeEnvironment() -> Environment {
   return CreateNativeEnvironment(CLIOptions{});
 }
+
+auto Environment::CreateTestEnvironment() -> Environment {
+  Environment env;
+  InitializeBinopPrimitives(env);
+  InitializeUnopPrimitives(env);
+  return env;
+}
 } // namespace pink

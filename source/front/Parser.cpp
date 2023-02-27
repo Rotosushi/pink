@@ -43,7 +43,7 @@
 // as we need the return statement to be in the scope
 // this snippet of code is inserted into.
 // and we cannot use this pattern in the visitor functions
-// elsewhere as these do not 'return' directly.
+// elsewhere as these do not return values normally.
 #define TRY(outcome, variable, function, ...)                                  \
   auto outcome = function(__VA_ARGS__);                                        \
   if (!outcome) {                                                              \
@@ -635,28 +635,27 @@ auto Parser::ParseSubscript(Ast::Pointer left, Environment &env)
 auto Parser::ParseInfix(Ast::Pointer lhs,
                         Precedence   precedence,
                         Environment &env) -> Parser::Result {
-  Parser::Result                result{std::move(lhs)};
-  InternedString                peek_str{nullptr};
-  std::optional<BinopLiteral *> peek_opt{};
-  BinopLiteral                 *peek_lit{nullptr};
-  InternedString                op_str{nullptr};
-  BinopLiteral                 *op_lit{nullptr};
-  Location                      op_loc{};
+  Parser::Result                   result{std::move(lhs)};
+  InternedString                   peek_str{nullptr};
+  std::optional<BinopTable::Binop> peek_opt{};
+  BinopTable::Binop                peek_lit{nullptr};
+  InternedString                   op_str{nullptr};
+  BinopTable::Binop                op_lit{nullptr};
+  Location                         op_loc{};
 
   auto PredictsBinop = [&]() -> bool {
-    if (token != Token::Op)
+    if (token != Token::Op) {
       return false;
-
+    }
     peek_str = env.InternOperator(text);
     assert(peek_str != nullptr);
 
     peek_opt = env.LookupBinop(peek_str);
-    if (!peek_opt.has_value())
+    if (!peek_opt) {
       return false;
-    peek_lit = peek_opt.value();
-    assert(peek_lit != nullptr);
+    }
 
-    return peek_lit->GetPrecedence() >= precedence;
+    return peek_opt->Precedence() >= precedence;
   };
 
   auto PredictsHigherPrecedenceOrRightAssociativeBinop = [&]() -> bool {
@@ -667,24 +666,23 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
     assert(peek_str != nullptr);
 
     peek_opt = env.LookupBinop(peek_str);
-    if (!peek_opt.has_value())
+    if (!peek_opt.has_value()) {
       return false;
-    peek_lit = peek_opt.value();
-    assert(peek_lit != nullptr);
-
-    if (peek_lit->GetPrecedence() > op_lit->GetPrecedence())
+    }
+    if (peek_opt->Precedence() > op_lit.Precedence()) {
       return true;
+    }
 
-    if ((peek_lit->GetAssociativity() == Associativity::Right) &&
-        (peek_lit->GetPrecedence() == op_lit->GetPrecedence()))
+    if ((peek_opt->Associativity() == Associativity::Right) &&
+        (peek_opt->Precedence() == op_lit.Precedence())) {
       return true;
-
+    }
     return false;
   };
 
   while (PredictsBinop()) {
     op_str = peek_str;
-    op_lit = peek_lit;
+    op_lit = peek_opt.value();
     op_loc = location;
 
     nexttok(); // eat the 'operator'
@@ -692,7 +690,7 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
     TRY(right_result, right, ParseAccessor, env)
 
     while (PredictsHigherPrecedenceOrRightAssociativeBinop()) {
-      auto temp = ParseInfix(std::move(right), peek_lit->GetPrecedence(), env);
+      auto temp = ParseInfix(std::move(right), peek_opt->Precedence(), env);
       if (!temp) {
         return temp.GetSecond();
       }
@@ -742,7 +740,7 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
   // #RULE: an operator appearing in the basic position is a unop
   case Token::Op: {
     Location       lhs_loc{location};
-    InternedString opr{env.InternVariable(text)};
+    InternedString opr{env.InternOperator(text)};
 
     nexttok(); // eat op
 

@@ -19,20 +19,20 @@ public:
 
   class Symbol {
   private:
-    Scope::Element *element;
+    Scope::Element element;
 
   public:
-    Symbol(Scope::Element *element) noexcept
+    Symbol(Scope::Element element) noexcept
         : element(element) {}
     ~Symbol() noexcept                                         = default;
     Symbol(const Symbol &element) noexcept                     = default;
     Symbol(Symbol &&element) noexcept                          = default;
     auto operator=(const Symbol &element) noexcept -> Symbol & = default;
-    auto operator=(Symbol &element) noexcept -> Symbol       & = default;
+    auto operator=(Symbol &&element) noexcept -> Symbol      & = default;
 
-    auto Name() noexcept -> InternedString { return element->first; }
-    auto Type() noexcept -> Type::Pointer { return element->second.first; }
-    auto Value() noexcept -> llvm::Value * { return element->second.second; }
+    auto Name() noexcept -> InternedString { return element.Key(); }
+    auto Type() noexcept -> Type::Pointer { return element.Value().first; }
+    auto Value() noexcept -> llvm::Value * { return element.Value().second; }
   };
 
 private:

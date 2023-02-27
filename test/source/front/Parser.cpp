@@ -10,6 +10,10 @@
 
 #include "llvm/Support/InitLLVM.h"
 
+// okay, how can we test that the parser fails in the
+// intended way? that is, returns an expected error
+// given some input?
+
 // unfortunately I belive these ~must~ be macros due to the
 // use of Catch2 macros within their bodies. (free functions
 // would not be able to use Catch2 macros properly, and neither
@@ -30,12 +34,10 @@
   auto *affix = bind->GetAffix().get();                                        \
   REQUIRE(llvm::dyn_cast<affix_type>(affix) != nullptr)
 
-#define FUNCTION_BODY_IS(text, body_type)                                      \
-  std::string_view line{text};                                                 \
-  pink::Location   location{line_number, 0, line_number, line.length() - 1};   \
-  line_number += 1;                                                            \
-  env.SetBuffer(line);                                                         \
-  auto parse_result = env.Parse();                                             \
+#define FUNCTION_BODY_IS(body_type)                                            \
+  line_number        += 1;                                                     \
+  auto &location     = locations[line_number - 1];                             \
+  auto  parse_result = env.Parse();                                            \
   if (!parse_result) {                                                         \
     env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());         \
     FAIL("Unable to parse expression.");                                       \
@@ -49,14 +51,12 @@
   REQUIRE(block != nullptr);                                                   \
   auto cursor = block->begin();                                                \
   REQUIRE(cursor != block->end());                                             \
-  REQUIRE(llvm::dyn_cast<body_type>(cursor->get()));
+  REQUIRE(llvm::dyn_cast<body_type>(cursor->get()))
 
-#define FUNCTION_ARGUMENT_TYPE_IS(text, argument_type)                         \
-  std::string_view line{text};                                                 \
-  pink::Location   location{line_number, 0, line_number, line.length() - 1};   \
-  line_number += 1;                                                            \
-  env.SetBuffer(line);                                                         \
-  auto parse_result = env.Parse();                                             \
+#define FUNCTION_ARGUMENT_TYPE_IS(argument_type)                               \
+  line_number        += 1;                                                     \
+  auto &location     = locations[line_number - 1];                             \
+  auto  parse_result = env.Parse();                                            \
   if (!parse_result) {                                                         \
     env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());         \
     FAIL("Unable to parse expression.");                                       \
@@ -74,7 +74,7 @@
   auto &arguments = function->GetArguments();                                  \
   REQUIRE(arguments.size() == 1);                                              \
   REQUIRE(arguments[0].first == env.InternVariable("x"));                      \
-  REQUIRE(arguments[0].second == (argument_type));
+  REQUIRE(arguments[0].second == (argument_type))
 
 TEST_CASE("front/Parser", "[unit][front]") {
   /*
@@ -138,21 +138,22 @@ TEST_CASE("front/Parser", "[unit][front]") {
       "a := b[0].1;\n",
       "a := b.1[2];\n",
       "a := b.1 + c[x];\n",
-      /*
+
       "fn f () { nil; }\n",
       "fn f () { 42; }\n",
       "fn f () { true; }\n",
       "fn f () { false; }\n",
       "fn f () { -23; }\n",
       "fn f () { 7 * 8; }\n",
+      "fn f () { (5) - (3); }\n",
       "fn f () { x; }\n",
       "fn f () { [0, 1, 2, 3, 4]; }\n",
       "fn f () { (0, 1, 2, 3, 4); }\n",
-      "fn f () { (5) - (3); }\n",
       "fn f () { x = 56; }\n",
       "fn f () { x := 56; }\n",
       "fn f () { if (true) { 10; } else { 11; } }\n",
       "fn f () { while (true) do { x = x + 1; } }\n",
+
       "fn f (x: Nil) { x; }\n",
       "fn f (x: Integer) { x; }\n",
       "fn f (x: Boolean) { x; }\n",
@@ -160,7 +161,6 @@ TEST_CASE("front/Parser", "[unit][front]") {
       "fn f (x: Slice Integer) { x; }\n",
       "fn f (x: (Integer, Integer)) { x; }\n",
       "fn f (x: [Integer; 5]) { x; }\n",
-      */
   };
   auto [locations, source] = [&]() {
     std::vector<pink::Location> locations;
@@ -190,22 +190,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
 
   { BIND_AFFIX_IS(pink::Unop); }
 
-  {
-    line_number        += 1;
-    auto &location     = locations[line_number - 1];
-    auto  parse_result = env.Parse();
-    if (!parse_result) {
-      env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());
-      FAIL("Unable to parse expression.");
-    }
-    REQUIRE(parse_result);
-    auto *expression = parse_result.GetFirst().get();
-    CHECK(expression->GetLocation() == location);
-    auto *bind = llvm::dyn_cast<pink::Bind>(expression);
-    REQUIRE(bind != nullptr);
-    auto *affix = bind->GetAffix().get();
-    REQUIRE(llvm::dyn_cast<pink::Binop>(affix) != nullptr);
-  }
+  { BIND_AFFIX_IS(pink::Binop); }
 
   { BIND_AFFIX_IS(pink::Binop); }
 
@@ -229,56 +214,48 @@ TEST_CASE("front/Parser", "[unit][front]") {
 
   { BIND_AFFIX_IS(pink::Binop); }
 
-  /*
-  {FUNCTION_BODY_IS( pink::Nil)}
+  { FUNCTION_BODY_IS(pink::Nil); }
 
-  {FUNCTION_BODY_IS( pink::Integer)}
+  { FUNCTION_BODY_IS(pink::Integer); }
 
-  {FUNCTION_BODY_IS( pink::Boolean)}
+  { FUNCTION_BODY_IS(pink::Boolean); }
 
-  {FUNCTION_BODY_IS( pink::Boolean)}
+  { FUNCTION_BODY_IS(pink::Boolean); }
 
-  {FUNCTION_BODY_IS( pink::Unop)}
+  { FUNCTION_BODY_IS(pink::Unop); }
 
-  {FUNCTION_BODY_IS( pink::Binop)}
+  { FUNCTION_BODY_IS(pink::Binop); }
 
-  {FUNCTION_BODY_IS( pink::Variable)}
+  { FUNCTION_BODY_IS(pink::Binop); }
 
-  {FUNCTION_BODY_IS( pink::Array)}
+  { FUNCTION_BODY_IS(pink::Variable); }
 
-  {FUNCTION_BODY_IS( pink::Tuple)}
+  { FUNCTION_BODY_IS(pink::Array); }
 
-  {FUNCTION_BODY_IS( pink::Binop)}
+  { FUNCTION_BODY_IS(pink::Tuple); }
 
-  {FUNCTION_BODY_IS( pink::Assignment)}
+  { FUNCTION_BODY_IS(pink::Assignment); }
 
-  {FUNCTION_BODY_IS( pink::Bind)}
+  { FUNCTION_BODY_IS(pink::Bind); }
 
-  {FUNCTION_BODY_IS(
-                    pink::IfThenElse)}
+  { FUNCTION_BODY_IS(pink::IfThenElse); }
 
-  {FUNCTION_BODY_IS(
-                    pink::While)}
+  { FUNCTION_BODY_IS(pink::While); }
 
-  {FUNCTION_ARGUMENT_TYPE_IS( env.GetNilType())}
+  { FUNCTION_ARGUMENT_TYPE_IS(env.GetNilType()); }
 
-  {FUNCTION_ARGUMENT_TYPE_IS( env.GetIntType())}
+  { FUNCTION_ARGUMENT_TYPE_IS(env.GetIntType()); }
 
-  {FUNCTION_ARGUMENT_TYPE_IS( env.GetBoolType())}
+  { FUNCTION_ARGUMENT_TYPE_IS(env.GetBoolType()); }
 
-  {FUNCTION_ARGUMENT_TYPE_IS(
-                             env.GetPointerType(env.GetIntType()))}
+  { FUNCTION_ARGUMENT_TYPE_IS(env.GetPointerType(env.GetIntType())); }
 
-  {FUNCTION_ARGUMENT_TYPE_IS(
-                             env.GetSliceType(env.GetIntType()))}
-
-  {FUNCTION_ARGUMENT_TYPE_IS(
-
-      env.GetTupleType({env.GetIntType(), env.GetIntType()}))}
+  { FUNCTION_ARGUMENT_TYPE_IS(env.GetSliceType(env.GetIntType())); }
 
   {
     FUNCTION_ARGUMENT_TYPE_IS(
-                              env.GetArrayType(5, env.GetIntType()))
+        env.GetTupleType({env.GetIntType(), env.GetIntType()}));
   }
-  */
+
+  { FUNCTION_ARGUMENT_TYPE_IS(env.GetArrayType(5, env.GetIntType())); }
 }

@@ -140,7 +140,7 @@ public:
    *
    * @return Environment
    */
-  static auto CreateTestEnvironment() -> Environment { return {}; }
+  static auto CreateTestEnvironment() -> Environment;
 
   // exposing EnvironmentFlags interface
   [[nodiscard]] auto OnTheLHSOfAssignment() const -> bool {
@@ -296,38 +296,30 @@ public:
   }
 
   // exposing BinopTable's interface
-  auto RegisterBinop(InternedString opr,
-                     Precedence     precedence,
-                     Associativity  associativity) -> BinopLiteral * {
-    return binop_table.Register(opr, precedence, associativity);
-  }
-
-  auto RegisterBinop(InternedString opr,
-                     Precedence     precedence,
-                     Associativity  associativity,
-                     Type::Pointer  left_t,
-                     Type::Pointer  right_t,
-                     Type::Pointer  ret_t,
-                     BinopCodegenFn fn_p) -> BinopLiteral * {
+  auto RegisterBinop(InternedString         opr,
+                     Precedence             precedence,
+                     Associativity          associativity,
+                     Type::Pointer          left_t,
+                     Type::Pointer          right_t,
+                     Type::Pointer          ret_t,
+                     BinopCodegen::Function fn_p) -> BinopTable::Binop {
     return binop_table
         .Register(opr, precedence, associativity, left_t, right_t, ret_t, fn_p);
   }
 
-  auto LookupBinop(InternedString opr) -> std::optional<BinopLiteral *> {
+  auto LookupBinop(InternedString opr) -> std::optional<BinopTable::Binop> {
     return binop_table.Lookup(opr);
   }
 
   // exposing UnopTable's interface
-  void RegisterUnop(InternedString        unop,
+  auto RegisterUnop(InternedString        unop,
                     Type::Pointer         argument_type,
                     Type::Pointer         return_type,
-                    UnopCodegen::Function function) {
-    UnopLiteral literal;
-    literal.Register(argument_type, UnopCodegen{return_type, function});
-    unop_table.Register(unop, std::move(literal));
+                    UnopCodegen::Function generator) -> UnopTable::Unop {
+    return unop_table.Register(unop, argument_type, return_type, generator);
   }
 
-  auto LookupUnop(InternedString opr) -> std::optional<UnopTable::Element *> {
+  auto LookupUnop(InternedString opr) -> std::optional<UnopTable::Unop> {
     return unop_table.Lookup(opr);
   }
 };
