@@ -46,6 +46,9 @@ public:
   auto operator=(const ScopeStack &other) -> ScopeStack & = delete;
   auto operator=(ScopeStack &&other) -> ScopeStack      & = default;
 
+  [[nodiscard]] auto IsGlobal() const noexcept -> bool {
+    return stack.size() == 1;
+  }
   void Reset() {
     stack.clear();
     stack.emplace_front();

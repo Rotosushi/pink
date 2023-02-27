@@ -1,6 +1,7 @@
 #include "runtime/sys/SysExit.h"
 #include "runtime/StaticCast.h"
 
+#include "support/FatalError.h"
 #include "support/LLVMErrorToString.h"
 
 #include "llvm/IR/InlineAsm.h"

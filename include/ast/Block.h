@@ -6,8 +6,6 @@
 #pragma once
 #include <vector>
 
-#include "aux/SymbolTable.h"
-
 #include "ast/Ast.h"
 
 namespace pink {
@@ -24,9 +22,11 @@ private:
   Expressions expressions;
 
 public:
-  Block(const Location &location) noexcept : Ast(Ast::Kind::Block, location) {}
+  Block(const Location &location) noexcept
+      : Ast(Ast::Kind::Block, location) {}
   Block(const Location &location, Expressions expressions) noexcept
-      : Ast(Ast::Kind::Block, location), expressions(std::move(expressions)) {}
+      : Ast(Ast::Kind::Block, location),
+        expressions(std::move(expressions)) {}
   ~Block() noexcept override                             = default;
   Block(const Block &other) noexcept                     = delete;
   Block(Block &&other) noexcept                          = default;

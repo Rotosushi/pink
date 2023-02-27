@@ -63,6 +63,11 @@ public:
       -> std::ostream &;
 };
 
-auto operator<<(std::ostream &out, const Location &location) -> std::ostream &;
+inline auto operator<<(std::ostream &out, const Location &location)
+    -> std::ostream & {
+  out << "{" << location.firstLine << ", " << location.firstColumn << ", "
+      << location.lastLine << ", " << location.lastColumn << "}";
+  return out;
+}
 
 } // namespace pink

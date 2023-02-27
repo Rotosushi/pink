@@ -1,40 +1,14 @@
 #include "front/Parser.h"
 
-#include <charconv> // std::from_chars, std::errc, std::error_code
-#include <sstream>  // std::stringstream
-
 #include "aux/Environment.h"
 
 // Syntactic Forms
-#include "ast/Application.h"
-#include "ast/Array.h"
-#include "ast/Assignment.h"
-#include "ast/Bind.h"
-#include "ast/Block.h"
-#include "ast/Conditional.h"
-#include "ast/Dot.h"
-#include "ast/Function.h"
-#include "ast/Subscript.h"
-#include "ast/Tuple.h"
-#include "ast/Variable.h"
-#include "ast/While.h"
-
-// Values
-#include "ast/Boolean.h"
-#include "ast/Integer.h"
-#include "ast/Nil.h"
-
-// Operators
-#include "ast/Binop.h"
-#include "ast/Unop.h"
+#include "ast/All.h"
 
 // Types
-#include "type/ArrayType.h"
-#include "type/BoolType.h"
-#include "type/IntType.h"
-#include "type/NilType.h"
-#include "type/PointerType.h"
-#include "type/TupleType.h"
+#include "type/All.h"
+
+#include "support/ToNumber.h"
 
 // This is a convenience macro for a common usage
 // pattern of the Outcome type.
@@ -145,41 +119,6 @@ auto Parser::ExtractSourceLine(const Location &location) const
     return {cursor, eol};
   }
   return {};
-}
-
-static auto ToInteger(std::string_view text)
-    -> Outcome<Integer::Value, std::errc> {
-  Integer::Value value{};
-  auto [ptr,
-        errc]{std::from_chars<Integer::Value>(text.begin(), text.end(), value)};
-  if (errc == std::errc()) {
-    return {value};
-  }
-  return {errc};
-}
-
-static auto HandleToIntegerError(std::errc        errc,
-                                 Location         location,
-                                 std::string_view text) -> Error {
-  // this makes sense as an error the programmer made
-  if (errc == std::errc::result_out_of_range) {
-    return {
-        Error(Error::Code::IntegerOutOfBounds, location, std::string(text))};
-  }
-
-  auto              code = std::make_error_code(errc);
-  std::stringstream description;
-
-  // this is clearly a problem with the lexer
-  if (errc == std::errc::invalid_argument) {
-    description
-        << "expected text like [0-9]+ that std::from_chars did not match ["
-        << text << "]";
-    FatalError(description.str(), __FILE__, __LINE__);
-  }
-
-  description << "Unhandled std::errc returned by from_chars [" << code << "]";
-  FatalError(description.str(), __FILE__, __LINE__);
 }
 
 auto Parser::Parse(Environment &env) -> Parser::Result {
@@ -659,8 +598,9 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
   };
 
   auto PredictsHigherPrecedenceOrRightAssociativeBinop = [&]() -> bool {
-    if (token != Token::Op)
+    if (token != Token::Op) {
       return false;
+    }
 
     peek_str = env.InternOperator(text);
     assert(peek_str != nullptr);
@@ -697,7 +637,7 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
       right_result = std::move(temp);
     }
 
-    const Location &rhs_loc = right->GetLocation();
+    const Location &rhs_loc = right_result.GetFirst()->GetLocation();
     Location        binop_loc(op_loc.firstLine,
                        op_loc.firstColumn,
                        rhs_loc.lastLine,
@@ -790,9 +730,9 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
   // #RULE Token::Int at basic position is a literal integer
   case Token::Integer: {
     Location lhs_loc       = location;
-    auto     maybe_integer = ToInteger(text);
+    auto     maybe_integer = ToNumber<Integer::Value>(text);
     if (!maybe_integer) {
-      return {HandleToIntegerError(maybe_integer.GetSecond(), location, text)};
+      return Error{maybe_integer.GetSecond(), location, text};
     }
 
     nexttok(); // eat [0-9]+
@@ -970,9 +910,9 @@ auto Parser::ParseArrayType(Environment &env) -> TypeResult {
     return {Error(Error::Code::MissingArrayNum, location, std::string(text))};
   }
 
-  auto maybe_integer = ToInteger(text);
+  auto maybe_integer = ToNumber<Integer::Value>(text);
   if (!maybe_integer) {
-    return {HandleToIntegerError(maybe_integer.GetSecond(), location, text)};
+    return Error{maybe_integer.GetSecond(), location, text};
   }
 
   nexttok(); // eat [0-9]+

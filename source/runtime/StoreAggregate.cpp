@@ -1,5 +1,7 @@
 #include "runtime/StoreAggregate.h"
 
+#include "support/FatalError.h"
+
 namespace pink {
 /*
  *

@@ -1,6 +1,7 @@
 #include "runtime/AllocateVariable.h"
 #include "runtime/StoreValue.h"
 
+#include "support/FatalError.h"
 #include "support/LLVMValueToString.h"
 
 namespace pink {
@@ -43,7 +44,7 @@ auto AllocateLocal(const std::string &name,
                    llvm::Value       *initializer) -> llvm::AllocaInst * {
   assert(env.current_function != nullptr);
   // per [https://llvm.org/docs/Frontend/PerformanceTips.html#use-of-allocas]
-  // all local variables are placed at the beginning of the first basic block 
+  // all local variables are placed at the beginning of the first basic block
   // of the current_function.
   auto           *insertion_block = &(env.current_function->getEntryBlock());
   auto            insertion_point = insertion_block->getFirstInsertionPt();

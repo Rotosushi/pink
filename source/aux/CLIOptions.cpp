@@ -4,8 +4,11 @@
 #include <vector>
 
 #include "PinkConfig.h"
+
 #include "aux/CLIOptions.h"
 #include "aux/Error.h"
+
+#include "support/FatalError.h"
 
 namespace pink {
 auto CLIOptions::RemoveTrailingExtensions(std::string_view filename)

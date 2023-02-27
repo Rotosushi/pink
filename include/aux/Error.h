@@ -90,7 +90,10 @@ public:
 
   Error()
       : code(Error::Code::None) {}
-  Error(Code code, Location location, std::string text = "");
+  Error(Code code, Location location, std::string_view text = "");
+  [[noreturn]] Error(std::errc        errc,
+                     Location         location,
+                     std::string_view text = "");
   ~Error()                                      = default;
   Error(const Error &other)                     = default;
   Error(Error &&other)                          = default;
@@ -101,9 +104,4 @@ public:
   auto               Print(std::ostream &out, std::string_view bad_source) const
       -> std::ostream &;
 };
-
-[[noreturn]] void FatalError(const char *dsc, const char *file, size_t line);
-[[noreturn]] void
-FatalError(const std::string &dsc, const char *file, size_t line);
-
 } // namespace pink

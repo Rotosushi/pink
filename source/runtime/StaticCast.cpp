@@ -121,6 +121,8 @@ auto StaticCast(llvm::Value *value, llvm::Type *target_type, Environment &env)
     // else if (llvm::PointerType* to_type =
     // llvm::dyn_cast<llvm::PointerType>(target_type)) else if
     // (to_type->isFloatingPointTy());
+
+    // #TODO: add the type to and from as strings to the Error.
     return {Error(Error::Code::CannotCastToType, Location())};
   }
   // else if (llvm::PointerType* from_type =

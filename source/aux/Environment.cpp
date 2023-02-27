@@ -5,6 +5,8 @@
 #include "runtime/ops/BinopPrimitives.h"
 #include "runtime/ops/UnopPrimitives.h"
 
+#include "support/FatalError.h"
+
 #include "llvm/Support/Host.h"
 #include "llvm/Support/TargetSelect.h"
 

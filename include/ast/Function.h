@@ -9,11 +9,8 @@
 
 #include "ast/Ast.h"
 #include "aux/StringInterner.h"
-#include "aux/SymbolTable.h"
 
 #include "type/FunctionType.h"
-
-#include "llvm/IR/DerivedTypes.h"
 
 namespace pink {
 /**
@@ -34,10 +31,14 @@ private:
   Ast::Pointer   body;
 
 public:
-  Function(const Location &location, const InternedString name,
-           Arguments arguments, Ast::Pointer body) noexcept
-      : Ast(Ast::Kind::Function, location), name(name),
-        arguments(std::move(arguments)), body(std::move(body)) {}
+  Function(const Location      &location,
+           const InternedString name,
+           Arguments            arguments,
+           Ast::Pointer         body) noexcept
+      : Ast(Ast::Kind::Function, location),
+        name(name),
+        arguments(std::move(arguments)),
+        body(std::move(body)) {}
   ~Function() noexcept override                                = default;
   Function(const Function &other) noexcept                     = delete;
   Function(Function &&other) noexcept                          = default;

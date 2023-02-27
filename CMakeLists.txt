@@ -234,9 +234,6 @@ add_library(common STATIC
 	source/aux/CLIOptions.cpp
 	source/aux/Environment.cpp
 	source/aux/Error.cpp
-	source/aux/Location.cpp
-	source/aux/Outcome.cpp
-	source/aux/SymbolTable.cpp
 	source/aux/TypeInterner.cpp
 	source/aux/InternalFlags.cpp
 
@@ -341,7 +338,7 @@ add_executable(tests
   test/source/aux/Location.cpp
   test/source/aux/Outcome.cpp
   test/source/aux/StringInterner.cpp
-  test/source/aux/SymbolTable.cpp
+  test/source/aux/ScopeStack.cpp
   test/source/aux/TypeInterner.cpp
 
   test/source/front/Token.cpp

@@ -1,5 +1,8 @@
 #include "front/Token.h"
+
 #include "aux/Error.h"
+
+#include "support/FatalError.h"
 
 namespace pink {
 /*

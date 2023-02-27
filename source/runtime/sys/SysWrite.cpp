@@ -1,5 +1,6 @@
 #include "runtime/sys/SysWrite.h"
 
+#include "support/FatalError.h"
 #include "support/LLVMErrorToString.h"
 
 #include "llvm/IR/InlineAsm.h"

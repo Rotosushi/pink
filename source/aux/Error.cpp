@@ -2,16 +2,33 @@
 
 #include <sstream>
 
+#include "support/FatalError.h"
+
 namespace pink {
-Error::Error(Error::Code code, Location location, std::string text)
+Error::Error(Error::Code code, Location location, std::string_view description)
     : code(code),
       location(location),
-      text(std::move(text)) {}
+      text(description) {}
+
+Error::Error(std::errc errc, Location location, std::string_view description)
+    : code(Error::Code::None),
+      location(location),
+      text(description) {
+  if (errc == std::errc::result_out_of_range) {
+    code = Error::Code::IntegerOutOfBounds;
+  }
+
+  auto              code = std::make_error_code(errc);
+  std::stringstream buffer;
+  buffer << "std::error_code [" << code << "], description: [" << text << "]\n";
+
+  FatalError(buffer.str(), __FILE__, __LINE__);
+}
 
 auto Error::ToString(std::string_view bad_source) const -> std::string {
   std::stringstream stream;
   Print(stream, bad_source);
-  return stream.str(); // how can we avoid a copy here?
+  return stream.str();
 }
 
 auto Error::Print(std::ostream &out, std::string_view bad_source) const
@@ -150,17 +167,5 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
   default:
     return "Unknown Error Code";
   }
-}
-
-void FatalError(const char *dsc, const char *file, size_t line) {
-  std::cerr << "Fatal Error in file: " << file << ", line: " << line << ": "
-            << dsc << std::endl;
-  exit(1);
-}
-
-void FatalError(const std::string &dsc, const char *file, size_t line) {
-  std::cerr << "Fatal Error in file: " << file << ", line: " << line << ": "
-            << dsc << std::endl;
-  exit(1);
 }
 } // namespace pink

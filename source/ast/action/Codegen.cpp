@@ -11,6 +11,7 @@
 #include "type/action/ToLLVM.h"
 #include "type/action/ToString.h"
 
+#include "support/FatalError.h"
 #include "support/LLVMErrorToString.h"
 #include "support/LLVMTypeToString.h"
 #include "support/LLVMValueToString.h"
