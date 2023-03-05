@@ -19,13 +19,27 @@ class Environment;
  * @brief Represents an instance of a Type
  *
  * \note Type is pure virtual
+ *
+ * \todo using Type =
+ * std::variant<
+ *   ArrayType,
+ *   BooleanType,
+ *   CharacterType,
+ *   FunctionType,
+ *   IntegerType,
+ *   NilType,
+ *   PointerType,
+ *   SliceType,
+ *   TupleType,
+ *   VoidType
+ *   >
  */
 class Type {
 public:
   using Pointer = Type const *;
 
   /**
-   * @brief Type::Kind is deifined so as to conform to LLVM style [RTTI]
+   * @brief Type::Kind is defined so as to conform to LLVM style [RTTI]
    *
    * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
    *
@@ -35,6 +49,7 @@ public:
     Boolean,
     Character,
     Function,
+    Identifier,
     Integer,
     Nil,
     Pointer,

@@ -212,8 +212,6 @@ add_library(common STATIC
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
-  source/ast/visitor/AstVisitor.cpp
-
   source/ast/action/ToString.cpp
   source/ast/action/Typecheck.cpp
   source/ast/action/Codegen.cpp
@@ -221,8 +219,6 @@ add_library(common STATIC
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
-  source/type/visitor/TypeVisitor.cpp
-
   source/type/action/StructuralEquality.cpp
   source/type/action/ToString.cpp
   source/type/action/ToLLVM.cpp
@@ -235,11 +231,12 @@ add_library(common STATIC
 	source/aux/Environment.cpp
 	source/aux/Error.cpp
 	source/aux/TypeInterner.cpp
-	source/aux/InternalFlags.cpp
 
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 
 	# operators like assignment '=', member access '.', and subscript '[]')
+  source/ops/BinopPrimitives.cpp 
+  source/ops/UnopPrimitives.cpp
 
 	# the 'front' directory is for the classes which comprise the frontend
 	# of the compiler itself.
@@ -248,31 +245,11 @@ add_library(common STATIC
 	source/front/Parser.cpp
 
 
-	# the 'kernel' directory is for files which implement functionality 
-	# of the language itself
-	source/runtime/ops/BinopPrimitives.cpp
-	source/runtime/ops/UnopPrimitives.cpp
-	source/runtime/sys/SysExit.cpp
-	source/runtime/sys/SysWrite.cpp
-	source/runtime/StaticCast.cpp
-	source/runtime/StoreAggregate.cpp
-	source/runtime/StoreValue.cpp
-	source/runtime/LoadValue.cpp
-	source/runtime/AllocateVariable.cpp
-	source/runtime/AllocateText.cpp
-	source/runtime/RuntimeError.cpp
-	source/runtime/SliceSubscript.cpp
-	source/runtime/ArraySubscript.cpp
-
-
 	# the 'support' directory is for files which define small, 
   # self-contained, and necessary or convienent header files
 	source/support/LLVMErrorToString.cpp
 	source/support/LLVMValueToString.cpp
 	source/support/LLVMTypeToString.cpp
-
-  # the 'visitor' directory is for the visitor interfaces
-  source/visitor/VisitorResult.cpp 
 )
 
 
@@ -304,7 +281,6 @@ add_executable(pink
   # the 'core' directory is for the central driver functions.
   source/core/Compile.cpp
   source/core/Link.cpp
-  source/core/Optimize.cpp
   source/core/main.cpp
 )
 

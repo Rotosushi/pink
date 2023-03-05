@@ -12,6 +12,7 @@ public:
   void Visit(const BooleanType *boolean_type) const noexcept override;
   void Visit(const CharacterType *character_type) const noexcept override;
   void Visit(const FunctionType *function_type) const noexcept override;
+  void Visit(const IdentifierType *identifier_type) const noexcept override;
   void Visit(const IntegerType *integer_type) const noexcept override;
   void Visit(const NilType *nil_type) const noexcept override;
   void Visit(const PointerType *pointer_type) const noexcept override;
@@ -58,6 +59,12 @@ void TypeToStringVisitor::Visit(
   }
   result += ") -> ";
   result += Compute(function_type->GetReturnType(), this);
+}
+
+void TypeToStringVisitor::Visit(
+    const IdentifierType *identifier_type) const noexcept {
+  assert(identifier_type != nullptr);
+  result = identifier_type->Identifier();
 }
 
 void TypeToStringVisitor::Visit(

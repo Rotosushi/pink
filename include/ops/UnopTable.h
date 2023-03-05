@@ -43,8 +43,10 @@ public:
     return return_type;
   }
 
-  [[nodiscard]] auto GetFunction() const noexcept -> Function {
-    return function;
+  [[nodiscard]] auto operator()(llvm::Value *value,
+                                Environment &env) const noexcept
+      -> llvm::Value * {
+    return function(value, env);
   }
 };
 
@@ -70,8 +72,10 @@ public:
     [[nodiscard]] auto ReturnType() const noexcept -> Type::Pointer {
       return literal.Value().GetReturnType();
     }
-    [[nodiscard]] auto Generate() const noexcept -> UnopCodegen::Function {
-      return literal.Value().GetFunction();
+    [[nodiscard]] auto operator()(llvm::Value *value,
+                                  Environment &env) const noexcept
+        -> llvm::Value * {
+      return literal.Value()(value, env);
     }
   };
 
@@ -102,6 +106,11 @@ public:
     return overloads.Lookup(argument_type);
   }
 };
+
+class PolyUnopOverloadSet : UnopOverloadSet {
+public:
+  
+}
 
 /**
  * @brief Represents the set of all known unary operators
@@ -135,7 +144,8 @@ public:
     }
     auto Register(Type::Pointer         argument_type,
                   Type::Pointer         return_type,
-                  UnopCodegen::Function generator) -> UnopOverloadSet::Overload {
+                  UnopCodegen::Function generator)
+        -> UnopOverloadSet::Overload {
       return element.Value().Register(argument_type, return_type, generator);
     }
     [[nodiscard]] auto Lookup(Type::Pointer argument_type)

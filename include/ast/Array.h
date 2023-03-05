@@ -66,8 +66,10 @@ public:
   auto operator=(const Array &other) noexcept -> Array & = delete;
   auto operator=(Array &&other) noexcept -> Array      & = default;
 
+  [[nodiscard]] auto Size() const noexcept -> std::size_t {
+    return elements.size();
+  }
   [[nodiscard]] auto GetElements() noexcept -> Elements & { return elements; }
-
   [[nodiscard]] auto GetElements() const noexcept -> const Elements & {
     return elements;
   }

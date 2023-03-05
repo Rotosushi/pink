@@ -8,7 +8,8 @@
 
 namespace pink {
 class StructuralEqualityVisitor
-    : public ConstVisitorResult<StructuralEqualityVisitor, const Type::Pointer,
+    : public ConstVisitorResult<StructuralEqualityVisitor,
+                                const Type::Pointer,
                                 bool>,
       public ConstTypeVisitor {
 private:
@@ -19,6 +20,7 @@ public:
   void Visit(const BooleanType *boolean_type) const noexcept override;
   void Visit(const CharacterType *character_type) const noexcept override;
   void Visit(const FunctionType *function_type) const noexcept override;
+  void Visit(const IdentifierType *identifier_type) const noexcept override;
   void Visit(const IntegerType *integer_type) const noexcept override;
   void Visit(const NilType *nil_type) const noexcept override;
   void Visit(const PointerType *pointer_type) const noexcept override;
@@ -27,7 +29,8 @@ public:
   void Visit(const VoidType *void_type) const noexcept override;
 
   StructuralEqualityVisitor(Type::Pointer one) noexcept
-      : ConstVisitorResult(), one(one) {}
+      : ConstVisitorResult(),
+        one(one) {}
   ~StructuralEqualityVisitor() noexcept override = default;
   StructuralEqualityVisitor(const StructuralEqualityVisitor &other) noexcept =
       default;
@@ -103,6 +106,18 @@ void StructuralEqualityVisitor::Visit(
   }
 
   result = true;
+}
+
+void StructuralEqualityVisitor::Visit(
+    const IdentifierType *identifier_type) const noexcept {
+  assert(identifier_type != nullptr);
+  const auto *other_identifier = llvm::dyn_cast<const IdentifierType>(one);
+  if (other_identifier == nullptr) {
+    result = false;
+    return;
+  }
+
+  result = identifier_type->Identifier() == other_identifier->Identifier();
 }
 
 void StructuralEqualityVisitor::Visit(

@@ -25,30 +25,32 @@ class Environment;
  */
 class BinopCodegen {
 public:
-  using Function = llvm::Value *(*)(llvm::Type  *lty,
-                                    llvm::Value *left,
-                                    llvm::Type  *rty,
+  using Function = llvm::Value *(*)(llvm::Value *left,
                                     llvm::Value *right,
                                     Environment &env);
 
 private:
-  Type::Pointer result_type;
-  Function      generate;
+  Type::Pointer return_type;
+  Function      function;
 
 public:
   BinopCodegen() noexcept  = delete;
   ~BinopCodegen() noexcept = default;
-  BinopCodegen(Type::Pointer ret_t, Function fn_p) noexcept
-      : result_type(ret_t),
-        generate(fn_p) {}
+  BinopCodegen(Type::Pointer ret, Function fun) noexcept
+      : return_type(ret),
+        function(fun) {}
   BinopCodegen(const BinopCodegen &other) noexcept = default;
   BinopCodegen(BinopCodegen &&other) noexcept      = default;
   auto operator=(const BinopCodegen &other) noexcept
       -> BinopCodegen                                           & = default;
   auto operator=(BinopCodegen &&other) noexcept -> BinopCodegen & = default;
 
-  [[nodiscard]] auto ReturnType() const -> Type::Pointer { return result_type; }
-  [[nodiscard]] auto Generate() const -> Function { return generate; }
+  [[nodiscard]] auto ReturnType() const -> Type::Pointer { return return_type; }
+  [[nodiscard]] auto operator()(llvm::Value *left,
+                                llvm::Value *right,
+                                Environment &env) const -> llvm::Value * {
+    return function(left, right, env);
+  }
 };
 
 class BinopOverloadSet {
@@ -57,6 +59,8 @@ public:
   using Value     = BinopCodegen;
   using Overloads = Map<Key, Value>;
 
+  // Proxy class so users don't have to
+  // use the Map::Element correctly
   class Overload {
   private:
     Overloads::Element literal;
@@ -68,8 +72,10 @@ public:
     auto ReturnType() noexcept -> Type::Pointer {
       return literal.Value().ReturnType();
     }
-    auto Generate() noexcept -> BinopCodegen::Function {
-      return literal.Value().Generate();
+    auto operator()(llvm::Value *left,
+                    llvm::Value *right,
+                    Environment &env) const noexcept -> llvm::Value * {
+      return literal.Value()(left, right, env);
     }
   };
 
@@ -174,6 +180,10 @@ public:
   auto operator=(const BinopTable &other) noexcept -> BinopTable & = delete;
   auto operator=(BinopTable &&other) noexcept -> BinopTable      & = default;
 
+  // #REASON: we cannot use 'operator' due to it's
+  // status as a c++ keyword, so 'op' will have to do.
+  // (i dislike 'opr', 'ope', 'oprtr', etc... 'op' just feels clean)
+  // NOLINTNEXTLINE(readability-identifier-length)
   auto Register(InternedString         op,
                 Precedence             precedence,
                 Associativity          associativity,
@@ -192,6 +202,7 @@ public:
     return binop;
   }
 
+  // NOLINTNEXTLINE(readability-identifier-length)
   auto Lookup(InternedString op) -> std::optional<Binop> {
     return table.Lookup(op);
   }

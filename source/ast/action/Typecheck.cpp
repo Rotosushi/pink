@@ -82,7 +82,8 @@ public:
 void TypecheckVisitor::Visit(const Application *application) const noexcept {
   TRY(callee_result, callee_type, Compute, application->GetCallee(), this)
 
-  auto *function_type = llvm::dyn_cast<FunctionType>(callee_result.GetFirst());
+  const auto *function_type =
+      llvm::dyn_cast<FunctionType>(callee_result.GetFirst());
   if (callee_type == nullptr) {
     result = Error(Error::Code::TypeCannotBeCalled,
                    application->GetLocation(),
@@ -159,7 +160,7 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
     }
   }
 
-  auto *result_type =
+  auto const *result_type =
       env.GetArrayType(array->GetElements().size(), computed_element_types[0]);
   array->SetCachedType(result_type);
   result = {result_type};

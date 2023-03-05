@@ -4,6 +4,7 @@
 #include "type/BoolType.h"
 #include "type/CharacterType.h"
 #include "type/FunctionType.h"
+#include "type/IdentifierType.h"
 #include "type/IntType.h"
 #include "type/NilType.h"
 #include "type/PointerType.h"

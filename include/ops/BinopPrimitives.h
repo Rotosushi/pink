@@ -5,9 +5,9 @@
  *
  */
 #pragma once
-#include "aux/Environment.h"
 
 namespace pink {
+class Environment;
 /**
  * @brief Initialize the [BinopTable](#BinopTable) with all predefined binops
  *

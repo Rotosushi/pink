@@ -18,7 +18,7 @@ TEST_CASE("ops/UnopCodegen", "[unit][ops]") {
   pink::UnopCodegen implementation(integer_type, UnopCodegenFunction);
 
   REQUIRE(implementation.GetReturnType() == integer_type);
-  REQUIRE(implementation.GetFunction() == UnopCodegenFunction);
+  REQUIRE(implementation.Generate() == UnopCodegenFunction);
 }
 
 TEST_CASE("ops/UnopOverloadSet", "[unit][ops]") {

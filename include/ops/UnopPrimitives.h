@@ -4,9 +4,9 @@
  * @version 0.1
  */
 #pragma once
-#include "aux/Environment.h"
 
 namespace pink {
+class Environment;
 /**
  * @brief Initialize the [UnopTable](#UnopTable) with all predefined unops
  *

@@ -18,13 +18,6 @@
 
 #include "aux/Environment.h"
 
-#include "runtime/AllocateVariable.h"
-#include "runtime/ArraySubscript.h"
-#include "runtime/LoadValue.h"
-#include "runtime/SliceSubscript.h"
-#include "runtime/StoreValue.h"
-#include "runtime/sys/SysExit.h"
-
 #include "llvm/IR/Verifier.h"
 
 namespace pink {
@@ -87,11 +80,9 @@ void CodegenVisitor::Visit(const Application *application) const noexcept {
 
   auto *call = [&]() {
     if (argument_values.empty()) {
-      return env.instruction_builder->CreateCall(
-          llvm::FunctionCallee(function));
+      return env.CreateCall(function);
     }
-    return env.instruction_builder->CreateCall(llvm::FunctionCallee(function),
-                                               argument_values);
+    return env.CreateCall(function, argument_values);
   }();
 
   call->setAttributes(function->getAttributes());
@@ -107,44 +98,41 @@ void CodegenVisitor::Visit(const Array *array) const noexcept {
   auto *array_layout_type =
       llvm::cast<llvm::StructType>(ToLLVM(cached_type, env));
 
-  auto *array_alloca = env.instruction_builder->CreateAlloca(array_layout_type);
+  auto *array_alloca = env.CreateAlloca(array_layout_type);
 
-  auto *array_size =
-      env.instruction_builder->getInt64(array->GetElements().size());
-  auto *array_size_type =
-      llvm::cast<llvm::IntegerType>(array_layout_type->getTypeAtIndex(0U));
+  auto *array_size      = env.ConstantInteger(array->Size());
+  auto *array_size_type = env.LLVMSizeType();
   auto *array_elements_type =
       llvm::cast<llvm::ArrayType>(array_layout_type->getTypeAtIndex(1U));
   auto *element_type = array_elements_type->getArrayElementType();
 
-  auto *array_size_pointer =
-      env.instruction_builder->CreateConstInBoundsGEP2_32(array_layout_type,
-                                                          array_alloca,
-                                                          0,
-                                                          0,
-                                                          "array_size");
+  auto *array_size_pointer = env.CreateConstInBoundsGEP2_32(array_layout_type,
+                                                            array_alloca,
+                                                            0,
+                                                            0,
+                                                            "array_size");
 
   auto *array_elements_pointer =
-      env.instruction_builder->CreateConstInBoundsGEP2_32(array_layout_type,
-                                                          array_alloca,
-                                                          0,
-                                                          0,
-                                                          "array_elements");
+      env.CreateConstInBoundsGEP2_32(array_layout_type,
+                                     array_alloca,
+                                     0,
+                                     0,
+                                     "array_elements");
 
   unsigned index = 0;
   for (const auto &element : *array) {
     auto *element_value = Compute(element, this);
     assert(element_value != nullptr);
-    auto *element_pointer = env.instruction_builder->CreateConstInBoundsGEP2_32(
-        array_elements_type,
-        array_elements_pointer,
-        0,
-        index);
-    StoreValue(element_type, element_pointer, element_value, env);
+    auto *element_pointer =
+        env.CreateConstInBoundsGEP2_64(array_elements_type,
+                                       array_elements_pointer,
+                                       0,
+                                       index);
+    env.Store(element_type, element_value, element_pointer);
     index += 1;
   }
 
-  StoreValue(array_size_type, array_size_pointer, array_size, env);
+  env.Store(array_size_type, array_size, array_size_pointer);
 
   result = array_alloca;
 }
@@ -161,7 +149,7 @@ void CodegenVisitor::Visit(const Assignment *assignment) const noexcept {
   auto *right_value = Compute(assignment->GetRight(), this);
   assert(right_value != nullptr);
 
-  StoreValue(left_value->getType(), left_value, right_value, env);
+  env.Store(left_value->getType(), left_value, right_value);
   result = right_value;
 }
 
@@ -188,7 +176,7 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
   auto *llvm_type = ToLLVM(affix_type, env);
   if (llvm_type->isSingleValueType()) {
     affix_value =
-        AllocateVariable(bind->GetSymbol(), llvm_type, env, affix_value);
+        env.AllocateVariable(bind->GetSymbol(), llvm_type, affix_value);
   }
 
   env.BindVariable(bind->GetSymbol(), affix_type, affix_value);
@@ -222,11 +210,7 @@ void CodegenVisitor::Visit(const Binop *binop) const noexcept {
   assert(optional_implementation.has_value());
   auto implementation = optional_implementation.value();
 
-  result = implementation.Generate()(llvm_left_type,
-                                     left_value,
-                                     llvm_right_type,
-                                     right_value,
-                                     env);
+  result = implementation(left_value, right_value, env);
 }
 
 /*
@@ -245,7 +229,7 @@ void CodegenVisitor::Visit(const Block *block) const noexcept {
   the value of the boolean.
 */
 void CodegenVisitor::Visit(const Boolean *boolean) const noexcept {
-  result = env.instruction_builder->getInt1(boolean->GetValue());
+  result = env.ConstantBoolean(boolean->GetValue());
 }
 
 /*
@@ -256,7 +240,8 @@ void CodegenVisitor::Visit(const Boolean *boolean) const noexcept {
   #TODO: add if blocks without else branches. (these have Type Nil)
 */
 void CodegenVisitor::Visit(const IfThenElse *conditional) const noexcept {
-  assert(env.current_function != nullptr);
+  // emit the test expression into whatever basic_block we
+  // are currently inserting into.
   auto *test_value = Compute(conditional->GetTest(), this);
   assert(test_value != nullptr);
 
@@ -265,33 +250,31 @@ void CodegenVisitor::Visit(const IfThenElse *conditional) const noexcept {
   // for the first or second alternative may change which
   // basic block is last in the function, and we want to append
   // exclusively to the end of the functions basic block list.
-  auto *then_BB =
-      llvm::BasicBlock::Create(*env.context, "then", env.current_function);
-  auto *else_BB  = llvm::BasicBlock::Create(*env.context, "else");
-  auto *merge_BB = llvm::BasicBlock::Create(*env.context, "merge");
+  auto *then_BB  = env.CreateAndInsertBasicBlock("then");
+  auto *else_BB  = env.CreateBasicBlock("else");
+  auto *merge_BB = env.CreateBasicBlock("merge");
 
-  env.instruction_builder->CreateCondBr(test_value, then_BB, else_BB);
-  env.instruction_builder->SetInsertPoint(then_BB);
+  env.CreateCondBr(test_value, then_BB, else_BB);
+  env.SetInsertionPoint(then_BB);
 
   auto *first_value = Compute(conditional->GetFirst(), this);
   assert(first_value != nullptr);
 
-  env.instruction_builder->CreateBr(merge_BB);
-  then_BB = env.instruction_builder->GetInsertBlock();
+  env.CreateBr(merge_BB);
+  then_BB = env.GetInsertionPoint().block;
 
-  env.current_function->insert(env.current_function->end(), else_BB);
-  env.instruction_builder->SetInsertPoint(else_BB);
+  env.InsertBasicBlock(else_BB);
+  env.SetInsertionPoint(else_BB);
 
   auto *second_value = Compute(conditional->GetSecond(), this);
   assert(second_value != nullptr);
 
-  env.instruction_builder->CreateBr(merge_BB);
-  else_BB = env.instruction_builder->GetInsertBlock();
+  env.CreateBr(merge_BB);
+  else_BB = env.GetInsertionPoint().block;
 
-  env.current_function->insert(env.current_function->end(), merge_BB);
-  env.instruction_builder->SetInsertPoint(merge_BB);
-  auto *phi =
-      env.instruction_builder->CreatePHI(first_value->getType(), 2, "phi");
+  env.InsertBasicBlock(merge_BB);
+  env.SetInsertionPoint(merge_BB);
+  auto *phi = env.CreatePHI(first_value->getType(), 2, "phi");
   phi->addIncoming(first_value, then_BB);
   phi->addIncoming(second_value, else_BB);
   result = phi;
@@ -307,14 +290,14 @@ void CodegenVisitor::Visit(const Dot *dot) const noexcept {
   auto *index = llvm::dyn_cast<Integer>(dot->GetRight().get());
   assert(index != nullptr);
   auto *struct_type = llvm::cast<llvm::StructType>(left_value->getType());
-  auto *gep         = env.instruction_builder->CreateConstGEP2_32(
-      struct_type,
-      left_value,
-      0,
-      static_cast<unsigned>(index->GetValue()));
+  auto *gep =
+      env.CreateConstInBoundsGEP2_32(struct_type,
+                                     left_value,
+                                     0,
+                                     static_cast<unsigned>(index->GetValue()));
   auto *element_type =
       struct_type->getTypeAtIndex(static_cast<unsigned>(index->GetValue()));
-  result = LoadValue(element_type, gep, env);
+  result = env.Load(element_type, gep);
 }
 
 /*
@@ -325,8 +308,6 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
 
   const auto *cache_type         = function->GetCachedTypeOrAssert();
   const auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
-
-  std::cout << "pink type [" << ToString(pink_function_type) << "]\n";
 
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
   auto *llvm_function_type = [&]() {
@@ -339,145 +320,58 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     return llvm::cast<llvm::FunctionType>(ToLLVM(pink_function_type, env));
   }();
 
-  auto *llvm_function = llvm::Function::Create(llvm_function_type,
-                                               llvm::Function::ExternalLinkage,
-                                               function->GetName(),
-                                               *env.module);
+  auto *llvm_function = env.CreateFunction(llvm_function_type,
+                                           llvm::Function::ExternalLinkage,
+                                           function->GetName());
 
-  /*
-    if this function returns a structure then we
-    have already promoted it's return type to void,
-    and added a parameter at the beginning of the
-    argument list. This argument needs to be given
-    the sret<Ty> attribute to communicate to llvm
-    that this struct is the return value.
-    this also means that the size of the argument list
-    is off by one compared to the function type as in
-    the source text. so we also have to start counting
-    the index from 1. additionally, any non-SingleValueType
-    will have been converted to an opaque pointer type,
-    so we must use the arguments converted from the
-    pink::FunctionType one by one.
-    #NOTE: I would prefer to add parameter attributes
-    when we convert the FunctionType within ToLLVM(),
-    however the attributes themselves are associated
-    with each function, as llvm::FunctionTypes may
-    be shared among llvm::Functions. This means we
-    are forced to walk the list of arguments types
-    twice.
-    if the function returns a singleValueType the return
-    value simply sits in the return register and we can
-    start counting arguments from 0.
-  */
-  unsigned index = [&]() {
-    if (llvm_return_type->isSingleValueType() &&
-        !llvm_return_type->isVoidTy()) {
-      llvm::AttrBuilder return_attribute(*env.context);
-      return_attribute.addStructRetAttr(llvm_return_type);
-      llvm_function->addParamAttrs(0U, return_attribute);
-      return 1U;
-    }
-    return 0U;
-  }();
+  env.ConstructFunctionAttributes(llvm_function, pink_function_type);
 
-  const auto &arguments            = pink_function_type->GetArguments();
-  const auto  number_of_parameters = llvm_function_type->getNumParams();
-  for (; index < number_of_parameters; ++index) {
-    llvm::AttrBuilder parameter_attribute(*env.context);
-    auto             *parameter_type = ToLLVM(arguments[index], env);
+  auto *entry_BB = env.CreateAndInsertBasicBlock(function->GetName() +
+                                                 std::string("_entry"));
 
-    if (!parameter_type->isSingleValueType() && !parameter_type->isVoidTy()) {
-      parameter_attribute.addByValAttr(parameter_type);
-      llvm_function->addParamAttrs(index, parameter_attribute);
-    }
-  }
-
-  auto *entry_BB =
-      llvm::BasicBlock::Create(*env.context,
-                               function->GetName() + std::string("entry"),
-                               llvm_function);
-
-  env.instruction_builder->SetInsertPoint(entry_BB);
+  env.SetInsertionPoint(entry_BB);
   env.PushScope();
 
-  // Set up the arguments within the function's first BasicBlock,
-  // A) Allocate all arguments
-  // B) Initialize all arguments
-  // we must do A for all arguments before we can do B for any
-  // argument, because the llvm optimizer best handles all allocas
-  // at the beginning of the functions first BasicBlock
-  std::vector<llvm::AllocaInst *> arg_allocas;
-  arg_allocas.reserve(function->GetArguments().size());
-  auto allocate_argument = [&](const llvm::Argument &arg) {
-    arg_allocas.emplace_back(env.instruction_builder->CreateAlloca(
-        arg.getType(),
-        env.module->getDataLayout().getAllocaAddrSpace(),
-        nullptr,
-        arg.getName()));
-  };
-  std::for_each(llvm_function->arg_begin(),
-                llvm_function->arg_end(),
-                allocate_argument);
-
-  auto alloc_cursor    = arg_allocas.begin();
-  auto alloc_end       = arg_allocas.end();
-  auto pink_arg_cursor = function->GetArguments().begin();
-  auto pink_arg_end    = function->GetArguments().end();
-  for (auto &llvm_arg : llvm_function->args()) {
-    auto       *alloc    = *alloc_cursor;
-    const auto &pink_arg = *pink_arg_cursor;
-
-    StoreValue(llvm_arg.getType(), alloc, &llvm_arg, env);
-    env.BindVariable(pink_arg.first, pink_arg.second, alloc);
-
-    alloc_cursor++;
-    pink_arg_cursor++;
-    if (alloc_cursor == alloc_end || pink_arg_cursor == pink_arg_end) {
-      break;
-    }
-  }
+  env.ConstructFunctionArguments(llvm_function, function);
 
   auto *body_value = Compute(function->GetBody(), this);
   assert(body_value != nullptr);
 
   if (is_main) {
-    SysExit(body_value, env);
-    env.instruction_builder->CreateRetVoid();
+    env.SysExit(body_value);
+    env.CreateRetVoid();
   } else {
     if (llvm_return_type->isSingleValueType()) {
-      env.instruction_builder->CreateRet(body_value);
+      env.CreateRet(body_value);
     } else {
-      StoreValue(llvm_return_type, llvm_function->getArg(0), body_value, env);
+      env.Store(llvm_return_type, body_value, llvm_function->getArg(0));
     }
   }
-
-  std::cerr << "number of function attributes ["
-            << llvm_function->getAttributes().getNumAttrSets() << "\n]";
 
   std::string              buffer;
   llvm::raw_string_ostream out(buffer);
   if (llvm::verifyFunction(*llvm_function, &out)) {
     std::cerr << "llvm function [\n"
               << LLVMValueToString(llvm_function) << "]\n"
-              << "llvm type [" << LLVMTypeToString(llvm_function_type) << "]\n";
+              << "llvm type [" << LLVMTypeToString(llvm_function_type) << "]\n"
+              << "pink type [" << ToString(pink_function_type) << "]\n"
+              << "number of function attributes ["
+              << llvm_function->getAttributes().getNumAttrSets() << "]\n";
     FatalError(buffer, __FILE__, __LINE__);
   }
-  // We just emitted a function, so we know we
-  // are about to enter global scope, and we cannot
-  // emit instructions into global scope, so we must
-  // clear the insertion point.
-  env.instruction_builder->ClearInsertionPoint();
+
+  env.LeaveCurrentFunction();
   env.BindVariable(function->GetName(), pink_function_type, llvm_function);
   result = llvm_function;
 }
 
 void CodegenVisitor::Visit(const Integer *integer) const noexcept {
-  result = env.instruction_builder->getInt64(integer->GetValue());
+  result = env.ConstantInteger(integer->GetValue());
 }
 
 void CodegenVisitor::Visit(const Nil *nil) const noexcept {
   assert(nil != nullptr);
-  result = env.instruction_builder->getInt1(false);
+  result = env.ConstantBoolean(false);
 }
 
 void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
@@ -490,6 +384,10 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
 
   auto *right_value = [&]() {
     CodegenResult res = nullptr;
+    // #NOTE: a subscript term on the LHS of assignment
+    // must not suppress any loads of variables occuring
+    // within the evaluation of it's index expression.
+    // so we pretend like we are not on the LHS of assignment.
     if (env.OnTheLHSOfAssignment()) {
       env.OnTheLHSOfAssignment(false);
       res = Compute(subscript->GetRight(), this);
@@ -504,12 +402,7 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
       array_type != nullptr) {
     auto *llvm_array_type =
         llvm::cast<llvm::StructType>(ToLLVM(array_type, env));
-    auto *llvm_element_type = ToLLVM(array_type->GetElementType(), env);
-    result                  = ArraySubscript(llvm_array_type,
-                            llvm_element_type,
-                            left_value,
-                            right_value,
-                            env);
+    result = env.ArraySubscript(llvm_array_type, left_value, right_value);
     return;
   }
 
@@ -518,11 +411,10 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
     auto *llvm_slice_type =
         llvm::cast<llvm::StructType>(ToLLVM(slice_type, env));
     auto *llvm_element_type = ToLLVM(slice_type->GetPointeeType(), env);
-    result                  = SliceSubscript(llvm_slice_type,
-                            llvm_element_type,
-                            left_value,
-                            right_value,
-                            env);
+    result                  = env.SliceSubscript(llvm_slice_type,
+                                llvm_element_type,
+                                left_value,
+                                right_value);
     return;
   }
 
@@ -537,19 +429,18 @@ void CodegenVisitor::Visit(const Tuple *tuple) const noexcept {
 
   auto *tuple_layout_type =
       llvm::cast<llvm::StructType>(ToLLVM(tuple_type, env));
-  auto *tuple_alloca = env.instruction_builder->CreateAlloca(tuple_layout_type);
+  auto *tuple_alloca = env.CreateAlloca(tuple_layout_type);
 
   unsigned index = 0;
   for (const auto &element : *tuple) {
     auto *element_value = Compute(element, this);
     assert(element_value != nullptr);
-    auto *element_type = tuple_layout_type->getStructElementType(index);
-    auto *element_pointer =
-        env.instruction_builder->CreateConstInBoundsGEP2_32(tuple_layout_type,
-                                                            tuple_alloca,
-                                                            0,
-                                                            index);
-    StoreValue(element_type, element_pointer, element_value, env);
+    auto *element_type    = tuple_layout_type->getStructElementType(index);
+    auto *element_pointer = env.CreateConstInBoundsGEP2_32(tuple_layout_type,
+                                                           tuple_alloca,
+                                                           0,
+                                                           index);
+    env.Store(element_type, element_value, element_pointer);
   }
 
   result = tuple_alloca;
@@ -590,7 +481,7 @@ static auto CodegenUnopDereferencePointer(const Unop           *unop,
   auto       *llvm_pointee_type = ToLLVM(pointer_type, env);
   // Note: this is the load for the dereference operation,
   // the generator expression is a no-op for address of and dereference.
-  return LoadValue(llvm_pointee_type, right_value, env);
+  return env.Load(llvm_pointee_type, right_value);
 }
 
 void CodegenVisitor::Visit(const Unop *unop) const noexcept {
@@ -619,7 +510,7 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   assert(optional_implementation.has_value());
   auto &implementation = optional_implementation.value();
 
-  result = implementation.Generate()(right_value, env);
+  result = implementation(right_value, env);
 }
 
 /*
@@ -629,7 +520,7 @@ void CodegenVisitor::Visit(const Variable *variable) const noexcept {
   auto bound = env.LookupVariable(variable->GetSymbol());
   assert(bound.has_value());
   assert(bound->Value() != nullptr);
-  result = LoadValue(ToLLVM(bound->Type(), env), bound->Value(), env);
+  result = env.Load(ToLLVM(bound->Type(), env), bound->Value());
 }
 
 /*
@@ -638,29 +529,27 @@ void CodegenVisitor::Visit(const Variable *variable) const noexcept {
   one for after the loop is completed.
 */
 void CodegenVisitor::Visit(const While *loop) const noexcept {
-  assert(env.current_function != nullptr);
-  auto *test_BB =
-      llvm::BasicBlock::Create(*env.context, "test", env.current_function);
-  auto *body_BB = llvm::BasicBlock::Create(*env.context, "body");
-  auto *end_BB  = llvm::BasicBlock::Create(*env.context, "end");
+  auto *test_BB = env.CreateAndInsertBasicBlock("test");
+  auto *body_BB = env.CreateBasicBlock("body");
+  auto *end_BB  = env.CreateBasicBlock("end");
 
-  env.instruction_builder->CreateBr(test_BB);
+  env.CreateBr(test_BB);
 
-  env.instruction_builder->SetInsertPoint(test_BB);
+  env.SetInsertionPoint(test_BB);
   auto *test_value = Compute(loop->GetTest(), this);
   assert(test_value != nullptr);
-  env.instruction_builder->CreateCondBr(test_value, body_BB, end_BB);
+  env.CreateCondBr(test_value, body_BB, end_BB);
 
-  env.instruction_builder->SetInsertPoint(body_BB);
-  env.current_function->insert(env.current_function->end(), body_BB);
+  env.SetInsertionPoint(body_BB);
+  env.InsertBasicBlock(body_BB);
   auto *body_value = Compute(loop->GetBody(), this);
   assert(body_value != nullptr);
-  env.instruction_builder->CreateBr(test_BB);
+  env.CreateBr(test_BB);
 
-  env.instruction_builder->SetInsertPoint(end_BB);
-  env.current_function->insert(env.current_function->end(), end_BB);
+  env.SetInsertionPoint(end_BB);
+  env.InsertBasicBlock(end_BB);
 
-  result = env.instruction_builder->getFalse();
+  result = env.ConstantBoolean(false);
 }
 
 [[nodiscard]] auto Codegen(const Ast::Pointer &ast, Environment &env) noexcept
