@@ -7,8 +7,8 @@
 
 #include "type/action/ToLLVM.h"
 
-#include "runtime/ops/BinopPrimitives.h"
-#include "runtime/ops/UnopPrimitives.h"
+#include "ops/BinopPrimitives.h"
+#include "ops/UnopPrimitives.h"
 
 #include "support/FatalError.h"
 #include "support/LLVMErrorToString.h"
@@ -486,13 +486,13 @@ auto Environment::LoadSlicePointer(llvm::StructType *slice_type,
 }
 
 void Environment::StoreSlice(llvm::StructType *slice_type,
-                             llvm::Value      *slice_ptr,
+                             llvm::Value      *slice,
                              llvm::Value      *size,
                              llvm::Value      *offset,
                              llvm::Value      *ptr) {
-  StoreStructElement(slice_type, size, slice_ptr, 0);
-  StoreStructElement(slice_type, offset, slice_ptr, 1);
-  StoreStructElement(slice_type, ptr, slice_ptr, 2);
+  StoreStructElement(slice_type, size, slice, 0);
+  StoreStructElement(slice_type, offset, slice, 1);
+  StoreStructElement(slice_type, ptr, slice, 2);
 }
 
 auto Environment::PtrToSliceElement(llvm::StructType *slice_type,
@@ -717,32 +717,36 @@ void Environment::SysExit(llvm::Value *exit_code) {
 }
 
 /***************************** Optimization *****************************/
-auto Environment::DefaultAnalysis(std::ostream &err) -> int {
-  llvm::LoopAnalysisManager     LAM;
-  llvm::FunctionAnalysisManager FAM;
-  llvm::CGSCCAnalysisManager    CGAM;
-  llvm::ModuleAnalysisManager   MAM;
+// we may want to print errors at some point. (it happened for Compile and Link)
+auto Environment::DefaultAnalysis([[maybe_unused]] std::ostream &err) -> int {
+  // quote: buildPerModuleDefaultPipeline "... Level cannot be 'O0' here ..."
+  if (GetOptimizationLevel() != llvm::OptimizationLevel::O0) {
+    llvm::LoopAnalysisManager     LAM;
+    llvm::FunctionAnalysisManager FAM;
+    llvm::CGSCCAnalysisManager    CGAM;
+    llvm::ModuleAnalysisManager   MAM;
 
-  // https://llvm.org/doxygen/classllvm_1_1PassBuilder.html
-  llvm::PassBuilder passBuilder;
+    // https://llvm.org/doxygen/classllvm_1_1PassBuilder.html
+    llvm::PassBuilder passBuilder;
 
-  // #TODO: what are the default analysis that this constructs?
-  FAM.registerPass([&] { return passBuilder.buildDefaultAAPipeline(); });
+    // #TODO: what are the default analysis that this constructs?
+    FAM.registerPass([&] { return passBuilder.buildDefaultAAPipeline(); });
 
-  // Register the AnalysisManagers with the Pass Builder
-  passBuilder.registerModuleAnalyses(MAM);
-  passBuilder.registerCGSCCAnalyses(CGAM);
-  passBuilder.registerFunctionAnalyses(FAM);
-  passBuilder.registerLoopAnalyses(LAM);
-  // This registers each of the passes with eachother, so they
-  // can perform optimizations together, lazily
-  passBuilder.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+    // Register the AnalysisManagers with the Pass Builder
+    passBuilder.registerModuleAnalyses(MAM);
+    passBuilder.registerCGSCCAnalyses(CGAM);
+    passBuilder.registerFunctionAnalyses(FAM);
+    passBuilder.registerLoopAnalyses(LAM);
+    // This registers each of the passes with eachother, so they
+    // can perform optimizations together, lazily
+    passBuilder.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-  llvm::ModulePassManager MPM =
-      passBuilder.buildPerModuleDefaultPipeline(GetOptimizationLevel());
+    llvm::ModulePassManager MPM =
+        passBuilder.buildPerModuleDefaultPipeline(GetOptimizationLevel());
 
-  // Run the optimizer against the IR
-  MPM.run(*module, MAM);
+    // Run the optimizer against the IR
+    MPM.run(*module, MAM);
+  }
   return EXIT_SUCCESS;
 }
 

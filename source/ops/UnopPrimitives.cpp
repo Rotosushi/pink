@@ -42,9 +42,15 @@ void InitializeUnopPrimitives(Environment &env) {
   const auto *aov  = env.InternOperator("&");
   const auto *voa  = env.InternOperator("*");
 
-  env.RegisterUnop(neg, integer_type, integer_type, UnopIntNegate);
-  env.RegisterUnop(bnot, boolean_type, boolean_type, UnopBoolNegate);
-  env.RegisterUnop(aov, integer_type, integer_pointer_type, UnopAddressOfValue);
-  env.RegisterUnop(voa, integer_pointer_type, integer_type, UnopValueOfAddress);
+  env.RegisterBuiltinUnop(neg, integer_type, integer_type, UnopIntNegate);
+  env.RegisterBuiltinUnop(bnot, boolean_type, boolean_type, UnopBoolNegate);
+  env.RegisterBuiltinUnop(aov,
+                          integer_type,
+                          integer_pointer_type,
+                          UnopAddressOfValue);
+  env.RegisterBuiltinUnop(voa,
+                          integer_pointer_type,
+                          integer_type,
+                          UnopValueOfAddress);
 }
 } // namespace pink

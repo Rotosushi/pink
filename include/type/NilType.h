@@ -14,14 +14,15 @@ class NilType : public Type {
 public:
   using Pointer = NilType const *;
 
-  NilType() noexcept : Type(Type::Kind::Nil) {}
+  NilType(TypeInterner *context) noexcept
+      : Type(Type::Kind::Nil, context) {}
   ~NilType() noexcept override                               = default;
   NilType(const NilType &other) noexcept                     = default;
   NilType(NilType &&other) noexcept                          = default;
   auto operator=(const NilType &other) noexcept -> NilType & = default;
   auto operator=(NilType &&other) noexcept -> NilType      & = default;
 
-  static auto classof(const Type* type) noexcept -> bool {
+  static auto classof(const Type *type) noexcept -> bool {
     return Type::Kind::Nil == type->GetKind();
   }
 

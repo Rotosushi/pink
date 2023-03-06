@@ -34,6 +34,11 @@ private:
   CharacterType character_type;
   VoidType      void_type;
 
+  // #TODO: vector may not be the best solution as
+  // we scale up to larger programs with an abundance of types.
+  // a map might help access time scale favorably with size.
+  // the only question is how? what is the key and what is the
+  // value? the 'key' is truly the uniqueness of each type.
   std::vector<std::unique_ptr<FunctionType>> function_types;
 
   /**
@@ -61,7 +66,12 @@ private:
   std::vector<std::unique_ptr<TupleType>> tuple_types;
 
 public:
-  TypeInterner()                                              = default;
+  TypeInterner() noexcept
+      : nil_type(this),
+        bool_type(this),
+        int_type(this),
+        character_type(this),
+        void_type(this) {}
   ~TypeInterner()                                             = default;
   TypeInterner(const TypeInterner &other)                     = delete;
   TypeInterner(TypeInterner &&other)                          = default;
@@ -73,10 +83,7 @@ public:
   auto GetIntType() -> IntegerType::Pointer;
   auto GetCharacterType() -> CharacterType::Pointer;
   auto GetVoidType() -> VoidType::Pointer;
-
-  auto GetFunctionType(Type::Pointer                  ret_type,
-                       FunctionType::Arguments const &arg_types)
-      -> FunctionType::Pointer;
+  
   auto GetFunctionType(Type::Pointer             ret_type,
                        FunctionType::Arguments &&arg_types)
       -> FunctionType::Pointer;
@@ -87,7 +94,6 @@ public:
   auto GetArrayType(std::size_t size, Type::Pointer element_type)
       -> ArrayType::Pointer;
 
-  auto GetTupleType(TupleType::Elements const &elements) -> TupleType::Pointer;
   auto GetTupleType(TupleType::Elements &&elements) -> TupleType::Pointer;
 
   auto GetTextType(std::size_t length) -> ArrayType::Pointer;

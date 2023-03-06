@@ -13,8 +13,12 @@ private:
   InternedString identifier;
 
 public:
-  IdentifierType(InternedString identifier) noexcept
-      : Type(Type::Kind::Identifier),
+  static auto classof(Type const *type) noexcept -> bool {
+    return type->GetKind() == Type::Kind::Identifier;
+  }
+
+  IdentifierType(TypeInterner *context, InternedString identifier) noexcept
+      : Type(Type::Kind::Identifier, context),
         identifier(identifier) {}
 
   [[nodiscard]] auto Identifier() const noexcept -> InternedString {

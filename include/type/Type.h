@@ -14,6 +14,7 @@
 
 namespace pink {
 class Environment;
+class TypeInterner;
 
 /**
  * @brief Represents an instance of a Type
@@ -61,11 +62,15 @@ public:
 private:
   Kind                kind;
   mutable llvm::Type *llvm_type;
+  TypeInterner       *context;
 
 public:
-  Type(Kind kind) noexcept
+  Type(Kind kind, TypeInterner *context) noexcept
       : kind{kind},
-        llvm_type{nullptr} {}
+        llvm_type{nullptr},
+        context(context) {
+    assert(context != nullptr);
+  }
   virtual ~Type() noexcept                             = default;
   Type(const Type &other) noexcept                     = default;
   Type(Type &&other) noexcept                          = default;
@@ -73,6 +78,7 @@ public:
   auto operator=(Type &&other) noexcept -> Type      & = default;
 
   [[nodiscard]] auto GetKind() const -> Kind { return kind; }
+  [[nodiscard]] auto GetContext() const -> TypeInterner * { return context; }
 
   void SetCachedLLVMType(llvm::Type *llvm_type) const noexcept {
     this->llvm_type = llvm_type;

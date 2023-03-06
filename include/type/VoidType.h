@@ -15,7 +15,8 @@ class VoidType : public Type {
 public:
   using Pointer = VoidType const *;
 
-  VoidType() noexcept : Type(Type::Kind::Void) {}
+  VoidType(TypeInterner *context) noexcept
+      : Type(Type::Kind::Void, context) {}
   ~VoidType() noexcept override                                = default;
   VoidType(const VoidType &other) noexcept                     = default;
   VoidType(VoidType &&other) noexcept                          = default;

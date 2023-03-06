@@ -219,10 +219,11 @@ add_library(common STATIC
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
+  source/type/action/Substitution.cpp 
   source/type/action/StructuralEquality.cpp
   source/type/action/ToString.cpp
   source/type/action/ToLLVM.cpp
-
+  source/type/interner/TypeInterner.cpp
 
 	# the 'aux' directory is for the classes which are necessary or convenient 
 	# for the functioning of the compiler, which are additionally small enough 
@@ -230,7 +231,7 @@ add_library(common STATIC
 	source/aux/CLIOptions.cpp
 	source/aux/Environment.cpp
 	source/aux/Error.cpp
-	source/aux/TypeInterner.cpp
+	
 
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 

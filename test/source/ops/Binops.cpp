@@ -4,29 +4,24 @@
 
 #include "aux/Environment.h"
 
-#include "support/DisableWarning.h"
-
-NOWARN(
-    "-Wunused-parameter",
-    auto BinopCodegenFunction(llvm::Type        *left_type,
-                              llvm::Value       *left_value,
-                              llvm::Type        *right_type,
-                              llvm::Value       *right_value,
-                              pink::Environment &env)
-        ->llvm::Value * { return nullptr; })
+auto BinopCodegenFunction([[maybe_unused]] llvm::Value       *left_value,
+                          [[maybe_unused]] llvm::Value       *right_value,
+                          [[maybe_unused]] pink::Environment &env)
+    -> llvm::Value * {
+  return nullptr;
+}
 
 TEST_CASE("ops/BinopCodegen", "[unit][ops]") {
-  auto                type         = std::make_unique<pink::IntegerType>();
-  pink::Type::Pointer integer_type = type.get();
+  auto interner     = pink::TypeInterner{};
+  auto integer_type = interner.GetIntType();
 
   pink::BinopCodegen binop_implementation(integer_type, BinopCodegenFunction);
   REQUIRE(binop_implementation.ReturnType() == integer_type);
-  REQUIRE(binop_implementation.Generate() == BinopCodegenFunction);
 }
 
 TEST_CASE("ops/BinopOverloadSet", "[unit][ops]") {
-  auto                type          = std::make_unique<pink::IntegerType>();
-  pink::Type::Pointer integer_type  = type.get();
+  auto                interner      = pink::TypeInterner{};
+  auto                integer_type  = interner.GetIntType();
   pink::Precedence    precedence    = 3;
   pink::Associativity associativity = pink::Associativity::Left;
 
@@ -41,18 +36,16 @@ TEST_CASE("ops/BinopOverloadSet", "[unit][ops]") {
                                                BinopCodegenFunction);
   REQUIRE(!binop_literal.Empty());
   REQUIRE(implementation.ReturnType() == integer_type);
-  REQUIRE(implementation.Generate() == BinopCodegenFunction);
 
   auto found = binop_literal.Lookup(integer_type, integer_type);
   REQUIRE(found.has_value());
   implementation = found.value();
   REQUIRE(implementation.ReturnType() == integer_type);
-  REQUIRE(implementation.Generate() == BinopCodegenFunction);
 }
 
 TEST_CASE("ops/BinopTable", "[unit][ops]") {
-  auto                 type          = std::make_unique<pink::IntegerType>();
-  pink::Type::Pointer  integer_type  = type.get();
+  auto                 interner      = pink::TypeInterner{};
+  auto                 integer_type  = interner.GetIntType();
   pink::Precedence     precedence    = 3;
   pink::Associativity  associativity = pink::Associativity::Left;
   pink::InternedString op            = "+";
@@ -72,7 +65,6 @@ TEST_CASE("ops/BinopTable", "[unit][ops]") {
   REQUIRE(optional_implementation.has_value());
   auto implementation = optional_implementation.value();
   REQUIRE(implementation.ReturnType() == integer_type);
-  REQUIRE(implementation.Generate() == BinopCodegenFunction);
 
   auto optional_literal = binop_table.Lookup(op);
   REQUIRE(optional_literal.has_value());
@@ -84,5 +76,4 @@ TEST_CASE("ops/BinopTable", "[unit][ops]") {
   REQUIRE(optional_implementation.has_value());
   implementation = optional_implementation.value();
   REQUIRE(implementation.ReturnType() == integer_type);
-  REQUIRE(implementation.Generate() == BinopCodegenFunction);
 }

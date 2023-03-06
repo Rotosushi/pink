@@ -878,7 +878,8 @@ auto Parser::ParseTupleType(Environment &env) -> TypeResult {
   TRY(left_result, left, ParseType, env)
 
   if (token == Token::Comma) {
-    std::vector<Type::Pointer> element_types = {left};
+    std::vector<Type::Pointer> element_types;
+    element_types.push_back(left);
     do {
       nexttok(); // eat ','
 
@@ -886,7 +887,7 @@ auto Parser::ParseTupleType(Environment &env) -> TypeResult {
       element_types.push_back(element_type);
     } while (token == Token::Comma);
 
-    left = env.GetTupleType(element_types);
+    left = env.GetTupleType(std::move(element_types));
   }
 
   if (!Expect(Token::RParen)) {

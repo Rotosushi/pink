@@ -19,8 +19,12 @@ private:
   Type::Pointer element_type;
 
 public:
-  ArrayType(std::size_t size, Type::Pointer element_type) noexcept
-      : Type(Type::Kind::Array), size(size), element_type(element_type) {
+  ArrayType(TypeInterner *context,
+            std::size_t   size,
+            Type::Pointer element_type) noexcept
+      : Type(Type::Kind::Array, context),
+        size(size),
+        element_type(element_type) {
     assert(element_type != nullptr);
   }
   ~ArrayType() noexcept override                                 = default;

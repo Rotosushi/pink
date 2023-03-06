@@ -2,7 +2,6 @@
 
 #include "core/Compile.h"
 #include "core/Link.h"
-#include "core/Optimize.h"
 
 #include "aux/Error.h" // pink::FatalError
 
@@ -62,7 +61,6 @@ static auto CompileEnvironment(std::ostream &out,
                                Environment  &env) -> int;
 
 auto Compile(int argc, char **argv) -> int {
-
   auto &out         = std::cout;
   auto &err         = std::cerr;
   auto  cli_options = pink::ParseCLIOptions(err, argc, argv);
@@ -72,8 +70,7 @@ auto Compile(int argc, char **argv) -> int {
     return EXIT_FAILURE;
   }
 
-  if ((env.GetOptimizationLevel() != llvm::OptimizationLevel::O0) &&
-      (DefaultAnalysis(err, env) == EXIT_FAILURE)) {
+  if (env.DefaultAnalysis(err) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 
@@ -81,10 +78,11 @@ auto Compile(int argc, char **argv) -> int {
     return EXIT_FAILURE;
   }
 
-  if (env.DoLink()) {
-    return Link(out, err, env);
+  if (!env.DoLink()) {
+    return EXIT_SUCCESS;
   }
-  return EXIT_SUCCESS;
+
+  return Link(out, err, env);
 }
 
 using Terms = std::vector<pink::Ast::Pointer>;

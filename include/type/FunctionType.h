@@ -24,8 +24,11 @@ private:
   Arguments     arguments;
 
 public:
-  FunctionType(Type::Pointer return_type, Arguments arguments) noexcept
-      : Type(Type::Kind::Function), return_type(return_type),
+  FunctionType(TypeInterner *context,
+               Type::Pointer return_type,
+               Arguments     arguments) noexcept
+      : Type(Type::Kind::Function, context),
+        return_type(return_type),
         arguments(std::move(arguments)) {
     assert(return_type != nullptr);
   }
@@ -42,8 +45,10 @@ public:
   [[nodiscard]] auto GetReturnType() const noexcept -> Type::Pointer {
     return return_type;
   }
-  [[nodiscard]] auto GetArguments() noexcept -> Arguments& { return arguments; }
-  [[nodiscard]] auto GetArguments() const noexcept -> const Arguments& {
+  [[nodiscard]] auto GetArguments() noexcept -> Arguments & {
+    return arguments;
+  }
+  [[nodiscard]] auto GetArguments() const noexcept -> const Arguments & {
     return arguments;
   }
 

@@ -23,8 +23,9 @@ private:
   Elements elements;
 
 public:
-  TupleType(Elements elements) noexcept
-      : Type(Type::Kind::Tuple), elements(std::move(elements)) {}
+  TupleType(TypeInterner *context, Elements elements) noexcept
+      : Type(Type::Kind::Tuple, context),
+        elements(std::move(elements)) {}
   ~TupleType() noexcept override                                 = default;
   TupleType(const TupleType &other) noexcept                     = default;
   TupleType(TupleType &&other) noexcept                          = default;

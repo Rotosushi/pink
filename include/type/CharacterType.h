@@ -6,7 +6,8 @@ class CharacterType : public Type {
 public:
   using Pointer = CharacterType const *;
 
-  CharacterType() noexcept : Type(Type::Kind::Character) {}
+  CharacterType(TypeInterner *context) noexcept
+      : Type(Type::Kind::Character, context) {}
   ~CharacterType() noexcept override                 = default;
   CharacterType(const CharacterType &other) noexcept = default;
   CharacterType(CharacterType &&other) noexcept      = default;

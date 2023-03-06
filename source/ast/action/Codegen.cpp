@@ -312,9 +312,9 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
   auto *llvm_function_type = [&]() {
     if (is_main) {
-      const auto *main_function_type =
-          env.GetFunctionType(env.GetVoidType(),
-                              pink_function_type->GetArguments());
+      const auto *main_function_type = env.GetFunctionType(
+          env.GetVoidType(),
+          FunctionType::Arguments{pink_function_type->GetArguments()});
       return llvm::cast<llvm::FunctionType>(ToLLVM(main_function_type, env));
     }
     return llvm::cast<llvm::FunctionType>(ToLLVM(pink_function_type, env));

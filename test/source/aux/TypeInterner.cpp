@@ -1,6 +1,6 @@
 #include "catch2/catch_test_macros.hpp"
 
-#include "aux/TypeInterner.h"
+#include "type/interner/TypeInterner.h"
 
 TEST_CASE("aux/TypeInterner", "[unit][aux]") {
   pink::TypeInterner interner;
@@ -80,8 +80,8 @@ TEST_CASE("aux/TypeInterner", "[unit][aux]") {
   REQUIRE(boolean_slice_type != integer_slice_type);
 
   // ArrayType equality
-  std::size_t         five = 5;
-  std::size_t         ten  = 10;
+  const std::size_t   five = 5;
+  const std::size_t   ten  = 10;
   pink::Type::Pointer five_integer_array_type =
       interner.GetArrayType(five, integer_type);
   REQUIRE(five_integer_array_type != nullptr);

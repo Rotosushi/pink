@@ -1,7 +1,7 @@
 #include "catch2/catch_test_macros.hpp"
 
 #include "aux/ScopeStack.h"
-#include "aux/TypeInterner.h"
+#include "type/interner/TypeInterner.h"
 
 TEST_CASE("aux/SymbolTable", "[unit][aux]") {
   pink::StringInterner string_interner;

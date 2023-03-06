@@ -46,8 +46,9 @@ private:
   Type::Pointer pointee_type;
 
 public:
-  PointerType(Type::Pointer pointee_type) noexcept
-      : Type(Type::Kind::Pointer), pointee_type(pointee_type) {
+  PointerType(TypeInterner *context, Type::Pointer pointee_type) noexcept
+      : Type(Type::Kind::Pointer, context),
+        pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
   ~PointerType() noexcept override                                   = default;

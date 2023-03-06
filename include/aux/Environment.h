@@ -18,7 +18,8 @@
 #include "aux/InternalFlags.h"
 #include "aux/ScopeStack.h"
 #include "aux/StringInterner.h"
-#include "aux/TypeInterner.h"
+
+#include "type/interner/TypeInterner.h"
 
 #include "ops/BinopTable.h"
 #include "ops/UnopTable.h"
@@ -245,11 +246,6 @@ public:
     return type_interner.GetVoidType();
   }
 
-  auto GetFunctionType(Type::Pointer                  ret_type,
-                       FunctionType::Arguments const &arg_types)
-      -> FunctionType::Pointer {
-    return type_interner.GetFunctionType(ret_type, arg_types);
-  }
   auto GetFunctionType(Type::Pointer             ret_type,
                        FunctionType::Arguments &&arg_types)
       -> FunctionType::Pointer {
@@ -268,9 +264,6 @@ public:
     return type_interner.GetArrayType(size, element_type);
   }
 
-  auto GetTupleType(TupleType::Elements const &elements) -> TupleType::Pointer {
-    return type_interner.GetTupleType(elements);
-  }
   auto GetTupleType(TupleType::Elements &&elements) -> TupleType::Pointer {
     return type_interner.GetTupleType(std::move(elements));
   }
@@ -314,11 +307,27 @@ public:
   }
 
   // exposing UnopTable's interface
-  auto RegisterUnop(InternedString        unop,
-                    Type::Pointer         argument_type,
-                    Type::Pointer         return_type,
-                    UnopCodegen::Function generator) -> UnopTable::Unop {
-    return unop_table.Register(unop, argument_type, return_type, generator);
+  auto RegisterBuiltinUnop(InternedString        unop,
+                           Type::Pointer         argument_type,
+                           Type::Pointer         return_type,
+                           UnopCodegen::Function generator) -> UnopTable::Unop {
+    return unop_table.RegisterBuiltin(unop,
+                                      argument_type,
+                                      return_type,
+                                      generator);
+  }
+
+  auto RegisterTemplateBuiltinUnop(InternedString        unop,
+                                   Type::Pointer         type_variable,
+                                   Type::Pointer         argument_type,
+                                   Type::Pointer         return_type,
+                                   UnopCodegen::Function function)
+      -> UnopTable::Unop {
+    return unop_table.RegisterTemplateBuiltin(unop,
+                                              type_variable,
+                                              argument_type,
+                                              return_type,
+                                              function);
   }
 
   auto LookupUnop(InternedString opr) -> std::optional<UnopTable::Unop> {

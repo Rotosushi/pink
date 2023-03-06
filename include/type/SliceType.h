@@ -37,8 +37,9 @@ private:
   Type::Pointer pointee_type;
 
 public:
-  SliceType(Type::Pointer pointee_type) noexcept
-      : Type(Type::Kind::Slice), pointee_type(pointee_type) {
+  SliceType(TypeInterner *context, Type::Pointer pointee_type) noexcept
+      : Type(Type::Kind::Slice, context),
+        pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
   ~SliceType() noexcept override                                 = default;

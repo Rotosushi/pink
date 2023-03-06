@@ -15,12 +15,13 @@ class BooleanType : public Type {
 public:
   using Pointer = BooleanType const *;
 
-  BooleanType() noexcept : Type(Type::Kind::Boolean) {}
-  ~BooleanType() noexcept override = default;
-  BooleanType(const BooleanType &other) noexcept = default;
-  BooleanType(BooleanType &&other) noexcept = default;
+  BooleanType(TypeInterner *context) noexcept
+      : Type(Type::Kind::Boolean, context) {}
+  ~BooleanType() noexcept override                                   = default;
+  BooleanType(const BooleanType &other) noexcept                     = default;
+  BooleanType(BooleanType &&other) noexcept                          = default;
   auto operator=(const BooleanType &other) noexcept -> BooleanType & = default;
-  auto operator=(BooleanType &&other) noexcept -> BooleanType & = default;
+  auto operator=(BooleanType &&other) noexcept -> BooleanType      & = default;
 
   static auto classof(const Type *type) noexcept -> bool {
     return Type::Kind::Boolean == type->GetKind();
