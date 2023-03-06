@@ -11,20 +11,20 @@ namespace pink {
 /**
  * @brief Represents the Type of Boolean
  */
-class BooleanType : public TypeInterface {
+class BooleanType : public Type {
 public:
   using Pointer = BooleanType const *;
 
   BooleanType(TypeInterner *context) noexcept
-      : TypeInterface(TypeInterface::Kind::Boolean, context) {}
+      : Type(Type::Kind::Boolean, context) {}
   ~BooleanType() noexcept override                                   = default;
   BooleanType(const BooleanType &other) noexcept                     = default;
   BooleanType(BooleanType &&other) noexcept                          = default;
   auto operator=(const BooleanType &other) noexcept -> BooleanType & = default;
   auto operator=(BooleanType &&other) noexcept -> BooleanType      & = default;
 
-  static auto classof(const TypeInterface *type) noexcept -> bool {
-    return TypeInterface::Kind::Boolean == type->GetKind();
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Boolean == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

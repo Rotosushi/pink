@@ -91,8 +91,8 @@ void InitializeBinopPrimitives(Environment &env) {
   InternedString cmpgt = env.InternOperator(">");
   InternedString cmpge = env.InternOperator(">=");
 
-  TypeInterface::Pointer int_ty  = env.GetIntType();
-  TypeInterface::Pointer bool_ty = env.GetBoolType();
+  Type::Pointer int_ty  = env.GetIntType();
+  Type::Pointer bool_ty = env.GetBoolType();
 
   Associativity left_assoc = Associativity::Left;
   // Associativity right_assoc = Associativity::Right;

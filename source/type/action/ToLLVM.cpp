@@ -8,7 +8,7 @@
 
 namespace pink {
 class ToLLVMVisitor : public ConstVisitorResult<ToLLVMVisitor,
-                                                const TypeInterface::Pointer,
+                                                const Type::Pointer,
                                                 llvm::Type *>,
                       public ConstTypeVisitor {
 private:
@@ -86,7 +86,7 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
   std::vector<llvm::Type *> llvm_argument_types(
       function_type->GetArguments().size());
 
-  auto transform_argument = [&](TypeInterface::Pointer type) -> llvm::Type * {
+  auto transform_argument = [&](Type::Pointer type) -> llvm::Type * {
     llvm::Type *llvm_type = Compute(type, this);
     if (llvm_type->isSingleValueType()) {
       return llvm_type;
@@ -169,7 +169,7 @@ void ToLLVMVisitor::Visit(const SliceType *slice_type) const noexcept {
 void ToLLVMVisitor::Visit(const TupleType *tuple_type) const noexcept {
   std::vector<llvm::Type *> llvm_element_types(
       tuple_type->GetElements().size());
-  auto transform_element = [&](TypeInterface::Pointer type) {
+  auto transform_element = [&](Type::Pointer type) {
     return Compute(type, this);
   };
   std::transform(tuple_type->begin(),
@@ -190,8 +190,8 @@ void ToLLVMVisitor::Visit(const VoidType *void_type) const noexcept {
   result = llvm_type;
 }
 
-[[nodiscard]] auto ToLLVM(TypeInterface::Pointer type,
-                          Environment           &env) noexcept -> llvm::Type * {
+[[nodiscard]] auto ToLLVM(Type::Pointer type, Environment &env) noexcept
+    -> llvm::Type * {
   auto cache = type->CachedLLVMType();
   if (cache) {
     return cache.value();

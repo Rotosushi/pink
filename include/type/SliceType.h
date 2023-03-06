@@ -29,16 +29,16 @@ namespace pink {
  * work up a chain of calls.
  *
  */
-class SliceType : public TypeInterface {
+class SliceType : public Type {
 public:
   using Pointer = SliceType const *;
 
 private:
-  TypeInterface::Pointer pointee_type;
+  Type::Pointer pointee_type;
 
 public:
-  SliceType(TypeInterner *context, TypeInterface::Pointer pointee_type) noexcept
-      : TypeInterface(TypeInterface::Kind::Slice, context),
+  SliceType(TypeInterner *context, Type::Pointer pointee_type) noexcept
+      : Type(Type::Kind::Slice, context),
         pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
@@ -48,11 +48,11 @@ public:
   auto operator=(const SliceType &other) noexcept -> SliceType & = default;
   auto operator=(SliceType &&other) noexcept -> SliceType      & = default;
 
-  static auto classof(const TypeInterface *type) noexcept -> bool {
-    return TypeInterface::Kind::Slice == type->GetKind();
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Slice == type->GetKind();
   }
 
-  [[nodiscard]] auto GetPointeeType() const noexcept -> TypeInterface::Pointer {
+  [[nodiscard]] auto GetPointeeType() const noexcept -> Type::Pointer {
     return pointee_type;
   }
 

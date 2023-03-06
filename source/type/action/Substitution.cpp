@@ -8,16 +8,15 @@
 
 namespace pink {
 class SubstitutionVisitor : public ConstVisitorResult<SubstitutionVisitor,
-                                                      TypeInterface::Pointer,
-                                                      TypeInterface::Pointer>,
+                                                      Type::Pointer,
+                                                      Type::Pointer>,
                             public ConstTypeVisitor {
 private:
-  TypeInterface::Pointer source_type;
-  TypeInterface::Pointer type_variable;
+  Type::Pointer source_type;
+  Type::Pointer type_variable;
 
 public:
-  SubstitutionVisitor(TypeInterface::Pointer source_type,
-                      TypeInterface::Pointer type_variable)
+  SubstitutionVisitor(Type::Pointer source_type, Type::Pointer type_variable)
       : ConstVisitorResult(),
         source_type(source_type),
         type_variable(type_variable) {}
@@ -50,8 +49,8 @@ void SubstitutionVisitor::Visit(
 }
 void SubstitutionVisitor::Visit(
     const FunctionType *function_type) const noexcept {
-  auto                               *context = function_type->GetContext();
-  std::vector<TypeInterface::Pointer> arg_types;
+  auto                      *context = function_type->GetContext();
+  std::vector<Type::Pointer> arg_types;
   arg_types.reserve(function_type->GetArguments().size());
   for (const auto *arg_type : function_type->GetArguments()) {
     arg_types.emplace_back(Compute(arg_type, this));
@@ -93,8 +92,8 @@ void SubstitutionVisitor::Visit(const SliceType *slice_type) const noexcept {
 }
 
 void SubstitutionVisitor::Visit(const TupleType *tuple_type) const noexcept {
-  auto                               *context = tuple_type->GetContext();
-  std::vector<TypeInterface::Pointer> element_types;
+  auto                      *context = tuple_type->GetContext();
+  std::vector<Type::Pointer> element_types;
   element_types.reserve(tuple_type->GetElements().size());
   for (const auto *element_type : tuple_type->GetElements()) {
     element_types.emplace_back(Compute(element_type, this));
@@ -106,10 +105,9 @@ void SubstitutionVisitor::Visit(const VoidType *void_type) const noexcept {
   result = void_type;
 }
 
-auto Substitution(TypeInterface::Pointer type_variable,
-                  TypeInterface::Pointer source_type,
-                  TypeInterface::Pointer target_type) noexcept
-    -> TypeInterface::Pointer {
+auto Substitution(Type::Pointer type_variable,
+                  Type::Pointer source_type,
+                  Type::Pointer target_type) noexcept -> Type::Pointer {
   SubstitutionVisitor visitor(source_type, type_variable);
   return visitor.Compute(target_type, &visitor);
 }

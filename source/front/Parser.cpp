@@ -262,7 +262,7 @@ auto Parser::ParseFunction(Environment &env) -> Parser::Result {
   arg = id ":" type
 */
 auto Parser::ParseArgument(Environment &env)
-    -> Outcome<std::pair<InternedString, TypeInterface::Pointer>, Error> {
+    -> Outcome<std::pair<InternedString, Type::Pointer>, Error> {
 
   if (!Peek(Token::Id)) {
     return Error(Error::Code::MissingArgName, location, std::string(text));
@@ -878,7 +878,7 @@ auto Parser::ParseTupleType(Environment &env) -> TypeResult {
   TRY(left_result, left, ParseType, env)
 
   if (token == Token::Comma) {
-    std::vector<TypeInterface::Pointer> element_types;
+    std::vector<Type::Pointer> element_types;
     element_types.push_back(left);
     do {
       nexttok(); // eat ','

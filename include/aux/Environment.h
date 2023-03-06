@@ -246,21 +246,20 @@ public:
     return type_interner.GetVoidType();
   }
 
-  auto GetFunctionType(TypeInterface::Pointer    ret_type,
+  auto GetFunctionType(Type::Pointer             ret_type,
                        FunctionType::Arguments &&arg_types)
       -> FunctionType::Pointer {
     return type_interner.GetFunctionType(ret_type, std::move(arg_types));
   }
 
-  auto GetPointerType(TypeInterface::Pointer pointee_type)
-      -> PointerType::Pointer {
+  auto GetPointerType(Type::Pointer pointee_type) -> PointerType::Pointer {
     return type_interner.GetPointerType(pointee_type);
   }
-  auto GetSliceType(TypeInterface::Pointer pointee_type) -> SliceType::Pointer {
+  auto GetSliceType(Type::Pointer pointee_type) -> SliceType::Pointer {
     return type_interner.GetSliceType(pointee_type);
   }
 
-  auto GetArrayType(std::size_t size, TypeInterface::Pointer element_type)
+  auto GetArrayType(std::size_t size, Type::Pointer element_type)
       -> ArrayType::Pointer {
     return type_interner.GetArrayType(size, element_type);
   }
@@ -294,9 +293,8 @@ public:
       -> std::optional<ScopeStack::Symbol> {
     return scopes.LookupLocal(symbol);
   }
-  void BindVariable(InternedString         symbol,
-                    TypeInterface::Pointer type,
-                    llvm::Value           *value) {
+  void
+  BindVariable(InternedString symbol, Type::Pointer type, llvm::Value *value) {
     scopes.Bind(symbol, type, value);
   }
 
@@ -304,9 +302,9 @@ public:
   auto RegisterBinop(InternedString         opr,
                      Precedence             precedence,
                      Associativity          associativity,
-                     TypeInterface::Pointer left_t,
-                     TypeInterface::Pointer right_t,
-                     TypeInterface::Pointer ret_t,
+                     Type::Pointer          left_t,
+                     Type::Pointer          right_t,
+                     Type::Pointer          ret_t,
                      BinopCodegen::Function fn_p) -> BinopTable::Binop {
     return binop_table
         .Register(opr, precedence, associativity, left_t, right_t, ret_t, fn_p);
@@ -317,9 +315,9 @@ public:
   }
 
   // exposing UnopTable's interface
-  auto RegisterBuiltinUnop(InternedString         unop,
-                           TypeInterface::Pointer argument_type,
-                           TypeInterface::Pointer return_type,
+  auto RegisterBuiltinUnop(InternedString        unop,
+                           Type::Pointer         argument_type,
+                           Type::Pointer         return_type,
                            UnopCodegen::Function generator) -> UnopTable::Unop {
     return unop_table.RegisterBuiltin(unop,
                                       argument_type,
@@ -327,11 +325,11 @@ public:
                                       generator);
   }
 
-  auto RegisterTemplateBuiltinUnop(InternedString         unop,
-                                   TypeInterface::Pointer type_variable,
-                                   TypeInterface::Pointer argument_type,
-                                   TypeInterface::Pointer return_type,
-                                   UnopCodegen::Function  function)
+  auto RegisterTemplateBuiltinUnop(InternedString        unop,
+                                   Type::Pointer         type_variable,
+                                   Type::Pointer         argument_type,
+                                   Type::Pointer         return_type,
+                                   UnopCodegen::Function function)
       -> UnopTable::Unop {
     return unop_table.RegisterTemplateBuiltin(unop,
                                               type_variable,

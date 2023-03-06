@@ -55,15 +55,14 @@ public:
   auto GetCharacterType() -> CharacterType::Pointer;
   auto GetVoidType() -> VoidType::Pointer;
 
-  auto GetFunctionType(TypeInterface::Pointer    ret_type,
+  auto GetFunctionType(Type::Pointer             ret_type,
                        FunctionType::Arguments &&arg_types)
       -> FunctionType::Pointer;
 
-  auto GetPointerType(TypeInterface::Pointer pointee_type)
-      -> PointerType::Pointer;
-  auto GetSliceType(TypeInterface::Pointer pointee_type) -> SliceType::Pointer;
+  auto GetPointerType(Type::Pointer pointee_type) -> PointerType::Pointer;
+  auto GetSliceType(Type::Pointer pointee_type) -> SliceType::Pointer;
 
-  auto GetArrayType(std::size_t size, TypeInterface::Pointer element_type)
+  auto GetArrayType(std::size_t size, Type::Pointer element_type)
       -> ArrayType::Pointer;
 
   auto GetTupleType(TupleType::Elements &&elements) -> TupleType::Pointer;

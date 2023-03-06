@@ -2,7 +2,7 @@
 #include "type/visitor/TypeVisitor.h"
 #include "visitor/VisitorResult.h"
 
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 
 namespace pink {
 /**
@@ -11,6 +11,5 @@ namespace pink {
  * @param type
  * @return std::string
  */
-[[nodiscard]] auto ToString(TypeInterface::Pointer type) noexcept
-    -> std::string;
+[[nodiscard]] auto ToString(const Type &type) noexcept -> std::string;
 } // namespace pink

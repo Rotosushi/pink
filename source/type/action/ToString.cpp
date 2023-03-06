@@ -3,32 +3,30 @@
 #include "type/All.h"
 
 namespace pink {
-class TypeToStringVisitor
-    : public ConstVisitorResult<TypeToStringVisitor,
-                                const TypeInterface::Pointer,
-                                std::string>,
-      public ConstTypeVisitor {
+class TypeToStringVisitor {
 public:
-  void Visit(const ArrayType *array_type) const noexcept override;
-  void Visit(const BooleanType *boolean_type) const noexcept override;
-  void Visit(const CharacterType *character_type) const noexcept override;
-  void Visit(const FunctionType *function_type) const noexcept override;
-  void Visit(const TypeVariable *identifier_type) const noexcept override;
-  void Visit(const IntegerType *integer_type) const noexcept override;
-  void Visit(const NilType *nil_type) const noexcept override;
-  void Visit(const PointerType *pointer_type) const noexcept override;
-  void Visit(const SliceType *slice_type) const noexcept override;
-  void Visit(const TupleType *tuple_type) const noexcept override;
-  void Visit(const VoidType *void_type) const noexcept override;
+  void operator()(const ArrayType &array_type) const noexcept;
+  void operator()(const BooleanType &boolean_type) const noexcept;
+  void operator()(const CharacterType &character_type) const noexcept;
+  void operator()(const FunctionType &function_type) const noexcept;
+  void operator()(const TypeVariable &identifier_type) const noexcept;
+  void operator()(const IntegerType &integer_type) const noexcept;
+  void operator()(const NilType &nil_type) const noexcept;
+  void operator()(const PointerType &pointer_type) const noexcept;
+  void operator()(const SliceType &slice_type) const noexcept;
+  void operator()(const TupleType &tuple_type) const noexcept;
+  void operator()(const VoidType &void_type) const noexcept;
 };
 
-void TypeToStringVisitor::Visit(const ArrayType *array_type) const noexcept {
-  assert(array_type != nullptr);
+void TypeToStringVisitor::operator()(
+    const ArrayType &array_type) const noexcept {
+  std::string result;
   result = "[";
   result += Compute(array_type->GetElementType(), this);
   result += "; ";
   result += std::to_string(array_type->GetSize());
   result += "]";
+  return result;
 }
 
 void TypeToStringVisitor::Visit(
@@ -116,8 +114,7 @@ void TypeToStringVisitor::Visit(const VoidType *void_type) const noexcept {
   result = "Void";
 }
 
-[[nodiscard]] auto ToString(const TypeInterface::Pointer type) noexcept
-    -> std::string {
+[[nodiscard]] auto ToString(const Type &type) noexcept -> std::string {
   assert(type != nullptr);
   TypeToStringVisitor visitor;
   return visitor.Compute(type, &visitor);

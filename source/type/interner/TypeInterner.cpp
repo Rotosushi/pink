@@ -14,7 +14,7 @@ auto TypeInterner::GetCharacterType() -> CharacterType::Pointer {
 }
 auto TypeInterner::GetVoidType() -> VoidType::Pointer { return &void_type; }
 
-auto TypeInterner::GetFunctionType(TypeInterface::Pointer    return_type,
+auto TypeInterner::GetFunctionType(Type::Pointer             return_type,
                                    FunctionType::Arguments &&arg_types)
     -> FunctionType::Pointer {
   auto possible =
@@ -31,7 +31,7 @@ auto TypeInterner::GetFunctionType(TypeInterface::Pointer    return_type,
   return result;
 }
 
-auto TypeInterner::GetPointerType(TypeInterface::Pointer pointee_type)
+auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
     -> PointerType::Pointer {
   auto possible = std::make_unique<PointerType>(this, pointee_type);
 
@@ -47,7 +47,7 @@ auto TypeInterner::GetPointerType(TypeInterface::Pointer pointee_type)
   return result;
 }
 
-auto TypeInterner::GetSliceType(TypeInterface::Pointer pointee_type)
+auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
     -> SliceType::Pointer {
   auto possible = std::make_unique<SliceType>(this, pointee_type);
 
@@ -62,8 +62,7 @@ auto TypeInterner::GetSliceType(TypeInterface::Pointer pointee_type)
   return result;
 }
 
-auto TypeInterner::GetArrayType(std::size_t            size,
-                                TypeInterface::Pointer member_type)
+auto TypeInterner::GetArrayType(std::size_t size, Type::Pointer member_type)
     -> ArrayType::Pointer {
   auto possible = std::make_unique<ArrayType>(this, size, member_type);
 

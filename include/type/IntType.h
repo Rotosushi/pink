@@ -11,20 +11,20 @@ namespace pink {
 /**
  * @brief Represents the Type Integer
  */
-class IntegerType : public TypeInterface {
+class IntegerType : public Type {
 public:
   using Pointer = IntegerType const *;
 
   IntegerType(TypeInterner *context) noexcept
-      : TypeInterface(TypeInterface::Kind::Integer, context) {}
+      : Type(Type::Kind::Integer, context) {}
   ~IntegerType() noexcept override                                   = default;
   IntegerType(const IntegerType &other) noexcept                     = default;
   IntegerType(IntegerType &&other) noexcept                          = default;
   auto operator=(const IntegerType &other) noexcept -> IntegerType & = default;
   auto operator=(IntegerType &&other) noexcept -> IntegerType      & = default;
 
-  static auto classof(const TypeInterface *type) noexcept -> bool {
-    return TypeInterface::Kind::Integer == type->GetKind();
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Integer == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

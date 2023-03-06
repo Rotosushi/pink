@@ -11,20 +11,20 @@ namespace pink {
 /**
  * @brief Represents the Type of Void
  */
-class VoidType : public TypeInterface {
+class VoidType : public Type {
 public:
   using Pointer = VoidType const *;
 
   VoidType(TypeInterner *context) noexcept
-      : TypeInterface(TypeInterface::Kind::Void, context) {}
+      : Type(Type::Kind::Void, context) {}
   ~VoidType() noexcept override                                = default;
   VoidType(const VoidType &other) noexcept                     = default;
   VoidType(VoidType &&other) noexcept                          = default;
   auto operator=(const VoidType &other) noexcept -> VoidType & = default;
   auto operator=(VoidType &&other) noexcept -> VoidType      & = default;
 
-  static auto classof(const TypeInterface *type) noexcept -> bool {
-    return TypeInterface::Kind::Void == type->GetKind();
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Void == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

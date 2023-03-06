@@ -457,10 +457,10 @@ static auto CodegenUnopAddressOf(const Unop           *unop,
   return right_result;
 }
 
-static auto CodegenUnopDereferencePointer(const Unop            *unop,
-                                          TypeInterface::Pointer right_type,
-                                          Environment           &env,
-                                          const CodegenVisitor  *visitor)
+static auto CodegenUnopDereferencePointer(const Unop           *unop,
+                                          Type::Pointer         right_type,
+                                          Environment          &env,
+                                          const CodegenVisitor *visitor)
     -> CodegenResult {
   // if we are dereferencing on the left of an assignment
   // expression, we want to suppress a single load instruction,

@@ -173,7 +173,7 @@ integer = [0-9]+
 class Parser {
 public:
   using Result     = Outcome<Ast::Pointer, Error>;
-  using TypeResult = Outcome<TypeInterface::Pointer, Error>;
+  using TypeResult = Outcome<Type::Pointer, Error>;
 
 private:
   std::istream *input_stream;
@@ -289,7 +289,7 @@ private:
    * which was parsed. if false, then the Error which was encountered.
    */
   auto ParseArgument(Environment &env)
-      -> Outcome<std::pair<InternedString, TypeInterface::Pointer>, Error>;
+      -> Outcome<std::pair<InternedString, Type::Pointer>, Error>;
   /**
    * @brief Parses Block expressions
    *

@@ -5,7 +5,6 @@
  */
 #pragma once
 #include <string>
-#include <variant>
 
 #include "aux/Outcome.h"
 
@@ -22,23 +21,10 @@ class TypeInterner;
  *
  * \note Type is pure virtual
  *
- * \todo using Type =
- * std::variant<
- *   ArrayType,
- *   BooleanType,
- *   CharacterType,
- *   FunctionType,
- *   IntegerType,
- *   NilType,
- *   PointerType,
- *   SliceType,
- *   TupleType,
- *   VoidType
- *   >
  */
-class TypeInterface {
+class Type {
 public:
-  using Pointer = TypeInterface const *;
+  using Pointer = Type const *;
 
   /**
    * @brief Type::Kind is defined so as to conform to LLVM style [RTTI]
@@ -66,18 +52,17 @@ private:
   TypeInterner       *context;
 
 public:
-  TypeInterface(Kind kind, TypeInterner *context) noexcept
+  Type(Kind kind, TypeInterner *context) noexcept
       : kind{kind},
         llvm_type{nullptr},
-        context(context) {
+        context{context} {
     assert(context != nullptr);
   }
-  virtual ~TypeInterface() noexcept                  = default;
-  TypeInterface(const TypeInterface &other) noexcept = default;
-  TypeInterface(TypeInterface &&other) noexcept      = default;
-  auto operator=(const TypeInterface &other) noexcept
-      -> TypeInterface                                            & = default;
-  auto operator=(TypeInterface &&other) noexcept -> TypeInterface & = default;
+  virtual ~Type() noexcept                             = default;
+  Type(const Type &other) noexcept                     = default;
+  Type(Type &&other) noexcept                          = default;
+  auto operator=(const Type &other) noexcept -> Type & = default;
+  auto operator=(Type &&other) noexcept -> Type      & = default;
 
   [[nodiscard]] auto GetKind() const -> Kind { return kind; }
   [[nodiscard]] auto GetContext() const -> TypeInterner * { return context; }

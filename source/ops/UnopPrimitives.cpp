@@ -33,10 +33,10 @@ auto UnopValueOfAddress(llvm::Value *term, [[maybe_unused]] Environment &env)
 }
 
 void InitializeUnopPrimitives(Environment &env) {
-  TypeInterface::Pointer integer_type      = env.GetIntType();
-  TypeInterface::Pointer boolean_type      = env.GetBoolType();
-  TypeInterface::Pointer type_variable     = env.GetTypeVariable("T");
-  TypeInterface::Pointer poly_pointer_type = env.GetPointerType(type_variable);
+  Type::Pointer integer_type      = env.GetIntType();
+  Type::Pointer boolean_type      = env.GetBoolType();
+  Type::Pointer type_variable     = env.GetTypeVariable("T");
+  Type::Pointer poly_pointer_type = env.GetPointerType(type_variable);
 
   const auto *neg  = env.InternOperator("-");
   const auto *bnot = env.InternOperator("!");

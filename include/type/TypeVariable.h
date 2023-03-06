@@ -5,7 +5,7 @@
 #include "aux/StringInterner.h"
 
 namespace pink {
-class TypeVariable : public TypeInterface {
+class TypeVariable : public Type {
 public:
   using Pointer = TypeVariable const *;
 
@@ -14,11 +14,11 @@ private:
 
 public:
   TypeVariable(TypeInterner *context, InternedString identifier) noexcept
-      : TypeInterface(TypeInterface::Kind::Identifier, context),
+      : Type(Type::Kind::Identifier, context),
         identifier(identifier) {}
 
-  static auto classof(TypeInterface const *type) noexcept -> bool {
-    return type->GetKind() == TypeInterface::Kind::Identifier;
+  static auto classof(Type const *type) noexcept -> bool {
+    return type->GetKind() == Type::Kind::Identifier;
   }
 
   [[nodiscard]] auto Identifier() const noexcept -> InternedString {

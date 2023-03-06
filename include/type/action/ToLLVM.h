@@ -5,6 +5,6 @@
 
 namespace pink {
 class Environment;
-[[nodiscard]] auto ToLLVM(TypeInterface::Pointer type,
-                          Environment           &env) noexcept -> llvm::Type *;
+[[nodiscard]] auto ToLLVM(Type::Pointer type, Environment &env) noexcept
+    -> llvm::Type *;
 } // namespace pink

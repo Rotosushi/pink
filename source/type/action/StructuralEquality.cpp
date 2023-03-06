@@ -8,11 +8,11 @@
 namespace pink {
 class StructuralEqualityVisitor
     : public ConstVisitorResult<StructuralEqualityVisitor,
-                                const TypeInterface::Pointer,
+                                const Type::Pointer,
                                 bool>,
       public ConstTypeVisitor {
 private:
-  TypeInterface::Pointer one;
+  Type::Pointer one;
 
 public:
   void Visit(const ArrayType *array_type) const noexcept override;
@@ -27,7 +27,7 @@ public:
   void Visit(const TupleType *tuple_type) const noexcept override;
   void Visit(const VoidType *void_type) const noexcept override;
 
-  StructuralEqualityVisitor(TypeInterface::Pointer one) noexcept
+  StructuralEqualityVisitor(Type::Pointer one) noexcept
       : ConstVisitorResult(),
         one(one) {}
   ~StructuralEqualityVisitor() noexcept override = default;
@@ -190,9 +190,8 @@ void StructuralEqualityVisitor::Visit(
   result                 = (other_type != nullptr);
 }
 
-[[nodiscard]] auto StructuralEquality(TypeInterface::Pointer one,
-                                      TypeInterface::Pointer two) noexcept
-    -> bool {
+[[nodiscard]] auto StructuralEquality(Type::Pointer one,
+                                      Type::Pointer two) noexcept -> bool {
   StructuralEqualityVisitor visitor(one);
   return visitor.Compute(two, &visitor);
 }

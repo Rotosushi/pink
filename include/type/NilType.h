@@ -10,20 +10,20 @@ namespace pink {
 /**
  * @brief Represents the Type of Nil
  */
-class NilType : public TypeInterface {
+class NilType : public Type {
 public:
   using Pointer = NilType const *;
 
   NilType(TypeInterner *context) noexcept
-      : TypeInterface(TypeInterface::Kind::Nil, context) {}
+      : Type(Type::Kind::Nil, context) {}
   ~NilType() noexcept override                               = default;
   NilType(const NilType &other) noexcept                     = default;
   NilType(NilType &&other) noexcept                          = default;
   auto operator=(const NilType &other) noexcept -> NilType & = default;
   auto operator=(NilType &&other) noexcept -> NilType      & = default;
 
-  static auto classof(const TypeInterface *type) noexcept -> bool {
-    return TypeInterface::Kind::Nil == type->GetKind();
+  static auto classof(const Type *type) noexcept -> bool {
+    return Type::Kind::Nil == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

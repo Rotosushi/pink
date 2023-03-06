@@ -2,7 +2,6 @@
 #include "type/TypeInterface.h"
 
 namespace pink {
-[[nodiscard]] auto StructuralEquality(TypeInterface::Pointer one,
-                                      TypeInterface::Pointer two) noexcept
-    -> bool;
+[[nodiscard]] auto StructuralEquality(Type::Pointer one,
+                                      Type::Pointer two) noexcept -> bool;
 } // namespace pink

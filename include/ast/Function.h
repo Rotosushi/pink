@@ -20,7 +20,7 @@ namespace pink {
  */
 class Function : public Ast {
 public:
-  using Argument       = std::pair<InternedString, TypeInterface::Pointer>;
+  using Argument       = std::pair<InternedString, Type::Pointer>;
   using Arguments      = std::vector<Argument>;
   using iterator       = Arguments::iterator;
   using const_iterator = Arguments::const_iterator;
