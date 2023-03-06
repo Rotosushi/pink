@@ -16,7 +16,7 @@
 
 #include "aux/Location.h" // pink::Location
 
-#include "type/Type.h" // pink::Type
+#include "type/TypeInterface.h" // pink::Type
 
 #include "ast/visitor/AstVisitor.h"
 
@@ -94,9 +94,9 @@ public:
   };
 
 private:
-  Kind                  kind;
-  Location              location;
-  mutable Type::Pointer cached_type;
+  Kind                           kind;
+  Location                       location;
+  mutable TypeInterface::Pointer cached_type;
 
 public:
   Ast(Kind kind, Location location) noexcept
@@ -116,19 +116,22 @@ public:
   }
 
   [[nodiscard]] auto GetCachedType() const noexcept
-      -> std::optional<Type::Pointer> {
+      -> std::optional<TypeInterface::Pointer> {
     if (cached_type == nullptr) {
       return {};
     }
     return cached_type;
   }
 
-  [[nodiscard]] auto GetCachedTypeOrAssert() const noexcept -> Type::Pointer {
+  [[nodiscard]] auto GetCachedTypeOrAssert() const noexcept
+      -> TypeInterface::Pointer {
     assert(cached_type != nullptr);
     return cached_type;
   }
 
-  void SetCachedType(Type::Pointer type) const noexcept { cached_type = type; }
+  void SetCachedType(TypeInterface::Pointer type) const noexcept {
+    cached_type = type;
+  }
 
   virtual void Accept(AstVisitor *visitor) noexcept            = 0;
   virtual void Accept(ConstAstVisitor *visitor) const noexcept = 0;

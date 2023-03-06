@@ -6,28 +6,28 @@
 #pragma once
 #include <vector>
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
  * @brief Represents the Type of a Function
  */
-class FunctionType : public Type {
+class FunctionType : public TypeInterface {
 public:
-  using Arguments      = std::vector<Type::Pointer>;
+  using Arguments      = std::vector<TypeInterface::Pointer>;
   using iterator       = Arguments::iterator;
   using const_iterator = Arguments::const_iterator;
   using Pointer        = FunctionType const *;
 
 private:
-  Type::Pointer return_type;
-  Arguments     arguments;
+  TypeInterface::Pointer return_type;
+  Arguments              arguments;
 
 public:
-  FunctionType(TypeInterner *context,
-               Type::Pointer return_type,
-               Arguments     arguments) noexcept
-      : Type(Type::Kind::Function, context),
+  FunctionType(TypeInterner          *context,
+               TypeInterface::Pointer return_type,
+               Arguments              arguments) noexcept
+      : TypeInterface(TypeInterface::Kind::Function, context),
         return_type(return_type),
         arguments(std::move(arguments)) {
     assert(return_type != nullptr);
@@ -39,10 +39,10 @@ public:
       -> FunctionType                                           & = default;
   auto operator=(FunctionType &&other) noexcept -> FunctionType & = default;
 
-  [[nodiscard]] auto GetReturnType() noexcept -> Type::Pointer {
+  [[nodiscard]] auto GetReturnType() noexcept -> TypeInterface::Pointer {
     return return_type;
   }
-  [[nodiscard]] auto GetReturnType() const noexcept -> Type::Pointer {
+  [[nodiscard]] auto GetReturnType() const noexcept -> TypeInterface::Pointer {
     return return_type;
   }
   [[nodiscard]] auto GetArguments() noexcept -> Arguments & {
@@ -67,8 +67,8 @@ public:
     return arguments.cend();
   }
 
-  static auto classof(const Type *type) noexcept -> bool {
-    return Type::Kind::Function == type->GetKind();
+  static auto classof(const TypeInterface *type) noexcept -> bool {
+    return TypeInterface::Kind::Function == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

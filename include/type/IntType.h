@@ -5,26 +5,26 @@
  */
 #pragma once
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
  * @brief Represents the Type Integer
  */
-class IntegerType : public Type {
+class IntegerType : public TypeInterface {
 public:
   using Pointer = IntegerType const *;
 
   IntegerType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Integer, context) {}
+      : TypeInterface(TypeInterface::Kind::Integer, context) {}
   ~IntegerType() noexcept override                                   = default;
   IntegerType(const IntegerType &other) noexcept                     = default;
   IntegerType(IntegerType &&other) noexcept                          = default;
   auto operator=(const IntegerType &other) noexcept -> IntegerType & = default;
   auto operator=(IntegerType &&other) noexcept -> IntegerType      & = default;
 
-  static auto classof(const Type *type) noexcept -> bool {
-    return Type::Kind::Integer == type->GetKind();
+  static auto classof(const TypeInterface *type) noexcept -> bool {
+    return TypeInterface::Kind::Integer == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

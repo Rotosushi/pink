@@ -33,9 +33,10 @@ auto UnopValueOfAddress(llvm::Value *term, [[maybe_unused]] Environment &env)
 }
 
 void InitializeUnopPrimitives(Environment &env) {
-  Type::Pointer integer_type         = env.GetIntType();
-  Type::Pointer boolean_type         = env.GetBoolType();
-  Type::Pointer integer_pointer_type = env.GetPointerType(integer_type);
+  TypeInterface::Pointer integer_type      = env.GetIntType();
+  TypeInterface::Pointer boolean_type      = env.GetBoolType();
+  TypeInterface::Pointer type_variable     = env.GetTypeVariable("T");
+  TypeInterface::Pointer poly_pointer_type = env.GetPointerType(type_variable);
 
   const auto *neg  = env.InternOperator("-");
   const auto *bnot = env.InternOperator("!");
@@ -44,13 +45,18 @@ void InitializeUnopPrimitives(Environment &env) {
 
   env.RegisterBuiltinUnop(neg, integer_type, integer_type, UnopIntNegate);
   env.RegisterBuiltinUnop(bnot, boolean_type, boolean_type, UnopBoolNegate);
-  env.RegisterBuiltinUnop(aov,
-                          integer_type,
-                          integer_pointer_type,
-                          UnopAddressOfValue);
-  env.RegisterBuiltinUnop(voa,
-                          integer_pointer_type,
-                          integer_type,
-                          UnopValueOfAddress);
+
+  // Address of Value has type [(T) -> Pointer<T>]
+  env.RegisterTemplateBuiltinUnop(aov,
+                                  type_variable,
+                                  type_variable,
+                                  poly_pointer_type,
+                                  UnopAddressOfValue);
+  // Value of Address has type [(Pointer<T>) -> T]
+  env.RegisterTemplateBuiltinUnop(voa,
+                                  type_variable,
+                                  poly_pointer_type,
+                                  type_variable,
+                                  UnopValueOfAddress);
 }
 } // namespace pink

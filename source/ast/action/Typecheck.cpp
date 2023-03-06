@@ -110,7 +110,9 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
     computed_argument_types.emplace_back(argument_type);
   }
 
-  auto cmp = [](Type::Pointer one, Type::Pointer two) { return one != two; };
+  auto cmp = [](TypeInterface::Pointer one, TypeInterface::Pointer two) {
+    return one != two;
+  };
   auto mismatch = FindBetween(function_type->begin(),
                               function_type->end(),
                               computed_argument_types.cbegin(),
@@ -139,7 +141,7 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
   first element of the Array.
 */
 void TypecheckVisitor::Visit(const Array *array) const noexcept {
-  std::vector<Type::Pointer> computed_element_types;
+  std::vector<TypeInterface::Pointer> computed_element_types;
   computed_element_types.reserve(array->GetElements().size());
 
   for (const auto &element : *array) {
@@ -430,7 +432,7 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
            this)
   env.PopScope();
 
-  std::vector<Type::Pointer> argument_types;
+  std::vector<TypeInterface::Pointer> argument_types;
   argument_types.reserve(function->GetArguments().size());
   auto GetType = [](const Function::Argument &argument) {
     return argument.second;
@@ -518,7 +520,7 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
   the elements of the Tuple Typecheck.
 */
 void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
-  std::vector<Type::Pointer> element_types;
+  std::vector<TypeInterface::Pointer> element_types;
   element_types.reserve(tuple->GetElements().size());
 
   for (const auto &element : *tuple) {
@@ -559,7 +561,7 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   }
   auto &literal = optional_literal.value();
 
-  auto right_type_result = [&]() -> Outcome<Type::Pointer, Error> {
+  auto right_type_result = [&]() -> Outcome<TypeInterface::Pointer, Error> {
     if (strcmp(unop->GetOp(), "*") == 0) {
       env.WithinDereferencePtr(true);
       auto right_result = Compute(unop->GetRight(), this);

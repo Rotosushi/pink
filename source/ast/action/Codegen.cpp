@@ -7,7 +7,7 @@
 #include "ast/visitor/AstVisitor.h"
 #include "visitor/VisitorResult.h"
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 #include "type/action/ToLLVM.h"
 #include "type/action/ToString.h"
 
@@ -457,10 +457,10 @@ static auto CodegenUnopAddressOf(const Unop           *unop,
   return right_result;
 }
 
-static auto CodegenUnopDereferencePointer(const Unop           *unop,
-                                          Type::Pointer         right_type,
-                                          Environment          &env,
-                                          const CodegenVisitor *visitor)
+static auto CodegenUnopDereferencePointer(const Unop            *unop,
+                                          TypeInterface::Pointer right_type,
+                                          Environment           &env,
+                                          const CodegenVisitor  *visitor)
     -> CodegenResult {
   // if we are dereferencing on the left of an assignment
   // expression, we want to suppress a single load instruction,

@@ -13,7 +13,7 @@
 #include "aux/Map.h"
 #include "aux/StringInterner.h"
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 #include "ops/PrecedenceAndAssociativity.h"
 
@@ -30,13 +30,13 @@ public:
                                     Environment &env);
 
 private:
-  Type::Pointer return_type;
-  Function      function;
+  TypeInterface::Pointer return_type;
+  Function               function;
 
 public:
   BinopCodegen() noexcept  = delete;
   ~BinopCodegen() noexcept = default;
-  BinopCodegen(Type::Pointer ret, Function fun) noexcept
+  BinopCodegen(TypeInterface::Pointer ret, Function fun) noexcept
       : return_type(ret),
         function(fun) {}
   BinopCodegen(const BinopCodegen &other) noexcept = default;
@@ -45,7 +45,9 @@ public:
       -> BinopCodegen                                           & = default;
   auto operator=(BinopCodegen &&other) noexcept -> BinopCodegen & = default;
 
-  [[nodiscard]] auto ReturnType() const -> Type::Pointer { return return_type; }
+  [[nodiscard]] auto ReturnType() const -> TypeInterface::Pointer {
+    return return_type;
+  }
   [[nodiscard]] auto operator()(llvm::Value *left,
                                 llvm::Value *right,
                                 Environment &env) const -> llvm::Value * {
@@ -55,7 +57,7 @@ public:
 
 class BinopOverloadSet {
 public:
-  using Key       = std::pair<Type::Pointer, Type::Pointer>;
+  using Key       = std::pair<TypeInterface::Pointer, TypeInterface::Pointer>;
   using Value     = BinopCodegen;
   using Overloads = Map<Key, Value>;
 
@@ -69,7 +71,7 @@ public:
     Overload(Overloads::Element element) noexcept
         : literal(element) {}
     auto ArgumentTypes() noexcept -> Key { return literal.Key(); }
-    auto ReturnType() noexcept -> Type::Pointer {
+    auto ReturnType() noexcept -> TypeInterface::Pointer {
       return literal.Value().ReturnType();
     }
     auto operator()(llvm::Value *left,
@@ -107,16 +109,16 @@ public:
     return associativity;
   }
 
-  auto Register(Type::Pointer          left_type,
-                Type::Pointer          right_type,
-                Type::Pointer          return_type,
+  auto Register(TypeInterface::Pointer left_type,
+                TypeInterface::Pointer right_type,
+                TypeInterface::Pointer return_type,
                 BinopCodegen::Function generator) -> Overload {
     return overloads.Register({left_type, right_type},
                               {return_type, generator});
   }
 
-  auto Lookup(Type::Pointer left_type, Type::Pointer right_type)
-      -> std::optional<Overload> {
+  auto Lookup(TypeInterface::Pointer left_type,
+              TypeInterface::Pointer right_type) -> std::optional<Overload> {
     auto found = overloads.Lookup({left_type, right_type});
     if (found) {
       return {found.value()};
@@ -152,9 +154,9 @@ public:
     [[nodiscard]] auto Associativity() const noexcept -> pink::Associativity {
       return element.Value().Associativity();
     }
-    auto Register(Type::Pointer          left_type,
-                  Type::Pointer          right_type,
-                  Type::Pointer          return_type,
+    auto Register(TypeInterface::Pointer left_type,
+                  TypeInterface::Pointer right_type,
+                  TypeInterface::Pointer return_type,
                   BinopCodegen::Function generator)
         -> BinopOverloadSet::Overload {
       return element.Value().Register(left_type,
@@ -163,7 +165,8 @@ public:
                                       generator);
     }
 
-    auto Lookup(Type::Pointer left_type, Type::Pointer right_type)
+    auto Lookup(TypeInterface::Pointer left_type,
+                TypeInterface::Pointer right_type)
         -> std::optional<BinopOverloadSet::Overload> {
       return element.Value().Lookup(left_type, right_type);
     }
@@ -187,9 +190,9 @@ public:
   auto Register(InternedString         op,
                 Precedence             precedence,
                 Associativity          associativity,
-                Type::Pointer          left_type,
-                Type::Pointer          right_type,
-                Type::Pointer          return_type,
+                TypeInterface::Pointer left_type,
+                TypeInterface::Pointer right_type,
+                TypeInterface::Pointer return_type,
                 BinopCodegen::Function generator) -> Binop {
     auto found = Lookup(op);
     if (found) {

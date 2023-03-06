@@ -5,6 +5,7 @@
  */
 #pragma once
 #include <string>
+#include <variant>
 
 #include "aux/Outcome.h"
 
@@ -35,9 +36,9 @@ class TypeInterner;
  *   VoidType
  *   >
  */
-class Type {
+class TypeInterface {
 public:
-  using Pointer = Type const *;
+  using Pointer = TypeInterface const *;
 
   /**
    * @brief Type::Kind is defined so as to conform to LLVM style [RTTI]
@@ -65,17 +66,18 @@ private:
   TypeInterner       *context;
 
 public:
-  Type(Kind kind, TypeInterner *context) noexcept
+  TypeInterface(Kind kind, TypeInterner *context) noexcept
       : kind{kind},
         llvm_type{nullptr},
         context(context) {
     assert(context != nullptr);
   }
-  virtual ~Type() noexcept                             = default;
-  Type(const Type &other) noexcept                     = default;
-  Type(Type &&other) noexcept                          = default;
-  auto operator=(const Type &other) noexcept -> Type & = default;
-  auto operator=(Type &&other) noexcept -> Type      & = default;
+  virtual ~TypeInterface() noexcept                  = default;
+  TypeInterface(const TypeInterface &other) noexcept = default;
+  TypeInterface(TypeInterface &&other) noexcept      = default;
+  auto operator=(const TypeInterface &other) noexcept
+      -> TypeInterface                                            & = default;
+  auto operator=(TypeInterface &&other) noexcept -> TypeInterface & = default;
 
   [[nodiscard]] auto GetKind() const -> Kind { return kind; }
   [[nodiscard]] auto GetContext() const -> TypeInterner * { return context; }

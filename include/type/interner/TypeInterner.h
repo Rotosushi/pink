@@ -9,17 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "type/ArrayType.h"
-#include "type/BoolType.h"
-#include "type/CharacterType.h"
-#include "type/FunctionType.h"
-#include "type/IntType.h"
-#include "type/NilType.h"
-#include "type/PointerType.h"
-#include "type/SliceType.h"
-#include "type/TupleType.h"
-#include "type/Type.h"
-#include "type/VoidType.h"
+#include "type/All.h"
 
 namespace pink {
 /**
@@ -40,30 +30,11 @@ private:
   // the only question is how? what is the key and what is the
   // value? the 'key' is truly the uniqueness of each type.
   std::vector<std::unique_ptr<FunctionType>> function_types;
-
-  /**
-   * @brief A vector of all the unique PointerTypes
-   *
-   */
-  std::vector<std::unique_ptr<PointerType>> pointer_types;
-
-  /**
-   * @brief A vector of all the unique ArrayTypes
-   *
-   */
-  std::vector<std::unique_ptr<ArrayType>> array_types;
-
-  /**
-   * @brief A vector of all the unique SliceTypes
-   *
-   */
-  std::vector<std::unique_ptr<SliceType>> slice_types;
-
-  /**
-   * @brief A vector of all the unique TupleTypes
-   *
-   */
-  std::vector<std::unique_ptr<TupleType>> tuple_types;
+  std::vector<std::unique_ptr<PointerType>>  pointer_types;
+  std::vector<std::unique_ptr<ArrayType>>    array_types;
+  std::vector<std::unique_ptr<SliceType>>    slice_types;
+  std::vector<std::unique_ptr<TupleType>>    tuple_types;
+  std::vector<std::unique_ptr<TypeVariable>> identifier_types;
 
 public:
   TypeInterner() noexcept
@@ -83,20 +54,23 @@ public:
   auto GetIntType() -> IntegerType::Pointer;
   auto GetCharacterType() -> CharacterType::Pointer;
   auto GetVoidType() -> VoidType::Pointer;
-  
-  auto GetFunctionType(Type::Pointer             ret_type,
+
+  auto GetFunctionType(TypeInterface::Pointer    ret_type,
                        FunctionType::Arguments &&arg_types)
       -> FunctionType::Pointer;
 
-  auto GetPointerType(Type::Pointer pointee_type) -> PointerType::Pointer;
-  auto GetSliceType(Type::Pointer pointee_type) -> SliceType::Pointer;
+  auto GetPointerType(TypeInterface::Pointer pointee_type)
+      -> PointerType::Pointer;
+  auto GetSliceType(TypeInterface::Pointer pointee_type) -> SliceType::Pointer;
 
-  auto GetArrayType(std::size_t size, Type::Pointer element_type)
+  auto GetArrayType(std::size_t size, TypeInterface::Pointer element_type)
       -> ArrayType::Pointer;
 
   auto GetTupleType(TupleType::Elements &&elements) -> TupleType::Pointer;
 
   auto GetTextType(std::size_t length) -> ArrayType::Pointer;
+
+  auto GetTypeVariable(InternedString identifier) -> TypeVariable::Pointer;
 };
 
 } // namespace pink

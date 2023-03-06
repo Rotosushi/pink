@@ -26,7 +26,7 @@ namespace pink {
  * no repeated copying of the intermediate strings.
  *
  * \todo This function does not currently indent blocks of code
- * according to their nested depth. and I feel that it should,
+ * according to their nested depth. and I feel that it should.
  * maybe we should write a formatter. (once we have the syntax
  * nailed down)
  *

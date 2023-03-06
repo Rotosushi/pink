@@ -1,5 +1,5 @@
 #pragma once
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
@@ -10,7 +10,8 @@ namespace pink {
  * @param target_type
  * @return Type::Pointer a Type representing the substituted Type.
  */
-auto Substitution(Type::Pointer type_variable,
-                  Type::Pointer source_type,
-                  Type::Pointer target_type) noexcept -> Type::Pointer;
+auto Substitution(TypeInterface::Pointer type_variable,
+                  TypeInterface::Pointer source_type,
+                  TypeInterface::Pointer target_type) noexcept
+    -> TypeInterface::Pointer;
 } // namespace pink

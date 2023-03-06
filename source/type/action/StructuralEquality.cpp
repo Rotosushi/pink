@@ -4,23 +4,22 @@
 #include "visitor/VisitorResult.h"
 
 #include "type/All.h"
-#include "type/Type.h"
 
 namespace pink {
 class StructuralEqualityVisitor
     : public ConstVisitorResult<StructuralEqualityVisitor,
-                                const Type::Pointer,
+                                const TypeInterface::Pointer,
                                 bool>,
       public ConstTypeVisitor {
 private:
-  Type::Pointer one;
+  TypeInterface::Pointer one;
 
 public:
   void Visit(const ArrayType *array_type) const noexcept override;
   void Visit(const BooleanType *boolean_type) const noexcept override;
   void Visit(const CharacterType *character_type) const noexcept override;
   void Visit(const FunctionType *function_type) const noexcept override;
-  void Visit(const IdentifierType *identifier_type) const noexcept override;
+  void Visit(const TypeVariable *identifier_type) const noexcept override;
   void Visit(const IntegerType *integer_type) const noexcept override;
   void Visit(const NilType *nil_type) const noexcept override;
   void Visit(const PointerType *pointer_type) const noexcept override;
@@ -28,7 +27,7 @@ public:
   void Visit(const TupleType *tuple_type) const noexcept override;
   void Visit(const VoidType *void_type) const noexcept override;
 
-  StructuralEqualityVisitor(Type::Pointer one) noexcept
+  StructuralEqualityVisitor(TypeInterface::Pointer one) noexcept
       : ConstVisitorResult(),
         one(one) {}
   ~StructuralEqualityVisitor() noexcept override = default;
@@ -109,9 +108,9 @@ void StructuralEqualityVisitor::Visit(
 }
 
 void StructuralEqualityVisitor::Visit(
-    const IdentifierType *identifier_type) const noexcept {
+    const TypeVariable *identifier_type) const noexcept {
   assert(identifier_type != nullptr);
-  const auto *other_identifier = llvm::dyn_cast<const IdentifierType>(one);
+  const auto *other_identifier = llvm::dyn_cast<const TypeVariable>(one);
   if (other_identifier == nullptr) {
     result = false;
     return;
@@ -191,8 +190,9 @@ void StructuralEqualityVisitor::Visit(
   result                 = (other_type != nullptr);
 }
 
-[[nodiscard]] auto StructuralEquality(Type::Pointer one,
-                                      Type::Pointer two) noexcept -> bool {
+[[nodiscard]] auto StructuralEquality(TypeInterface::Pointer one,
+                                      TypeInterface::Pointer two) noexcept
+    -> bool {
   StructuralEqualityVisitor visitor(one);
   return visitor.Compute(two, &visitor);
 }

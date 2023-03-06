@@ -5,26 +5,26 @@
  */
 #pragma once
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
  * @brief Represents the Type of Void
  */
-class VoidType : public Type {
+class VoidType : public TypeInterface {
 public:
   using Pointer = VoidType const *;
 
   VoidType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Void, context) {}
+      : TypeInterface(TypeInterface::Kind::Void, context) {}
   ~VoidType() noexcept override                                = default;
   VoidType(const VoidType &other) noexcept                     = default;
   VoidType(VoidType &&other) noexcept                          = default;
   auto operator=(const VoidType &other) noexcept -> VoidType & = default;
   auto operator=(VoidType &&other) noexcept -> VoidType      & = default;
 
-  static auto classof(const Type *type) noexcept -> bool {
-    return Type::Kind::Void == type->GetKind();
+  static auto classof(const TypeInterface *type) noexcept -> bool {
+    return TypeInterface::Kind::Void == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

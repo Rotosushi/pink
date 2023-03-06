@@ -4,26 +4,26 @@
  * @version 0.1
  */
 #pragma once
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
  * @brief Represents the Type of Nil
  */
-class NilType : public Type {
+class NilType : public TypeInterface {
 public:
   using Pointer = NilType const *;
 
   NilType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Nil, context) {}
+      : TypeInterface(TypeInterface::Kind::Nil, context) {}
   ~NilType() noexcept override                               = default;
   NilType(const NilType &other) noexcept                     = default;
   NilType(NilType &&other) noexcept                          = default;
   auto operator=(const NilType &other) noexcept -> NilType & = default;
   auto operator=(NilType &&other) noexcept -> NilType      & = default;
 
-  static auto classof(const Type *type) noexcept -> bool {
-    return Type::Kind::Nil == type->GetKind();
+  static auto classof(const TypeInterface *type) noexcept -> bool {
+    return TypeInterface::Kind::Nil == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

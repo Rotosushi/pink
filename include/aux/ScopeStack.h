@@ -4,7 +4,7 @@
 
 #include "llvm/IR/Value.h"
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 #include "aux/Map.h"
 #include "aux/StringInterner.h"
@@ -13,7 +13,7 @@ namespace pink {
 class ScopeStack {
 public:
   using Key   = InternedString;
-  using Value = std::pair<Type::Pointer, llvm::Value *>;
+  using Value = std::pair<TypeInterface::Pointer, llvm::Value *>;
   using Scope = Map<Key, Value>;
   using Stack = std::list<Scope>;
 
@@ -31,7 +31,9 @@ public:
     auto operator=(Symbol &&element) noexcept -> Symbol      & = default;
 
     auto Name() noexcept -> InternedString { return element.Key(); }
-    auto Type() noexcept -> Type::Pointer { return element.Value().first; }
+    auto Type() noexcept -> TypeInterface::Pointer {
+      return element.Value().first;
+    }
     auto Value() noexcept -> llvm::Value * { return element.Value().second; }
   };
 
@@ -77,7 +79,8 @@ public:
     return stack.front().Lookup(name);
   }
 
-  void Bind(InternedString name, Type::Pointer type, llvm::Value *value) {
+  void
+  Bind(InternedString name, TypeInterface::Pointer type, llvm::Value *value) {
     stack.front().Register(name, {type, value});
   }
 };

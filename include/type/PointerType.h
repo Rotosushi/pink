@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
@@ -38,16 +38,17 @@ namespace pink {
  *
  *
  */
-class PointerType : public Type {
+class PointerType : public TypeInterface {
 public:
   using Pointer = PointerType const *;
 
 private:
-  Type::Pointer pointee_type;
+  TypeInterface::Pointer pointee_type;
 
 public:
-  PointerType(TypeInterner *context, Type::Pointer pointee_type) noexcept
-      : Type(Type::Kind::Pointer, context),
+  PointerType(TypeInterner          *context,
+              TypeInterface::Pointer pointee_type) noexcept
+      : TypeInterface(TypeInterface::Kind::Pointer, context),
         pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
@@ -57,14 +58,14 @@ public:
   auto operator=(const PointerType &other) noexcept -> PointerType & = default;
   auto operator=(PointerType &&other) noexcept -> PointerType      & = default;
 
-  static auto classof(const Type::Pointer type) noexcept -> bool {
-    return Type::Kind::Pointer == type->GetKind();
+  static auto classof(const TypeInterface::Pointer type) noexcept -> bool {
+    return TypeInterface::Kind::Pointer == type->GetKind();
   }
 
-  [[nodiscard]] auto GetPointeeType() noexcept -> Type::Pointer {
+  [[nodiscard]] auto GetPointeeType() noexcept -> TypeInterface::Pointer {
     return pointee_type;
   }
-  [[nodiscard]] auto GetPointeeType() const noexcept -> Type::Pointer {
+  [[nodiscard]] auto GetPointeeType() const noexcept -> TypeInterface::Pointer {
     return pointee_type;
   }
 

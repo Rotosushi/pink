@@ -6,15 +6,15 @@
 #pragma once
 #include <vector>
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
  * @brief Represents the Type of a Tuple
  */
-class TupleType : public Type {
+class TupleType : public TypeInterface {
 public:
-  using Elements       = std::vector<Type::Pointer>;
+  using Elements       = std::vector<TypeInterface::Pointer>;
   using iterator       = Elements::iterator;
   using const_iterator = Elements::const_iterator;
   using Pointer        = TupleType const *;
@@ -24,7 +24,7 @@ private:
 
 public:
   TupleType(TypeInterner *context, Elements elements) noexcept
-      : Type(Type::Kind::Tuple, context),
+      : TypeInterface(TypeInterface::Kind::Tuple, context),
         elements(std::move(elements)) {}
   ~TupleType() noexcept override                                 = default;
   TupleType(const TupleType &other) noexcept                     = default;
@@ -52,8 +52,8 @@ public:
     return elements.cend();
   }
 
-  static auto classof(const Type *type) noexcept -> bool {
-    return Type::Kind::Tuple == type->GetKind();
+  static auto classof(const TypeInterface *type) noexcept -> bool {
+    return TypeInterface::Kind::Tuple == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

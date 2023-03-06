@@ -6,7 +6,7 @@
 #pragma once
 #include "llvm/IR/Value.h" // llvm::Value
 
-#include "type/Type.h"                // pink::Type
+#include "type/TypeInterface.h"       // pink::Type
 #include "type/action/Substitution.h" // pink::Substitution
 
 #include "aux/Map.h"            // pink::Map<K, V>
@@ -24,14 +24,14 @@ public:
   using Function = llvm::Value *(*)(llvm::Value *term, Environment &env);
 
 private:
-  Type::Pointer return_type;
-  Function      function;
+  TypeInterface::Pointer return_type;
+  Function               function;
 
 public:
   UnopCodegen() noexcept
       : return_type{nullptr},
         function{nullptr} {}
-  UnopCodegen(Type::Pointer return_type, Function function) noexcept
+  UnopCodegen(TypeInterface::Pointer return_type, Function function) noexcept
       : return_type{return_type},
         function{function} {}
   ~UnopCodegen() noexcept                                            = default;
@@ -40,7 +40,7 @@ public:
   auto operator=(const UnopCodegen &other) noexcept -> UnopCodegen & = default;
   auto operator=(UnopCodegen &&other) noexcept -> UnopCodegen      & = default;
 
-  [[nodiscard]] auto GetReturnType() const noexcept -> Type::Pointer {
+  [[nodiscard]] auto GetReturnType() const noexcept -> TypeInterface::Pointer {
     return return_type;
   }
 
@@ -53,7 +53,7 @@ public:
 
 class BuiltinUnopOverloadSet {
 public:
-  using Key       = Type::Pointer;
+  using Key       = TypeInterface::Pointer;
   using Value     = UnopCodegen;
   using Overloads = Map<Key, Value>;
 
@@ -67,7 +67,7 @@ public:
     [[nodiscard]] auto ArgumentType() const noexcept -> Key {
       return literal.Key();
     }
-    [[nodiscard]] auto ReturnType() const noexcept -> Type::Pointer {
+    [[nodiscard]] auto ReturnType() const noexcept -> TypeInterface::Pointer {
       return literal.Value().GetReturnType();
     }
     [[nodiscard]] auto operator()(llvm::Value *value,
@@ -99,11 +99,11 @@ public:
     return overloads.Size() == 0;
   }
 
-  virtual auto Register(Type::Pointer         argument_type,
-                        Type::Pointer         return_type,
-                        UnopCodegen::Function generator) -> Overload = 0;
+  virtual auto Register(TypeInterface::Pointer argument_type,
+                        TypeInterface::Pointer return_type,
+                        UnopCodegen::Function  generator) -> Overload = 0;
 
-  virtual auto Lookup(Type::Pointer argument_type)
+  virtual auto Lookup(TypeInterface::Pointer argument_type)
       -> std::optional<Overload> = 0;
 };
 
@@ -112,13 +112,14 @@ public:
  */
 class ConcreteBuiltinUnopOverloadSet : public BuiltinUnopOverloadSet {
 public:
-  auto Register(Type::Pointer         argument_type,
-                Type::Pointer         return_type,
-                UnopCodegen::Function generator) -> Overload override {
+  auto Register(TypeInterface::Pointer argument_type,
+                TypeInterface::Pointer return_type,
+                UnopCodegen::Function  generator) -> Overload override {
     return overloads.Register(argument_type, {return_type, generator});
   }
 
-  auto Lookup(Type::Pointer argument_type) -> std::optional<Overload> override {
+  auto Lookup(TypeInterface::Pointer argument_type)
+      -> std::optional<Overload> override {
     return overloads.Lookup(argument_type);
   }
 };
@@ -140,28 +141,29 @@ public:
   // of a given type, to the new type with no variables
   // within it.
 private:
-  UnopCodegen::Function function;
-  Type::Pointer         poly_return_type;
-  Type::Pointer         poly_argument_type;
-  Type::Pointer         type_variable;
+  UnopCodegen::Function  function;
+  TypeInterface::Pointer poly_return_type;
+  TypeInterface::Pointer poly_argument_type;
+  TypeInterface::Pointer type_variable;
 
 public:
-  TemplateBuiltinUnopOverloadSet(Type::Pointer         type_variable,
-                                 Type::Pointer         poly_return_type,
-                                 Type::Pointer         poly_argument_type,
-                                 UnopCodegen::Function function)
+  TemplateBuiltinUnopOverloadSet(TypeInterface::Pointer type_variable,
+                                 TypeInterface::Pointer poly_return_type,
+                                 TypeInterface::Pointer poly_argument_type,
+                                 UnopCodegen::Function  function)
       : function(function),
         poly_return_type(poly_return_type),
         poly_argument_type(poly_argument_type),
         type_variable(type_variable) {}
 
-  auto Register(Type::Pointer         argument_type,
-                Type::Pointer         return_type,
-                UnopCodegen::Function generator) -> Overload override {
+  auto Register(TypeInterface::Pointer argument_type,
+                TypeInterface::Pointer return_type,
+                UnopCodegen::Function  generator) -> Overload override {
     return overloads.Register(argument_type, {return_type, generator});
   }
 
-  auto Lookup(Type::Pointer argument_type) -> std::optional<Overload> override {
+  auto Lookup(TypeInterface::Pointer argument_type)
+      -> std::optional<Overload> override {
     auto found = overloads.Lookup(argument_type);
     if (found) {
       return found;
@@ -205,13 +207,13 @@ public:
     [[nodiscard]] auto Operator() const noexcept -> InternedString {
       return element.Key();
     }
-    auto Register(Type::Pointer         argument_type,
-                  Type::Pointer         return_type,
-                  UnopCodegen::Function generator)
+    auto Register(TypeInterface::Pointer argument_type,
+                  TypeInterface::Pointer return_type,
+                  UnopCodegen::Function  generator)
         -> BuiltinUnopOverloadSet::Overload {
       return element.Value()->Register(argument_type, return_type, generator);
     }
-    [[nodiscard]] auto Lookup(Type::Pointer argument_type)
+    [[nodiscard]] auto Lookup(TypeInterface::Pointer argument_type)
         -> std::optional<BuiltinUnopOverloadSet::Overload> {
       return element.Value()->Lookup(argument_type);
     }
@@ -229,10 +231,10 @@ public:
   auto operator=(UnopTable &&other) noexcept -> UnopTable      & = default;
 
   // NOLINTNEXTLINE(readability-identifier-length)
-  auto RegisterBuiltin(InternedString        op,
-                       Type::Pointer         argument_type,
-                       Type::Pointer         return_type,
-                       UnopCodegen::Function generator) -> Unop {
+  auto RegisterBuiltin(InternedString         op,
+                       TypeInterface::Pointer argument_type,
+                       TypeInterface::Pointer return_type,
+                       UnopCodegen::Function  generator) -> Unop {
     assert(op != nullptr);
     assert(argument_type != nullptr);
     assert(return_type != nullptr);
@@ -243,17 +245,18 @@ public:
       return found.value();
     }
 
-    Unop unop = table.Register(op, {});
+    Unop unop =
+        table.Register(op, std::make_unique<ConcreteBuiltinUnopOverloadSet>());
     unop.Register(argument_type, return_type, generator);
     return unop;
   }
 
   // NOLINTNEXTLINE(readability-identifier-length)
-  auto RegisterTemplateBuiltin(InternedString        op,
-                               Type::Pointer         type_variable,
-                               Type::Pointer         argument_type,
-                               Type::Pointer         return_type,
-                               UnopCodegen::Function function) -> Unop {
+  auto RegisterTemplateBuiltin(InternedString         op,
+                               TypeInterface::Pointer type_variable,
+                               TypeInterface::Pointer argument_type,
+                               TypeInterface::Pointer return_type,
+                               UnopCodegen::Function  function) -> Unop {
     assert(op != nullptr);
     assert(type_variable != nullptr);
     assert(argument_type != nullptr);

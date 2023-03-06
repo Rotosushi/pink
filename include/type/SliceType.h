@@ -1,6 +1,6 @@
 #pragma once
 
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
@@ -29,16 +29,16 @@ namespace pink {
  * work up a chain of calls.
  *
  */
-class SliceType : public Type {
+class SliceType : public TypeInterface {
 public:
   using Pointer = SliceType const *;
 
 private:
-  Type::Pointer pointee_type;
+  TypeInterface::Pointer pointee_type;
 
 public:
-  SliceType(TypeInterner *context, Type::Pointer pointee_type) noexcept
-      : Type(Type::Kind::Slice, context),
+  SliceType(TypeInterner *context, TypeInterface::Pointer pointee_type) noexcept
+      : TypeInterface(TypeInterface::Kind::Slice, context),
         pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
@@ -48,11 +48,11 @@ public:
   auto operator=(const SliceType &other) noexcept -> SliceType & = default;
   auto operator=(SliceType &&other) noexcept -> SliceType      & = default;
 
-  static auto classof(const Type *type) noexcept -> bool {
-    return Type::Kind::Slice == type->GetKind();
+  static auto classof(const TypeInterface *type) noexcept -> bool {
+    return TypeInterface::Kind::Slice == type->GetKind();
   }
 
-  [[nodiscard]] auto GetPointeeType() const noexcept -> Type::Pointer {
+  [[nodiscard]] auto GetPointeeType() const noexcept -> TypeInterface::Pointer {
     return pointee_type;
   }
 

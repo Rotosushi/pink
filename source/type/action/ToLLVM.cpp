@@ -8,7 +8,7 @@
 
 namespace pink {
 class ToLLVMVisitor : public ConstVisitorResult<ToLLVMVisitor,
-                                                const Type::Pointer,
+                                                const TypeInterface::Pointer,
                                                 llvm::Type *>,
                       public ConstTypeVisitor {
 private:
@@ -19,7 +19,7 @@ public:
   void Visit(const BooleanType *boolean_type) const noexcept override;
   void Visit(const CharacterType *character_type) const noexcept override;
   void Visit(const FunctionType *function_type) const noexcept override;
-  void Visit(const IdentifierType *identifier_type) const noexcept override;
+  void Visit(const TypeVariable *identifier_type) const noexcept override;
   void Visit(const IntegerType *integer_type) const noexcept override;
   void Visit(const NilType *nil_type) const noexcept override;
   void Visit(const PointerType *pointer_type) const noexcept override;
@@ -86,7 +86,7 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
   std::vector<llvm::Type *> llvm_argument_types(
       function_type->GetArguments().size());
 
-  auto transform_argument = [&](Type::Pointer type) -> llvm::Type * {
+  auto transform_argument = [&](TypeInterface::Pointer type) -> llvm::Type * {
     llvm::Type *llvm_type = Compute(type, this);
     if (llvm_type->isSingleValueType()) {
       return llvm_type;
@@ -116,8 +116,7 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
   result = llvm_type;
 }
 
-void ToLLVMVisitor::Visit(
-    const IdentifierType *identifier_type) const noexcept {
+void ToLLVMVisitor::Visit(const TypeVariable *identifier_type) const noexcept {
   auto found = env.LookupVariable(identifier_type->Identifier());
   assert(found);
   assert(found->Type() != nullptr);
@@ -170,7 +169,7 @@ void ToLLVMVisitor::Visit(const SliceType *slice_type) const noexcept {
 void ToLLVMVisitor::Visit(const TupleType *tuple_type) const noexcept {
   std::vector<llvm::Type *> llvm_element_types(
       tuple_type->GetElements().size());
-  auto transform_element = [&](Type::Pointer type) {
+  auto transform_element = [&](TypeInterface::Pointer type) {
     return Compute(type, this);
   };
   std::transform(tuple_type->begin(),
@@ -191,8 +190,8 @@ void ToLLVMVisitor::Visit(const VoidType *void_type) const noexcept {
   result = llvm_type;
 }
 
-[[nodiscard]] auto ToLLVM(Type::Pointer type, Environment &env) noexcept
-    -> llvm::Type * {
+[[nodiscard]] auto ToLLVM(TypeInterface::Pointer type,
+                          Environment           &env) noexcept -> llvm::Type * {
   auto cache = type->CachedLLVMType();
   if (cache) {
     return cache.value();

@@ -4,25 +4,25 @@
  * @version 0.1
  */
 #pragma once
-#include "type/Type.h"
+#include "type/TypeInterface.h"
 
 namespace pink {
 /**
  * @brief Represents the Type of an Array
  */
-class ArrayType : public Type {
+class ArrayType : public TypeInterface {
 public:
   using Pointer = ArrayType const *;
 
 private:
-  std::size_t   size;
-  Type::Pointer element_type;
+  std::size_t            size;
+  TypeInterface::Pointer element_type;
 
 public:
-  ArrayType(TypeInterner *context,
-            std::size_t   size,
-            Type::Pointer element_type) noexcept
-      : Type(Type::Kind::Array, context),
+  ArrayType(TypeInterner          *context,
+            std::size_t            size,
+            TypeInterface::Pointer element_type) noexcept
+      : TypeInterface(TypeInterface::Kind::Array, context),
         size(size),
         element_type(element_type) {
     assert(element_type != nullptr);
@@ -34,12 +34,12 @@ public:
   auto operator=(ArrayType &&other) noexcept -> ArrayType      & = default;
 
   [[nodiscard]] auto GetSize() const -> std::size_t { return size; }
-  [[nodiscard]] auto GetElementType() const -> Type::Pointer {
+  [[nodiscard]] auto GetElementType() const -> TypeInterface::Pointer {
     return element_type;
   }
 
-  static auto classof(const Type::Pointer type) noexcept -> bool {
-    return Type::Kind::Array == type->GetKind();
+  static auto classof(const TypeInterface::Pointer type) noexcept -> bool {
+    return TypeInterface::Kind::Array == type->GetKind();
   }
 
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }

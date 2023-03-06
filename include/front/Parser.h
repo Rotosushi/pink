@@ -10,8 +10,8 @@
 #include "aux/Error.h"   // pink::Error
 #include "aux/Outcome.h" // pink::Outcome<>
 
-#include "ast/Ast.h"   // pink::Ast
-#include "type/Type.h" // pink::Type
+#include "ast/Ast.h"            // pink::Ast
+#include "type/TypeInterface.h" // pink::Type
 
 #include "front/Lexer.h" // pink::Lexer pink::Token
 
@@ -173,7 +173,7 @@ integer = [0-9]+
 class Parser {
 public:
   using Result     = Outcome<Ast::Pointer, Error>;
-  using TypeResult = Outcome<Type::Pointer, Error>;
+  using TypeResult = Outcome<TypeInterface::Pointer, Error>;
 
 private:
   std::istream *input_stream;
@@ -289,7 +289,7 @@ private:
    * which was parsed. if false, then the Error which was encountered.
    */
   auto ParseArgument(Environment &env)
-      -> Outcome<std::pair<InternedString, Type::Pointer>, Error>;
+      -> Outcome<std::pair<InternedString, TypeInterface::Pointer>, Error>;
   /**
    * @brief Parses Block expressions
    *

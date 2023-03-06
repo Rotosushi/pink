@@ -308,6 +308,7 @@ add_executable(tests
   test/source/ast/Typecheck.cpp
 
   test/source/type/Type.cpp
+  test/source/type/TypeInterner.cpp
 
   test/source/aux/CLIOptions.cpp
   test/source/aux/Error.cpp
@@ -316,7 +317,6 @@ add_executable(tests
   test/source/aux/Outcome.cpp
   test/source/aux/StringInterner.cpp
   test/source/aux/ScopeStack.cpp
-  test/source/aux/TypeInterner.cpp
 
   test/source/front/Token.cpp
   test/source/front/Lexer.cpp
