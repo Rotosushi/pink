@@ -80,28 +80,7 @@ TEST_CASE("front/Parser", "[unit][front]") {
   /*
     We are getting memory leaks from the global structures
     that LLVM creates and we reference via the Environment class.
-    When the test exits normally and when the test exits with FAIL()
-    We need to rethink how we test Parse, Typecheck, and Codegen
-    so as to remove these leaks.
-    1) it does not work to call InitLLVM once at the start of main,
-      (though it seems like this would be the solution as these are
-      ManagedStatic objects that are leaking.)
-    2) it does not work to call InitLLVM in each test
 
-    do we still get leaks if we do not initialize the llvm::*
-    members? yes, the llvm::StringSet of the StringInterner leaks,
-    as does the Ast's which are constructed.
-    my biggest question is why do std containers not leak when
-    returning via FAIL and the llvm containers do seem to leak?
-    if it is an abnormal return where destructors are not called
-    then prsumably both would leak as destructors are not called.
-    and if it is a normal return where destructors are called
-    then why does llvm containers leak at all?
-    next question, does the main program leak with the same containers?
-    because presumably the llvm::InitLLVM class is working as intended
-    when we use it in the main program.
-    (namely init at begin of main, destructor at end of main cleans up
-    managed static objects.)
     so, it looks as if it is explicitly failing the test with the FAIL
     macro that is causing the leak. and not some code that I wrote.
     I don't know how I could resolve this unless there was some way to

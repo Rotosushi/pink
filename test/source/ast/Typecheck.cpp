@@ -29,7 +29,7 @@
   CHECK(term_type == (bind_term_type))
 
 TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
-  std::vector<std::string> source_lines = {
+  std::vector<std::string_view> source_lines = {
       "a := 108;\n",
       "b := true;\n",
       "c := false;\n",
@@ -38,17 +38,29 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
       "f := -36;\n",
       "g := 3 + 7;\n",
       "h := (f) + (12);\n",
+      "i := b = false;\n",
+      "j := (a, b, c, true, e);\n",
+      "k := ((a, e), (f, g));\n",
+      "l := [a, e, 2, f, g];\n",
+      "m := [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]];\n",
+      "n := ([1, 2, 3], [4, 5, 6]);\n",
+      "o := [(1, 2), (3, 4), (5, 6)];\n",
+      "p := j.0;\n",
+      "q := k.1;\n",
+      "r := k.0.1;\n",
+      "s := l[3];\n",
+      "t := m[0];\n",
+      "u := m[1][2];\n",
+      "v := n.0;\n",
+      "x := n.0[1];\n",
+      "y := o[1];\n",
+      "z := o[2].0;\n",
+      "aa := j.0 - j.4;\n",
+      "ab := k.0.1 + k.1.0;\n",
+      "ac := l[1] * l[2];\n",
+      "ad := m[0][3] / m[1][2];\n",
+      "ae := n.1[0] % n.0[1];\n",
       /*
-      "i := [a, e, 2, f, g];\n",
-      "j := (a, b, c, d, e);\n",
-      "k := b = (true, false);\n",
-      "l := b.0;\n",
-      "m := b.0.1;\n",
-      "n := b[0];\n",
-      "o := b[0][1];\n",
-      "p := b[0].1;\n",
-      "q := b.1[2];\n",
-      "r := b.1 + c[x];\n",
 
       "fn f () { nil; }\n",
       "fn f () { 42; }\n",
@@ -100,11 +112,71 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
 
-  // the term [f := -36;] is not typechecking.
-  // the error is unknown unop [-].
-  // when lookup of [-] occurs, the two InternedStrings 
-  // both hold "-", but with different addresses 
-  // which causes Lookup to fail.
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetBoolType()); }
+
+  {
+    auto tuple_type = env.GetTupleType({env.GetIntType(),
+                                        env.GetBoolType(),
+                                        env.GetBoolType(),
+                                        env.GetBoolType(),
+                                        env.GetIntType()});
+    BIND_TERM_TYPE_IS(tuple_type);
+  }
+
+  {
+    auto tuple_type = env.GetTupleType(
+        {env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+         env.GetTupleType({env.GetIntType(), env.GetIntType()})});
+    BIND_TERM_TYPE_IS(tuple_type);
+  }
+
+  { BIND_TERM_TYPE_IS(env.GetArrayType(5U, env.GetIntType())); }
+
+  {
+    BIND_TERM_TYPE_IS(
+        env.GetArrayType(2U, env.GetArrayType(5U, env.GetIntType())));
+  }
+
+  {
+    BIND_TERM_TYPE_IS(
+        env.GetTupleType({env.GetArrayType(3U, env.GetIntType()),
+                          env.GetArrayType(3U, env.GetIntType())}));
+  }
+
+  {
+    BIND_TERM_TYPE_IS(env.GetArrayType(
+        3U,
+        env.GetTupleType({env.GetIntType(), env.GetIntType()})));
+  }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetTupleType({env.GetIntType(), env.GetIntType()})); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetArrayType(5U, env.GetIntType())); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetArrayType(3U, env.GetIntType())); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetTupleType({env.GetIntType(), env.GetIntType()})); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }

@@ -11,5 +11,5 @@ namespace pink {
  * @param type
  * @return std::string
  */
-[[nodiscard]] auto ToString(const Type &type) noexcept -> std::string;
+[[nodiscard]] auto ToString(Type::Pointer type) noexcept -> std::string;
 } // namespace pink
