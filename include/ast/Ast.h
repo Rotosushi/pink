@@ -16,7 +16,7 @@
 
 #include "aux/Location.h" // pink::Location
 
-#include "type/TypeInterface.h" // pink::Type
+#include "type/Type.h" // pink::Type
 
 #include "ast/visitor/AstVisitor.h"
 

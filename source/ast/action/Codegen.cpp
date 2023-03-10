@@ -7,7 +7,7 @@
 #include "ast/visitor/AstVisitor.h"
 #include "visitor/VisitorResult.h"
 
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 #include "type/action/ToLLVM.h"
 #include "type/action/ToString.h"
 

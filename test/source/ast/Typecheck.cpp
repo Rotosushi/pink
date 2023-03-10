@@ -60,6 +60,10 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
       "ac := l[1] * l[2];\n",
       "ad := m[0][3] / m[1][2];\n",
       "ae := n.1[0] % n.0[1];\n",
+      "af := &a;\n",
+      "ag := &b;\n",
+      "ah := &d;\n",
+      "ai := *af;\n",
       /*
 
       "fn f () { nil; }\n",
@@ -172,6 +176,14 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
 
   { BIND_TERM_TYPE_IS(env.GetTupleType({env.GetIntType(), env.GetIntType()})); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+
+  { BIND_TERM_TYPE_IS(env.GetIntType()); }
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
 

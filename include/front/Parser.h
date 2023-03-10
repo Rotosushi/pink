@@ -11,7 +11,6 @@
 #include "aux/Outcome.h" // pink::Outcome<>
 
 #include "ast/Ast.h"            // pink::Ast
-#include "type/TypeInterface.h" // pink::Type
 
 #include "front/Lexer.h" // pink::Lexer pink::Token
 

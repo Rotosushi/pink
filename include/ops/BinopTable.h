@@ -13,7 +13,7 @@
 #include "aux/Map.h"
 #include "aux/StringInterner.h"
 
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 
 #include "ops/PrecedenceAndAssociativity.h"
 

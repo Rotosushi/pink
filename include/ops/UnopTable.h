@@ -6,7 +6,7 @@
 #pragma once
 #include "llvm/IR/Value.h" // llvm::Value
 
-#include "type/TypeInterface.h"       // pink::Type
+#include "type/Type.h"                // pink::Type
 #include "type/action/Substitution.h" // pink::Substitution
 
 #include "aux/Map.h"            // pink::Map<K, V>
@@ -63,7 +63,7 @@ public:
 
   public:
     Overload(Overloads::Element element) noexcept
-        : literal(element) {}
+        : literal{element} {}
     [[nodiscard]] auto ArgumentType() const noexcept -> Key {
       return literal.Key();
     }
@@ -108,7 +108,7 @@ public:
 };
 
 /**
- * @brief Represents a single unary operator
+ * @brief Represents a single unary operator's overload set
  */
 class ConcreteBuiltinUnopOverloadSet : public BuiltinUnopOverloadSet {
 public:
@@ -168,9 +168,9 @@ public:
     }
 
     auto const *mono_return_type =
-        Substitution(argument_type, type_variable, poly_return_type);
+        Substitution(type_variable, argument_type, poly_return_type);
     auto const *mono_argument_type =
-        Substitution(argument_type, type_variable, poly_argument_type);
+        Substitution(type_variable, argument_type, poly_argument_type);
     return overloads.Register(mono_argument_type, {mono_return_type, function});
   }
 };

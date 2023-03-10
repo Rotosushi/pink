@@ -1,54 +1,87 @@
+/**
+ * @file Type.h
+ * @brief Header for class Type
+ * @version 0.1
+ */
 #pragma once
-#include <variant>
+#include <optional>
 
-#include "type/All.h"
+#include "llvm/IR/Type.h"
+
+#include "type/visitor/TypeVisitor.h"
 
 namespace pink {
-// so how do we represent interned trees
-// of types with a type that is a variant?
-// the safest solution would be to have
-// the type interner hand out shared pointers.
-// and for the types themselves to hold shared
-// pointers. But that is way more overhead
-// compared to the current solution.
-// actually, the type interner could still work,
-// each type interning location must be a variant
-// however, we cannot intern the derived types directly.
-// (which adds some overhead)
-// what is breaking is that the type's that are returned
-// out of the "Get*Type" functions must be Type*
-// (pointers to the variant.) and as such there
-// would be no way of conviently querying the
-// state of the derived type in functions that
-// needed that information. Typecheck, and the Type
-// visitors.
-/*using Type = std::variant<ArrayType,
-                          BooleanType,
-                          CharacterType,
-                          FunctionType,
-                          TypeVariable,
-                          IntegerType,
-                          NilType,
-                          PointerType,
-                          SliceType,
-                          TupleType,
-                          VoidType>;
-*/
-// this is however closer to my idea
-// of compacting the tree's into a deque
-// like type. ideally each basic block becomes
-// a single vector allocation, where only the
-// other basic block terms point out of the
-// allocation, otherwise if a parent term has
-// children terms, they are allocated adjacent in
-// the vector. Unfortunately that idea is probably
-// far too convoluted to be much of a performance win,
-// especially given how much simpler a tree is
-// implementation wise. additionally there are concerns
-// in that you cannot rearrange the tree at all in this
-// configuration, in fact you have to know exactly how
-// large a basic block will be before you allocate it.
-// which adds another pass over the AST itself. Thus
-// there will need to be two abstract syntax tree types
-// maintained in lock-step, which is a lot of work.
+class Environment;
+class TypeInterner;
+
+/**
+ * @brief Represents an instance of a Type
+ *
+ * \note Type is pure virtual
+ *
+ */
+class Type {
+public:
+  using Pointer = Type const *;
+
+  /**
+   * @brief Type::Kind is defined so as to conform to LLVM style [RTTI]
+   *
+   * [RTTI]: https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html "RTTI"
+   *
+   */
+  enum class Kind {
+    Array,
+    Boolean,
+    Character,
+    Function,
+    Identifier,
+    Integer,
+    Nil,
+    Pointer,
+    Slice,
+    Tuple,
+    Void,
+  };
+
+private:
+  Kind                kind;
+  mutable llvm::Type *llvm_type;
+  TypeInterner       *context;
+
+public:
+  Type(Kind kind, TypeInterner *context) noexcept
+      : kind{kind},
+        llvm_type{nullptr},
+        context{context} {
+    assert(context != nullptr);
+  }
+  virtual ~Type() noexcept                             = default;
+  Type(const Type &other) noexcept                     = default;
+  Type(Type &&other) noexcept                          = default;
+  auto operator=(const Type &other) noexcept -> Type & = default;
+  auto operator=(Type &&other) noexcept -> Type      & = default;
+
+  [[nodiscard]] auto GetKind() const -> Kind { return kind; }
+  [[nodiscard]] auto GetContext() const -> TypeInterner * { return context; }
+
+  void SetCachedLLVMType(llvm::Type *llvm_type) const noexcept {
+    this->llvm_type = llvm_type;
+  }
+
+  auto CachedLLVMType() const noexcept -> std::optional<llvm::Type *> {
+    if (llvm_type == nullptr) {
+      return {};
+    }
+    return {llvm_type};
+  }
+
+  auto CachedLLVMTypeOrAssert() const noexcept -> llvm::Type * {
+    assert(llvm_type != nullptr);
+    return llvm_type;
+  }
+
+  virtual void Accept(TypeVisitor *vistor) noexcept             = 0;
+  virtual void Accept(ConstTypeVisitor *visitor) const noexcept = 0;
+};
 } // namespace pink

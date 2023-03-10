@@ -1,6 +1,6 @@
 #pragma once
 
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 
 #include "aux/StringInterner.h"
 

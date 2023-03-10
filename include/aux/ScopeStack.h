@@ -4,7 +4,7 @@
 
 #include "llvm/IR/Value.h"
 
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 
 #include "aux/Map.h"
 #include "aux/StringInterner.h"

@@ -1,8 +1,6 @@
 #pragma once
 #include "ast/Ast.h"
 
-#include "type/TypeInterface.h"
-
 #include "aux/Error.h"
 #include "aux/Outcome.h"
 

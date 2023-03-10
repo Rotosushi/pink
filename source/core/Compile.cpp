@@ -14,47 +14,6 @@
 
 #include "llvm/Support/TargetSelect.h"
 
-/*
-#NOTE: 2/12/2023
-as of today the AddressSanitizer has detected memory leaks in our program.
-luckily all of them are from memory only meant to be cleaned up right before
-our process exits. Because according to the output of LeakSanitizer:
-all of them appear to come from the allocations presumably from these
-llvm::Initialize* functions. that is, the memory leaks are coming from llvm
-global state objects, holding information about llvm::X86TargetMachine,
-llvm::TargetMachine, createX86MCInstrInfo, llvm::DataLayout::parseSpecifier,
-std::vector<llvm::MCCFIInstruction ...>, createX86MCRegisterInfo,
-llvm::MCSubtargetInfo::InitMCProcessorInfo,
-llvm::X86TargetMachine::X86TargetMachine(), llvm::DenseMap<llvm::MCRegister,
-int, ...>, llvm::RegisterTargetMachine<llvm::X86TargetMachine>.
-Which looks like the kind of global data that would be constructed to describe
-the Native Assembly Target.
-(which isn't going to be used unless/until we emit Assembly code.)
-
-assumptions:
-I assumed that llvm::InitLLVM cleaned up these objects on destruction,
-as per the comment in:
-_/llvm-project/llvm/include/Support/InitLLVM.h
-"InitLLVM calls llvm_shutdown() on destruction, which cleans up
- ManagedStatic objects."
-
-preliminary research:
-_/llvm-project/llvm/lib/Support/InitLLVM.cpp
-"InitLLVM::~InitLLVM() { llvm_shutdown(); }"
-
-_/llvm-projects/llvm/lib/Support/ManagedStatic.cpp
-"void llvm::llvm_shutdown() {
-  while (StaticList)
-    StaticList->destroy();
-}"
-
-and StaticList::destroy also looks like it works,
-so clearly none of these parts are the problem.
-
-Is there any other function which I am failing to call?
-
-*/
-
 namespace pink {
 static auto CompileEnvironment(std::ostream &out,
                                std::ostream &err,

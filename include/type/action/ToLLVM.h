@@ -1,5 +1,5 @@
 #pragma once
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 
 #include "llvm/IR/Type.h"
 

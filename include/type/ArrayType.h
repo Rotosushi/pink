@@ -4,7 +4,7 @@
  * @version 0.1
  */
 #pragma once
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 
 namespace pink {
 /**

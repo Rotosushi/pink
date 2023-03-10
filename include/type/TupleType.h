@@ -6,7 +6,7 @@
 #pragma once
 #include <vector>
 
-#include "type/TypeInterface.h"
+#include "type/Type.h"
 
 namespace pink {
 /**
