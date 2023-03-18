@@ -1,3 +1,20 @@
+// Copyright (C) 2023 cadence
+//
+// This file is part of pink.
+//
+// pink is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// pink is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with pink.  If not, see <http://www.gnu.org/licenses/>.
+
 #include <random>
 #include <sstream>
 
@@ -525,12 +542,18 @@ void Environment::StoreArray(llvm::StructType             *array_type,
                              llvm::ArrayRef<llvm::Value *> init) {
   auto *buffer_type  = array_type->getTypeAtIndex(1);
   auto  num_elements = buffer_type->getArrayNumElements();
+  auto *element_type = buffer_type->getArrayElementType();
   for (std::size_t index = 0; index < num_elements; ++index) {
-    StoreArrayElement(array_type,
-                      init[index],
-                      array_ptr,
-                      ConstantInteger(index));
+    auto *element = UncheckedPtrToArrayElement(array_type, array_ptr, index);
+    Store(element_type, init[index], element);
   }
+  StoreArraySize(array_type, array_ptr, ConstantSize(num_elements));
+}
+
+void Environment::StoreArraySize(llvm::StructType *array_type,
+                                 llvm::Value      *array_ptr,
+                                 llvm::Value      *size) {
+  StoreStructElement(array_type, size, array_ptr, 0);
 }
 
 auto Environment::ArraySubscript(llvm::StructType *array_type,
@@ -546,6 +569,15 @@ auto Environment::PtrToArrayElement(llvm::StructType *array_type,
   auto [size, buffer] = LoadArray(array_type, ptr);
   BoundsCheck(size, index);
   return CreateInBoundsGEP(buffer_type, buffer, {index});
+}
+
+auto Environment::UncheckedPtrToArrayElement(llvm::StructType *array_type,
+                                             llvm::Value      *array_ptr,
+                                             std::size_t       index)
+    -> llvm::Value * {
+  auto *buffer_type = array_type->getTypeAtIndex(1);
+  auto *buffer      = ArrayBuffer(array_type, array_ptr);
+  return CreateConstInBoundsGEP2_64(buffer_type, buffer, 0, index);
 }
 
 auto Environment::LoadArrayElement(llvm::StructType *array_type,

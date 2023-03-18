@@ -1,3 +1,20 @@
+// Copyright (C) 2023 cadence
+//
+// This file is part of pink.
+//
+// pink is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// pink is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with pink.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "catch2/catch_test_macros.hpp"
 
 #include "ast/action/Typecheck.h"
@@ -30,27 +47,36 @@
 
 TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
   std::vector<std::string_view> source_lines = {
+      // basic terms
       "a := 108;\n",
       "b := true;\n",
-      "c := false;\n",
+      "c := (false);\n",
       "d := nil;\n",
       "e := a;\n",
       "f := -36;\n",
+      // binops
       "g := 3 + 7;\n",
       "h := (f) + (12);\n",
+      // assingment
       "i := b = false;\n",
+      // tuple
       "j := (a, b, c, true, e);\n",
       "k := ((a, e), (f, g));\n",
+      // array
       "l := [a, e, 2, f, g];\n",
       "m := [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]];\n",
+      // tuple-array mixed
       "n := ([1, 2, 3], [4, 5, 6]);\n",
       "o := [(1, 2), (3, 4), (5, 6)];\n",
+      // dot access
       "p := j.0;\n",
       "q := k.1;\n",
       "r := k.0.1;\n",
+      // subscript access
       "s := l[3];\n",
       "t := m[0];\n",
       "u := m[1][2];\n",
+      // dot-subscript mixed access
       "v := n.0;\n",
       "x := n.0[1];\n",
       "y := o[1];\n",
@@ -60,9 +86,11 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
       "ac := l[1] * l[2];\n",
       "ad := m[0][3] / m[1][2];\n",
       "ae := n.1[0] % n.0[1];\n",
+      // address of
       "af := &a;\n",
       "ag := &b;\n",
       "ah := &d;\n",
+      // value at
       "ai := *af;\n",
       /*
 
@@ -174,7 +202,7 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
   { BIND_TERM_TYPE_IS(env.GetArrayType(3U, env.GetIntType())); }
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
-
+  // "y := o[1];\n" -> (Integer, Integer)
   { BIND_TERM_TYPE_IS(env.GetTupleType({env.GetIntType(), env.GetIntType()})); }
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
@@ -189,9 +217,11 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
 
-  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+  { BIND_TERM_TYPE_IS(env.GetPointerType(env.GetIntType())); }
 
-  { BIND_TERM_TYPE_IS(env.GetIntType()); }
+  { BIND_TERM_TYPE_IS(env.GetPointerType(env.GetBoolType())); }
+
+  { BIND_TERM_TYPE_IS(env.GetPointerType(env.GetNilType())); }
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
 }

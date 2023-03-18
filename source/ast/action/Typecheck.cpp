@@ -1,3 +1,20 @@
+// Copyright (C) 2023 cadence
+// 
+// This file is part of pink.
+// 
+// pink is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// pink is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with pink.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "ast/action/Typecheck.h"
 #include "ast/action/ToString.h"
 
@@ -15,7 +32,7 @@
 /*
   These are semi experimental, thinking about how
   to implement a language feature which would give
-  these semantics with a builtin type.
+  these semantics with a builtin type. i.e. rust Result<T> and ? operator
 */
 
 #define TRY(outcome, variable, function, ...)                                  \
@@ -536,17 +553,6 @@ void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
   given the type of it's right hand side expression as argument
   if and only if the unop has an implementation for the type of
   the right expression
-
-  \todo refactor unary operator "*" and "&" to their own Ast nodes,
-  just as dot "." is represented with 'Ast::Dot'.
-  the reason being is their extra invariants; as of now "*" and "&"
-  are being implemented within Ast::Unop. This is (I think) confusing
-  the implementation of Ast::Unop, where it is doing more than simply
-  checking the invariants of 'normal' unops. This is reflected (I think)
-  in the implementation of "*" and "&", their codegen functions,
-  which both simply return what they were passed without modification.
-  The entire funcionality of the operation is just in changing how we
-  treat the pointer to some allocation.
 */
 void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   auto optional_literal = env.LookupUnop(unop->GetOp());

@@ -1,3 +1,20 @@
+// Copyright (C) 2023 cadence
+//
+// This file is part of pink.
+//
+// pink is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// pink is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with pink.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * @file Environment.h
  * @brief Header for class Environment
@@ -36,9 +53,9 @@ namespace pink {
  * another benefiet is that it provides a convienent place for placing the
  * initialization work of the llvm data structures.
  *
- * #TODO: this class probably does too much, but how do we reduce it in size?
- *  we very much need all of these members working together to run the process
- *  of compilation.
+ * #TODO: this class probably does too much, so how do we reduce it in size?
+ *  we very much need all of these members working together to typecheck an ast
+ *  and to generate code from an ast.
  *
  * #TODO: Environment -> CompilationUnit (because thats what it is)
  */
@@ -376,7 +393,7 @@ public:
                            llvm::Value *destination);
 
   // "methods" for builtin types
-  // #TODO: Store* "methods"
+  // text literals
   auto LoadText(llvm::StructType *text_type, llvm::Value *text_ptr)
       -> std::pair<llvm::Value *, llvm::Value *>;
   auto LoadTextSize(llvm::StructType *text_type, llvm::Value *text_ptr)
@@ -386,7 +403,7 @@ public:
   auto StoreText(llvm::StructType             *text_type,
                  llvm::Value                  *text_ptr,
                  llvm::ArrayRef<llvm::Value *> init);
-
+  // slices
   // A slice could be two pointers, size would be equal to
   // the difference divided by the element type. But then
   // how would you walk backwards, you still need the size
@@ -405,11 +422,15 @@ public:
                   llvm::Value      *size,
                   llvm::Value      *offset,
                   llvm::Value      *ptr);
+  auto PtrToSliceElement(llvm::StructType *slice_type,
+                         llvm::Type       *element_type,
+                         llvm::Value      *slice_ptr,
+                         llvm::Value      *index) -> llvm::Value *;
   auto SliceSubscript(llvm::StructType *slice_type,
                       llvm::Type       *element_type,
                       llvm::Value      *slice_ptr,
                       llvm::Value      *index) -> llvm::Value *;
-
+  // arrays
   auto LoadArray(llvm::StructType *array_type, llvm::Value *array_ptr)
       -> std::pair<llvm::Value *, llvm::Value *>;
   auto LoadArraySize(llvm::StructType *array_type, llvm::Value *array_ptr)
@@ -419,15 +440,12 @@ public:
   void StoreArray(llvm::StructType             *array_type,
                   llvm::Value                  *array_ptr,
                   llvm::ArrayRef<llvm::Value *> init);
-  auto ArraySubscript(llvm::StructType *array_type,
+  void StoreArraySize(llvm::StructType *array_type,
                       llvm::Value      *array_ptr,
-                      llvm::Value      *index) -> llvm::Value *;
-
-  auto PtrToSliceElement(llvm::StructType *slice_type,
-                         llvm::Type       *element_type,
-                         llvm::Value      *slice_ptr,
-                         llvm::Value      *index) -> llvm::Value *;
-
+                      llvm::Value      *size);
+  auto UncheckedPtrToArrayElement(llvm::StructType *array_type,
+                                  llvm::Value      *array_ptr,
+                                  std::size_t       index) -> llvm::Value *;
   auto PtrToArrayElement(llvm::StructType *array_type,
                          llvm::Value      *ptr,
                          llvm::Value      *index) -> llvm::Value *;
@@ -438,7 +456,10 @@ public:
                          llvm::Value      *source,
                          llvm::Value      *ptr,
                          llvm::Value      *index);
-
+  auto ArraySubscript(llvm::StructType *array_type,
+                      llvm::Value      *array_ptr,
+                      llvm::Value      *index) -> llvm::Value *;
+  // structs
   auto PtrToStructElement(llvm::StructType *struct_type,
                           llvm::Value      *ptr,
                           unsigned          index) -> llvm::Value *;

@@ -1,3 +1,20 @@
+// Copyright (C) 2023 cadence
+//
+// This file is part of pink.
+//
+// pink is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// pink is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with pink.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "ast/action/Codegen.h"
 #include "ast/action/ToString.h"
 #include "ast/action/Typecheck.h"
@@ -100,39 +117,11 @@ void CodegenVisitor::Visit(const Array *array) const noexcept {
 
   auto *array_alloca = env.CreateAlloca(array_layout_type);
 
-  auto *array_size      = env.ConstantInteger(array->Size());
-  auto *array_size_type = env.LLVMSizeType();
-  auto *array_elements_type =
-      llvm::cast<llvm::ArrayType>(array_layout_type->getTypeAtIndex(1U));
-  auto *element_type = array_elements_type->getArrayElementType();
-
-  auto *array_size_pointer = env.CreateConstInBoundsGEP2_32(array_layout_type,
-                                                            array_alloca,
-                                                            0,
-                                                            0,
-                                                            "array_size");
-
-  auto *array_elements_pointer =
-      env.CreateConstInBoundsGEP2_32(array_layout_type,
-                                     array_alloca,
-                                     0,
-                                     0,
-                                     "array_elements");
-
-  unsigned index = 0;
-  for (const auto &element : *array) {
-    auto *element_value = Compute(element, this);
-    assert(element_value != nullptr);
-    auto *element_pointer =
-        env.CreateConstInBoundsGEP2_64(array_elements_type,
-                                       array_elements_pointer,
-                                       0,
-                                       index);
-    env.Store(element_type, element_value, element_pointer);
-    index += 1;
+  std::vector<llvm::Value *> elements{};
+  for (auto const &element : *array) {
+    elements.emplace_back(Compute(element, this));
   }
-
-  env.Store(array_size_type, array_size, array_size_pointer);
+  env.StoreArray(array_layout_type, array_alloca, elements);
 
   result = array_alloca;
 }
@@ -170,6 +159,8 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
   env.WithinBindExpression(false);
 
   // #RULE we must allocate stack space for singleValueType()s
+  // as these types are not allocated when literals appear in 
+  // expressions.
   // #RULE We must not allocate space for non-singleValueType()s
   // as the Codegen visitor for non-singleValueType() literals
   // allocates stack space for them.
