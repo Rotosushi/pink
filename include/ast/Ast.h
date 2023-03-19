@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -55,6 +55,68 @@ namespace pink {
   Ast?
   mutability
 
+  we really want to subsume the usages of OnTHeLHSOfAssignment
+  WithinAddressOf, WithinDereferencePtr, and WithinBindExpression.
+  And since these flags are associated with the Ast itself
+  it would be cleaner and clearer to communicate the information
+  that needs to be communicated by those flags by way of these
+  flags, due to the weirdness of a boolean being manipulated by
+  hand within a given tree walking function.
+
+  the first piece of the puzzle is to notice that
+  the real purpose of the above flags is to control the emission
+  of loads and stores during codegeneration.
+  we know a few facts about loads.
+  1) we can only load values which are stored in memory
+  2) we can only load values which are <= sizeof a single register.
+      (llvm::Type::isSingleValueType() checks this.)
+
+  we know a few facts about stores.
+  1) we can only store values to memory
+  2) we can only store values which are <= sizeof a single register.
+
+  the second piece of this puzzle is what values exist during
+  compilation?
+  1) literals
+    literals are llvm::Constant*s. they do not live in memory or registers, they
+    exist as compile time constants. thus they cannot be loaded and can be
+  stored 2) values
+    -) values are either a register (a) or a memory address in a register (b).
+    a) cannot be loaded, can be stored
+    b) can be loaded, can be stored
+
+  the third piece of the puzzle is value semantics.
+   1) when we say "a := 100;" we mean that a is a memory loaction
+    of type Integer which is holding the value 100.
+    (allocate a; store 100)
+
+   2) when we say "b := a;" we mean that b is a memory location
+    of type Integer which is holding the exact value held in
+    the memory location a. 
+    (allocate b; store (load a))
+
+   3) when we say "c := a + b;" we mean that c is a memory location
+    of type Integer which is holding the sum of the values at memory
+    locations a and b. 
+    (allocate c; store (load a + load b))
+    ((this argument holds for any Integer binop))
+
+   4) when we say "a = c" we mean that the memory location referenced
+    by a is assigned the value of the memory location referenced by c.
+    (store (load c))
+
+   5) when we say "f(a)" we mean that the value held in the memory location
+    referenced by a is passed to f, not a itself
+    (allocate parameter, store (load a))
+
+   6) when we say "(a, ...)" we mean that the value held in the memory location
+    referenced by a is stored within the tuple itself, not a itself.
+    (allocate tuple, store (load a))
+
+   7) when we say "[a, ...]" we mean that the value held in the memory location 
+    referenced by a is stored within the array itself, not a itself.
+    (allocate array, store (load a))
+   
 */
 class AstFlags {
 public:

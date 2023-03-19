@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -107,6 +107,11 @@ static auto ParseAndTypecheckInputFile(std::ostream &err, Environment &env)
     // about a better way to handle this
     // issue of symbol redefinition between
     // Typechecking and Codegeneration.
+    // 3/17/23 since we already allow variables to
+    // be bound to nullptr, perhaps we add an exemption
+    // for variables bound to a null value?
+    // my only concern is that is rather opaque behavior
+    // to be reliant upon.
     env.ResetScopes();
   }
   if (invalid_terms.empty()) {

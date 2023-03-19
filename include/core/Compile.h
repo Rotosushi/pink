@@ -33,8 +33,7 @@
  */
 namespace pink {
 /**
- * @brief Compile the source file represented by the given
- * Environment.
+ * @brief Runs the main process of compilation given the command line arguments.
  *
  * @param argc
  * @param argv

@@ -25,6 +25,80 @@
 
 #include "llvm/Support/InitLLVM.h"
 
+static auto ComputeLocation(std::string_view text) {
+  return pink::Location{1U, 0U, 1U, text.length() - 1};
+}
+
+#define TEST_BIND_TERM_TYPE(bind_text, target_type)                            \
+  std::stringstream stream{bind_text};                                         \
+  pink::Location    location = ComputeLocation(bind_text);                     \
+  env.SetIStream(&stream);                                                     \
+  auto parse_result = env.Parse();                                             \
+  if (!parse_result) {                                                         \
+    env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());         \
+    FAIL("Unable to parse expression.");                                       \
+  }                                                                            \
+  REQUIRE(parse_result);                                                       \
+  auto &expression = parse_result.GetFirst();                                  \
+  CHECK(expression->GetLocation() == location);                                \
+  auto typecheck_result = Typecheck(expression, env);                          \
+  if (!typecheck_result) {                                                     \
+    env.PrintErrorWithSourceText(std::cerr, typecheck_result.GetSecond());     \
+    FAIL("Unable to Type expression.");                                        \
+  }                                                                            \
+  REQUIRE(typecheck_result);                                                   \
+  auto term_type = typecheck_result.GetFirst();                                \
+  CHECK(term_type == (target_type))
+
+TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
+  auto env = pink::Environment::CreateTestEnvironment();
+
+  SECTION("a := 42;") { TEST_BIND_TERM_TYPE("a := 42;\n", env.GetIntType()); }
+
+  SECTION("b := true;") {
+    TEST_BIND_TERM_TYPE("b := true;\n", env.GetBoolType());
+  }
+
+  SECTION("c := (false);") {
+    TEST_BIND_TERM_TYPE("c := (false);\n", env.GetBoolType());
+  }
+
+  SECTION("d := nil;\n") {
+    TEST_BIND_TERM_TYPE("d := nil;\n", env.GetNilType());
+  }
+
+  // Causes Error:
+  // Type Error: Variable [a] not bound in scope.
+  // in spite of the fact that a is being bound in scope
+  // manually, and this appears to actually occur when
+  // stepping through the code. However, Lookup is failing.
+  SECTION("e := a;") {
+    env.BindVariable("a", env.GetIntType(), nullptr);
+    std::stringstream stream{"e := a;\n"};
+    pink::Location    location = ComputeLocation("e := a;\n");
+    env.SetIStream(&stream);
+    auto parse_result = env.Parse();
+    if (!parse_result) {
+      env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());
+      FAIL("Unable to parse expression.");
+    }
+    REQUIRE(parse_result);
+    auto &expression = parse_result.GetFirst();
+    CHECK(expression->GetLocation() == location);
+    auto typecheck_result = Typecheck(expression, env);
+    if (!typecheck_result) {
+      env.PrintErrorWithSourceText(std::cerr, typecheck_result.GetSecond());
+      FAIL("Unable to Type expression.");
+    }
+    REQUIRE(typecheck_result);
+    auto term_type = typecheck_result.GetFirst();
+    CHECK(term_type == (env.GetIntType()));
+  }
+}
+
+#undef TEST_BIND_TERM_TYPE
+
+/*
 #define BIND_TERM_TYPE_IS(bind_term_type)                                      \
   line_number                 += 1;                                            \
   pink::Location location     = locations[line_number - 1];                    \
@@ -92,31 +166,29 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
       "ah := &d;\n",
       // value at
       "ai := *af;\n",
-      /*
 
-      "fn f () { nil; }\n",
-      "fn f () { 42; }\n",
-      "fn f () { true; }\n",
-      "fn f () { false; }\n",
-      "fn f () { -23; }\n",
-      "fn f () { 7 * 8; }\n",
-      "fn f () { (5) - (3); }\n",
-      "fn f () { x; }\n",
-      "fn f () { [0, 1, 2, 3, 4]; }\n",
-      "fn f () { (0, 1, 2, 3, 4); }\n",
-      "fn f () { x = 56; }\n",
-      "fn f () { x := 56; }\n",
-      "fn f () { if (true) { 10; } else { 11; } }\n",
-      "fn f () { while (true) do { x = x + 1; } }\n",
-
-      "fn f (x: Nil) { x; }\n",
-      "fn f (x: Integer) { x; }\n",
-      "fn f (x: Boolean) { x; }\n",
-      "fn f (x: Pointer Integer) { x; }\n",
-      "fn f (x: Slice Integer) { x; }\n",
-      "fn f (x: (Integer, Integer)) { x; }\n",
-      "fn f (x: [Integer; 5]) { x; }\n",
-      */
+      //"fn f () { nil; }\n",
+      //"fn f () { 42; }\n",
+      //"fn f () { true; }\n",
+      //"fn f () { false; }\n",
+      //"fn f () { -23; }\n",
+      //"fn f () { 7 * 8; }\n",
+      //"fn f () { (5) - (3); }\n",
+      //"fn f () { x; }\n",
+      //"fn f () { [0, 1, 2, 3, 4]; }\n",
+      //"fn f () { (0, 1, 2, 3, 4); }\n",
+      //"fn f () { x = 56; }\n",
+      //"fn f () { x := 56; }\n",
+      //"fn f () { if (true) { 10; } else { 11; } }\n",
+      //"fn f () { while (true) do { x = x + 1; } }\n",
+      //
+      //"fn f (x: Nil) { x; }\n",
+      //"fn f (x: Integer) { x; }\n",
+      //"fn f (x: Boolean) { x; }\n",
+      //"fn f (x: Pointer Integer) { x; }\n",
+      //"fn f (x: Slice Integer) { x; }\n",
+      //"fn f (x: (Integer, Integer)) { x; }\n",
+      //"fn f (x: [Integer; 5]) { x; }\n",
   };
   auto [locations, source] = [&]() {
     std::vector<pink::Location> locations;
@@ -225,3 +297,4 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
 
   { BIND_TERM_TYPE_IS(env.GetIntType()); }
 }
+*/

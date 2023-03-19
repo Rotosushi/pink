@@ -294,7 +294,7 @@ public:
   }
 
   auto GetTypeVariable(std::string_view &identifier) -> TypeVariable::Pointer {
-    return GetTypeVariable(variable_interner.Intern(identifier));
+    return GetTypeVariable(InternVariable(identifier));
   }
 
   // exposing ScopeStack's interface
@@ -309,6 +309,11 @@ public:
   auto LookupLocalVariable(InternedString symbol)
       -> std::optional<ScopeStack::Symbol> {
     return scopes.LookupLocal(symbol);
+  }
+  void BindVariable(std::string_view symbol,
+                    Type::Pointer    type,
+                    llvm::Value     *value) {
+    BindVariable(InternVariable(symbol), type, value);
   }
   void
   BindVariable(InternedString symbol, Type::Pointer type, llvm::Value *value) {
@@ -393,14 +398,35 @@ public:
                            llvm::Value *destination);
 
   // "methods" for builtin types
-  // text literals
+  // note: we cannot simply get the type from the value passed in,
+  // because for these builtin types they are stored as anon structs,
+  // which means they live in memory and we only ever have a pointer.
+  // and since llvm pointers are all opaque, we have to take an extra
+  // parameter telling the function the type of the pointee.
+  // I have been considering wrapping up the type and the pointer into
+  // POD structs to make the function signatures more readable.
+  // such as:
+  // class BuiltinArray {
+  //   llvm::StructType *array_type;
+  //   llvm::Value      *array_ptr;
+  // };
+  // class BuiltinTuple {
+  //   llvm::StructType *tuple_type;
+  //   llvm::Value      *tuple_ptr;
+  // };
+  // class BuiltinText {
+  //   llvm::StructType *text_type;
+  //   llvm::Value      *text_ptr;
+  // };
+
+  /* text literals */
   auto LoadText(llvm::StructType *text_type, llvm::Value *text_ptr)
       -> std::pair<llvm::Value *, llvm::Value *>;
   auto LoadTextSize(llvm::StructType *text_type, llvm::Value *text_ptr)
       -> llvm::Value *;
   auto TextPointer(llvm::StructType *text_type, llvm::Value *text_ptr)
       -> llvm::Value *;
-  auto StoreText(llvm::StructType             *text_type,
+  void StoreText(llvm::StructType             *text_type,
                  llvm::Value                  *text_ptr,
                  llvm::ArrayRef<llvm::Value *> init);
   // slices
@@ -461,14 +487,14 @@ public:
                       llvm::Value      *index) -> llvm::Value *;
   // structs
   auto PtrToStructElement(llvm::StructType *struct_type,
-                          llvm::Value      *ptr,
+                          llvm::Value      *struct_ptr,
                           unsigned          index) -> llvm::Value *;
   auto LoadStructElement(llvm::StructType *struct_type,
-                         llvm::Value      *ptr,
+                         llvm::Value      *struct_ptr,
                          unsigned          index) -> llvm::Value *;
   void StoreStructElement(llvm::StructType *struct_type,
-                          llvm::Value      *value,
-                          llvm::Value      *ptr,
+                          llvm::Value      *struct_ptr,
+                          llvm::Value      *source,
                           unsigned          index);
   // Casting
   auto Cast(llvm::Value *source,
@@ -539,19 +565,22 @@ public:
     return instruction_builder->getInt1(value);
   }
 
-  auto ConstantStruct(llvm::ArrayRef<llvm::Constant *> elements) {
+  static auto ConstantStruct(llvm::ArrayRef<llvm::Constant *> elements)
+      -> llvm::Constant * {
     assert(!elements.empty());
     auto *type = llvm::ConstantStruct::getTypeForElements(elements);
     return llvm::ConstantStruct::get(type, elements);
   }
 
-  auto ConstantBareArray(llvm::ArrayRef<llvm::Constant *> elements) {
+  static auto ConstantBareArray(llvm::ArrayRef<llvm::Constant *> elements)
+      -> llvm::Constant * {
     auto *element_type = elements.front()->getType();
     auto *type         = LLVMBareArrayType(element_type, elements.size());
     return llvm::ConstantArray::get(type, elements);
   }
 
-  auto ConstantArray(llvm::ArrayRef<llvm::Constant *> elements) {
+  auto ConstantArray(llvm::ArrayRef<llvm::Constant *> elements)
+      -> llvm::Constant * {
     auto *size = ConstantSize(elements.size());
     return ConstantStruct({size, ConstantBareArray(elements)});
   }
@@ -560,7 +589,7 @@ public:
     return ConstantArray(ToConstantInit(text));
   }
 
-  auto
+  static auto
   InlineAsm(llvm::FunctionType         *asm_type,
             std::string_view            asm_string,
             std::string_view            constraints,
@@ -639,6 +668,13 @@ public:
   public:
     llvm::BasicBlock          *block;
     llvm::BasicBlock::iterator point;
+
+    InsertionPoint(llvm::BasicBlock          *block,
+                   llvm::BasicBlock::iterator point) noexcept
+        : block(block),
+          point(point) {
+      assert(block != nullptr);
+    }
   };
 
   auto GetInsertionPoint() -> InsertionPoint {

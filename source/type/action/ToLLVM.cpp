@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -96,6 +96,13 @@ void ToLLVMVisitor::Visit(const CharacterType *character_type) const noexcept {
   and we must promote the return type to a hidden first ptr type
   argument with the sret<Ty> tag if the return type is also not
   a single value type.
+
+  so, thinking about this more I realized that any given function
+  type will have the same attribute set, no matter which function
+  the type is attached too. (modulo any attributes only knowable
+  by parsing the body of the function), thus we could attach an
+  attribute set to the pink::Function type, and we can very much
+  compute that attribute set here.
 */
 void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
   auto address_space = env.AllocaAddressSpace();
@@ -103,6 +110,9 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
   std::vector<llvm::Type *> llvm_argument_types(
       function_type->GetArguments().size());
 
+  // #RULE we can only pass arguments which are single value types
+  // thus arguments which are larger than a single value type must
+  // be passed via a pointer.
   auto transform_argument = [&](Type::Pointer type) -> llvm::Type * {
     llvm::Type *llvm_type = Compute(type, this);
     if (llvm_type->isSingleValueType()) {
@@ -117,18 +127,23 @@ void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
                  transform_argument);
 
   auto *llvm_return_type = Compute(function_type->GetReturnType(), this);
+
+  // #RULE we can only return single value types from a function
   if (llvm_return_type->isSingleValueType() || llvm_return_type->isVoidTy()) {
-    auto *llvm_type =
-        env.LLVMFunctionType(llvm_return_type, llvm_argument_types, false);
+    auto *llvm_type = Environment::LLVMFunctionType(llvm_return_type,
+                                                    llvm_argument_types,
+                                                    false);
     function_type->SetCachedLLVMType(llvm_type);
     result = llvm_type;
     return;
   }
 
+  // #RULE we return non single value types by way of a hidden first parameter.
   llvm_argument_types.insert(llvm_argument_types.begin(),
                              env.LLVMPointerType(address_space));
-  auto *llvm_type =
-      env.LLVMFunctionType(env.LLVMVoidType(), llvm_argument_types, false);
+  auto *llvm_type = Environment::LLVMFunctionType(env.LLVMVoidType(),
+                                                  llvm_argument_types,
+                                                  false);
   function_type->SetCachedLLVMType(llvm_type);
   result = llvm_type;
 }

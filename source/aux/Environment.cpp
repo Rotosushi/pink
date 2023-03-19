@@ -122,22 +122,23 @@ auto Environment::EmitAssemblyFile(std::ostream &err) const -> int {
   std::error_code      outfile_error{};
   llvm::raw_fd_ostream outfile{filename, outfile_error};
   if (outfile_error) {
-    err << "Couldn't open output file [" << filename << "]" << outfile_error
+    err << "Couldn't open output file [" << filename << "] " << outfile_error
         << "\n";
     return EXIT_FAILURE;
   }
 
   llvm::legacy::PassManager AssemblyPrinter;
-  auto                      failed{target_machine->addPassesToEmitFile(
+
+  bool failed{target_machine->addPassesToEmitFile(
       AssemblyPrinter,
       outfile,
       nullptr,
       llvm::CodeGenFileType::CGFT_AssemblyFile)};
 
   if (failed) {
-    err << "Target machine [" << target_machine->getTargetCPU().data() << ","
-        << target_machine->getTargetTriple().str()
-        << "] cannot write an assembly file.\n";
+    err << "Cannot write an assembly file for Target Machine ["
+        << target_machine->getTargetCPU().data() << ","
+        << target_machine->getTargetTriple().str() << "]\n";
     return EXIT_FAILURE;
   }
   AssemblyPrinter.run(module.operator*());
@@ -467,6 +468,12 @@ auto Environment::TextPointer(llvm::StructType *text_type,
   return CreateConstInBoundsGEP2_32(text_type, text_ptr, 0, 1);
 }
 
+void Environment::StoreText(llvm::StructType             *text_type,
+                            llvm::Value                  *text_ptr,
+                            llvm::ArrayRef<llvm::Value *> init) {
+  StoreArray(text_type, text_ptr, init);
+}
+
 /* Slices */
 auto Environment::LoadSlice(llvm::StructType *slice_type,
                             llvm::Value      *slice_ptr)
@@ -492,13 +499,13 @@ auto Environment::LoadSlicePointer(llvm::StructType *slice_type,
 }
 
 void Environment::StoreSlice(llvm::StructType *slice_type,
-                             llvm::Value      *slice,
+                             llvm::Value      *slice_ptr,
                              llvm::Value      *size,
                              llvm::Value      *offset,
                              llvm::Value      *ptr) {
-  StoreStructElement(slice_type, size, slice, 0);
-  StoreStructElement(slice_type, offset, slice, 1);
-  StoreStructElement(slice_type, ptr, slice, 2);
+  StoreStructElement(slice_type, slice_ptr, size, 0);
+  StoreStructElement(slice_type, slice_ptr, offset, 1);
+  StoreStructElement(slice_type, slice_ptr, ptr, 2);
 }
 
 auto Environment::PtrToSliceElement(llvm::StructType *slice_type,
@@ -542,6 +549,7 @@ void Environment::StoreArray(llvm::StructType             *array_type,
                              llvm::ArrayRef<llvm::Value *> init) {
   auto *buffer_type  = array_type->getTypeAtIndex(1);
   auto  num_elements = buffer_type->getArrayNumElements();
+  assert(init.size() <= num_elements);
   auto *element_type = buffer_type->getArrayElementType();
   for (std::size_t index = 0; index < num_elements; ++index) {
     auto *element = UncheckedPtrToArrayElement(array_type, array_ptr, index);
@@ -553,7 +561,7 @@ void Environment::StoreArray(llvm::StructType             *array_type,
 void Environment::StoreArraySize(llvm::StructType *array_type,
                                  llvm::Value      *array_ptr,
                                  llvm::Value      *size) {
-  StoreStructElement(array_type, size, array_ptr, 0);
+  StoreStructElement(array_type, array_ptr, size, 0);
 }
 
 auto Environment::ArraySubscript(llvm::StructType *array_type,
@@ -563,10 +571,10 @@ auto Environment::ArraySubscript(llvm::StructType *array_type,
 }
 
 auto Environment::PtrToArrayElement(llvm::StructType *array_type,
-                                    llvm::Value      *ptr,
+                                    llvm::Value      *array_ptr,
                                     llvm::Value      *index) -> llvm::Value * {
   auto *buffer_type   = array_type->getTypeAtIndex(1);
-  auto [size, buffer] = LoadArray(array_type, ptr);
+  auto [size, buffer] = LoadArray(array_type, array_ptr);
   BoundsCheck(size, index);
   return CreateInBoundsGEP(buffer_type, buffer, {index});
 }
@@ -581,46 +589,46 @@ auto Environment::UncheckedPtrToArrayElement(llvm::StructType *array_type,
 }
 
 auto Environment::LoadArrayElement(llvm::StructType *array_type,
-                                   llvm::Value      *ptr,
+                                   llvm::Value      *array_ptr,
                                    llvm::Value      *index) -> llvm::Value * {
   auto *buffer_type  = array_type->getTypeAtIndex(1);
   auto *element_type = buffer_type->getArrayElementType();
-  auto *element_ptr  = PtrToArrayElement(array_type, ptr, index);
+  auto *element_ptr  = PtrToArrayElement(array_type, array_ptr, index);
   return Load(element_type, element_ptr);
 }
 
 void Environment::StoreArrayElement(llvm::StructType *array_type,
                                     llvm::Value      *source,
-                                    llvm::Value      *ptr,
+                                    llvm::Value      *array_ptr,
                                     llvm::Value      *index) {
   auto *buffer_type  = array_type->getTypeAtIndex(1);
   auto *element_type = buffer_type->getArrayElementType();
-  auto *element_ptr  = PtrToArrayElement(array_type, ptr, index);
+  auto *element_ptr  = PtrToArrayElement(array_type, array_ptr, index);
   Store(element_type, source, element_ptr);
 }
 
 auto Environment::PtrToStructElement(llvm::StructType *struct_type,
-                                     llvm::Value      *ptr,
+                                     llvm::Value      *struct_ptr,
                                      unsigned          index) -> llvm::Value * {
   assert(struct_type->indexValid(index));
-  return CreateConstInBoundsGEP2_32(struct_type, ptr, 0, index);
+  return CreateConstInBoundsGEP2_32(struct_type, struct_ptr, 0, index);
 }
 
 auto Environment::LoadStructElement(llvm::StructType *struct_type,
-                                    llvm::Value      *ptr,
+                                    llvm::Value      *struct_ptr,
                                     unsigned          index) -> llvm::Value * {
-  auto *element_ptr  = PtrToStructElement(struct_type, ptr, index);
+  auto *element_ptr  = PtrToStructElement(struct_type, struct_ptr, index);
   auto *element_type = struct_type->getTypeAtIndex(index);
   return Load(element_type, element_ptr);
 }
 
 void Environment::StoreStructElement(llvm::StructType *struct_type,
-                                     llvm::Value      *value,
-                                     llvm::Value      *ptr,
+                                     llvm::Value      *struct_ptr,
+                                     llvm::Value      *source,
                                      unsigned          index) {
-  auto *element_ptr  = PtrToStructElement(struct_type, ptr, index);
+  auto *element_ptr  = PtrToStructElement(struct_type, struct_ptr, index);
   auto *element_type = struct_type->getTypeAtIndex(index);
-  return Store(element_type, value, element_ptr);
+  return Store(element_type, source, element_ptr);
 }
 
 /***************************** Error Handling *****************************/
@@ -660,7 +668,6 @@ void Environment::BoundsCheck(llvm::Value *upper,
 
 void Environment::RuntimeError(std::string_view description,
                                llvm::Value     *exit_code) {
-
   auto *error_text = AllocateGlobalText(Gensym(), description);
   auto *text_type  = LLVMTextType(description.size());
   auto *sys_err    = ConstantInteger(2);
@@ -773,20 +780,20 @@ auto Environment::DefaultAnalysis([[maybe_unused]] std::ostream &err) -> int {
 
 /***************************** Casting *****************************/
 // #NOTE:
-// Int -> Int     -: sext | trunc
-// Int -> Uint    -: zext | trunc
-// Int -> Float   -: sitofp
-// Int -> Ptr     -: inttoptr
-// Uint -> Uint   -: zext | trunc
-// Uint -> Int    -: zext | trunc
-// Uint -> Float  -: uitofp
-// Uint -> Ptr    -: inttoptr
-// Float -> Float -: fpext | fptrunc
-// Float -> Int   -: fptosi
-// Float -> Uint  -: fptoui
-// Ptr -> Ptr     -: bitcast
-// Ptr -> Int     -: ptrtoint
-// Ptr -> Uint    -: ptrtoint
+// Int -> Int     -: sext (lossless) | trunc (lossy)
+// Int -> Uint    -: zext (lossy) | trunc (lossy)
+// Int -> Float   -: sitofp (lossy)
+// Int -> Ptr     -: inttoptr (lossless)
+// Uint -> Uint   -: zext (lossless) | trunc (lossy)
+// Uint -> Int    -: zext (lossless) | trunc (lossy)
+// Uint -> Float  -: uitofp (lossy)
+// Uint -> Ptr    -: inttoptr (lossless)
+// Float -> Float -: fpext (lossless?) | fptrunc (lossy)
+// Float -> Int   -: fptosi (lossy)
+// Float -> Uint  -: fptoui (lossy)
+// Ptr -> Ptr     -: bitcast (lossless)
+// Ptr -> Int     -: ptrtoint (lossless)
+// Ptr -> Uint    -: ptrtoint (lossless)
 auto Environment::Cast(llvm::Value *source,
                        llvm::Type  *target_type,
                        bool         is_source_signed,
