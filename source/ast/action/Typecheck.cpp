@@ -1,22 +1,23 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
+#include <algorithm>
 
-#include "ast/action/Typecheck.h"
 #include "ast/action/ToString.h"
+#include "ast/action/Typecheck.h"
 
 #include "type/action/ToString.h"
 
@@ -26,8 +27,6 @@
 #include "ast/All.h"
 
 #include "aux/Environment.h"
-
-#include "support/Find.h"
 
 /*
   These are semi experimental, thinking about how
@@ -127,11 +126,9 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
     computed_argument_types.emplace_back(argument_type);
   }
 
-  auto cmp = [](Type::Pointer one, Type::Pointer two) { return one != two; };
-  auto mismatch = FindBetween(function_type->begin(),
-                              function_type->end(),
-                              computed_argument_types.cbegin(),
-                              cmp);
+  auto mismatch = std::mismatch(function_type->begin(),
+                                function_type->end(),
+                                computed_argument_types.cbegin());
 
   if (mismatch.first != function_type->end()) {
     std::string errmsg = "Expected argument type [";
