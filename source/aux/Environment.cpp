@@ -185,7 +185,7 @@ auto Environment::CreateNativeEnvironment(CLIOptions    cli_options,
   const llvm::Target *target =
       llvm::TargetRegistry::lookupTarget(target_triple, error);
   if (target == nullptr) {
-    FatalError(error.data(), __FILE__, __LINE__);
+    FatalError(error.data());
   }
 
   auto *target_machine =
@@ -286,7 +286,7 @@ auto Environment::AllocateVariable(std::string_view name,
     if (auto *const_init = llvm::dyn_cast<llvm::Constant>(init)) {
       return AllocateGlobal(name, type, const_init);
     }
-    FatalError("Non-Constant global initializer", __FILE__, __LINE__);
+    FatalError("Non-Constant global initializer");
   }
   return AllocateLocal(name, type, init);
 }
@@ -377,9 +377,7 @@ void Environment::StoreConstAggregate(llvm::Type     *type,
     }
     return;
   }
-  FatalError("unsupported type passed to StoreConstAggregate!",
-             __FILE__,
-             __LINE__);
+  FatalError("unsupported type passed to StoreConstAggregate!");
 }
 
 void Environment::StoreValueAggregate(llvm::Type  *type,
@@ -434,9 +432,7 @@ void Environment::StoreValueAggregate(llvm::Type  *type,
     return;
   }
 
-  FatalError("unsupported type passed to StoreValueAggregate!",
-             __FILE__,
-             __LINE__);
+  FatalError("unsupported type passed to StoreValueAggregate!");
 }
 
 /* "methods" for builtin types
@@ -815,7 +811,7 @@ auto Environment::Cast(llvm::Value *source,
     }
   }
 
-  FatalError("unsupported type cast", __FILE__, __LINE__);
+  FatalError("unsupported type cast");
 }
 
 auto Environment::CastIntegerTo(llvm::Value       *source,
@@ -830,7 +826,7 @@ auto Environment::CastIntegerTo(llvm::Value       *source,
     return CastZExt(source, from_type, to_type);
   }
 
-  FatalError("unsupported type cast", __FILE__, __LINE__);
+  FatalError("unsupported type cast");
 }
 
 auto Environment::CastUnsignedIntegerTo(llvm::Value          *source,
@@ -843,7 +839,7 @@ auto Environment::CastUnsignedIntegerTo(llvm::Value          *source,
     return CastZExt(source, from_type, to_type);
   }
 
-  FatalError("unsupported type cast", __FILE__, __LINE__);
+  FatalError("unsupported type cast");
 }
 
 auto Environment::CastSExt(llvm::Value       *from,
@@ -892,7 +888,7 @@ auto Environment::InlineAsm(llvm::FunctionType         *asm_type,
     buffer << "InlineAsm constraints [" << constraints << "] are not valid "
            << "for llvm::Type [" << LLVMTypeToString(asm_type) << "] because ["
            << LLVMErrorToString(error) << "]\n";
-    FatalError(buffer.str(), __FILE__, __LINE__);
+    FatalError(buffer.str());
   }
 
   return llvm::InlineAsm::get(asm_type,

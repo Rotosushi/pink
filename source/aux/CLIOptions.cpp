@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -190,10 +190,8 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
 
       default: {
         FatalError("Option: " + std::string(optarg) +
-                       " is not a valid optimization level, use one of: 0, 1, "
-                       "2, 3, s, z",
-                   __FILE__,
-                   __LINE__);
+                   " is not a valid optimization level, use one of: 0, 1, "
+                   "2, 3, s, z");
       }
       }
       break;
@@ -205,9 +203,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
     }
 
     default: {
-      FatalError("Error while parsing option: " + std::string(optarg),
-                 __FILE__,
-                 __LINE__);
+      FatalError("Error while parsing option: " + std::string(optarg));
       break;
     }
     }
@@ -216,14 +212,14 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   if (input_file.empty()) {
     int infile_option_index = optind + 1 + numopt;
     if (optind >= argc || infile_option_index >= argc) {
-      FatalError("input file is required", __FILE__, __LINE__);
+      FatalError("input file is required");
     }
 
     char *option = argv[infile_option_index];
     if (option != nullptr) {
       input_file = option;
     } else {
-      FatalError("input file is required", __FILE__, __LINE__);
+      FatalError("input file is required");
     }
   }
 

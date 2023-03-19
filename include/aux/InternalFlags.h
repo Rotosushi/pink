@@ -24,8 +24,6 @@
 #pragma once
 #include <bitset>
 
-#include "support/BitsPerByte.h"
-
 namespace pink {
 
 /**

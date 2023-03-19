@@ -248,9 +248,6 @@ add_library(common STATIC
 
 	# the 'support' directory is for files which define small, 
   # self-contained, and necessary or convienent header files
-	source/support/LLVMErrorToString.cpp
-	source/support/LLVMValueToString.cpp
-	source/support/LLVMTypeToString.cpp
 )
 
 

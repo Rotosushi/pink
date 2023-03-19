@@ -159,7 +159,7 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
   env.WithinBindExpression(false);
 
   // #RULE we must allocate stack space for singleValueType()s
-  // as these types are not allocated when literals appear in 
+  // as these types are not allocated when literals appear in
   // expressions.
   // #RULE We must not allocate space for non-singleValueType()s
   // as the Codegen visitor for non-singleValueType() literals
@@ -342,13 +342,13 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   std::string              buffer;
   llvm::raw_string_ostream out(buffer);
   if (llvm::verifyFunction(*llvm_function, &out)) {
-    std::cerr << "llvm function [\n"
-              << LLVMValueToString(llvm_function) << "]\n"
-              << "llvm type [" << LLVMTypeToString(llvm_function_type) << "]\n"
-              << "pink type [" << ToString(pink_function_type) << "]\n"
-              << "number of function attributes ["
-              << llvm_function->getAttributes().getNumAttrSets() << "]\n";
-    FatalError(buffer, __FILE__, __LINE__);
+    out << " llvm function [\n"
+        << LLVMValueToString(llvm_function) << "]\n"
+        << "llvm type [" << LLVMTypeToString(llvm_function_type) << "]\n"
+        << "pink type [" << ToString(pink_function_type) << "]\n"
+        << "number of function attributes ["
+        << llvm_function->getAttributes().getNumAttrSets() << "]\n";
+    FatalError(buffer);
   }
 
   env.LeaveCurrentFunction();
