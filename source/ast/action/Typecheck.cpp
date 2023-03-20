@@ -182,7 +182,7 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
 
 /* 1/24/2023
   The type of an assignment is the Type of it's left hand side,
-  if and only if the left hand side is the same type.
+  if and only if the right hand side is the same type
 */
 void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
   env.OnTheLHSOfAssignment(true);
@@ -214,7 +214,7 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
 }
 
 /* 1/24/2023
-  The Type of a Ast::Bind is the type of it's right hand side,
+  The Type of an Ast::Bind is the type of it's right hand side,
   if and only if the name being bound is not already bound.
 */
 void TypecheckVisitor::Visit(const Bind *bind) const noexcept {

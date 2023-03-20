@@ -50,6 +50,18 @@ static auto ComputeLocation(std::string_view text) {
   auto term_type = typecheck_result.GetFirst();                                \
   CHECK(term_type == (target_type))
 
+// #REASON Normally I agree with this metric. but this is a test
+// function, and all of the complexity comes from repeating the
+// same test lines on differing inputs. Thus the function is as
+// 'complex' as a series of function calls with distinct parameters.
+// the only reason this function is flagged is due to the use of
+// macros, which explicitly inline the code. and we need to use
+// the macro to remove the repeated code due to the macros that
+// CATCH2 uses. these macros need to be expanded within the scope
+// of the TEST_CASE. thus we are forced to use a macro here.
+// thus the code is physically repeated, thus clang tidy complains
+// that this function is too complex. when it really isn't.
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
   auto env = pink::Environment::CreateTestEnvironment();
 
@@ -72,6 +84,18 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
   // in spite of the fact that a is being bound in scope
   // manually, and this appears to actually occur when
   // stepping through the code. However, Lookup is failing.
+  // what is especially weird is that this test does not
+  // fail when we don't have the tests in their own sections.
+  // this is confusing because during parsing we intern the
+  // same variable [a], within the same interner, because it's
+  // the same environment instance. and further, we call env.BindVariable
+  // within TypecheckVisitor::Visit(const Variable *variable)
+  // which is the exact function we call here. so why does binding
+  // the variable when typechecking create a binding that can be
+  // resolved when typechecking a later term. but explicitly Binding
+  // a variable does not allow that variable to be resolved for the
+  // immediate next term? When the same function is being called 
+  // on the same environment to bind variables in both cases?
   SECTION("e := a;") {
     env.BindVariable("a", env.GetIntType(), nullptr);
     std::stringstream stream{"e := a;\n"};

@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -33,8 +33,10 @@
 // We cannot replace this with a template function,
 // as we need the return statement to be in the scope
 // this snippet of code is inserted into.
-// and we cannot use this pattern in the visitor functions
-// elsewhere as these do not return values normally.
+// and we cannot use this pattern directly in the visitor functions
+// elsewhere as these do not return values normally. so
+// the macro is defined in this file only.
+// admittedly this is kinda hacky.
 #define TRY(outcome, variable, function, ...)                                  \
   auto outcome = function(__VA_ARGS__);                                        \
   if (!outcome) {                                                              \
