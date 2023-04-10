@@ -23,7 +23,7 @@
 
 TEST_CASE("aux/CLIFlags", "[unit][aux]") {
   pink::CLIFlags flags;
-
+  // this is overkill
   REQUIRE(flags.DoEmitAssembly() == false);
   REQUIRE(flags.DoEmitAssembly(true) == true);
   REQUIRE(flags.DoEmitAssembly() == true);

@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -35,7 +35,9 @@ namespace pink {
  * the machine. it's an 'i64' in llvm IR.
  *
  * \todo The size of Integer is not selected dynamically based upon the target
- * machine
+ * machine, and this is not necessarily reflected in the type of Integer::Value,
+ * for the compiler. This works fine for now, because we only target native
+ * x86-64 linux, so we know that a size_t is 64 bits.
  *
  */
 class Integer : public Ast {

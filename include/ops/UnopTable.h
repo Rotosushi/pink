@@ -97,8 +97,8 @@ public:
 protected:
   // #REASON: this is protected so the derived classes
   // can implement their specific behavior over this
-  // set of data. and this class is the abstract base
-  // to make calling code simpler.
+  // set of data. and this class is an abstract base
+  // to make consuming code simpler.
   // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
   Overloads overloads;
 
@@ -151,11 +151,6 @@ public:
  */
 class TemplateBuiltinUnopOverloadSet : public BuiltinUnopOverloadSet {
 public:
-  // to define a template, we need to define some
-  // form of type substitution. which can carry us
-  // from having Type Variables in the definition
-  // of a given type, to the new type with no variables
-  // within it.
 private:
   UnopCodegen::Function function;
   Type::Pointer         poly_return_type;

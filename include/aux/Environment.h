@@ -145,6 +145,15 @@ public:
   auto EmitObjectFile(std::ostream &err) const -> int;
   auto EmitAssemblyFile(std::ostream &err) const -> int;
 
+  using Term   = Ast::Pointer;
+  using Terms  = std::vector<Ast::Pointer>;
+  using Errors = std::vector<Error>;
+
+  auto Compile(std::ostream &out, std::ostream &err) -> int;
+  auto ParseInputFile(std::ostream &err) -> Outcome<Terms, Error>;
+  auto TypecheckTerms(Terms &terms) -> std::optional<Errors>;
+  void CodegenTerms(Terms &terms);
+
   static auto NativeCPUFeatures() noexcept -> std::string;
   static auto CreateNativeEnvironment(CLIOptions    cli_options,
                                       std::istream *input = &std::cin)
@@ -158,7 +167,18 @@ public:
    *
    * \warning it is not safe to call any member function which
    * requires the llvm::* members to be active from a TestEnvironment.
-   * this is a hack to track down a memory leak in the test rig.
+   * this is a hack to track down a memory leak in the Catch2 test rig.
+   * 4/10/2023: the memory leak only happens on test failure, and it is
+   * due to the catch2 early return mechanism not properly cleaning up
+   * the llvm Managed Static objects on test failure. given that this
+   * leak only occurs when a thread is exiting, I don't really care as much.
+   * (were this a leak that persisted during compilation itself, it would
+   * push me to remove catch2 or llvm managed static objects. (I don't feel
+   * like fixing leaks in other peoples code for a hobby project lmao.)
+   * (yes, you are correct we cannot remove llvm managed static objects
+   * without removing llvm, I dislike llvm's use of global variables here.
+   * (though I do understand why they fit the use case of globals, It's just,
+   * why are they [the managed static tables] not constexpr???)))
    *
    * @return Environment
    */
@@ -192,7 +212,6 @@ public:
   auto WithinBindExpression(bool state) -> bool {
     return internal_flags.WithinBindExpression(state);
   }
-
   // exposing CLIOptions interface
   [[nodiscard]] auto DoVerbose() const noexcept -> bool {
     return cli_options.DoVerbose();
@@ -313,7 +332,7 @@ public:
   void BindVariable(std::string_view symbol,
                     Type::Pointer    type,
                     llvm::Value     *value) {
-    BindVariable(InternVariable(symbol), type, value);
+    scopes.Bind(InternVariable(symbol), type, value);
   }
   void
   BindVariable(InternedString symbol, Type::Pointer type, llvm::Value *value) {

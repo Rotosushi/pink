@@ -26,7 +26,7 @@ public:
   using Key   = K;
   using Value = V;
   using Table = llvm::SmallDenseMap<Key, Value>;
-  // using Element = typename Table::iterator::pointer;
+  
   class Element {
   private:
     typename Table::iterator::pointer element;
@@ -66,7 +66,7 @@ public:
   // #NOTE: 2/24/2023
   // we have a not const version to allow for a map of maps.
   // otherwise the client could not call Element::Value::Lookup()
-  auto Lookup(Key key) -> std::optional<Map::Element> {
+  auto Lookup(Key key) -> std::optional<Element> {
     auto found = table.find(key);
     if (found == table.end()) {
       return {};

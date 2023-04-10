@@ -13,11 +13,40 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 cmake_policy(SET CMP0076 NEW)
 
-message(STATUS "using c compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "using c++ compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "using c++ standard: ${CXX_STANDARD}")
+message(STATUS "build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "build directory: ${PROJECT_BINARY_DIR}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
+
+set(CMAKE_CXX_FLAGS_CFG "-emit-llvm -S" CACHE STRING 
+"Flags used by the C++ compiler during Control Flow Graph builds."
+FORCE)
+
+set(CMAKE_C_FLAGS_CFG "-emit-llvm -S" CACHE STRING
+"flags used by the C compiler during Control Flow Graph builds."
+FORCE)
+
+set(CMAKE_EXE_LINKER_FLAGS_CFG "" CACHE STRING 
+"Flags used by the linker to link binaries during Control Flow Graph builds."
+FORCE)
+
+set(CMAKE_SHARED_LINKER_FLAGS_CFG "" CACHE STRING 
+"Flags used by the linker to like shared libraries during Control Flow Graph builds."
+FORCE)
+
+mark_as_advanced(
+  CMAKE_CXX_FLAGS_CFG 
+  CMAKE_C_FLAGS_CFG 
+  CMAKE_EXE_LINKER_FLAGS_CFG 
+  CMAKE_SHARED_LINKER_FLAGS_CFG
+)
+
+set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING 
+"Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel CFG."
+FORCE)
+
 
 # TODO: split build of project and build of tests 
 
@@ -31,93 +60,24 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 # TODO: check that the warnings enabled work for 
 # the compiler being used to build the project.
 add_compile_options(
-  -O1 
-  -gdwarf-4 
   #-flto=thin
   -Wall 
   -Wdeprecated
   -Wextra 
-  -Wmost 
   -Wpedantic 
   -Wconversion 
-  -Wunused 
+
   -Warray-bounds-pointer-arithmetic
   -Warray-parameter
-  -Watomic-implicit-seq-cst
-  -Wbad-function-cast
-  -Wbitwise-op-parentheses
-  -Wbool-operation
-  -Wc++-compat 
-  -Wcast-align
-  -Wcast-function-type 
-  -Wcast-qual 
-  -Wchar-subscripts 
-  -Wcomma 
   -Wcomment
-  -Wcompound-token-split 
   -Wconditional-uninitialized
-  -Wctad-maybe-unsupported
-  -Wcustom-atomic-properties
   -Wdelete-non-virtual-dtor 
   -Wnon-virtual-dtor
-  -Wdeprecated-implementations
-  -Wdeprecated-writable-strings 
-  -Wdisabled-macro-expansion 
-  -Wdouble-promotion 
-  -Wdtor-name 
-  -Wduplicate-decl-specifier 
-  -Wduplicate-enum 
-  -Wduplicate-method-arg 
-  -Wduplicate-method-match 
-  -Wembedded-directive 
-  -Wempty-init-stmt 
-  -Wempty-translation-unit 
-  -Wenum-enum-conversion 
-  -Wenum-float-conversion 
-  -Wextra-semi 
-  -Wextra-semi-stmt 
-  -Wflexible-array-extensions 
-  -Wfloat-conversion 
-  -Wfloat-equal 
-  -Wfloat-overflow-conversion 
-  -Wfloat-zero-conversion 
-  -Wformat-nonliteral 
-  -Wformat-pedantic 
-  -Wformat-type-confusion 
-  -Wglobal-constructors 
-  -Wgnu 
-  -Wheader-hygiene 
-  -Wimplicit-fallthrough 
-  -Wimplicit-int-conversion 
-  -Wimplicit-int-float-conversion 
-  -Winfinite-recursion 
-  -Wint-in-bool-context 
-  -Wkeyword-macro 
-  -Wlanguage-extension-token 
-  -Wlogical-op-parentheses 
-  -Wloop-analysis 
-  -Wmain 
-  -Wmove 
-  -Wmalformed-warning-check 
-  -Wmicrosoft 
-  -Wmisleading-indentation 
-  -Wmismatched-tags 
-  -Wmissing-braces 
-  -Wmissing-field-initializers 
-  -Wmissing-method-return-type 
-  -Wmissing-noreturn 
-  -Wnested-anon-types 
-  -Wold-style-cast 
-  -Woption-ignored 
-  -Wover-aligned 
-  -Woverlength-strings 
   -Woverloaded-virtual 
   -Woverriding-method-mismatch 
-  -Wpacked 
-  -Wparentheses 
-  -Wredundant-parens 
-  -Wreorder-ctor 
-  -Werror
+  -Wfloat-conversion
+  
+  #-Werror
   #-fsanitize=address
   #-fsanitize=undefined
   -fno-omit-frame-pointer
@@ -194,12 +154,10 @@ add_custom_command(
 )
 
 
-
 # building the actual project
 include_directories(include)
 
-set(build_type $<$<CONFIG:Debug>:DEBUG_BUILD>)
-if (build_type STREQUAL DEBUG_BUILD)
+if ($<CONFIG:Debug>)
   set(DEBUG 1)
 else() 
   set(DEBUG 0)
@@ -208,14 +166,13 @@ endif()
 configure_file(include/PinkConfig.h.in ../include/PinkConfig.h)
 
 
-add_library(common STATIC
+add_library(common
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
   source/ast/action/ToString.cpp
   source/ast/action/Typecheck.cpp
   source/ast/action/Codegen.cpp
-	
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
@@ -232,7 +189,6 @@ add_library(common STATIC
 	source/aux/Environment.cpp
 	source/aux/Error.cpp
 	
-
 	# the 'ops' directory is for the classes which comprise the semantics
 	# of binary and unary operators within the language. (minus the specialized 
 	# operators like assignment '=', member access '.', and subscript '[]')
@@ -245,9 +201,12 @@ add_library(common STATIC
 	source/front/Token.cpp
 	source/front/Parser.cpp
 
-
 	# the 'support' directory is for files which define small, 
   # self-contained, and necessary or convienent header files
+
+  # the 'core' directory is for the central driver functions.
+  source/core/Compile.cpp
+  source/core/Link.cpp
 )
 
 
@@ -276,9 +235,6 @@ ${LLVM_LIBRARY_DIRS}/liblldELF.a
 )
 
 add_executable(pink 
-  # the 'core' directory is for the central driver functions.
-  source/core/Compile.cpp
-  source/core/Link.cpp
   source/core/main.cpp
 )
 
@@ -293,7 +249,6 @@ ${LLVM_LIBRARY_DIRS}/liblldELF.a
 )
 
 target_include_directories(pink PUBLIC
-  "${PROJECT_BINARY_DIR}"
   include
 )
 
@@ -321,8 +276,6 @@ add_executable(tests
 
   test/source/ops/Binops.cpp
   test/source/ops/Unops.cpp
-
-
 )
 
 target_include_directories(tests PUBLIC 
@@ -338,3 +291,18 @@ include(CTest)
 include(Catch)
 catch_discover_tests(tests)
 
+
+if ($<Config:CFG>) 
+set (PINK_BUILD_DIR "${PROJECT_BINARY_DIR}/CMakeFiles")
+set(PINK_LLVM_IR_FILES 
+  
+)
+
+add_custom_command(
+  TARGET pink POST_BUILD 
+  COMMAND opt --dot-cfg-mssa=pink-cfg.dot 
+  COMMAND dot -Tsvg pink-cfg.dot -o pink-cfg.svg
+  DEPENDS 
+VERBATIM 
+)
+endif()

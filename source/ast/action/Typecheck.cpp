@@ -643,7 +643,7 @@ void TypecheckVisitor::Visit(const While *loop) const noexcept {
   if (test_type != env.GetBoolType()) {
     std::string errmsg = "Test expression has type [";
     errmsg             += ToString(test_type);
-    errmsg             += "]. expected type [Boolean]";
+    errmsg             += "] expected type [Boolean]";
     result             = Error(Error::Code::WhileTestTypeMismatch,
                    loop->GetTest()->GetLocation(),
                    errmsg);

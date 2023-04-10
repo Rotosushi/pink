@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -26,7 +26,7 @@
 // ":" +
 // the description the error holds +
 // newline +
-// the bad source +
+// the line of source text which produced the error +
 // newline +
 // the highlight line
 //
@@ -69,8 +69,9 @@ static auto ProperlyUnderlined(std::string    &description,
 }
 
 TEST_CASE("aux/Error", "[unit][aux]") {
-  std::string  bad_source = "some erroneous input text";
-  std::mt19937 generator;
+  std::string        bad_source = "some erroneous input text";
+  std::random_device random_device;
+  std::mt19937       generator{random_device()};
 
   // generate some random location within the bad_source
   // to place the error highlight

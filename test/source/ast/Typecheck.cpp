@@ -50,10 +50,12 @@ static auto ComputeLocation(std::string_view text) {
   auto term_type = typecheck_result.GetFirst();                                \
   CHECK(term_type == (target_type))
 
-// #REASON Normally I agree with this metric. but this is a test
+// #REASON Normally I agree with this metric. and avoid macros
+// like the plague, however this is a test
 // function, and all of the complexity comes from repeating the
 // same test lines on differing inputs. Thus the function is as
 // 'complex' as a series of function calls with distinct parameters.
+// and would literally be a series of function calls were it not for catch2.
 // the only reason this function is flagged is due to the use of
 // macros, which explicitly inline the code. and we need to use
 // the macro to remove the repeated code due to the macros that
@@ -62,7 +64,7 @@ static auto ComputeLocation(std::string_view text) {
 // thus the code is physically repeated, thus clang tidy complains
 // that this function is too complex. when it really isn't.
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
-TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
+TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
   auto env = pink::Environment::CreateTestEnvironment();
 
   SECTION("a := 42;") { TEST_BIND_TERM_TYPE("a := 42;\n", env.GetIntType()); }
@@ -79,44 +81,105 @@ TEST_CASE("ast/action/Typecheck", "[unit][ast][ast/action]") {
     TEST_BIND_TERM_TYPE("d := nil;\n", env.GetNilType());
   }
 
-  // Causes Error:
-  // Type Error: Variable [a] not bound in scope.
-  // in spite of the fact that a is being bound in scope
-  // manually, and this appears to actually occur when
-  // stepping through the code. However, Lookup is failing.
-  // what is especially weird is that this test does not
-  // fail when we don't have the tests in their own sections.
-  // this is confusing because during parsing we intern the
-  // same variable [a], within the same interner, because it's
-  // the same environment instance. and further, we call env.BindVariable
-  // within TypecheckVisitor::Visit(const Variable *variable)
-  // which is the exact function we call here. so why does binding
-  // the variable when typechecking create a binding that can be
-  // resolved when typechecking a later term. but explicitly Binding
-  // a variable does not allow that variable to be resolved for the
-  // immediate next term? When the same function is being called 
-  // on the same environment to bind variables in both cases?
   SECTION("e := a;") {
-    env.BindVariable("a", env.GetIntType(), nullptr);
-    std::stringstream stream{"e := a;\n"};
-    pink::Location    location = ComputeLocation("e := a;\n");
-    env.SetIStream(&stream);
-    auto parse_result = env.Parse();
-    if (!parse_result) {
-      env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());
-      FAIL("Unable to parse expression.");
-    }
-    REQUIRE(parse_result);
-    auto &expression = parse_result.GetFirst();
-    CHECK(expression->GetLocation() == location);
-    auto typecheck_result = Typecheck(expression, env);
-    if (!typecheck_result) {
-      env.PrintErrorWithSourceText(std::cerr, typecheck_result.GetSecond());
-      FAIL("Unable to Type expression.");
-    }
-    REQUIRE(typecheck_result);
-    auto term_type = typecheck_result.GetFirst();
-    CHECK(term_type == (env.GetIntType()));
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    TEST_BIND_TERM_TYPE("e := a;\n", env.GetIntType());
+  }
+
+  SECTION("f := -36;") { TEST_BIND_TERM_TYPE("f := -36;\n", env.GetIntType()); }
+
+  SECTION("g := 3 + 7;") {
+    TEST_BIND_TERM_TYPE("g := 3 + 7;\n", env.GetIntType());
+  }
+
+  SECTION("h := ((f) + (12));") {
+    env.BindVariable(std::string_view{"f"}, env.GetIntType(), nullptr);
+    TEST_BIND_TERM_TYPE("h := (f) + (12);\n", env.GetIntType());
+  }
+
+  SECTION("i := 5 - 10;") {
+    TEST_BIND_TERM_TYPE("i := 5 - 10;\n", env.GetIntType());
+  }
+
+  SECTION("j := 30 * 7;") {
+    TEST_BIND_TERM_TYPE("j := 30 * 7;\n", env.GetIntType());
+  }
+
+  SECTION("k := 81 / 3;") {
+    TEST_BIND_TERM_TYPE("k := 81 / 3;\n", env.GetIntType());
+  }
+
+  SECTION("l := 45 % 8;") {
+    TEST_BIND_TERM_TYPE("l := 45 % 8;\n", env.GetIntType());
+  }
+
+  SECTION("m := true & true;") {
+    TEST_BIND_TERM_TYPE("m := true & true;\n", env.GetBoolType());
+  }
+
+  SECTION("n := true | false;") {
+    TEST_BIND_TERM_TYPE("n := true | false;\n", env.GetBoolType());
+  }
+
+  SECTION("o := 5 == 5;") {
+    TEST_BIND_TERM_TYPE("o := 5 == 5;\n", env.GetBoolType());
+  }
+
+  SECTION("p := 12 != 102;") {
+    TEST_BIND_TERM_TYPE("p := 12 != 102;\n", env.GetBoolType());
+  }
+
+  SECTION("q := 8 < 6;") {
+    TEST_BIND_TERM_TYPE("q := 8 < 6;\n", env.GetBoolType());
+  }
+
+  SECTION("r := 42 <= 42;") {
+    TEST_BIND_TERM_TYPE("r := 42 <= 42;\n", env.GetBoolType());
+  }
+
+  SECTION("s := 56 > 10;") {
+    TEST_BIND_TERM_TYPE("s := 56 > 10;\n", env.GetBoolType());
+  }
+
+  SECTION("t := 21 >= 7;") {
+    TEST_BIND_TERM_TYPE("t := 21 >= 7;\n", env.GetBoolType());
+  }
+
+  SECTION("u := -21 + -7;") {
+    TEST_BIND_TERM_TYPE("u := -21 + -7;\n", env.GetIntType());
+  }
+
+  SECTION("v := !true | !false;") {
+    TEST_BIND_TERM_TYPE("v := !true | !false;\n", env.GetBoolType());
+  }
+
+  SECTION("w := a = 53;") {
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    TEST_BIND_TERM_TYPE("w := a = 53;\n", env.GetIntType());
+  }
+
+  SECTION("x := &a;") {
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    TEST_BIND_TERM_TYPE("x := &a;\n", env.GetPointerType(env.GetIntType()));
+  }
+
+  SECTION("y := &b;") {
+    env.BindVariable(std::string_view{"b"}, env.GetBoolType(), nullptr);
+    TEST_BIND_TERM_TYPE("y := &b;\n", env.GetPointerType(env.GetBoolType()));
+  }
+
+  SECTION("z := *x;") {
+    env.BindVariable(std::string_view{"x"},
+                     env.GetPointerType(env.GetIntType()),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("z := *x;\n", env.GetIntType());
+  }
+
+  SECTION("aa := *y;") {
+    env.BindVariable(std::string_view{"y"},
+                     env.GetPointerType(env.GetBoolType()),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("aa := *y;\n", env.GetBoolType());
   }
 }
 
