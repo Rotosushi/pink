@@ -1,0 +1,95 @@
+// Copyright (C) 2023 Cade Weinberg
+// 
+// This file is part of pink.
+// 
+// pink is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// pink is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with pink.  If not, see <http://www.gnu.org/licenses/>.
+
+bug: when attempting to type the expression [z := *y;]
+the type of the expression is the pointer type. when the 
+expected type of the expresion is the pointee type.
+
+it seems this is occurring due to an incorrect application of 
+type substitution. in the case of operator '&' we have the 
+polymorphic type [T -> Pointer<T>] then when we attempt to 
+type an expression with some concrete type, say [&a] where 
+a is bound to an integer type. we resolve the ambiguity at 
+lookup time. that is, we get the operator overload set of '&'
+then we lookup the overload for the type 'Integer'. then during 
+substitution we have the source type 'Integer' and we use it 
+to susbtitute within the expression [T] and [Pointer<T>] respectively.
+this resolves nicely, as just substituting 'Integer' for 'T' within 
+both expressions results in the expected type of the address of 
+an Integer variable. [Integer -> Pointer<Integer>]
+
+what is going wrong in the case of operator '*' is that the source type 
+being used is 'Pointer<Integer>' then, observing the type of operator '*'
+[Pointer<T> -> T] we can see that a bare substitution of 'Pointer<Integer>'
+for 'T' results in the concrete type 
+[Pointer<Pointer<Integer>> -> Pointer<Integer>]. 
+this is why the type of the expression [z := *y;] is resolved as [Pointer<Integer>]
+when we want the expression to type as [Integer]
+this means we must modify how we apply the substitution algorithm.
+it is not useful to apply the substitution algorithm in this case,
+but why?
+
+an obvious hack would be to check for the case of operator '*' and strip 
+the pointer type off of the type of the argument. 
+this works, but it does not generalize. we want to construct an algorithm 
+which works in many cases without modification.
+
+first thing to note is that the substitution itself is not the problem 
+here. We are correctly substituting the source type within the target types.
+
+another thing to note is that we are not checking that the source type 
+matches the 'shape' of the argument type in this case. that is, as written 
+operator '*' will always typecheck, even if passed non-pointer types.
+this is absolutely a bug. so maybe we can leverage some form of 'shape' 
+checking? 
+in the case of operator '&', the argument type is 'T', this shape is valid 
+to replace with any type. however, with operator '*' the argument is 
+'Pointer<T>' so we only want it to match types with the 'shape' 
+'Pointer<SomeType>'
+
+okay, so this works to check that the type we are attempting to susbtitute
+matches the form of the type we are substituting in, but this still 
+does not prevent the 'incorrect' substitution of Pointer<Integer>
+into the poylmorphic type of operator '*' [Pointer<T> -> T]
+
+in c++ this problem is 'solved' by the template syntax, wherein we 
+would substitute Integer into the type, not Pointer<Integer>.
+however, in this case we are attempting to substitute the 
+given argument type. and not the given template type. and since 
+the argument type must be pointer shaped, we are incorrectly substituting 
+a pointer type.
+
+additionally we don't have an explicit syntax for this instance, due to 
+the fact that we are using templates to implement all possible uses 
+of builtin operators '&' and '*'. 
+it's interesting, we can use the given argument type for operator '&'
+because it's type is [T -> Pointer<T>], meaning that given a hypothetical
+explicit syntax 'operator&<T>(argument : U) -> Pointer<T>' we know that it is safe 
+to assume that whatever type U actually is, is safe to substitute for T 
+within the Type and Body of the operator. once we write out operator '&'
+in this syntax it becomes clear what the issue is. 
+'operator*<T>(argument : Pointer<U>) -> T' 
+what we need to do is extract U from the Pointer type. the question becomes 
+when and where during compilation, and does this affect user templates?
+
+hmm, when and where can be answerd nicely if we make Ast nodes for 
+operator '&' and '*'. the when and were becomes, in the Ast node Typecheck 
+function. this however, requires a rewrite of how operators are handled 
+in general, which is more work, but it is along the same lines that I 
+wanted to go anyways. So, looks like that is the next step!
+
+

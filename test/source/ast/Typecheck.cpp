@@ -168,11 +168,33 @@ TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
     TEST_BIND_TERM_TYPE("y := &b;\n", env.GetPointerType(env.GetBoolType()));
   }
 
+  // causes error: somehow the return type is equal to the argument type.
+  // swapping the order of the arguments within RegisterTemplateBuiltinUnop
+  // only causes the & operator to also fail in the same way, yet
+  // in both cases the * operator fails
   SECTION("z := *x;") {
     env.BindVariable(std::string_view{"x"},
                      env.GetPointerType(env.GetIntType()),
                      nullptr);
-    TEST_BIND_TERM_TYPE("z := *x;\n", env.GetIntType());
+    std::stringstream stream{"z := *x;\n"};
+    pink::Location    location = ComputeLocation("z := *x;\n");
+    env.SetIStream(&stream);
+    auto parse_result = env.Parse();
+    if (!parse_result) {
+      env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());
+      FAIL("Unable to parse expression.");
+    }
+    REQUIRE(parse_result);
+    auto &expression = parse_result.GetFirst();
+    CHECK(expression->GetLocation() == location);
+    auto typecheck_result = Typecheck(expression, env);
+    if (!typecheck_result) {
+      env.PrintErrorWithSourceText(std::cerr, typecheck_result.GetSecond());
+      FAIL("Unable to Type expression.");
+    }
+    REQUIRE(typecheck_result);
+    auto term_type = typecheck_result.GetFirst();
+    CHECK(term_type == (env.GetIntType()));
   }
 
   SECTION("aa := *y;") {

@@ -308,6 +308,10 @@ public:
     return type_interner.GetTextType(length);
   }
 
+  auto GetTypeVariable(std::string_view identifier) -> TypeVariable::Pointer {
+    return type_interner.GetTypeVariable(variable_interner.Intern(identifier));
+  }
+
   auto GetTypeVariable(InternedString identifier) -> TypeVariable::Pointer {
     return type_interner.GetTypeVariable(identifier);
   }

@@ -1,20 +1,19 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
-
 
 #include "aux/Environment.h"
 
@@ -52,7 +51,7 @@ auto UnopValueOfAddress(llvm::Value *term, [[maybe_unused]] Environment &env)
 void InitializeUnopPrimitives(Environment &env) {
   Type::Pointer integer_type      = env.GetIntType();
   Type::Pointer boolean_type      = env.GetBoolType();
-  Type::Pointer type_variable     = env.GetTypeVariable("T");
+  Type::Pointer type_variable     = env.GetTypeVariable(std::string_view{"T"});
   Type::Pointer poly_pointer_type = env.GetPointerType(type_variable);
 
   const auto *neg  = env.InternOperator("-");
@@ -63,13 +62,13 @@ void InitializeUnopPrimitives(Environment &env) {
   env.RegisterBuiltinUnop(neg, integer_type, integer_type, UnopIntNegate);
   env.RegisterBuiltinUnop(bnot, boolean_type, boolean_type, UnopBoolNegate);
 
-  // Address of Value has type [(T) -> Pointer<T>]
+  // Address of Value has type [T -> Pointer<T>]
   env.RegisterTemplateBuiltinUnop(aov,
                                   type_variable,
                                   type_variable,
                                   poly_pointer_type,
                                   UnopAddressOfValue);
-  // Value of Address has type [(Pointer<T>) -> T]
+  // Value of Address has type [Pointer<T> -> T]
   env.RegisterTemplateBuiltinUnop(voa,
                                   type_variable,
                                   poly_pointer_type,

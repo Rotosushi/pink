@@ -3,13 +3,13 @@
 
 # Test[
 #  Parser(check),
-#  Typecheck(currently fixing a memory leak),
+#  Typecheck(in progress),
 #  Codegen
 # ]
 
 
 # Features [
-  Global Declarations,
+  Global Declarations(testing),
   Functions [
     Expressions [
       Local Declarations,
@@ -48,6 +48,8 @@
 
     Annotations [
       Mutable,
+      Variable,
+      Literal,
     ],
   ],
 ]
@@ -55,11 +57,12 @@
 # * Arrays have a size member. w/runtime panic
 # ** tagged Unions. w/runtime panic 
 
-# Rewrite the Parser to a new grammar (maybe entirely, maybe just a little)
+# Rewrite the Parser to a new grammar (maybe entirely, maybe just a little.
+ I am debating a parenthesis-less call syntax. I want it to be LL(1))
   # rewrite operators such that they are treated as tokens in their own right.
-    (no more user defined operators, it makes the language hard to parse)
-  # parenthesis-less call syntax. (more functional style)
-  # optional type annotations in bind expressions
+    (no more user defined operators, it introduces a parsing/lexing ambiguity 
+    with operator < and > being used for template syntax.)
+  # optional type annotations in bind expressions, these get checked during typeing.
   # const-ness and mutability specifiers (I think these have to define new types?
     still considering the implementation of this tbch)
   # optional else clauses on conditionals

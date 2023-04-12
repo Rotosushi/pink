@@ -139,8 +139,13 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
   case Error::Code::NameAlreadyBoundInScope:
     return "Type Error: Name is already bound within this scope";
   case Error::Code::ArrayMemberTypeMismatch:
-    return "Type Error: Array member does not have the same type as other "
-           "array members";
+    return "Type Error: Array element type mismatch";
+  case Error::Code::ArraySizeMismatch:
+    return "Type Error: Array size mismatch";
+  case Error::Code::TupleSizeMismatch:
+    return "Type Error: Tuple size mismatch";
+  case Error::Code::TupleElementMismatch:
+    return "Type Error: Tuple element type mismatch";
   case Error::Code::CondTestExprTypeMismatch:
     return "Type Error: IfThenElse expression's test expression must have "
            "type Boolean";
@@ -148,12 +153,12 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Type Error: IfThenElse expression's body expressions must have "
            "identical type";
   case Error::Code::WhileTestTypeMismatch:
-    return "Type Error: While loop's test expression must have type Boolean";
+    return "Type Error: While loop's test expression must have type [Boolean]";
   case Error::Code::DotLeftIsNotATuple:
     return "Type Error: Dot operator's right hand side must be a tuple";
   case Error::Code::DotRightIsNotAnInt:
-    return "Type Error: Dot operator's left hand side must be an integer when "
-           "right is a tuple";
+    return "Type Error: Dot operator's left hand side must be an integer "
+           "literal when right is a tuple";
   case Error::Code::DotIndexOutOfRange:
     return "Type Error: Index into tuple is larger than the tuple itself";
   case Error::Code::SubscriptLeftIsNotSubscriptable:
@@ -161,6 +166,8 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
            "side";
   case Error::Code::SubscriptRightIsNotAnIndex:
     return "Type Error: Cannot use argument to Subscript operation as an Index";
+  case Error::Code::TypeSubstitutionInvalid:
+    return "Type Error: Type substitution invalid";
 
   // semantic errors
   case Error::Code::OutOfBounds:

@@ -23,10 +23,14 @@
 #pragma once
 #include "llvm/IR/Value.h" // llvm::Value
 
-#include "type/Type.h"                // pink::Type
-#include "type/action/Substitution.h" // pink::Substitution
+#include "type/Type.h"                       // pink::Type
+#include "type/action/PolymorphicEquality.h" // pink::PolymorphicEquality
+#include "type/action/Substitution.h"        // pink::Substitution
+#include "type/action/ToString.h"            // pink::ToString
 
+#include "aux/Error.h"          // pink::Error
 #include "aux/Map.h"            // pink::Map<K, V>
+#include "aux/Outcome.h"        // pink::Outcome
 #include "aux/StringInterner.h" // pink::InternedString
 
 namespace pink {
@@ -94,6 +98,8 @@ public:
     }
   };
 
+  using Result = Outcome<Overload, Error>;
+
 protected:
   // #REASON: this is protected so the derived classes
   // can implement their specific behavior over this
@@ -120,8 +126,7 @@ public:
                         Type::Pointer         return_type,
                         UnopCodegen::Function generator) -> Overload = 0;
 
-  virtual auto Lookup(Type::Pointer argument_type)
-      -> std::optional<Overload> = 0;
+  virtual auto Lookup(Type::Pointer argument_type) -> Result = 0;
 };
 
 /**
@@ -135,8 +140,17 @@ public:
     return overloads.Register(argument_type, {return_type, generator});
   }
 
-  auto Lookup(Type::Pointer argument_type) -> std::optional<Overload> override {
-    return overloads.Lookup(argument_type);
+  auto Lookup(Type::Pointer argument_type)
+      -> BuiltinUnopOverloadSet::Result override {
+    auto found = overloads.Lookup(argument_type);
+    if (found) {
+      return {found.value()};
+    }
+
+    std::string errmsg = "for argument type [";
+    errmsg             += ToString(argument_type);
+    errmsg             += "]";
+    return {Error{Error::Code::OverloadDoesNotExist, {}, errmsg}};
   }
 };
 
@@ -173,17 +187,29 @@ public:
     return overloads.Register(argument_type, {return_type, generator});
   }
 
-  auto Lookup(Type::Pointer argument_type) -> std::optional<Overload> override {
+  auto Lookup(Type::Pointer argument_type)
+      -> BuiltinUnopOverloadSet::Result override {
+    // check that the given argument type has the correct
+    // shape for the expected polymorphic argument type.
+    // see type/action/PolymorphicEquality for the definition
+    // of shape.
+    auto equality_error =
+        PolymorphicEquality(poly_argument_type, argument_type);
+    if (equality_error) {
+      return {equality_error.value()};
+    }
+
     auto found = overloads.Lookup(argument_type);
     if (found) {
-      return found;
+      return {found.value()};
     }
 
     auto const *mono_return_type =
         Substitution(type_variable, argument_type, poly_return_type);
     auto const *mono_argument_type =
         Substitution(type_variable, argument_type, poly_argument_type);
-    return overloads.Register(mono_argument_type, {mono_return_type, function});
+    return {
+        overloads.Register(mono_argument_type, {mono_return_type, function})};
   }
 };
 
@@ -224,7 +250,7 @@ public:
       return element.Value()->Register(argument_type, return_type, generator);
     }
     [[nodiscard]] auto Lookup(Type::Pointer argument_type)
-        -> std::optional<BuiltinUnopOverloadSet::Overload> {
+        -> BuiltinUnopOverloadSet::Result {
       return element.Value()->Lookup(argument_type);
     }
   };

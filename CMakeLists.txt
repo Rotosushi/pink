@@ -176,8 +176,9 @@ add_library(common
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
-  source/type/action/Substitution.cpp 
+  source/type/action/PolymorphicEquality.cpp
   source/type/action/StructuralEquality.cpp
+  source/type/action/Substitution.cpp 
   source/type/action/ToString.cpp
   source/type/action/ToLLVM.cpp
   source/type/interner/TypeInterner.cpp
