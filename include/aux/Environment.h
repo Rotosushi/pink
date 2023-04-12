@@ -65,7 +65,6 @@ private:
   CLIOptions       cli_options;
   Parser           parser;
   StringInterner   variable_interner;
-  StringInterner   operator_interner;
   TypeInterner     type_interner;
   ScopeStack       scopes;
   BinopTable       binop_table;
@@ -94,7 +93,6 @@ private:
         cli_options{std::move(cli_options)},
         parser{input},
         variable_interner{},
-        operator_interner{},
         type_interner{},
         scopes{},
         binop_table{},
@@ -113,7 +111,6 @@ private:
         cli_options{},
         parser{},
         variable_interner{},
-        operator_interner{},
         type_interner{},
         scopes{},
         binop_table{},
@@ -262,11 +259,6 @@ public:
     return variable_interner.Intern(str);
   }
 
-  // exposing operator_interner's interface
-  auto InternOperator(std::string_view str) -> InternedString {
-    return operator_interner.Intern(str);
-  }
-
   // exposing TypeInterner's interface
   auto GetNilType() -> NilType::Pointer { return type_interner.GetNilType(); }
   auto GetBoolType() -> BooleanType::Pointer {
@@ -344,46 +336,27 @@ public:
   }
 
   // exposing BinopTable's interface
-  auto RegisterBinop(InternedString         opr,
-                     Precedence             precedence,
-                     Associativity          associativity,
+  auto RegisterBinop(Token                  opr,
                      Type::Pointer          left_t,
                      Type::Pointer          right_t,
                      Type::Pointer          ret_t,
                      BinopCodegen::Function fn_p) -> BinopTable::Binop {
-    return binop_table
-        .Register(opr, precedence, associativity, left_t, right_t, ret_t, fn_p);
+    return binop_table.Register(opr, left_t, right_t, ret_t, fn_p);
   }
 
-  auto LookupBinop(InternedString opr) -> std::optional<BinopTable::Binop> {
+  auto LookupBinop(Token opr) -> std::optional<BinopTable::Binop> {
     return binop_table.Lookup(opr);
   }
 
   // exposing UnopTable's interface
-  auto RegisterBuiltinUnop(InternedString        unop,
-                           Type::Pointer         argument_type,
-                           Type::Pointer         return_type,
-                           UnopCodegen::Function generator) -> UnopTable::Unop {
-    return unop_table.RegisterBuiltin(unop,
-                                      argument_type,
-                                      return_type,
-                                      generator);
+  auto RegisterUnop(Token                 unop,
+                    Type::Pointer         argument_type,
+                    Type::Pointer         return_type,
+                    UnopCodegen::Function generator) -> UnopTable::Unop {
+    return unop_table.RegisterUnop(unop, argument_type, return_type, generator);
   }
 
-  auto RegisterTemplateBuiltinUnop(InternedString        unop,
-                                   Type::Pointer         type_variable,
-                                   Type::Pointer         argument_type,
-                                   Type::Pointer         return_type,
-                                   UnopCodegen::Function function)
-      -> UnopTable::Unop {
-    return unop_table.RegisterTemplateBuiltin(unop,
-                                              type_variable,
-                                              argument_type,
-                                              return_type,
-                                              function);
-  }
-
-  auto LookupUnop(InternedString opr) -> std::optional<UnopTable::Unop> {
+  auto LookupUnop(Token opr) -> std::optional<UnopTable::Unop> {
     return unop_table.Lookup(opr);
   }
 

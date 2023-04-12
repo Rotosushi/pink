@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -27,7 +27,7 @@
 #include "aux/Error.h"   // pink::Error
 #include "aux/Outcome.h" // pink::Outcome<>
 
-#include "ast/Ast.h"            // pink::Ast
+#include "ast/Ast.h" // pink::Ast
 
 #include "front/Lexer.h" // pink::Lexer pink::Token
 
@@ -76,8 +76,13 @@ affix = composite "=" affix
       | composite "(" [affix {"," affix}] ")"
       | composite
 
-composite = accessor operator infix-parser
+composite = accessor binop infix-parser
           | accessor
+
+binop = "+"  |  "-"  |  "*"  | "/"
+      | "&"  |  "|"  |  "!"  | "=="
+      | "!=" |  "<"  |  "<=" | ">"
+      | ">="
 
 accessor = basic {"." basic}
          | basic {"[" basic "]"}
@@ -85,12 +90,16 @@ accessor = basic {"." basic}
 
 basic = id [":=" affix]
       | integer
-      | operator accessor
+      | unop accessor
+      | "&" accessor
+      | "*" accessor
       | "nil"
       | "true"
       | "false"
       | "(" affix {"," affix} ")"
       | "[" affix {"," affix} "]"
+
+unop = "!" | "-"
 
 type = "Nil"
      | "Integer"
@@ -101,7 +110,6 @@ type = "Nil"
 
 // these are the regular expressions used by re2c
 id = [a-zA-Z_][a-zA-Z0-9_]*
-operator = [*+\-/%<=>&|\^!~@$]+;
 integer = [0-9]+
 
     \endverbatim
@@ -232,6 +240,10 @@ private:
    * @return false token != token
    */
   auto Peek(Token token) -> bool;
+
+  auto IsBinop(Token token) -> bool;
+  auto Precedence(Token token) -> Precedence;
+  auto Associativity(Token token) -> Associativity;
 
   /**
    * @brief Parses Top level expressions
@@ -483,7 +495,7 @@ private:
    * which was parsed. if false, then the Error which was encountered.
    */
   auto ParseInfix(std::unique_ptr<Ast> left,
-                  Precedence           precedence,
+                  pink::Precedence     precedence,
                   Environment         &env) -> Result;
 
   /**

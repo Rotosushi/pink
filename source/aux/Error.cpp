@@ -182,8 +182,8 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Semantic Error: Tuples must have constant initializers";
   case Error::Code::CannotTakeAddressOfLiteral:
     return "Semantic Error: Cannot take the address of a literal value";
-  case Error::Code::CannotDereferenceLiteral:
-    return "Semantic Error: Cannot dereference a non-pointer value";
+  case Error::Code::CannotDereferenceNonPointer:
+    return "Semantic Error: Cannot dereference a non-pointer type";
   case Error::Code::CannotCastToType:
     return "Semantic Error: Cannot cast value to the target type";
   case Error::Code::CannotCastFromType:

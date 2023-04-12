@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -28,9 +28,10 @@
 #include "llvm/IR/Value.h"
 
 #include "aux/Map.h"
-#include "aux/StringInterner.h"
 
 #include "type/Type.h"
+
+#include "front/Token.h"
 
 #include "ops/PrecedenceAndAssociativity.h"
 
@@ -84,7 +85,7 @@ public:
 
   public:
     Overload(Overloads::Element element) noexcept
-        : literal(element) {}
+        : literal(std::move(element)) {}
     auto ArgumentTypes() noexcept -> Key { return literal.Key(); }
     auto ReturnType() noexcept -> Type::Pointer {
       return literal.Value().ReturnType();
@@ -97,15 +98,10 @@ public:
   };
 
 private:
-  Precedence    precedence;
-  Associativity associativity;
-  Overloads     overloads;
+  Overloads overloads;
 
 public:
-  BinopOverloadSet(Precedence precedence, Associativity associativity) noexcept
-      : precedence{precedence},
-        associativity{associativity},
-        overloads{} {}
+  BinopOverloadSet() noexcept                              = default;
   ~BinopOverloadSet() noexcept                             = default;
   BinopOverloadSet(const BinopOverloadSet &other) noexcept = delete;
   BinopOverloadSet(BinopOverloadSet &&other) noexcept      = default;
@@ -116,12 +112,6 @@ public:
 
   [[nodiscard]] auto Empty() const noexcept -> bool {
     return overloads.Size() == 0;
-  }
-  [[nodiscard]] auto Precedence() const noexcept -> Precedence {
-    return precedence;
-  }
-  [[nodiscard]] auto Associativity() const noexcept -> Associativity {
-    return associativity;
   }
 
   auto Register(Type::Pointer          left_type,
@@ -147,8 +137,8 @@ public:
  */
 class BinopTable {
 public:
-  using Key   = InternedString;
-  using Value = BinopOverloadSet;
+  using Key   = Token;
+  using Value = std::unique_ptr<BinopOverloadSet>;
   using Table = Map<Key, Value>;
 
   class Binop {
@@ -156,33 +146,24 @@ public:
 
   public:
     Binop(BinopTable::Table::Element element) noexcept
-        : element(element) {}
+        : element(std::move(element)) {}
     [[nodiscard]] auto Empty() const noexcept -> bool {
-      return element.Value().Empty();
-    }
-    [[nodiscard]] auto Operator() const noexcept -> InternedString {
-      return element.Key();
-    }
-    [[nodiscard]] auto Precedence() const noexcept -> pink::Precedence {
-      return element.Value().Precedence();
-    }
-    [[nodiscard]] auto Associativity() const noexcept -> pink::Associativity {
-      return element.Value().Associativity();
+      return element.Value()->Empty();
     }
     auto Register(Type::Pointer          left_type,
                   Type::Pointer          right_type,
                   Type::Pointer          return_type,
                   BinopCodegen::Function generator)
         -> BinopOverloadSet::Overload {
-      return element.Value().Register(left_type,
-                                      right_type,
-                                      return_type,
-                                      generator);
+      return element.Value()->Register(left_type,
+                                       right_type,
+                                       return_type,
+                                       generator);
     }
 
     auto Lookup(Type::Pointer left_type, Type::Pointer right_type)
         -> std::optional<BinopOverloadSet::Overload> {
-      return element.Value().Lookup(left_type, right_type);
+      return element.Value()->Lookup(left_type, right_type);
     }
   };
 
@@ -201,9 +182,7 @@ public:
   // status as a c++ keyword, so 'op' will have to do.
   // (i dislike 'opr', 'ope', 'oprtr', etc... 'op' just feels clean)
   // NOLINTNEXTLINE(readability-identifier-length)
-  auto Register(InternedString         op,
-                Precedence             precedence,
-                Associativity          associativity,
+  auto Register(Token                  op,
                 Type::Pointer          left_type,
                 Type::Pointer          right_type,
                 Type::Pointer          return_type,
@@ -214,14 +193,12 @@ public:
       return {found.value()};
     }
 
-    Binop binop = table.Register(op, {precedence, associativity});
+    Binop binop = table.Register(op, std::make_unique<BinopOverloadSet>());
     binop.Register(left_type, right_type, return_type, generator);
     return binop;
   }
 
   // NOLINTNEXTLINE(readability-identifier-length)
-  auto Lookup(InternedString op) -> std::optional<Binop> {
-    return table.Lookup(op);
-  }
+  auto Lookup(Token op) -> std::optional<Binop> { return table.Lookup(op); }
 };
 } // namespace pink

@@ -109,6 +109,91 @@ auto Parser::Expect(Token expected) -> bool {
 
 auto Parser::Peek(Token expected) -> bool { return token == expected; }
 
+auto Parser::IsBinop(Token token) -> bool {
+  switch (token) {
+  case Token::Add:
+  case Token::Sub:
+  case Token::Star:
+  case Token::Divide:
+  case Token::Modulo:
+  case Token::And:
+  case Token::Or:
+  case Token::Equals:
+  case Token::NotEquals:
+  case Token::LessThan:
+  case Token::LessThanOrEqual:
+  case Token::GreaterThan:
+  case Token::GreaterThanOrEqual:
+    return true;
+  default:
+    return false;
+  }
+}
+
+/*
+  precedence table:
+      == !=     : 1
+      < <= > >= : 2
+      & |       : 3
+      + -       : 4
+      * / %     : 5
+
+  #REASON
+  in short, I want [a + b * c == d * e + f]
+  to parse as [(a + (b * c)) == ((c * d) + f)]
+  to ensure that comparisons happen on the
+  'most evaluated' values. The only pain point is
+  that if you want to combine the comparison expressions
+  themselves you must use parenthesis, however I feel like
+  that is a small price to pay, when it makes boolean
+  conjunction/disjunction occur before comparison by default.
+*/
+auto Parser::Precedence(Token token) -> pink::Precedence {
+  switch (token) {
+  case Token::Equals:
+  case Token::NotEquals:
+    return 1;
+  case Token::LessThan:
+  case Token::LessThanOrEqual:
+  case Token::GreaterThan:
+  case Token::GreaterThanOrEqual:
+    return 2;
+  case Token::And:
+  case Token::Or:
+    return 3;
+  case Token::Add:
+  case Token::Sub:
+    return 4;
+  case Token::Star:
+  case Token::Divide:
+  case Token::Modulo:
+    return 5;
+  default:
+    return 0;
+  }
+}
+
+auto Parser::Associativity(Token token) -> pink::Associativity {
+  switch (token) {
+  case Token::Add:
+  case Token::Sub:
+  case Token::Star:
+  case Token::Divide:
+  case Token::Modulo:
+  case Token::And:
+  case Token::Or:
+  case Token::Equals:
+  case Token::NotEquals:
+  case Token::LessThan:
+  case Token::LessThanOrEqual:
+  case Token::GreaterThan:
+  case Token::GreaterThanOrEqual:
+    return Associativity::Left;
+  default:
+    return Associativity::None;
+  }
+}
+
 /*
   Extract the n'th line of source text from the buffer,
   where n = location.firstLine
@@ -437,7 +522,7 @@ auto Parser::ParseAffix(Environment &env)
   TRY(composite_result, composite, ParseComposite, env)
 
   // composite "=" affix
-  if (Peek(Token::Equals)) {
+  if (Peek(Token::Assign)) {
     return ParseAssignment(std::move(composite), env);
   }
 
@@ -518,7 +603,7 @@ auto Parser::ParseApplication(Ast::Pointer composite, Environment &env)
 auto Parser::ParseComposite(Environment &env) -> Parser::Result {
   TRY(accessor_result, accessor, ParseAccessor, env)
 
-  if (Peek(Token::Op)) {
+  if (IsBinop(token)) {
     return ParseInfix(std::move(accessor), 0, env);
   }
 
@@ -590,58 +675,39 @@ auto Parser::ParseSubscript(Ast::Pointer left, Environment &env)
     going from this pseudo-code:
     https://en.wikipedia.org/wiki/Operator-precedence_parser
 */
-auto Parser::ParseInfix(Ast::Pointer lhs,
-                        Precedence   precedence,
-                        Environment &env) -> Parser::Result {
-  Parser::Result                   result{std::move(lhs)};
-  InternedString                   peek_str{nullptr};
-  std::optional<BinopTable::Binop> peek_opt{};
-  BinopTable::Binop                peek_lit{nullptr};
-  InternedString                   op_str{nullptr};
-  BinopTable::Binop                op_lit{nullptr};
-  Location                         op_loc{};
+auto Parser::ParseInfix(Ast::Pointer     lhs,
+                        pink::Precedence precedence,
+                        Environment     &env) -> Parser::Result {
+  Parser::Result result{std::move(lhs)};
+  Token          op{Token::Error};
+  Location       op_loc{};
 
   auto PredictsBinop = [&]() -> bool {
-    if (token != Token::Op) {
-      return false;
-    }
-    peek_str = env.InternOperator(text);
-    assert(peek_str != nullptr);
-
-    peek_opt = env.LookupBinop(peek_str);
-    if (!peek_opt) {
+    if (!IsBinop(token)) {
       return false;
     }
 
-    return peek_opt->Precedence() >= precedence;
+    return Precedence(token) >= precedence;
   };
 
   auto PredictsHigherPrecedenceOrRightAssociativeBinop = [&]() -> bool {
-    if (token != Token::Op) {
+    if (!IsBinop(token)) {
       return false;
     }
 
-    peek_str = env.InternOperator(text);
-    assert(peek_str != nullptr);
-
-    peek_opt = env.LookupBinop(peek_str);
-    if (!peek_opt.has_value()) {
-      return false;
-    }
-    if (peek_opt->Precedence() > op_lit.Precedence()) {
+    if (Precedence(token) > Precedence(op)) {
       return true;
     }
 
-    if ((peek_opt->Associativity() == Associativity::Right) &&
-        (peek_opt->Precedence() == op_lit.Precedence())) {
+    if ((Associativity(op) == Associativity::Right) &&
+        (Precedence(op) == Precedence(token))) {
       return true;
     }
     return false;
   };
 
   while (PredictsBinop()) {
-    op_str = peek_str;
-    op_lit = peek_opt.value();
+    op     = token;
     op_loc = location;
 
     nexttok(); // eat the 'operator'
@@ -649,7 +715,7 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
     TRY(right_result, right, ParseAccessor, env)
 
     while (PredictsHigherPrecedenceOrRightAssociativeBinop()) {
-      auto temp = ParseInfix(std::move(right), peek_opt->Precedence(), env);
+      auto temp = ParseInfix(std::move(right), Precedence(op), env);
       if (!temp) {
         return temp.GetSecond();
       }
@@ -662,7 +728,7 @@ auto Parser::ParseInfix(Ast::Pointer lhs,
                        rhs_loc.lastLine,
                        rhs_loc.lastColumn);
     result = std::make_unique<Binop>(binop_loc,
-                                     op_str,
+                                     op,
                                      std::move(result.GetFirst()),
                                      std::move(right));
   }
@@ -696,10 +762,11 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
     return {std::make_unique<Variable>(lhs_loc, symbol)};
   }
 
-  // #RULE: an operator appearing in the basic position is a unop
-  case Token::Op: {
-    Location       lhs_loc{location};
-    InternedString opr{env.InternOperator(text)};
+  // #RULE: "!" and "-" are unary operators
+  case Token::Not:
+  case Token::Sub: {
+    Location lhs_loc{location};
+    Token    op = token; // NOLINT
 
     nexttok(); // eat op
 
@@ -711,7 +778,39 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
                       lhs_loc.firstColumn,
                       rhs_loc.lastLine,
                       rhs_loc.lastColumn};
-    return {std::make_unique<Unop>(unop_loc, opr, std::move(right))};
+    return {std::make_unique<Unop>(unop_loc, op, std::move(right))};
+  }
+
+  // #RULE '&' in basic position is the address of operator
+  case Token::And: {
+    Location lhs_loc{location};
+
+    nexttok(); // eat '&'
+
+    TRY(right_result, right, ParseAccessor, env)
+
+    const Location &rhs_loc{right->GetLocation()};
+    Location        address_of_loc{lhs_loc.firstLine,
+                            lhs_loc.firstColumn,
+                            rhs_loc.lastLine,
+                            rhs_loc.lastColumn};
+    return {std::make_unique<AddressOf>(address_of_loc, std::move(right))};
+  }
+
+  // #RULE '*' in basic position is the address of operator
+  case Token::Star: {
+    Location lhs_loc{location};
+
+    nexttok(); // eat '*'
+
+    TRY(right_result, right, ParseAccessor, env)
+
+    const Location &rhs_loc{right->GetLocation()};
+    Location        value_of_loc{lhs_loc.firstLine,
+                          lhs_loc.firstColumn,
+                          rhs_loc.lastLine,
+                          rhs_loc.lastColumn};
+    return {std::make_unique<ValueOf>(value_of_loc, std::move(right))};
   }
 
   // #RULE a open paren appearing in basic position

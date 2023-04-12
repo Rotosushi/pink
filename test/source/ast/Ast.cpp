@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -131,11 +131,11 @@ TEST_CASE("ast/Bind", "[unit][ast]") {
 }
 
 TEST_CASE("ast/Binop", "[unit][ast]") {
-  pink::Location       location = RandomLocation();
-  pink::InternedString op       = "+";
-  pink::Ast::Pointer   left;
-  pink::Ast::Pointer   right;
-  pink::Ast::Pointer   ast = std::make_unique<pink::Binop>(location,
+  pink::Location     location = RandomLocation();
+  pink::Token        op       = pink::Token::Add;
+  pink::Ast::Pointer left;
+  pink::Ast::Pointer right;
+  pink::Ast::Pointer ast = std::make_unique<pink::Binop>(location,
                                                          op,
                                                          std::move(left),
                                                          std::move(right));
@@ -296,10 +296,10 @@ TEST_CASE("ast/Tuple", "[unit][ast]") {
 }
 
 TEST_CASE("ast/Unop", "[unit][ast]") {
-  pink::Location       location = RandomLocation();
-  pink::InternedString op       = "-";
-  pink::Ast::Pointer   right;
-  pink::Ast::Pointer   ast =
+  pink::Location     location = RandomLocation();
+  pink::Token        op       = pink::Token::Not;
+  pink::Ast::Pointer right;
+  pink::Ast::Pointer ast =
       std::make_unique<pink::Unop>(location, op, std::move(right));
   REQUIRE(ast->GetKind() == pink::Ast::Kind::Unop);
   REQUIRE(ast->GetLocation() == location);

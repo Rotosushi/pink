@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -20,6 +20,7 @@
 #include "visitor/VisitorResult.h"
 
 namespace pink {
+class AddressOf;
 class Application;
 class Array;
 class Assignment;
@@ -35,11 +36,13 @@ class Nil;
 class Subscript;
 class Tuple;
 class Unop;
+class ValueOf;
 class Variable;
 class While;
 
 class AstVisitor {
 public:
+  virtual void Visit(AddressOf *address_of) noexcept    = 0;
   virtual void Visit(Application *application) noexcept = 0;
   virtual void Visit(Array *array) noexcept             = 0;
   virtual void Visit(Assignment *assignment) noexcept   = 0;
@@ -55,6 +58,7 @@ public:
   virtual void Visit(Subscript *subscript) noexcept     = 0;
   virtual void Visit(Tuple *tuple) noexcept             = 0;
   virtual void Visit(Unop *unop) noexcept               = 0;
+  virtual void Visit(ValueOf *value_of) noexcept        = 0;
   virtual void Visit(Variable *variable) noexcept       = 0;
   virtual void Visit(While *loop) noexcept              = 0;
 
@@ -68,6 +72,7 @@ public:
 
 class ConstAstVisitor {
 public:
+  virtual void Visit(const AddressOf *address_of) const noexcept    = 0;
   virtual void Visit(const Application *application) const noexcept = 0;
   virtual void Visit(const Array *array) const noexcept             = 0;
   virtual void Visit(const Assignment *assignment) const noexcept   = 0;
@@ -83,6 +88,7 @@ public:
   virtual void Visit(const Subscript *subscript) const noexcept     = 0;
   virtual void Visit(const Tuple *tuple) const noexcept             = 0;
   virtual void Visit(const Unop *unop) const noexcept               = 0;
+  virtual void Visit(const ValueOf *value_of) const noexcept        = 0;
   virtual void Visit(const Variable *variable) const noexcept       = 0;
   virtual void Visit(const While *loop) const noexcept              = 0;
 

@@ -21,7 +21,6 @@
  * @version 0.1
  */
 #pragma once
-#include <memory> // std::unique_ptr
 #include <vector> // std::vector
 
 #include "ast/Ast.h"

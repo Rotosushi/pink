@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -37,15 +37,11 @@ TEST_CASE("ops/BinopCodegen", "[unit][ops]") {
 }
 
 TEST_CASE("ops/BinopOverloadSet", "[unit][ops]") {
-  auto                interner      = pink::TypeInterner{};
-  auto                integer_type  = interner.GetIntType();
-  pink::Precedence    precedence    = 3;
-  pink::Associativity associativity = pink::Associativity::Left;
+  auto interner     = pink::TypeInterner{};
+  auto integer_type = interner.GetIntType();
 
-  pink::BinopOverloadSet binop_literal(precedence, associativity);
+  pink::BinopOverloadSet binop_literal;
   REQUIRE(binop_literal.Empty());
-  REQUIRE(binop_literal.Precedence() == precedence);
-  REQUIRE(binop_literal.Associativity() == associativity);
 
   auto implementation = binop_literal.Register(integer_type,
                                                integer_type,
@@ -61,23 +57,17 @@ TEST_CASE("ops/BinopOverloadSet", "[unit][ops]") {
 }
 
 TEST_CASE("ops/BinopTable", "[unit][ops]") {
-  auto                 interner      = pink::TypeInterner{};
-  auto                 integer_type  = interner.GetIntType();
-  pink::Precedence     precedence    = 3;
-  pink::Associativity  associativity = pink::Associativity::Left;
-  pink::InternedString op            = "+";
+  auto        interner     = pink::TypeInterner{};
+  auto        integer_type = interner.GetIntType();
+  pink::Token op           = pink::Token::Add;
 
   pink::BinopTable binop_table;
   auto             literal = binop_table.Register(op,
-                                      precedence,
-                                      associativity,
                                       integer_type,
                                       integer_type,
                                       integer_type,
                                       BinopCodegenFunction);
   REQUIRE(!literal.Empty());
-  REQUIRE(literal.Associativity() == associativity);
-  REQUIRE(literal.Precedence() == precedence);
   auto optional_implementation = literal.Lookup(integer_type, integer_type);
   REQUIRE(optional_implementation.has_value());
   auto implementation = optional_implementation.value();
@@ -87,8 +77,6 @@ TEST_CASE("ops/BinopTable", "[unit][ops]") {
   REQUIRE(optional_literal.has_value());
   literal = optional_literal.value();
   REQUIRE(!literal.Empty());
-  REQUIRE(literal.Associativity() == associativity);
-  REQUIRE(literal.Precedence() == precedence);
   optional_implementation = literal.Lookup(integer_type, integer_type);
   REQUIRE(optional_implementation.has_value());
   implementation = optional_implementation.value();

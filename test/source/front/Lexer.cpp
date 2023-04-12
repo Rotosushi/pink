@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -31,13 +31,13 @@ TEST_CASE("front/Lexer", "[unit][front]") {
   };
 
   std::vector<pink::Token> equivalent_tokens = {
-      pink::Token::Id,     pink::Token::Op,       pink::Token::Integer,
+      pink::Token::Id,     pink::Token::Add,      pink::Token::Integer,
       pink::Token::Nil,    pink::Token::NilType,  pink::Token::IntegerType,
       pink::Token::True,   pink::Token::False,    pink::Token::BooleanType,
       pink::Token::Fn,     pink::Token::If,       pink::Token::Then,
       pink::Token::Else,   pink::Token::While,    pink::Token::Do,
       pink::Token::Dot,    pink::Token::Comma,    pink::Token::Semicolon,
-      pink::Token::Colon,  pink::Token::Equals,   pink::Token::ColonEq,
+      pink::Token::Colon,  pink::Token::Assign,   pink::Token::ColonEq,
       pink::Token::LParen, pink::Token::RParen,   pink::Token::LBrace,
       pink::Token::RBrace, pink::Token::LBracket, pink::Token::RBracket,
   };

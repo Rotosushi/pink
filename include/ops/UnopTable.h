@@ -28,10 +28,11 @@
 #include "type/action/Substitution.h"        // pink::Substitution
 #include "type/action/ToString.h"            // pink::ToString
 
-#include "aux/Error.h"          // pink::Error
-#include "aux/Map.h"            // pink::Map<K, V>
-#include "aux/Outcome.h"        // pink::Outcome
-#include "aux/StringInterner.h" // pink::InternedString
+#include "aux/Error.h"   // pink::Error
+#include "aux/Map.h"     // pink::Map<K, V>
+#include "aux/Outcome.h" // pink::Outcome
+
+#include "front/Token.h" // pink::Token
 
 namespace pink {
 class Environment;
@@ -72,7 +73,7 @@ public:
   }
 };
 
-class BuiltinUnopOverloadSet {
+class UnopOverloadSet {
 public:
   using Key       = Type::Pointer;
   using Value     = UnopCodegen;
@@ -84,7 +85,7 @@ public:
 
   public:
     Overload(Overloads::Element element) noexcept
-        : literal{element} {}
+        : literal{std::move(element)} {}
     [[nodiscard]] auto ArgumentType() const noexcept -> Key {
       return literal.Key();
     }
@@ -98,118 +99,31 @@ public:
     }
   };
 
-  using Result = Outcome<Overload, Error>;
-
-protected:
-  // #REASON: this is protected so the derived classes
-  // can implement their specific behavior over this
-  // set of data. and this class is an abstract base
-  // to make consuming code simpler.
-  // NOLINTNEXTLINE(cppcoreguidelines-non-private-member-variables-in-classes)
+private:
   Overloads overloads;
 
 public:
-  BuiltinUnopOverloadSet() noexcept          = default;
-  virtual ~BuiltinUnopOverloadSet() noexcept = default;
-  BuiltinUnopOverloadSet(const BuiltinUnopOverloadSet &other) noexcept = delete;
-  BuiltinUnopOverloadSet(BuiltinUnopOverloadSet &&other) noexcept = default;
-  auto operator=(const BuiltinUnopOverloadSet &other) noexcept
-      -> BuiltinUnopOverloadSet & = delete;
-  auto operator=(BuiltinUnopOverloadSet &&other) noexcept
-      -> BuiltinUnopOverloadSet & = default;
+  UnopOverloadSet() noexcept                             = default;
+  virtual ~UnopOverloadSet() noexcept                    = default;
+  UnopOverloadSet(const UnopOverloadSet &other) noexcept = delete;
+  UnopOverloadSet(UnopOverloadSet &&other) noexcept      = default;
+  auto operator=(const UnopOverloadSet &other) noexcept
+      -> UnopOverloadSet & = delete;
+  auto operator=(UnopOverloadSet &&other) noexcept
+      -> UnopOverloadSet & = default;
 
   [[nodiscard]] auto Empty() const noexcept -> bool {
     return overloads.Size() == 0;
   }
 
-  virtual auto Register(Type::Pointer         argument_type,
-                        Type::Pointer         return_type,
-                        UnopCodegen::Function generator) -> Overload = 0;
-
-  virtual auto Lookup(Type::Pointer argument_type) -> Result = 0;
-};
-
-/**
- * @brief Represents a single unary operator's overload set
- */
-class ConcreteBuiltinUnopOverloadSet : public BuiltinUnopOverloadSet {
-public:
   auto Register(Type::Pointer         argument_type,
                 Type::Pointer         return_type,
-                UnopCodegen::Function generator) -> Overload override {
+                UnopCodegen::Function generator) -> Overload {
     return overloads.Register(argument_type, {return_type, generator});
   }
 
-  auto Lookup(Type::Pointer argument_type)
-      -> BuiltinUnopOverloadSet::Result override {
-    auto found = overloads.Lookup(argument_type);
-    if (found) {
-      return {found.value()};
-    }
-
-    std::string errmsg = "for argument type [";
-    errmsg             += ToString(argument_type);
-    errmsg             += "]";
-    return {Error{Error::Code::OverloadDoesNotExist, {}, errmsg}};
-  }
-};
-
-/*
- * TemplateBuiltinUnopOverloadSet is not built to solve
- * the general problem of a templated unary operator,
- * rather this class is used to add the 'templated'
- * unop builtins '&' and '*'. which are implementable
- * over all possible types given the same UnopCodegen::Function.
- * (due to llvm always returning a pointer to memory allocations.
- *  both '&' and '*' are implemented as no-ops)
- */
-class TemplateBuiltinUnopOverloadSet : public BuiltinUnopOverloadSet {
-public:
-private:
-  UnopCodegen::Function function;
-  Type::Pointer         poly_return_type;
-  Type::Pointer         poly_argument_type;
-  Type::Pointer         type_variable;
-
-public:
-  TemplateBuiltinUnopOverloadSet(Type::Pointer         type_variable,
-                                 Type::Pointer         poly_return_type,
-                                 Type::Pointer         poly_argument_type,
-                                 UnopCodegen::Function function)
-      : function(function),
-        poly_return_type(poly_return_type),
-        poly_argument_type(poly_argument_type),
-        type_variable(type_variable) {}
-
-  auto Register(Type::Pointer         argument_type,
-                Type::Pointer         return_type,
-                UnopCodegen::Function generator) -> Overload override {
-    return overloads.Register(argument_type, {return_type, generator});
-  }
-
-  auto Lookup(Type::Pointer argument_type)
-      -> BuiltinUnopOverloadSet::Result override {
-    // check that the given argument type has the correct
-    // shape for the expected polymorphic argument type.
-    // see type/action/PolymorphicEquality for the definition
-    // of shape.
-    auto equality_error =
-        PolymorphicEquality(poly_argument_type, argument_type);
-    if (equality_error) {
-      return {equality_error.value()};
-    }
-
-    auto found = overloads.Lookup(argument_type);
-    if (found) {
-      return {found.value()};
-    }
-
-    auto const *mono_return_type =
-        Substitution(type_variable, argument_type, poly_return_type);
-    auto const *mono_argument_type =
-        Substitution(type_variable, argument_type, poly_argument_type);
-    return {
-        overloads.Register(mono_argument_type, {mono_return_type, function})};
+  auto Lookup(Type::Pointer argument_type) -> std::optional<Overload> {
+    return overloads.Lookup(argument_type);
   }
 };
 
@@ -226,8 +140,8 @@ public:
  */
 class UnopTable {
 public:
-  using Key   = InternedString;
-  using Value = std::unique_ptr<BuiltinUnopOverloadSet>;
+  using Key   = Token;
+  using Value = std::unique_ptr<UnopOverloadSet>;
   using Table = Map<Key, Value>;
 
   class Unop {
@@ -236,21 +150,18 @@ public:
 
   public:
     Unop(Table::Element element) noexcept
-        : element(element) {}
+        : element(std::move(element)) {}
     [[nodiscard]] auto Empty() const noexcept -> bool {
       return element.Value()->Empty();
-    }
-    [[nodiscard]] auto Operator() const noexcept -> InternedString {
-      return element.Key();
     }
     auto Register(Type::Pointer         argument_type,
                   Type::Pointer         return_type,
                   UnopCodegen::Function generator)
-        -> BuiltinUnopOverloadSet::Overload {
+        -> UnopOverloadSet::Overload {
       return element.Value()->Register(argument_type, return_type, generator);
     }
     [[nodiscard]] auto Lookup(Type::Pointer argument_type)
-        -> BuiltinUnopOverloadSet::Result {
+        -> std::optional<UnopOverloadSet::Overload> {
       return element.Value()->Lookup(argument_type);
     }
   };
@@ -267,11 +178,10 @@ public:
   auto operator=(UnopTable &&other) noexcept -> UnopTable      & = default;
 
   // NOLINTNEXTLINE(readability-identifier-length)
-  auto RegisterBuiltin(InternedString        op,
-                       Type::Pointer         argument_type,
-                       Type::Pointer         return_type,
-                       UnopCodegen::Function generator) -> Unop {
-    assert(op != nullptr);
+  auto RegisterUnop(Token                 op,
+                    Type::Pointer         argument_type,
+                    Type::Pointer         return_type,
+                    UnopCodegen::Function generator) -> Unop {
     assert(argument_type != nullptr);
     assert(return_type != nullptr);
     assert(generator != nullptr);
@@ -281,41 +191,12 @@ public:
       return found.value();
     }
 
-    Unop unop =
-        table.Register(op, std::make_unique<ConcreteBuiltinUnopOverloadSet>());
+    Unop unop = table.Register(op, std::make_unique<UnopOverloadSet>());
     unop.Register(argument_type, return_type, generator);
     return unop;
   }
 
   // NOLINTNEXTLINE(readability-identifier-length)
-  auto RegisterTemplateBuiltin(InternedString        op,
-                               Type::Pointer         type_variable,
-                               Type::Pointer         argument_type,
-                               Type::Pointer         return_type,
-                               UnopCodegen::Function function) -> Unop {
-    assert(op != nullptr);
-    assert(type_variable != nullptr);
-    assert(argument_type != nullptr);
-    assert(return_type != nullptr);
-    assert(function != nullptr);
-    auto found = Lookup(op);
-    assert(!found); // there can only be a templated op, or a non-templated op.
-    // #NOTE: 3/5/2023 this might be a bit too restrictive an assert,
-    // technically we are fine in the case that the already defined
-    // unop is templated. but checking that requires a dynamic cast.
-    Unop unop = table.Register(
-        op,
-        std::make_unique<TemplateBuiltinUnopOverloadSet>(type_variable,
-                                                         return_type,
-                                                         argument_type,
-                                                         function));
-    return unop;
-  }
-
-  // NOLINTNEXTLINE(readability-identifier-length)
-  auto Lookup(InternedString op) -> std::optional<Unop> {
-    assert(op != nullptr);
-    return table.Lookup(op);
-  }
+  auto Lookup(Token op) -> std::optional<Unop> { return table.Lookup(op); }
 };
 } // namespace pink

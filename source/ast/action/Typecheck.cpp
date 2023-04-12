@@ -60,6 +60,7 @@ private:
   Environment &env;
 
 public:
+  void Visit(const AddressOf *address_of) const noexcept override;
   void Visit(const Application *application) const noexcept override;
   void Visit(const Array *array) const noexcept override;
   void Visit(const Assignment *assignment) const noexcept override;
@@ -75,6 +76,7 @@ public:
   void Visit(const Subscript *subscript) const noexcept override;
   void Visit(const Tuple *tuple) const noexcept override;
   void Visit(const Unop *unop) const noexcept override;
+  void Visit(const ValueOf *value_of) const noexcept override;
   void Visit(const Variable *variable) const noexcept override;
   void Visit(const While *loop) const noexcept override;
 
@@ -88,6 +90,23 @@ public:
   auto operator=(TypecheckVisitor &&other) noexcept
       -> TypecheckVisitor & = delete;
 };
+
+/*
+  Address of has the type Pointer<T> iff the right hand side has a type T
+*/
+void TypecheckVisitor::Visit(const AddressOf *address_of) const noexcept {
+  env.WithinAddressOf(true);
+  TRY_ELSE(right_result,
+           right_type,
+           env.WithinAddressOf(false),
+           Compute,
+           address_of->GetRight(),
+           this)
+  env.WithinAddressOf(false);
+
+  address_of->SetCachedType(right_type);
+  result = right_type;
+}
 
 /* 1/24/2023
   The type of and Ast::Application is the result type of the
@@ -261,7 +280,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
 
   if (!optional_literal || optional_literal->Empty()) {
     std::string errmsg = "Unknown binop [";
-    errmsg             += binop->GetOp();
+    errmsg             += ToString(binop->GetOp());
     errmsg             += "]";
     result = Error(Error::Code::UnknownBinop, binop->GetLocation(), errmsg);
     return;
@@ -272,7 +291,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
   auto optional_implementation = literal.Lookup(left_type, right_type);
   if (!optional_implementation.has_value()) {
     std::string errmsg = "Could not find an implementation of [";
-    errmsg             += binop->GetOp();
+    errmsg             += ToString(binop->GetOp());
     errmsg             += "] given the types [";
     errmsg             += ToString(left_type);
     errmsg             += ", ";
@@ -555,49 +574,20 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   auto optional_literal = env.LookupUnop(unop->GetOp());
   if (!optional_literal) {
     std::string errmsg = "Unknown unop [";
-    errmsg             += unop->GetOp();
+    errmsg             += ToString(unop->GetOp());
     errmsg             += "]";
     result = Error(Error::Code::UnknownUnop, unop->GetLocation(), errmsg);
     return;
   }
   auto &literal = optional_literal.value();
 
-  auto right_type_result = [&]() -> Outcome<Type::Pointer, Error> {
-    if (strcmp(unop->GetOp(), "*") == 0) {
-      env.WithinDereferencePtr(true);
-      auto right_result = Compute(unop->GetRight(), this);
-      env.WithinDereferencePtr(false);
-      return right_result;
-    }
-
-    if (strcmp(unop->GetOp(), "&") == 0) {
-      if (env.OnTheLHSOfAssignment()) {
-        // we cannot assign to an address value.
-        // that is like assignment to a number
-        // we can assign to a variable holding
-        // an address, but '&' creates a literal value.
-        return Error(Error::Code::ValueCannotBeAssigned, unop->GetLocation());
-      }
-      env.WithinAddressOf(true);
-      auto right_result = Compute(unop->GetRight(), this);
-      env.WithinAddressOf(false);
-      return right_result;
-    }
-
-    return Compute(unop->GetRight(), this);
-  }();
-
-  if (!right_type_result) {
-    result = right_type_result;
-    return;
-  }
-  const auto *right_type = right_type_result.GetFirst();
+  TRY(right_result, right_type, Compute, unop->GetRight(), this)
 
   auto found = literal.Lookup(right_type);
 
   if (!found) {
     std::string errmsg = "No implementation of unop [";
-    errmsg             += unop->GetOp();
+    errmsg             += ToString(unop->GetOp());
     errmsg             += "] found for type [";
     errmsg             += ToString(right_type);
     errmsg             += "]";
@@ -609,6 +599,37 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   const auto *result_type = implementation.ReturnType();
   unop->SetCachedType(result_type);
   result = result_type;
+}
+
+/*
+  The type of Value of is T iff the right hand side has type
+  Pointer<T>
+*/
+void TypecheckVisitor::Visit(const ValueOf *value_of) const noexcept {
+  env.WithinDereferencePtr(true);
+  TRY_ELSE(right_result,
+           right_type,
+           env.WithinDereferencePtr(false),
+           Compute,
+           value_of->GetRight(),
+           this)
+  env.WithinDereferencePtr(false);
+
+  if (const auto *pointer_type = llvm::dyn_cast<PointerType>(right_type);
+      pointer_type != nullptr) {
+    result = pointer_type->GetPointeeType();
+  } else if (const auto *slice_type = llvm::dyn_cast<SliceType>(right_type);
+             slice_type != nullptr) {
+    result = slice_type->GetPointeeType();
+  } else {
+    std::string errmsg = "[";
+    errmsg             += ToString(right_type);
+    errmsg             += "]";
+
+    result = Error{Error::Code::CannotDereferenceNonPointer,
+                   value_of->GetLocation(),
+                   errmsg};
+  }
 }
 
 /*

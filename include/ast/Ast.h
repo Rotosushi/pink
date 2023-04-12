@@ -92,12 +92,12 @@ namespace pink {
 
    2) when we say "b := a;" we mean that b is a memory location
     of type Integer which is holding the exact value held in
-    the memory location a. 
+    the memory location a.
     (allocate b; store (load a))
 
    3) when we say "c := a + b;" we mean that c is a memory location
     of type Integer which is holding the sum of the values at memory
-    locations a and b. 
+    locations a and b.
     (allocate c; store (load a + load b))
     ((this argument holds for any Integer binop))
 
@@ -113,16 +113,18 @@ namespace pink {
     referenced by a is stored within the tuple itself, not a itself.
     (allocate tuple, store (load a))
 
-   7) when we say "[a, ...]" we mean that the value held in the memory location 
+   7) when we say "[a, ...]" we mean that the value held in the memory location
     referenced by a is stored within the array itself, not a itself.
     (allocate array, store (load a))
-   
+
 */
 class AstFlags {
 public:
 private:
   enum Flags {
     Mutable,
+    Variable,
+    Literal,
     SIZE // must be the last enum value
          // no enums may have an assigned value
   };
@@ -152,6 +154,7 @@ public:
    */
   enum class Kind {
     // Expressions
+    AddressOf,
     Application,
     Assignment,
     Bind,
@@ -163,6 +166,7 @@ public:
     Subscript,
     Unop,
     Variable,
+    ValueOf,
     While,
     // Values
     Nil,

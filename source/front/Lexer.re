@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -125,7 +125,6 @@ auto Lexer::loc() -> Location { return location; }
     re2c:define:YYLESSTHAN = "(end > (end - cursor));";
 
     id=[a-zA-Z_][a-zA-Z0-9_]*;
-    op=[+*\-/%<=>&|\^!~@$]+;
     int=[0-9]+;
 */
 
@@ -155,11 +154,25 @@ auto Lexer::lex() -> Token {
         "while" { UpdateLocation(); return Token::While; }
         "do"    { UpdateLocation(); return Token::Do; }
 
+        "+"     { UpdateLocation(); return Token::Add; }
+        "-"     { UpdateLocation(); return Token::Sub; }
+        "*"     { UpdateLocation(); return Token::Star; }
+        "/"     { UpdateLocation(); return Token::Divide; }
+        "&"     { UpdateLocation(); return Token::And; }
+        "|"     { UpdateLocation(); return Token::Or; }
+        "!"     { UpdateLocation(); return Token::Not; }
+        "=="    { UpdateLocation(); return Token::Equals; }
+        "!="    { UpdateLocation(); return Token::NotEquals; }
+        "<"     { UpdateLocation(); return Token::LessThan; }
+        "<="    { UpdateLocation(); return Token::LessThanOrEqual; }
+        ">"     { UpdateLocation(); return Token::GreaterThan; }
+        ">="    { UpdateLocation(); return Token::GreaterThanOrEqual; }
+
         "."     { UpdateLocation(); return Token::Dot; }
         ","		  { UpdateLocation(); return Token::Comma; }
         ";"		  { UpdateLocation(); return Token::Semicolon;}
         ":"     { UpdateLocation(); return Token::Colon; }
-        "="     { UpdateLocation(); return Token::Equals; }
+        "="     { UpdateLocation(); return Token::Assign; }
         ":="    { UpdateLocation(); return Token::ColonEq; }
         "("     { UpdateLocation(); return Token::LParen; }
         ")"     { UpdateLocation(); return Token::RParen; }
@@ -169,7 +182,6 @@ auto Lexer::lex() -> Token {
         "]"     { UpdateLocation(); return Token::RBracket; }
 
         id      { UpdateLocation(); return Token::Id; }
-        op      { UpdateLocation(); return Token::Op; }
         int     { UpdateLocation(); return Token::Integer; }
 
         [ \t\n]+ { UpdateLocation(); continue; } // Whitespace

@@ -22,7 +22,10 @@
  *
  */
 #pragma once
-#include <string>
+#include <string_view>
+#include <utility>
+
+#include "llvm/ADT/DenseMapInfo.h"
 
 namespace pink {
 /**
@@ -30,41 +33,41 @@ namespace pink {
  * [Parser](#pink::Parser)
  *
  */
-enum class Token {
+enum class Token : unsigned {
   Error, // an erroneous token
   End,   // EOF
 
   Id, // [a-zA-Z_][a-zA-Z0-9_]*
-  Op, // [+\-*\\%<=>&|\^!~@$]+
+  // Op, // [+\-*\\%<=>&|\^!~@$]+
   // #TODO replace string_view based operators
   // with token based operators, to remove the lexing
-  // ambiguity occring with << and >> when lexing template
+  // ambiguity occuring with << and >> when lexing template
   // argument lists.
   // (they must be lexed as '<' '<' and '>' '>' respectively.)
-  // (if we add stream insertion or bitwise rotate operators
+  // (if we add stream insertion and/or bitwise rotate operators
   //  we will choose non conflicting symbols.
   //  i'm considering '<|' and '|>',  or '<|' and '>|')
-  // Add,                // '+'
-  // Sub,                // '-'
-  // Multiply,           // '*'
-  // Divide,             // '/'
-  // Modulo,             // '%'
-  // And,                // '&'
-  // Or,                 // '|'
-  // Not,                // '!'
-  // Equals,             // '=='
-  // NotEquals,          // '!='
-  // LessThan,           // '<'
-  // LessThanOrEqual,    // '<='
-  // GreaterThan,        // '>'
-  // GreaterThanOrEqual, // '>='
+  Add,                // '+'
+  Sub,                // '-'
+  Star,               // '*'
+  Divide,             // '/'
+  Modulo,             // '%'
+  And,                // '&'
+  Or,                 // '|'
+  Not,                // '!'
+  Equals,             // '=='
+  NotEquals,          // '!='
+  LessThan,           // '<'
+  LessThanOrEqual,    // '<='
+  GreaterThan,        // '>'
+  GreaterThanOrEqual, // '>='
 
   Dot,       // '.'
   Comma,     // ','
   Semicolon, // ';'
   Colon,     // ':'
   ColonEq,   // ':='
-  Equals,    // '='
+  Assign,    // '='
   LParen,    // '('
   RParen,    // ')'
   LBrace,    // '{'
@@ -91,15 +94,21 @@ enum class Token {
   Do,    // 'do'
 };
 
+template <typename Enum> auto ToUnderlying(Enum e) noexcept { // NOLINT
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
+
 /**
  * @brief Converts a token into a string representation
  *
  * all this does is uniquely identify the tokens themselves.
  * it does not reproduce the string which was lexed to return
- * a Token::Id, it simply returns "Token::Id". etc...
+ * a Token::Id, it simply returns "Token::Id".
+ * However, if the Token is itself associated with a single unique
+ * string, that string will be returned.
  *
  * @param t the token to translate
  * @return std::string the string representing the token
  */
-[[maybe_unused]] auto TokenToString(const Token token) -> std::string;
+[[maybe_unused]] auto ToString(const Token token) -> std::string_view;
 } // namespace pink

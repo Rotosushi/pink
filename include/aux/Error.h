@@ -99,7 +99,7 @@ public:
     NonConstArrayInit,
     NonConstTupleInit,
     CannotTakeAddressOfLiteral,
-    CannotDereferenceLiteral,
+    CannotDereferenceNonPointer,
     CannotCastToType,
     CannotCastFromType,
   };

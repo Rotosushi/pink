@@ -46,6 +46,7 @@ private:
   Environment &env;
 
 public:
+  void Visit(const AddressOf *address_of) const noexcept override;
   void Visit(const Application *application) const noexcept override;
   void Visit(const Array *array) const noexcept override;
   void Visit(const Assignment *assignment) const noexcept override;
@@ -61,6 +62,7 @@ public:
   void Visit(const Subscript *subscript) const noexcept override;
   void Visit(const Tuple *tuple) const noexcept override;
   void Visit(const Unop *unop) const noexcept override;
+  void Visit(const ValueOf *value_of) const noexcept override;
   void Visit(const Variable *variable) const noexcept override;
   void Visit(const While *loop) const noexcept override;
 
@@ -74,6 +76,16 @@ public:
       -> CodegenVisitor                                             & = delete;
   auto operator=(CodegenVisitor &&other) noexcept -> CodegenVisitor & = delete;
 };
+
+/*
+  To Codegen the address of operation, we simply return the value
+  of the right hand side. as it is already a pointer.
+*/
+void CodegenVisitor::Visit(const AddressOf *address_of) const noexcept {
+  env.WithinAddressOf(true);
+  result = Compute(address_of->GetRight(), this);
+  env.WithinAddressOf(false);
+}
 
 /*
   The Codegen of an Ast::Application is a llvm::CallInst,
@@ -437,60 +449,12 @@ void CodegenVisitor::Visit(const Tuple *tuple) const noexcept {
   result = tuple_alloca;
 }
 
-static auto CodegenUnopAddressOf(const Unop           *unop,
-                                 Environment          &env,
-                                 const CodegenVisitor *visitor)
-    -> CodegenResult {
-  env.WithinAddressOf(true);
-  auto *right_result = visitor->Compute(unop->GetRight(), visitor);
-  env.WithinAddressOf(false);
-  assert(right_result != nullptr);
-  return right_result;
-}
-
-static auto CodegenUnopDereferencePointer(const Unop           *unop,
-                                          Type::Pointer         right_type,
-                                          Environment          &env,
-                                          const CodegenVisitor *visitor)
-    -> CodegenResult {
-  // if we are dereferencing on the left of an assignment
-  // expression, we want to suppress a single load instruction,
-  // so we pretend we aren't under a dereference operation
-  if (env.OnTheLHSOfAssignment()) {
-    return visitor->Compute(unop->GetRight(), visitor);
-  }
-
-  env.WithinDereferencePtr(true);
-  auto *right_value = visitor->Compute(unop->GetRight(), visitor);
-  env.WithinDereferencePtr(false);
-  assert(right_value != nullptr);
-
-  // we know this is a pointer type, because we can
-  // only validly typecheck a dereference operation
-  // on a PointerType
-  const auto *pointer_type      = llvm::cast<pink::PointerType>(right_type);
-  auto       *llvm_pointee_type = ToLLVM(pointer_type, env);
-  // Note: this is the load for the dereference operation,
-  // the generator expression is a no-op for address of and dereference.
-  return env.Load(llvm_pointee_type, right_value);
-}
-
 void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   auto right_cache = unop->GetRight()->GetCachedType();
   assert(right_cache.has_value());
   const auto *right_type = right_cache.value();
 
-  auto *right_value = [&]() -> CodegenResult {
-    if (strcmp(unop->GetOp(), "&") == 0) {
-      return CodegenUnopAddressOf(unop, env, this);
-    }
-
-    if (strcmp(unop->GetOp(), "*") == 0) {
-      return CodegenUnopDereferencePointer(unop, right_type, env, this);
-    }
-
-    return Compute(unop->GetRight(), this);
-  }();
+  auto *right_value = Compute(unop->GetRight(), this);
   assert(right_value != nullptr);
 
   auto optional_literal = env.LookupUnop(unop->GetOp());
@@ -502,6 +466,24 @@ void CodegenVisitor::Visit(const Unop *unop) const noexcept {
   auto &implementation = optional_implementation.value();
 
   result = implementation(right_value, env);
+}
+
+/*
+  To Codegen the dereference operation we emit a single load of the rhs
+*/
+void CodegenVisitor::Visit(const ValueOf *value_of) const noexcept {
+  env.WithinDereferencePtr(true);
+  auto *right_value = Compute(value_of->GetRight(), this);
+  env.WithinDereferencePtr(false);
+
+  /*
+    Typechecking ensures that the result type of the value of
+    expression is T iff the type of the right hand side has type
+    Pointer<T>
+  */
+  auto *pointee_type = ToLLVM(value_of->GetCachedTypeOrAssert(), env);
+
+  result = env.Load(pointee_type, right_value);
 }
 
 /*

@@ -33,6 +33,7 @@ class AstToStringVisitor
   std::string &buffer;
 
 public:
+  void Visit(const AddressOf *address_of) const noexcept override;
   void Visit(const Application *application) const noexcept override;
   void Visit(const Array *array) const noexcept override;
   void Visit(const Assignment *assignment) const noexcept override;
@@ -48,6 +49,7 @@ public:
   void Visit(const Subscript *subscript) const noexcept override;
   void Visit(const Tuple *tuple) const noexcept override;
   void Visit(const Unop *unop) const noexcept override;
+  void Visit(const ValueOf *value_of) const noexcept override;
   void Visit(const Variable *variable) const noexcept override;
   void Visit(const While *loop) const noexcept override;
 
@@ -61,6 +63,11 @@ public:
   auto operator=(AstToStringVisitor &&other) noexcept
       -> AstToStringVisitor & = delete;
 };
+
+void AstToStringVisitor::Visit(const AddressOf *address_of) const noexcept {
+  buffer.append("&");
+  Compute(address_of->GetRight(), this);
+}
 
 void AstToStringVisitor::Visit(const Application *application) const noexcept {
   Compute(application->GetCallee(), this);
@@ -119,7 +126,7 @@ void AstToStringVisitor::Visit(const Binop *binop) const noexcept {
   }
 
   buffer.append(" ");
-  buffer.append(binop->GetOp());
+  buffer.append(ToString(binop->GetOp()));
   buffer.append(" ");
 
   if (llvm::isa<Binop>(binop->GetRight())) {
@@ -222,8 +229,13 @@ void AstToStringVisitor::Visit(const Tuple *tuple) const noexcept {
 }
 
 void AstToStringVisitor::Visit(const Unop *unop) const noexcept {
-  buffer.append(unop->GetOp());
+  buffer.append(ToString(unop->GetOp()));
   Compute(unop->GetRight(), this);
+}
+
+void AstToStringVisitor::Visit(const ValueOf *value_of) const noexcept {
+  buffer.append("*");
+  Compute(value_of->GetRight(), this);
 }
 
 void AstToStringVisitor::Visit(const Variable *variable) const noexcept {

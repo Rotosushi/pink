@@ -20,26 +20,54 @@
 
 #include "llvm/ADT/DenseMap.h"
 
+namespace pink::detail {
+template <typename T>
+concept Enumeration = std::is_enum<T>::value;
+} // namespace pink::detail
+
+namespace llvm {
+// provide DenseMapInfo for Enums
+template <pink::detail::Enumeration E> struct DenseMapInfo<E> {
+  using UnderlyingType = typename std::underlying_type<E>::type;
+  using Info           = DenseMapInfo<UnderlyingType>;
+
+  static auto getEmptyKey() -> E { return static_cast<E>(Info::getEmptyKey()); }
+
+  static auto getTombstoneKey() -> E {
+    return static_cast<E>(Info::getTombstoneKey());
+  }
+
+  static auto getHashValue(const E &val) -> UnderlyingType {
+    return Info::getHashValue(static_cast<UnderlyingType>(val));
+  }
+
+  static auto isEqual(const E &lhs, const E &rhs) -> bool {
+    return Info::isEqual(static_cast<UnderlyingType>(lhs),
+                         static_cast<UnderlyingType>(rhs));
+  }
+};
+} // namespace llvm
+
 namespace pink {
 template <class K, class V> class Map {
 public:
   using Key   = K;
   using Value = V;
   using Table = llvm::SmallDenseMap<Key, Value>;
-  
+
   class Element {
   private:
-    typename Table::iterator::pointer element;
+    typename Table::iterator element;
 
   public:
-    Element(typename Table::iterator::pointer element) noexcept
+    Element(typename Table::iterator element) noexcept
         : element(element) {}
-    [[nodiscard]] auto Key() -> Map::Key & { return element->getFirst(); }
-    [[nodiscard]] auto Key() const -> Map::Key & { return element->getFirst(); }
-    [[nodiscard]] auto Value() -> Map::Value & { return element->getSecond(); }
-    [[nodiscard]] auto Value() const -> Map::Value & {
-      return element->getSecond();
+    [[nodiscard]] auto Key() -> Map::Key & { return element->first; }
+    [[nodiscard]] auto Key() const -> const Map::Key & {
+      return element->first;
     }
+    [[nodiscard]] auto Value() -> Map::Value & { return element->second; }
+    [[nodiscard]] auto Value() const -> Map::Value & { return element->second; }
   };
 
 private:
@@ -60,7 +88,7 @@ public:
 
   auto Register(Key key, Value value) -> Element {
     auto pair = table.try_emplace(key, std::move(value));
-    return std::to_address(pair.first);
+    return pair.first;
   }
 
   // #NOTE: 2/24/2023
@@ -71,7 +99,7 @@ public:
     if (found == table.end()) {
       return {};
     }
-    return std::to_address(found);
+    return found;
   }
 };
 } // namespace pink

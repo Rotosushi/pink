@@ -17,139 +17,158 @@
 
 #include "front/Token.h"
 
-#include "aux/Error.h"
-
 #include "support/FatalError.h"
 
 namespace pink {
 /*
-        Error reporting/Status Dumping subroutine for
-        examining the state of the Lexer/Parser
+
 */
-auto TokenToString(const Token token) -> std::string {
+auto ToString(const Token token) -> std::string_view {
   switch (token) {
   case Token::Error: {
-    return {"Token::Error"};
+    return "Token::Error";
   }
   case Token::End: {
-    return {"Token::End"};
+    return "Token::End";
   }
+
   case Token::Id: {
-    return {"Token::Id"};
+    return "Token::Id";
   }
-  case Token::Op: {
-    return {"Token::Op"};
+
+  case Token::Add: {
+    return "+";
+  }
+  case Token::Sub: {
+    return "-";
+  }
+  case Token::Star: {
+    return "*";
+  }
+  case Token::Divide: {
+    return "/";
+  }
+  case Token::Modulo: {
+    return "%";
+  }
+  case Token::And: {
+    return "&";
+  }
+  case Token::Or: {
+    return "|";
+  }
+  case Token::Not: {
+    return "!";
+  }
+  case Token::Equals: {
+    return "==";
+  }
+  case Token::NotEquals: {
+    return "!=";
+  }
+  case Token::LessThan: {
+    return "<";
+  }
+  case Token::LessThanOrEqual: {
+    return "<=";
+  }
+  case Token::GreaterThan: {
+    return ">";
+  }
+  case Token::GreaterThanOrEqual: {
+    return ">=";
   }
 
   case Token::Dot: {
-    return {"Token::Dot"};
+    return ".";
   }
   case Token::Comma: {
-    return {"Token::Comma"};
+    return ",";
   }
   case Token::Semicolon: {
-    return {"Token::Semicolon"};
+    return ";";
   }
   case Token::Colon: {
-    return {"Token::Colon"};
+    return ":";
   }
-  case Token::Equals: {
-    return {"Token::Equals"};
+  case Token::Assign: {
+    return "=";
   }
   case Token::ColonEq: {
-    return {"Token::ColonEq"};
+    return ":=";
   }
   case Token::LParen: {
-    return {"Token::LParen"};
+    return "(";
   }
   case Token::RParen: {
-    return {"Token::RParen"};
+    return ")";
   }
   case Token::LBrace: {
-    return {"Token::LBrace"};
+    return "{";
   }
   case Token::RBrace: {
-    return {"Token::RBrace"};
+    return "}";
   }
   case Token::LBracket: {
-    return {"Token::LBracket"};
+    return "[";
   }
   case Token::RBracket: {
-    return {"Token::RBracket"};
+    return "]";
   }
 
   case Token::Nil: {
-    return {"Token::Nil"};
+    return "nil";
   }
   case Token::NilType: {
-    return {"Token::NilType"};
+    return "Nil";
   }
   case Token::Integer: {
-    return {"Token::Integer"};
+    return "Token::Integer";
   }
   case Token::IntegerType: {
-    return {"Token::IntegerType"};
+    return "Integer";
   }
   case Token::True: {
-    return {"Token::True"};
+    return "true";
   }
   case Token::False: {
-    return {"Token::False"};
+    return "false";
   }
   case Token::BooleanType: {
-    return {"Token::BooleanType"};
+    return "Boolean";
   }
   case Token::Pointer: {
-    return {"Token::Pointer"};
+    return "Pointer";
   }
   case Token::Slice: {
-    return {"Token::Slice"};
+    return "Slice";
   }
 
   case Token::Fn: {
-    return {"Token::Fn"};
+    return "fn";
   }
   case Token::Var: {
-    return {"Token::Var"};
+    return "var";
   }
   case Token::If: {
-    return {"Token::If"};
+    return "if";
   }
   case Token::Then: {
-    return {"Token::Then"};
+    return "then";
   }
   case Token::Else: {
-    return {"Token::Else"};
+    return "else";
   }
   case Token::While: {
-    return {"Token::While"};
+    return "while";
   }
   case Token::Do: {
-    return {"Token::Do"};
+    return "do";
   }
   default: {
     FatalError("Unknown Token Kind");
     return {"Unknown"};
   }
-  }
-}
-
-/*
-    Only returns false on Token::Error,
-    every other token is considered a
-    valid token. This function mainly
-    exists so that we can use an assignment
-    statement within the while conditions
-    within Parser::ParseInfix. which are there
-    so that we are peeking the next token
-    while we parse an infix expression.
-*/
-auto TokenToBool(const Token token) -> bool {
-  switch (token) {
-  case Token::Error:
-    return false;
-  default:
-    return true;
   }
 }
 } // namespace pink
