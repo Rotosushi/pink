@@ -104,8 +104,9 @@ void TypecheckVisitor::Visit(const AddressOf *address_of) const noexcept {
            this)
   env.WithinAddressOf(false);
 
-  address_of->SetCachedType(right_type);
-  result = right_type;
+  auto *pointer_type = env.GetPointerType(right_type);
+  address_of->SetCachedType(pointer_type);
+  result = pointer_type;
 }
 
 /* 1/24/2023
