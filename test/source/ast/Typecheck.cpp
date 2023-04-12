@@ -110,7 +110,25 @@ TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
   }
 
   SECTION("l := 45 % 8;") {
-    TEST_BIND_TERM_TYPE("l := 45 % 8;\n", env.GetIntType());
+    std::stringstream stream{"l := 45 % 8;\n"};
+    pink::Location    location = ComputeLocation("l := 45 % 8;\n");
+    env.SetIStream(&stream);
+    auto parse_result = env.Parse();
+    if (!parse_result) {
+      env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());
+      FAIL("Unable to parse expression.");
+    }
+    REQUIRE(parse_result);
+    auto &expression = parse_result.GetFirst();
+    CHECK(expression->GetLocation() == location);
+    auto typecheck_result = Typecheck(expression, env);
+    if (!typecheck_result) {
+      env.PrintErrorWithSourceText(std::cerr, typecheck_result.GetSecond());
+      FAIL("Unable to Type expression.");
+    }
+    REQUIRE(typecheck_result);
+    auto term_type = typecheck_result.GetFirst();
+    CHECK(term_type == (env.GetIntType()));
   }
 
   SECTION("m := true & true;") {

@@ -158,6 +158,7 @@ auto Lexer::lex() -> Token {
         "-"     { UpdateLocation(); return Token::Sub; }
         "*"     { UpdateLocation(); return Token::Star; }
         "/"     { UpdateLocation(); return Token::Divide; }
+        "%"     { UpdateLocation(); return Token::Modulo; }
         "&"     { UpdateLocation(); return Token::And; }
         "|"     { UpdateLocation(); return Token::Or; }
         "!"     { UpdateLocation(); return Token::Not; }
