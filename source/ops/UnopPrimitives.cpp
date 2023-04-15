@@ -18,15 +18,15 @@
 #include "aux/Environment.h"
 
 namespace pink {
-auto UnopIntNegate(llvm::Value *term, Environment &env) -> llvm::Value * {
+auto UnopIntNegate(llvm::Value *term, CompilationUnit &env) -> llvm::Value * {
   return env.CreateNeg(term);
 }
 
-auto UnopBoolNegate(llvm::Value *term, Environment &env) -> llvm::Value * {
+auto UnopBoolNegate(llvm::Value *term, CompilationUnit &env) -> llvm::Value * {
   return env.CreateNot(term);
 }
 
-void InitializeUnopPrimitives(Environment &env) {
+void InitializeUnopPrimitives(CompilationUnit &env) {
   Type::Pointer integer_type = env.GetIntType();
   Type::Pointer boolean_type = env.GetBoolType();
 

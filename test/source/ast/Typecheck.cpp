@@ -25,9 +25,11 @@
 
 #include "llvm/Support/InitLLVM.h"
 
+namespace {
 static auto ComputeLocation(std::string_view text) {
   return pink::Location{1U, 0U, 1U, text.length() - 1};
 }
+} // namespace
 
 #define TEST_BIND_TERM_TYPE(bind_text, target_type)                            \
   std::stringstream stream{bind_text};                                         \
@@ -65,7 +67,7 @@ static auto ComputeLocation(std::string_view text) {
 // that this function is too complex. when it really isn't.
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
-  auto env = pink::Environment::CreateTestEnvironment();
+  auto env = pink::CompilationUnit::CreateTestEnvironment();
 
   SECTION("a := 42;") { TEST_BIND_TERM_TYPE("a := 42;\n", env.GetIntType()); }
 
@@ -110,25 +112,7 @@ TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
   }
 
   SECTION("l := 45 % 8;") {
-    std::stringstream stream{"l := 45 % 8;\n"};
-    pink::Location    location = ComputeLocation("l := 45 % 8;\n");
-    env.SetIStream(&stream);
-    auto parse_result = env.Parse();
-    if (!parse_result) {
-      env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());
-      FAIL("Unable to parse expression.");
-    }
-    REQUIRE(parse_result);
-    auto &expression = parse_result.GetFirst();
-    CHECK(expression->GetLocation() == location);
-    auto typecheck_result = Typecheck(expression, env);
-    if (!typecheck_result) {
-      env.PrintErrorWithSourceText(std::cerr, typecheck_result.GetSecond());
-      FAIL("Unable to Type expression.");
-    }
-    REQUIRE(typecheck_result);
-    auto term_type = typecheck_result.GetFirst();
-    CHECK(term_type == (env.GetIntType()));
+    TEST_BIND_TERM_TYPE("l := 45 % 8;\n", env.GetIntType());
   }
 
   SECTION("m := true & true;") {
@@ -194,25 +178,7 @@ TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
     env.BindVariable(std::string_view{"x"},
                      env.GetPointerType(env.GetIntType()),
                      nullptr);
-    std::stringstream stream{"z := *x;\n"};
-    pink::Location    location = ComputeLocation("z := *x;\n");
-    env.SetIStream(&stream);
-    auto parse_result = env.Parse();
-    if (!parse_result) {
-      env.PrintErrorWithSourceText(std::cerr, parse_result.GetSecond());
-      FAIL("Unable to parse expression.");
-    }
-    REQUIRE(parse_result);
-    auto &expression = parse_result.GetFirst();
-    CHECK(expression->GetLocation() == location);
-    auto typecheck_result = Typecheck(expression, env);
-    if (!typecheck_result) {
-      env.PrintErrorWithSourceText(std::cerr, typecheck_result.GetSecond());
-      FAIL("Unable to Type expression.");
-    }
-    REQUIRE(typecheck_result);
-    auto term_type = typecheck_result.GetFirst();
-    CHECK(term_type == (env.GetIntType()));
+    TEST_BIND_TERM_TYPE("z := *x;\n", env.GetIntType());
   }
 
   SECTION("aa := *y;") {

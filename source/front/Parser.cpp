@@ -225,7 +225,7 @@ auto Parser::ExtractSourceLine(const Location &location) const
   return {};
 }
 
-auto Parser::Parse(Environment &env) -> Parser::Result {
+auto Parser::Parse(CompilationUnit &env) -> Parser::Result {
   // prime the lexer with the first token from the input stream;
   // only if we are not already parsing an input stream.
   if (Peek(Token::End) && lexer.EndOfInput() && !input_stream->eof()) {
@@ -244,7 +244,7 @@ auto Parser::Parse(Environment &env) -> Parser::Result {
   top = function
       | bind ';'
 */
-auto Parser::ParseTop(Environment &env) -> Parser::Result {
+auto Parser::ParseTop(CompilationUnit &env) -> Parser::Result {
   if (Peek(Token::Fn)) {
     return ParseFunction(env);
   }
@@ -256,7 +256,7 @@ auto Parser::ParseTop(Environment &env) -> Parser::Result {
     }
 
     if (!Expect(Token::Semicolon)) {
-      return {Error(Error::MissingSemicolon, location, std::string(text))};
+      return {Error(Error::MissingSemicolon, location, text)};
     }
 
     return outcome;
@@ -277,7 +277,7 @@ auto Parser::ParseTop(Environment &env) -> Parser::Result {
 /*
   bind = ("var")? id ":=" affix ";"
 */
-auto Parser::ParseBind(Environment &env) -> Parser::Result {
+auto Parser::ParseBind(CompilationUnit &env) -> Parser::Result {
   Location lhs_loc = location;
 
   if (Peek(Token::Var)) {
@@ -285,7 +285,7 @@ auto Parser::ParseBind(Environment &env) -> Parser::Result {
   }
 
   if (!Peek(Token::Id)) {
-    return Error(Error::Code::MissingBindId, location, std::string(text));
+    return Error(Error::Code::MissingBindId, location, text);
   }
 
   const auto *name = env.InternVariable(text);
@@ -295,12 +295,12 @@ auto Parser::ParseBind(Environment &env) -> Parser::Result {
   return ParseBind(name, lhs_loc, env);
 }
 
-auto Parser::ParseBind(InternedString name,
-                       Location       lhs_location,
-                       Environment   &env)
+auto Parser::ParseBind(InternedString   name,
+                       Location         lhs_location,
+                       CompilationUnit &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
   if (!Expect(Token::ColonEq)) {
-    return Error(Error::Code::MissingBindColonEq, location, std::string(text));
+    return Error(Error::Code::MissingBindColonEq, location, text);
   }
 
   TRY(affix_result, affix, ParseAffix, env)
@@ -315,14 +315,14 @@ auto Parser::ParseBind(InternedString name,
 /*
   function = "fn" id "(" [arg {"," arg}] ")" block
 */
-auto Parser::ParseFunction(Environment &env) -> Parser::Result {
+auto Parser::ParseFunction(CompilationUnit &env) -> Parser::Result {
   Function::Arguments args;
   Location            lhs_loc = location;
 
   nexttok(); // eat 'fn'
 
   if (!Peek(Token::Id)) {
-    return Error(Error::Code::MissingFnName, location, std::string(text));
+    return Error(Error::Code::MissingFnName, location, text);
   }
 
   auto name = env.InternVariable(text); // intern the functions name
@@ -330,7 +330,7 @@ auto Parser::ParseFunction(Environment &env) -> Parser::Result {
   nexttok(); // eat 'id'
 
   if (!Expect(Token::LParen)) {
-    return Error(Error::Code::MissingLParen, location, std::string(text));
+    return Error(Error::Code::MissingLParen, location, text);
   }
 
   // #RULE a functions argument list is optional
@@ -343,7 +343,7 @@ auto Parser::ParseFunction(Environment &env) -> Parser::Result {
   }
 
   if (!Expect(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, location, std::string(text));
+    return Error(Error::Code::MissingRParen, location, text);
   }
 
   // #PROPOSAL we could easily parse functions which have no
@@ -365,11 +365,11 @@ auto Parser::ParseFunction(Environment &env) -> Parser::Result {
 /*
   arg = id ":" type
 */
-auto Parser::ParseArgument(Environment &env)
+auto Parser::ParseArgument(CompilationUnit &env)
     -> Outcome<std::pair<InternedString, Type::Pointer>, Error> {
 
   if (!Peek(Token::Id)) {
-    return Error(Error::Code::MissingArgName, location, std::string(text));
+    return Error(Error::Code::MissingArgName, location, text);
   }
 
   const auto *name = env.InternVariable(text);
@@ -377,11 +377,11 @@ auto Parser::ParseArgument(Environment &env)
   nexttok(); // eat 'Id'
 
   if (!Expect(Token::Colon)) {
-    Error(Error::Code::MissingArgColon, location, std::string(text));
+    Error(Error::Code::MissingArgColon, location, text);
   }
 
   if (Peek(Token::Comma) || Peek(Token::RParen)) {
-    return Error(Error::Code::MissingArgType, location, std::string(text));
+    return Error(Error::Code::MissingArgType, location, text);
   }
 
   TRY(type_result, type, ParseType, env)
@@ -393,13 +393,13 @@ auto Parser::ParseArgument(Environment &env)
   block = "{" {term} "}"
 */
 
-auto Parser::ParseBlock(Environment &env) -> Parser::Result {
+auto Parser::ParseBlock(CompilationUnit &env) -> Parser::Result {
   std::vector<Ast::Pointer> expressions;
   Parser::Result            expression_result;
   Location                  left_loc = location;
 
   if (!Peek(Token::LBrace)) {
-    return Error(Error::Code::MissingLBrace, location, std::string(text));
+    return Error(Error::Code::MissingLBrace, location, text);
   }
 
   nexttok(); // eat '{'
@@ -428,7 +428,7 @@ auto Parser::ParseBlock(Environment &env) -> Parser::Result {
        | bind
        | affix ";"
 */
-auto Parser::ParseTerm(Environment &env) -> Parser::Result {
+auto Parser::ParseTerm(CompilationUnit &env) -> Parser::Result {
   if (Peek(Token::If)) {
     return ParseConditional(env);
   }
@@ -444,7 +444,7 @@ auto Parser::ParseTerm(Environment &env) -> Parser::Result {
   TRY(affix_result, affix, ParseAffix, env)
 
   if (!Expect(Token::Semicolon)) {
-    return {Error(Error::Code::MissingSemicolon, location, std::string(text))};
+    return {Error(Error::Code::MissingSemicolon, location, text)};
   }
 
   return {std::move(affix)};
@@ -453,25 +453,25 @@ auto Parser::ParseTerm(Environment &env) -> Parser::Result {
 /*
   conditional = "if" "(" affix ")" block "else" block
 */
-auto Parser::ParseConditional(Environment &env) -> Parser::Result {
+auto Parser::ParseConditional(CompilationUnit &env) -> Parser::Result {
   Location lhs_loc = location;
 
   nexttok(); // eat "if"
 
   if (!Expect(Token::LParen)) {
-    return Error(Error::Code::MissingLParen, location, std::string(text));
+    return Error(Error::Code::MissingLParen, location, text);
   }
 
   TRY(test_result, test_term, ParseAffix, env)
 
   if (!Expect(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, location, std::string(text));
+    return Error(Error::Code::MissingRParen, location, text);
   }
 
   TRY(then_result, then_term, ParseBlock, env)
 
   if (!Expect(Token::Else)) {
-    return Error(Error::Code::MissingElse, location, std::string(text));
+    return Error(Error::Code::MissingElse, location, text);
   }
 
   TRY(else_result, else_term, ParseBlock, env)
@@ -490,14 +490,14 @@ auto Parser::ParseConditional(Environment &env) -> Parser::Result {
 /*
   while = "while" "(" affix ")" block
 */
-auto Parser::ParseWhile(Environment &env) -> Parser::Result {
+auto Parser::ParseWhile(CompilationUnit &env) -> Parser::Result {
   Location lhs_loc = location;
   nexttok(); // eat 'while'
 
   TRY(test_result, test_term, ParseAffix, env)
 
   if (!Expect(Token::Do)) {
-    return Error(Error::Code::MissingDo, location, std::string(text));
+    return Error(Error::Code::MissingDo, location, text);
   }
 
   TRY(body_result, body_term, ParseBlock, env)
@@ -517,18 +517,13 @@ auto Parser::ParseWhile(Environment &env) -> Parser::Result {
         | composite "(" [affix {"," affix}] ")"
         | composite
 */
-auto Parser::ParseAffix(Environment &env)
+auto Parser::ParseAffix(CompilationUnit &env)
     -> Outcome<std::unique_ptr<Ast>, Error> {
   TRY(composite_result, composite, ParseComposite, env)
 
   // composite "=" affix
   if (Peek(Token::Assign)) {
     return ParseAssignment(std::move(composite), env);
-  }
-
-  // composite "(" [affix {"," affix}] ")"
-  if (Peek(Token::LParen)) {
-    return ParseApplication(std::move(composite), env);
   }
 
   // composite
@@ -538,7 +533,7 @@ auto Parser::ParseAffix(Environment &env)
 /*
   composite '=' affix
 */
-auto Parser::ParseAssignment(Ast::Pointer composite, Environment &env)
+auto Parser::ParseAssignment(Ast::Pointer composite, CompilationUnit &env)
     -> Parser::Result {
   nexttok(); // eat "="
 
@@ -556,9 +551,9 @@ auto Parser::ParseAssignment(Ast::Pointer composite, Environment &env)
 }
 
 /*
-  composite "(" [affix {"," affix}] ")"
+  callee "(" [affix {"," affix}] ")"
 */
-auto Parser::ParseApplication(Ast::Pointer composite, Environment &env)
+auto Parser::ParseApplication(Ast::Pointer callee, CompilationUnit &env)
     -> Parser::Result {
   nexttok(); // eat '('
 
@@ -579,20 +574,20 @@ auto Parser::ParseApplication(Ast::Pointer composite, Environment &env)
 
     // finish parsing the argument list
     if (!Peek(Token::RParen)) {
-      return Error(Error::Code::MissingRParen, location, std::string(text));
+      return Error(Error::Code::MissingRParen, location, text);
     }
   }
 
   nexttok(); // eat ')'
 
-  const Location &lhs_loc = composite->GetLocation();
+  const Location &lhs_loc = callee->GetLocation();
   auto            rhs_loc = location;
   Location        app_loc(lhs_loc.firstLine,
                    lhs_loc.firstColumn,
                    rhs_loc.lastLine,
                    rhs_loc.lastColumn);
   return {std::make_unique<Application>(app_loc,
-                                        std::move(composite),
+                                        std::move(callee),
                                         std::move(args))};
 }
 
@@ -600,8 +595,8 @@ auto Parser::ParseApplication(Ast::Pointer composite, Environment &env)
   composite = accessor operator infix-parser
             | accessor
 */
-auto Parser::ParseComposite(Environment &env) -> Parser::Result {
-  TRY(accessor_result, accessor, ParseAccessor, env)
+auto Parser::ParseComposite(CompilationUnit &env) -> Parser::Result {
+  TRY(accessor_result, accessor, ParseBuiltin, env)
 
   if (IsBinop(token)) {
     return ParseInfix(std::move(accessor), 0, env);
@@ -611,10 +606,10 @@ auto Parser::ParseComposite(Environment &env) -> Parser::Result {
 }
 
 /*
-  accessor = basic { ("." basic | "[" basic "]") }
+  builtin = basic {"." basic | "[" basic "]" | "(" [affix {"," affix}] ")" }
            | basic
 */
-auto Parser::ParseAccessor(Environment &env) -> Parser::Result {
+auto Parser::ParseBuiltin(CompilationUnit &env) -> Parser::Result {
   TRY(left_result, left_term, ParseBasic, env)
 
   do {
@@ -622,10 +617,12 @@ auto Parser::ParseAccessor(Environment &env) -> Parser::Result {
       left_result = ParseDot(std::move(left_term), env);
     } else if (Peek(Token::LBracket)) {
       left_result = ParseSubscript(std::move(left_term), env);
+    } else if (Peek(Token::LParen)) {
+      left_result = ParseApplication(std::move(left_term), env);
     } else {
       break;
     }
-  } while (Peek(Token::Dot) || Peek(Token::LBracket));
+  } while (Peek(Token::Dot) || Peek(Token::LBracket) || Peek(Token::LParen));
 
   return left_result;
 }
@@ -633,7 +630,8 @@ auto Parser::ParseAccessor(Environment &env) -> Parser::Result {
 /*
  dot = basic "." basic
 */
-auto Parser::ParseDot(Ast::Pointer left, Environment &env) -> Parser::Result {
+auto Parser::ParseDot(Ast::Pointer left, CompilationUnit &env)
+    -> Parser::Result {
   auto lhs_loc = left->GetLocation();
   nexttok(); // eat '.'
 
@@ -650,7 +648,7 @@ auto Parser::ParseDot(Ast::Pointer left, Environment &env) -> Parser::Result {
 /*
  subscript = basic "[" basic "]"
 */
-auto Parser::ParseSubscript(Ast::Pointer left, Environment &env)
+auto Parser::ParseSubscript(Ast::Pointer left, CompilationUnit &env)
     -> Parser::Result {
   auto lhs_loc = left->GetLocation();
   nexttok(); // eat '['
@@ -658,7 +656,7 @@ auto Parser::ParseSubscript(Ast::Pointer left, Environment &env)
   TRY(right_result, right, ParseBasic, env)
 
   if (!Expect(Token::RBracket)) { // eat ']'
-    return {Error(Error::Code::MissingRBracket, location, std::string(text))};
+    return {Error(Error::Code::MissingRBracket, location, text)};
   }
 
   auto     rhs_loc = location;
@@ -677,7 +675,7 @@ auto Parser::ParseSubscript(Ast::Pointer left, Environment &env)
 */
 auto Parser::ParseInfix(Ast::Pointer     lhs,
                         pink::Precedence precedence,
-                        Environment     &env) -> Parser::Result {
+                        CompilationUnit &env) -> Parser::Result {
   Parser::Result result{std::move(lhs)};
   Token          op{Token::Error};
   Location       op_loc{};
@@ -712,7 +710,7 @@ auto Parser::ParseInfix(Ast::Pointer     lhs,
 
     nexttok(); // eat the 'operator'
 
-    TRY(right_result, right, ParseAccessor, env)
+    TRY(right_result, right, ParseBuiltin, env)
 
     while (PredictsHigherPrecedenceOrRightAssociativeBinop()) {
       auto temp = ParseInfix(std::move(right), Precedence(op), env);
@@ -747,7 +745,7 @@ auto Parser::ParseInfix(Ast::Pointer     lhs,
         | "[" affix {"," affix} "]"
 
 */
-auto Parser::ParseBasic(Environment &env) -> Parser::Result {
+auto Parser::ParseBasic(CompilationUnit &env) -> Parser::Result {
   switch (token) {
   case Token::Id: {
     Location       lhs_loc = location;
@@ -771,7 +769,7 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
     nexttok(); // eat op
 
     // #RULE unops all bind to their immediate right hand side
-    TRY(right_result, right, ParseAccessor, env)
+    TRY(right_result, right, ParseBuiltin, env)
 
     const Location &rhs_loc{right->GetLocation()};
     Location        unop_loc{lhs_loc.firstLine,
@@ -787,7 +785,7 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
 
     nexttok(); // eat '&'
 
-    TRY(right_result, right, ParseAccessor, env)
+    TRY(right_result, right, ParseBuiltin, env)
 
     const Location &rhs_loc{right->GetLocation()};
     Location        address_of_loc{lhs_loc.firstLine,
@@ -803,7 +801,7 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
 
     nexttok(); // eat '*'
 
-    TRY(right_result, right, ParseAccessor, env)
+    TRY(right_result, right, ParseBuiltin, env)
 
     const Location &rhs_loc{right->GetLocation()};
     Location        value_of_loc{lhs_loc.firstLine,
@@ -827,7 +825,7 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
     }
     // else we parsed a parenthised expression
     if (!Expect(Token::RParen)) {
-      return {Error(Error::Code::MissingRParen, location, std::string(text))};
+      return {Error(Error::Code::MissingRParen, location, text)};
     }
 
     return {std::move(expression)};
@@ -872,12 +870,12 @@ auto Parser::ParseBasic(Environment &env) -> Parser::Result {
   }
 
   default: {
-    return {Error(Error::Code::UnknownBasicToken, location, std::string(text))};
+    return {Error(Error::Code::UnknownBasicToken, location, text)};
   }
   } // !switch(token)
 }
 
-auto Parser::ParseArray(Environment &env) -> Result {
+auto Parser::ParseArray(CompilationUnit &env) -> Result {
   Location lhs_loc = location;
   nexttok(); // eat '['
 
@@ -894,7 +892,7 @@ auto Parser::ParseArray(Environment &env) -> Result {
   } while (token == Token::Comma);
 
   if (token != Token::RBracket) {
-    return Error(Error::Code::MissingRBracket, location, std::string(text));
+    return Error(Error::Code::MissingRBracket, location, text);
   }
 
   Location rhs_loc = location;
@@ -907,7 +905,7 @@ auto Parser::ParseArray(Environment &env) -> Result {
   return {std::make_unique<Array>(array_loc, std::move(elements))};
 }
 
-auto Parser::ParseTuple(Ast::Pointer first_element, Environment &env)
+auto Parser::ParseTuple(Ast::Pointer first_element, CompilationUnit &env)
     -> Parser::Result {
   const Location           &lhs_loc = first_element->GetLocation();
   std::vector<Ast::Pointer> elements;
@@ -919,7 +917,7 @@ auto Parser::ParseTuple(Ast::Pointer first_element, Environment &env)
   }
 
   if (!Peek(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, location, std::string(text));
+    return Error(Error::Code::MissingRParen, location, text);
   }
 
   Location rhs_loc = location;
@@ -939,10 +937,11 @@ auto Parser::ParseTuple(Ast::Pointer first_element, Environment &env)
        | "Bool"
        | "(" type {"," type} ")"
        | "[" type ";" int "]"
-       | "Pointer" type
-       | "Slice" type
+       | "*" type
+       | "*[]" type
+       | "fn" "(" type {"," type} ")" "->" type
 */
-auto Parser::ParseType(Environment &env) -> Parser::TypeResult {
+auto Parser::ParseType(CompilationUnit &env) -> Parser::TypeResult {
   switch (token) {
   // #RULE Token::NilType is the type Nil
   case Token::NilType: {
@@ -975,58 +974,57 @@ auto Parser::ParseType(Environment &env) -> Parser::TypeResult {
     return ParseArrayType(env);
   }
 
-  // #RULE Token::Pointer predicts the type of a pointer
-  case Token::Pointer: {
+  // #RULE Token::Star predicts the type of a pointer
+  case Token::Star: {
     return ParsePointerType(env);
   }
 
-  // #RULE Token::Slice predicts the type of a Slice
-  case Token::Slice: {
-    return ParseSliceType(env);
+  // #RULE Token::Fn predicts the type of a function
+  case Token::Fn: {
+    return ParseFunctionType(env);
   }
 
   default: {
-    return {Error(Error::Code::UnknownTypeToken, location, std::string(text))};
+    return {Error(Error::Code::UnknownTypeToken, location, text)};
   }
   }
 }
 
-auto Parser::ParseTupleType(Environment &env) -> TypeResult {
+auto Parser::ParseTupleType(CompilationUnit &env) -> TypeResult {
   nexttok(); // eat '('
   TRY(left_result, left, ParseType, env)
 
   if (token == Token::Comma) {
-    std::vector<Type::Pointer> element_types;
-    element_types.push_back(left);
+    TupleType::Elements elements;
+    elements.push_back(left);
     do {
       nexttok(); // eat ','
 
-      TRY(element_type_result, element_type, ParseType, env)
-      element_types.push_back(element_type);
+      TRY(element_result, element, ParseType, env)
+      elements.push_back(element);
     } while (token == Token::Comma);
 
-    left = env.GetTupleType(std::move(element_types));
+    left = env.GetTupleType(std::move(elements));
   }
 
   if (!Expect(Token::RParen)) {
-    return Error(Error::Code::MissingRParen, location, std::string(text));
+    return Error(Error::Code::MissingRParen, location, text);
   }
 
   return left;
 }
 
-auto Parser::ParseArrayType(Environment &env) -> TypeResult {
+auto Parser::ParseArrayType(CompilationUnit &env) -> TypeResult {
   nexttok(); // eat '['
 
   TRY(array_type_result, array_type, ParseType, env)
 
   if (!Expect(Token::Semicolon)) {
-    return {
-        Error(Error::Code::MissingArraySemicolon, location, std::string(text))};
+    return {Error(Error::Code::MissingArraySemicolon, location, text)};
   }
 
   if (!Peek(Token::Integer)) {
-    return {Error(Error::Code::MissingArrayNum, location, std::string(text))};
+    return {Error(Error::Code::MissingArrayNum, location, text)};
   }
 
   auto maybe_integer = ToNumber<Integer::Value>(text);
@@ -1037,26 +1035,61 @@ auto Parser::ParseArrayType(Environment &env) -> TypeResult {
   nexttok(); // eat [0-9]+
 
   if (!Expect(Token::RBracket)) {
-    return {Error(Error::Code::MissingRBracket, location, std::string(text))};
+    return {Error(Error::Code::MissingRBracket, location, text)};
   }
 
   return {env.GetArrayType(maybe_integer.GetFirst(), array_type)};
 }
 
-auto Parser::ParsePointerType(Environment &env) -> TypeResult {
-  nexttok(); // eat "Pointer"
+auto Parser::ParsePointerType(CompilationUnit &env) -> TypeResult {
+  nexttok(); // eat "*"
+
+  if (Expect(Token::LBracket)) {
+    if (!Expect(Token::RBracket)) {
+      return {Error{Error::Code::MissingRBrace, location, text}};
+    }
+    TRY(type_result, type, ParseType, env)
+    return {env.GetSliceType(type)};
+  }
 
   TRY(type_result, type, ParseType, env)
-
   return {env.GetPointerType(type)};
 }
 
-auto Parser::ParseSliceType(Environment &env) -> TypeResult {
-  nexttok(); // eat "Slice"
+auto Parser::ParseFunctionType(CompilationUnit &env) -> TypeResult {
+  nexttok(); // eat "fn"
 
-  TRY(type_result, type, ParseType, env)
+  if (!Expect(Token::LParen)) {
+    return {Error{Error::Code::MissingLParen, location, text}};
+  }
 
-  return {env.GetSliceType(type)};
+  FunctionType::Arguments arguments;
+  // if we see ")", then we skip parsing the argument list
+  // because there are none.
+  // if we don't see ")" then we attempt to parse the argument list
+  if (!Expect(Token::RParen)) {
+    do {
+      if (Peek(Token::Comma)) {
+        nexttok();
+      }
+
+      TRY(argument_result, argument, ParseType, env)
+      arguments.push_back(argument);
+
+    } while (Peek(Token::Comma));
+
+    // #RULE the argument list must end with ")"
+    if (!Expect(Token::RParen)) {
+      return {Error{Error::Code::MissingRParen, location, text}};
+    }
+  }
+
+  if (!Expect(Token::RArrow)) {
+    return {Error{Error::Code::MissingRArrow, location, text}};
+  }
+
+  TRY(result_result, result, ParseType, env)
+  return {env.GetFunctionType(result, std::move(arguments))};
 }
 
 } // namespace pink

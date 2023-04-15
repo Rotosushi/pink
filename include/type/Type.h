@@ -28,7 +28,7 @@
 #include "type/visitor/TypeVisitor.h"
 
 namespace pink {
-class Environment;
+class CompilationUnit;
 class TypeInterner;
 
 /**
@@ -63,7 +63,22 @@ public:
 
 private:
   Kind                kind;
+  /*
+   * I dislike using the mutable keyword if
+   * at all possible, however this is a member
+   * which is only used to avoid recomputing
+   * the equivalent llvm::Type if that work
+   * has already been done. This does not affect
+   * the visible semantics of any particular type.
+   */
   mutable llvm::Type *llvm_type;
+  /*
+   * Context is used by Substitution to simplify
+   * it's implementation and call signature.
+   * also, since Types are only validly constructable
+   * via the TypeInterner, it is less of an issue
+   * that they are so tightly coupled.
+   */
   TypeInterner       *context;
 
 public:

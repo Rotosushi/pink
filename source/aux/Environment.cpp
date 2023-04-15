@@ -15,12 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <fstream>
 #include <random>
 #include <sstream>
 
 #include "aux/Environment.h"
 
 #include "ast/Function.h"
+#include "ast/action/Codegen.h"
+#include "ast/action/Typecheck.h"
 
 #include "type/action/ToLLVM.h"
 
@@ -50,7 +53,7 @@ namespace pink {
  *
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-auto Environment::ToConstantInit(std::string_view text)
+auto CompilationUnit::ToConstantInit(std::string_view text)
     -> std::vector<llvm::Constant *> {
   std::vector<llvm::Constant *> buffer{text.size()};
   auto                          cursor = buffer.begin();
@@ -71,7 +74,7 @@ auto Environment::ToConstantInit(std::string_view text)
  * or maybe there is an rng per Environment?
  * to be decided later.
  */
-auto Environment::Gensym(std::string_view prefix) -> InternedString {
+auto CompilationUnit::Gensym(std::string_view prefix) -> InternedString {
   std::random_device                  random;
   std::mt19937                        generator{random()};
   std::uniform_int_distribution<long> distribution;
@@ -88,7 +91,7 @@ auto Environment::Gensym(std::string_view prefix) -> InternedString {
   return candidate;
 }
 
-auto Environment::EmitFiles(std::ostream &err) const -> int {
+auto CompilationUnit::EmitFiles(std::ostream &err) const -> int {
   if (cli_options.DoEmitObject()) {
     if (EmitObjectFile(err) == EXIT_FAILURE) {
       return EXIT_FAILURE;
@@ -103,7 +106,7 @@ auto Environment::EmitFiles(std::ostream &err) const -> int {
   return EXIT_SUCCESS;
 }
 
-auto Environment::EmitObjectFile(std::ostream &err) const -> int {
+auto CompilationUnit::EmitObjectFile(std::ostream &err) const -> int {
   auto                 filename = cli_options.GetObjectFilename();
   std::error_code      outfile_error;
   llvm::raw_fd_ostream outfile{filename, outfile_error};
@@ -117,7 +120,7 @@ auto Environment::EmitObjectFile(std::ostream &err) const -> int {
   return EXIT_SUCCESS;
 }
 
-auto Environment::EmitAssemblyFile(std::ostream &err) const -> int {
+auto CompilationUnit::EmitAssemblyFile(std::ostream &err) const -> int {
   auto                 filename = cli_options.GetAssemblyFilename();
   std::error_code      outfile_error{};
   llvm::raw_fd_ostream outfile{filename, outfile_error};
@@ -145,7 +148,84 @@ auto Environment::EmitAssemblyFile(std::ostream &err) const -> int {
   return EXIT_SUCCESS;
 }
 
-auto Environment::NativeCPUFeatures() noexcept -> std::string {
+auto CompilationUnit::Compile(std::ostream &out, std::ostream &err) -> int {
+  if (DoVerbose()) {
+    out << "Compiling source file [" << GetInputFilename() << "]\n";
+  }
+
+  auto parse_result = ParseInputFile(err);
+  if (!parse_result) {
+    PrintErrorWithSourceText(err, parse_result.GetSecond());
+    return EXIT_FAILURE;
+  }
+
+  auto typecheck_errors = TypecheckTerms(parse_result.GetFirst());
+  if (typecheck_errors) {
+    for (auto &error : typecheck_errors.value()) {
+      PrintErrorWithSourceText(err, error);
+    }
+    return EXIT_FAILURE;
+  }
+
+  CodegenTerms(parse_result.GetFirst());
+  return EXIT_SUCCESS;
+}
+auto CompilationUnit::ParseInputFile([[maybe_unused]] std::ostream &err)
+    -> Outcome<Terms, Error> {
+  Terms terms;
+  {
+    std::fstream infile;
+    infile.open(GetInputFilename().data());
+    if (!infile.is_open()) {
+      std::string errmsg{"Could not open input file ["};
+      errmsg += GetInputFilename();
+      errmsg += "]\n";
+      FatalError(errmsg);
+    }
+
+    SetIStream(&infile);
+    while (!EndOfInput()) {
+      auto term_result = Parse();
+
+      if (!term_result) {
+        auto &error = term_result.GetSecond();
+        if ((error.code == Error::Code::EndOfFile) && (!terms.empty())) {
+          break;
+        }
+        return std::move(error);
+      }
+
+      terms.emplace_back(std::move(term_result.GetFirst()));
+    }
+  }
+  return terms;
+}
+
+auto CompilationUnit::TypecheckTerms(Terms &terms) -> std::optional<Errors> {
+  Errors errors;
+  for (const auto &term : terms) {
+    auto typecheck_result = Typecheck(term, *this);
+
+    if (!typecheck_result) {
+      errors.emplace_back(std::move(typecheck_result.GetSecond()));
+    }
+  }
+
+  if (errors.empty()) {
+    return {};
+  }
+
+  return errors;
+}
+
+void CompilationUnit::CodegenTerms(Terms &terms) {
+  for (const auto &term : terms) {
+    auto *value = Codegen(term, *this);
+    assert(value != nullptr);
+  }
+}
+
+auto CompilationUnit::NativeCPUFeatures() noexcept -> std::string {
   std::string           cpu_features;
   llvm::StringMap<bool> features;
 
@@ -176,8 +256,9 @@ auto Environment::NativeCPUFeatures() noexcept -> std::string {
   return cpu_features;
 }
 
-auto Environment::CreateNativeEnvironment(CLIOptions    cli_options,
-                                          std::istream *input) -> Environment {
+auto CompilationUnit::CreateNativeEnvironment(CLIOptions    cli_options,
+                                              std::istream *input)
+    -> CompilationUnit {
   auto        context       = std::make_unique<llvm::LLVMContext>();
   std::string target_triple = llvm::sys::getProcessTriple();
 
@@ -204,12 +285,12 @@ auto Environment::CreateNativeEnvironment(CLIOptions    cli_options,
   module->setDataLayout(data_layout);
   module->setTargetTriple(target_triple);
 
-  Environment env{std::move(cli_options),
-                  input,
-                  std::move(context),
-                  std::move(module),
-                  std::move(instruction_builder),
-                  target_machine};
+  CompilationUnit env{std::move(cli_options),
+                      input,
+                      std::move(context),
+                      std::move(module),
+                      std::move(instruction_builder),
+                      target_machine};
 
   InitializeBinopPrimitives(env);
   InitializeUnopPrimitives(env);
@@ -217,8 +298,8 @@ auto Environment::CreateNativeEnvironment(CLIOptions    cli_options,
   return env;
 }
 
-auto Environment::CreateTestEnvironment() -> Environment {
-  Environment env;
+auto CompilationUnit::CreateTestEnvironment() -> CompilationUnit {
+  CompilationUnit env;
   InitializeBinopPrimitives(env);
   InitializeUnopPrimitives(env);
   return env;
@@ -232,17 +313,17 @@ auto Environment::CreateTestEnvironment() -> Environment {
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /******************************* Allocation *******************************/
-auto Environment::AllocateGlobalText(std::string_view name,
-                                     std::string_view text)
+auto CompilationUnit::AllocateGlobalText(std::string_view name,
+                                         std::string_view text)
     -> llvm::GlobalVariable * {
   auto *type = LLVMTextType(text.size());
   auto *init = ConstantText(text);
   return AllocateGlobal(name, type, init);
 }
 
-auto Environment::AllocateGlobal(std::string_view name,
-                                 llvm::Type      *type,
-                                 llvm::Constant  *initializer)
+auto CompilationUnit::AllocateGlobal(std::string_view name,
+                                     llvm::Type      *type,
+                                     llvm::Constant  *initializer)
     -> llvm::GlobalVariable * {
   auto *global =
       llvm::cast<llvm::GlobalVariable>(module->getOrInsertGlobal(name, type));
@@ -262,9 +343,9 @@ auto Environment::AllocateGlobal(std::string_view name,
 // in Environment::AllocateLocal, but we would need
 // to delay emitting llvm.lifetime.end(<size>, <ptr>)
 // until end of scope somehow. a delay primitive?
-auto Environment::AllocateLocal(std::string_view name,
-                                llvm::Type      *type,
-                                llvm::Value     *init) -> llvm::AllocaInst * {
+auto CompilationUnit::AllocateLocal(std::string_view name,
+                                    llvm::Type      *type,
+                                    llvm::Value *init) -> llvm::AllocaInst * {
   assert(current_function != nullptr);
   auto  save  = GetInsertionPoint();
   auto *entry = &current_function->getEntryBlock();
@@ -279,9 +360,9 @@ auto Environment::AllocateLocal(std::string_view name,
   return local;
 }
 
-auto Environment::AllocateVariable(std::string_view name,
-                                   llvm::Type      *type,
-                                   llvm::Value     *init) -> llvm::Value * {
+auto CompilationUnit::AllocateVariable(std::string_view name,
+                                       llvm::Type      *type,
+                                       llvm::Value     *init) -> llvm::Value * {
   if (current_function == nullptr) {
     if (auto *const_init = llvm::dyn_cast<llvm::Constant>(init)) {
       return AllocateGlobal(name, type, const_init);
@@ -291,23 +372,22 @@ auto Environment::AllocateVariable(std::string_view name,
   return AllocateLocal(name, type, init);
 }
 
-auto Environment::Load(llvm::Type *type, llvm::Value *source) -> llvm::Value * {
+auto CompilationUnit::Load(llvm::Type *type, llvm::Value *source)
+    -> llvm::Value * {
   // #RULE we can only load single value types
-  if (!type->isSingleValueType()) {
-    return source;
-  }
   // #RULE lhs of assignment suppresses a load
   // #RULE address of suppresses a load
-  if (OnTheLHSOfAssignment() || WithinAddressOf()) {
+  if (!type->isSingleValueType() || OnTheLHSOfAssignment() ||
+      WithinAddressOf()) {
     return source;
   }
 
   return instruction_builder->CreateLoad(type, source);
 }
 
-void Environment::Store(llvm::Type  *type,
-                        llvm::Value *source,
-                        llvm::Value *destination) {
+void CompilationUnit::Store(llvm::Type  *type,
+                            llvm::Value *source,
+                            llvm::Value *destination) {
   // #RULE we can only store single value types
   if (type->isSingleValueType()) {
     instruction_builder->CreateStore(source, destination);
@@ -317,9 +397,9 @@ void Environment::Store(llvm::Type  *type,
   }
 }
 
-void Environment::StoreAggregate(llvm::Type  *type,
-                                 llvm::Value *source,
-                                 llvm::Value *destination) {
+void CompilationUnit::StoreAggregate(llvm::Type  *type,
+                                     llvm::Value *source,
+                                     llvm::Value *destination) {
   if (auto *const_source = llvm::dyn_cast<llvm::Constant>(source);
       const_source != nullptr) {
     StoreConstAggregate(type, const_source, destination);
@@ -328,9 +408,9 @@ void Environment::StoreAggregate(llvm::Type  *type,
   }
 }
 
-void Environment::StoreConstAggregate(llvm::Type     *type,
-                                      llvm::Constant *source,
-                                      llvm::Value    *destination) {
+void CompilationUnit::StoreConstAggregate(llvm::Type     *type,
+                                          llvm::Constant *source,
+                                          llvm::Value    *destination) {
   if (auto *array_type = llvm::dyn_cast<llvm::ArrayType>(type);
       array_type != nullptr) {
     auto       *element_type = array_type->getElementType();
@@ -380,9 +460,9 @@ void Environment::StoreConstAggregate(llvm::Type     *type,
   FatalError("unsupported type passed to StoreConstAggregate!");
 }
 
-void Environment::StoreValueAggregate(llvm::Type  *type,
-                                      llvm::Value *source,
-                                      llvm::Value *destination) {
+void CompilationUnit::StoreValueAggregate(llvm::Type  *type,
+                                          llvm::Value *source,
+                                          llvm::Value *destination) {
   if (auto *array_type = llvm::dyn_cast<llvm::ArrayType>(type);
       array_type != nullptr) {
     std::size_t size         = array_type->getNumElements();
@@ -447,102 +527,104 @@ void Environment::StoreValueAggregate(llvm::Type  *type,
 */
 
 /* Text */
-auto Environment::LoadText(llvm::StructType *text_type, llvm::Value *text_ptr)
+auto CompilationUnit::LoadText(llvm::StructType *text_type,
+                               llvm::Value      *text_ptr)
     -> std::pair<llvm::Value *, llvm::Value *> {
   return {LoadTextSize(text_type, text_ptr), TextPointer(text_type, text_ptr)};
 }
 
-auto Environment::LoadTextSize(llvm::StructType *text_type,
-                               llvm::Value      *text_ptr) -> llvm::Value * {
+auto CompilationUnit::LoadTextSize(llvm::StructType *text_type,
+                                   llvm::Value *text_ptr) -> llvm::Value * {
   auto *size_type     = LLVMSizeType();
   auto *text_size_ptr = CreateConstInBoundsGEP2_32(text_type, text_ptr, 0, 0);
   return Load(size_type, text_size_ptr);
 }
 
-auto Environment::TextPointer(llvm::StructType *text_type,
-                              llvm::Value      *text_ptr) -> llvm::Value * {
+auto CompilationUnit::TextPointer(llvm::StructType *text_type,
+                                  llvm::Value      *text_ptr) -> llvm::Value * {
   return CreateConstInBoundsGEP2_32(text_type, text_ptr, 0, 1);
 }
 
-void Environment::StoreText(llvm::StructType             *text_type,
-                            llvm::Value                  *text_ptr,
-                            llvm::ArrayRef<llvm::Value *> init) {
+void CompilationUnit::StoreText(llvm::StructType             *text_type,
+                                llvm::Value                  *text_ptr,
+                                llvm::ArrayRef<llvm::Value *> init) {
   StoreArray(text_type, text_ptr, init);
 }
 
 /* Slices */
-auto Environment::LoadSlice(llvm::StructType *slice_type,
-                            llvm::Value      *slice_ptr)
+auto CompilationUnit::LoadSlice(llvm::StructType *slice_type,
+                                llvm::Value      *slice_ptr)
     -> std::tuple<llvm::Value *, llvm::Value *, llvm::Value *> {
   return {LoadSliceSize(slice_type, slice_ptr),
           LoadSliceOffset(slice_type, slice_ptr),
           LoadSlicePointer(slice_type, slice_ptr)};
 }
 
-auto Environment::LoadSliceSize(llvm::StructType *slice_type,
-                                llvm::Value      *slice_ptr) -> llvm::Value * {
+auto CompilationUnit::LoadSliceSize(llvm::StructType *slice_type,
+                                    llvm::Value *slice_ptr) -> llvm::Value * {
   return LoadStructElement(slice_type, slice_ptr, 0);
 }
 
-auto Environment::LoadSliceOffset(llvm::StructType *slice_type,
-                                  llvm::Value *slice_ptr) -> llvm::Value * {
+auto CompilationUnit::LoadSliceOffset(llvm::StructType *slice_type,
+                                      llvm::Value *slice_ptr) -> llvm::Value * {
   return LoadStructElement(slice_type, slice_ptr, 1);
 }
 
-auto Environment::LoadSlicePointer(llvm::StructType *slice_type,
-                                   llvm::Value *slice_ptr) -> llvm::Value * {
+auto CompilationUnit::LoadSlicePointer(llvm::StructType *slice_type,
+                                       llvm::Value      *slice_ptr)
+    -> llvm::Value * {
   return LoadStructElement(slice_type, slice_ptr, 2);
 }
 
-void Environment::StoreSlice(llvm::StructType *slice_type,
-                             llvm::Value      *slice_ptr,
-                             llvm::Value      *size,
-                             llvm::Value      *offset,
-                             llvm::Value      *ptr) {
+void CompilationUnit::StoreSlice(llvm::StructType *slice_type,
+                                 llvm::Value      *slice_ptr,
+                                 llvm::Value      *size,
+                                 llvm::Value      *offset,
+                                 llvm::Value      *ptr) {
   StoreStructElement(slice_type, slice_ptr, size, 0);
   StoreStructElement(slice_type, slice_ptr, offset, 1);
   StoreStructElement(slice_type, slice_ptr, ptr, 2);
 }
 
-auto Environment::PtrToSliceElement(llvm::StructType *slice_type,
-                                    llvm::Type       *element_type,
-                                    llvm::Value      *slice_ptr,
-                                    llvm::Value      *index) -> llvm::Value * {
+auto CompilationUnit::PtrToSliceElement(llvm::StructType *slice_type,
+                                        llvm::Type       *element_type,
+                                        llvm::Value      *slice_ptr,
+                                        llvm::Value *index) -> llvm::Value * {
   auto [size, offset, ptr] = LoadSlice(slice_type, slice_ptr);
   BoundsCheck(size, offset, ptr);
   return CreateInBoundsGEP(element_type, ptr, {index});
 }
 
-auto Environment::SliceSubscript(llvm::StructType *slice_type,
-                                 llvm::Type       *element_type,
-                                 llvm::Value      *slice_ptr,
-                                 llvm::Value      *index) -> llvm::Value * {
+auto CompilationUnit::SliceSubscript(llvm::StructType *slice_type,
+                                     llvm::Type       *element_type,
+                                     llvm::Value      *slice_ptr,
+                                     llvm::Value      *index) -> llvm::Value * {
   auto *element_ptr =
       PtrToSliceElement(slice_type, element_type, slice_ptr, index);
   return Load(element_type, element_ptr);
 }
 
 /* Arrays */
-auto Environment::LoadArray(llvm::StructType *array_type,
-                            llvm::Value      *array_ptr)
+auto CompilationUnit::LoadArray(llvm::StructType *array_type,
+                                llvm::Value      *array_ptr)
     -> std::pair<llvm::Value *, llvm::Value *> {
   return {LoadArraySize(array_type, array_ptr),
           ArrayBuffer(array_type, array_ptr)};
 }
 
-auto Environment::LoadArraySize(llvm::StructType *array_type,
-                                llvm::Value      *array_ptr) -> llvm::Value * {
+auto CompilationUnit::LoadArraySize(llvm::StructType *array_type,
+                                    llvm::Value *array_ptr) -> llvm::Value * {
   return LoadStructElement(array_type, array_ptr, 0);
 }
 
-auto Environment::ArrayBuffer(llvm::StructType *array_type,
-                              llvm::Value      *array_ptr) -> llvm::Value * {
+auto CompilationUnit::ArrayBuffer(llvm::StructType *array_type,
+                                  llvm::Value *array_ptr) -> llvm::Value * {
   return PtrToStructElement(array_type, array_ptr, 1);
 }
 
-void Environment::StoreArray(llvm::StructType             *array_type,
-                             llvm::Value                  *array_ptr,
-                             llvm::ArrayRef<llvm::Value *> init) {
+void CompilationUnit::StoreArray(llvm::StructType             *array_type,
+                                 llvm::Value                  *array_ptr,
+                                 llvm::ArrayRef<llvm::Value *> init) {
   auto *buffer_type  = array_type->getTypeAtIndex(1);
   auto  num_elements = buffer_type->getArrayNumElements();
   assert(init.size() <= num_elements);
@@ -554,74 +636,74 @@ void Environment::StoreArray(llvm::StructType             *array_type,
   StoreArraySize(array_type, array_ptr, ConstantSize(num_elements));
 }
 
-void Environment::StoreArraySize(llvm::StructType *array_type,
-                                 llvm::Value      *array_ptr,
-                                 llvm::Value      *size) {
+void CompilationUnit::StoreArraySize(llvm::StructType *array_type,
+                                     llvm::Value      *array_ptr,
+                                     llvm::Value      *size) {
   StoreStructElement(array_type, array_ptr, size, 0);
 }
 
-auto Environment::ArraySubscript(llvm::StructType *array_type,
-                                 llvm::Value      *array_ptr,
-                                 llvm::Value      *index) -> llvm::Value * {
+auto CompilationUnit::ArraySubscript(llvm::StructType *array_type,
+                                     llvm::Value      *array_ptr,
+                                     llvm::Value      *index) -> llvm::Value * {
   return LoadArrayElement(array_type, array_ptr, index);
 }
 
-auto Environment::PtrToArrayElement(llvm::StructType *array_type,
-                                    llvm::Value      *array_ptr,
-                                    llvm::Value      *index) -> llvm::Value * {
+auto CompilationUnit::PtrToArrayElement(llvm::StructType *array_type,
+                                        llvm::Value      *array_ptr,
+                                        llvm::Value *index) -> llvm::Value * {
   auto *buffer_type   = array_type->getTypeAtIndex(1);
   auto [size, buffer] = LoadArray(array_type, array_ptr);
   BoundsCheck(size, index);
   return CreateInBoundsGEP(buffer_type, buffer, {index});
 }
 
-auto Environment::UncheckedPtrToArrayElement(llvm::StructType *array_type,
-                                             llvm::Value      *array_ptr,
-                                             std::size_t       index)
+auto CompilationUnit::UncheckedPtrToArrayElement(llvm::StructType *array_type,
+                                                 llvm::Value      *array_ptr,
+                                                 std::size_t       index)
     -> llvm::Value * {
   auto *buffer_type = array_type->getTypeAtIndex(1);
   auto *buffer      = ArrayBuffer(array_type, array_ptr);
   return CreateConstInBoundsGEP2_64(buffer_type, buffer, 0, index);
 }
 
-auto Environment::LoadArrayElement(llvm::StructType *array_type,
-                                   llvm::Value      *array_ptr,
-                                   llvm::Value      *index) -> llvm::Value * {
+auto CompilationUnit::LoadArrayElement(llvm::StructType *array_type,
+                                       llvm::Value      *array_ptr,
+                                       llvm::Value *index) -> llvm::Value * {
   auto *buffer_type  = array_type->getTypeAtIndex(1);
   auto *element_type = buffer_type->getArrayElementType();
   auto *element_ptr  = PtrToArrayElement(array_type, array_ptr, index);
   return Load(element_type, element_ptr);
 }
 
-void Environment::StoreArrayElement(llvm::StructType *array_type,
-                                    llvm::Value      *source,
-                                    llvm::Value      *array_ptr,
-                                    llvm::Value      *index) {
+void CompilationUnit::StoreArrayElement(llvm::StructType *array_type,
+                                        llvm::Value      *source,
+                                        llvm::Value      *array_ptr,
+                                        llvm::Value      *index) {
   auto *buffer_type  = array_type->getTypeAtIndex(1);
   auto *element_type = buffer_type->getArrayElementType();
   auto *element_ptr  = PtrToArrayElement(array_type, array_ptr, index);
   Store(element_type, source, element_ptr);
 }
 
-auto Environment::PtrToStructElement(llvm::StructType *struct_type,
-                                     llvm::Value      *struct_ptr,
-                                     unsigned          index) -> llvm::Value * {
+auto CompilationUnit::PtrToStructElement(llvm::StructType *struct_type,
+                                         llvm::Value      *struct_ptr,
+                                         unsigned index) -> llvm::Value * {
   assert(struct_type->indexValid(index));
   return CreateConstInBoundsGEP2_32(struct_type, struct_ptr, 0, index);
 }
 
-auto Environment::LoadStructElement(llvm::StructType *struct_type,
-                                    llvm::Value      *struct_ptr,
-                                    unsigned          index) -> llvm::Value * {
+auto CompilationUnit::LoadStructElement(llvm::StructType *struct_type,
+                                        llvm::Value      *struct_ptr,
+                                        unsigned index) -> llvm::Value * {
   auto *element_ptr  = PtrToStructElement(struct_type, struct_ptr, index);
   auto *element_type = struct_type->getTypeAtIndex(index);
   return Load(element_type, element_ptr);
 }
 
-void Environment::StoreStructElement(llvm::StructType *struct_type,
-                                     llvm::Value      *struct_ptr,
-                                     llvm::Value      *source,
-                                     unsigned          index) {
+void CompilationUnit::StoreStructElement(llvm::StructType *struct_type,
+                                         llvm::Value      *struct_ptr,
+                                         llvm::Value      *source,
+                                         unsigned          index) {
   auto *element_ptr  = PtrToStructElement(struct_type, struct_ptr, index);
   auto *element_type = struct_type->getTypeAtIndex(index);
   return Store(element_type, source, element_ptr);
@@ -629,7 +711,7 @@ void Environment::StoreStructElement(llvm::StructType *struct_type,
 
 /***************************** Error Handling *****************************/
 
-void Environment::BoundsCheck(llvm::Value *upper, llvm::Value *index) {
+void CompilationUnit::BoundsCheck(llvm::Value *upper, llvm::Value *index) {
   auto *lower = ConstantInteger(0);
   // if ((upper <= index) || (index < 0))
   //    RuntimeError()
@@ -655,15 +737,15 @@ void Environment::BoundsCheck(llvm::Value *upper, llvm::Value *index) {
   SetInsertionPoint(in_bounds);
 }
 
-void Environment::BoundsCheck(llvm::Value *upper,
-                              llvm::Value *offset,
-                              llvm::Value *index) {
+void CompilationUnit::BoundsCheck(llvm::Value *upper,
+                                  llvm::Value *offset,
+                                  llvm::Value *index) {
   auto *new_index = CreateAdd(offset, index, "bounds_check");
   BoundsCheck(upper, new_index);
 }
 
-void Environment::RuntimeError(std::string_view description,
-                               llvm::Value     *exit_code) {
+void CompilationUnit::RuntimeError(std::string_view description,
+                                   llvm::Value     *exit_code) {
   auto *error_text = AllocateGlobalText(Gensym(), description);
   auto *text_type  = LLVMTextType(description.size());
   auto *sys_err    = ConstantInteger(2);
@@ -672,24 +754,25 @@ void Environment::RuntimeError(std::string_view description,
 }
 
 /***************************** System Calls *****************************/
-auto Environment::SysWriteSlice(llvm::Value      *filenum,
-                                llvm::StructType *slice_type,
-                                llvm::Value *slice_pointer) -> llvm::Value * {
+auto CompilationUnit::SysWriteSlice(llvm::Value      *filenum,
+                                    llvm::StructType *slice_type,
+                                    llvm::Value      *slice_pointer)
+    -> llvm::Value * {
   auto [size, offset, buffer] = LoadSlice(slice_type, slice_pointer);
   auto *length                = CreateSub(size, offset);
   return SysWrite(filenum, length, buffer);
 }
 
-auto Environment::SysWriteText(llvm::Value      *filenum,
-                               llvm::StructType *text_type,
-                               llvm::Value *text_pointer) -> llvm::Value * {
+auto CompilationUnit::SysWriteText(llvm::Value      *filenum,
+                                   llvm::StructType *text_type,
+                                   llvm::Value *text_pointer) -> llvm::Value * {
   auto [text_size, text_ptr] = LoadText(text_type, text_pointer);
   return SysWrite(filenum, text_size, text_ptr);
 }
 
-auto Environment::SysWrite(llvm::Value *filenum,
-                           llvm::Value *size,
-                           llvm::Value *buffer) -> llvm::Value * {
+auto CompilationUnit::SysWrite(llvm::Value *filenum,
+                               llvm::Value *size,
+                               llvm::Value *buffer) -> llvm::Value * {
   auto *size_type    = LLVMSizeType();
   auto *pointer_type = LLVMPointerType();
 
@@ -717,7 +800,7 @@ auto Environment::SysWrite(llvm::Value *filenum,
   return CreateCall(syscall, {});
 }
 
-void Environment::SysExit(llvm::Value *exit_code) {
+void CompilationUnit::SysExit(llvm::Value *exit_code) {
   auto *size_type    = LLVMSizeType();
   auto *void_type    = LLVMVoidType();
   auto *mov_rax_type = LLVMFunctionType(size_type, {});
@@ -742,7 +825,8 @@ void Environment::SysExit(llvm::Value *exit_code) {
 
 /***************************** Optimization *****************************/
 // we may want to print errors at some point. (it happened for Compile and Link)
-auto Environment::DefaultAnalysis([[maybe_unused]] std::ostream &err) -> int {
+auto CompilationUnit::DefaultAnalysis([[maybe_unused]] std::ostream &err)
+    -> int {
   // quote: buildPerModuleDefaultPipeline "... Level cannot be 'O0' here ..."
   if (GetOptimizationLevel() != llvm::OptimizationLevel::O0) {
     llvm::LoopAnalysisManager     LAM;
@@ -790,10 +874,10 @@ auto Environment::DefaultAnalysis([[maybe_unused]] std::ostream &err) -> int {
 // Ptr -> Ptr     -: bitcast (lossless)
 // Ptr -> Int     -: ptrtoint (lossless)
 // Ptr -> Uint    -: ptrtoint (lossless)
-auto Environment::Cast(llvm::Value *source,
-                       llvm::Type  *target_type,
-                       bool         is_source_signed,
-                       bool         is_target_signed) -> llvm::Value * {
+auto CompilationUnit::Cast(llvm::Value *source,
+                           llvm::Type  *target_type,
+                           bool         is_source_signed,
+                           bool         is_target_signed) -> llvm::Value * {
   auto *source_type = source->getType();
 
   if (is_source_signed) {
@@ -814,10 +898,10 @@ auto Environment::Cast(llvm::Value *source,
   FatalError("unsupported type cast");
 }
 
-auto Environment::CastIntegerTo(llvm::Value       *source,
-                                llvm::IntegerType *from_type,
-                                llvm::Type        *target_type,
-                                bool is_target_signed) -> llvm::Value * {
+auto CompilationUnit::CastIntegerTo(llvm::Value       *source,
+                                    llvm::IntegerType *from_type,
+                                    llvm::Type        *target_type,
+                                    bool is_target_signed) -> llvm::Value * {
   if (auto *to_type = llvm::dyn_cast<llvm::IntegerType>(target_type);
       to_type != nullptr) {
     if (is_target_signed) {
@@ -829,11 +913,11 @@ auto Environment::CastIntegerTo(llvm::Value       *source,
   FatalError("unsupported type cast");
 }
 
-auto Environment::CastUnsignedIntegerTo(llvm::Value          *source,
-                                        llvm::IntegerType    *from_type,
-                                        llvm::Type           *target_type,
-                                        [[maybe_unused]] bool is_target_signed)
-    -> llvm::Value * {
+auto CompilationUnit::CastUnsignedIntegerTo(
+    llvm::Value          *source,
+    llvm::IntegerType    *from_type,
+    llvm::Type           *target_type,
+    [[maybe_unused]] bool is_target_signed) -> llvm::Value * {
   if (auto *to_type = llvm::dyn_cast<llvm::IntegerType>(target_type);
       to_type != nullptr) {
     return CastZExt(source, from_type, to_type);
@@ -842,9 +926,9 @@ auto Environment::CastUnsignedIntegerTo(llvm::Value          *source,
   FatalError("unsupported type cast");
 }
 
-auto Environment::CastSExt(llvm::Value       *from,
-                           llvm::IntegerType *from_type,
-                           llvm::IntegerType *to_type) -> llvm::Value * {
+auto CompilationUnit::CastSExt(llvm::Value       *from,
+                               llvm::IntegerType *from_type,
+                               llvm::IntegerType *to_type) -> llvm::Value * {
   auto from_bitwidth = from_type->getBitWidth();
   auto to_bitwidth   = to_type->getBitWidth();
 
@@ -859,9 +943,9 @@ auto Environment::CastSExt(llvm::Value       *from,
   return instruction_builder->CreateBitCast(from, to_type);
 }
 
-auto Environment::CastZExt(llvm::Value       *from,
-                           llvm::IntegerType *from_type,
-                           llvm::IntegerType *to_type) -> llvm::Value * {
+auto CompilationUnit::CastZExt(llvm::Value       *from,
+                               llvm::IntegerType *from_type,
+                               llvm::IntegerType *to_type) -> llvm::Value * {
   auto from_bitwidth = from_type->getBitWidth();
   auto to_bitwidth   = to_type->getBitWidth();
 
@@ -876,13 +960,13 @@ auto Environment::CastZExt(llvm::Value       *from,
   return instruction_builder->CreateBitCast(from, to_type);
 }
 
-auto Environment::InlineAsm(llvm::FunctionType         *asm_type,
-                            std::string_view            asm_string,
-                            std::string_view            constraints,
-                            bool                        has_side_effects,
-                            bool                        is_align_stack,
-                            llvm::InlineAsm::AsmDialect asm_dialect,
-                            bool can_throw) -> llvm::InlineAsm * {
+auto CompilationUnit::InlineAsm(llvm::FunctionType         *asm_type,
+                                std::string_view            asm_string,
+                                std::string_view            constraints,
+                                bool                        has_side_effects,
+                                bool                        is_align_stack,
+                                llvm::InlineAsm::AsmDialect asm_dialect,
+                                bool can_throw) -> llvm::InlineAsm * {
   if (auto error = llvm::InlineAsm::verify(asm_type, constraints)) {
     std::stringstream buffer;
     buffer << "InlineAsm constraints [" << constraints << "] are not valid "
@@ -900,7 +984,7 @@ auto Environment::InlineAsm(llvm::FunctionType         *asm_type,
                               can_throw);
 }
 
-void Environment::ConstructFunctionAttributes(
+void CompilationUnit::ConstructFunctionAttributes(
     llvm::Function             *llvm_function,
     pink::FunctionType::Pointer pink_function_type) {
   auto    *llvm_return_type   = llvm_function->getReturnType();
@@ -926,7 +1010,9 @@ void Environment::ConstructFunctionAttributes(
   with each function, as llvm::FunctionTypes may
   be shared among llvm::Functions. This means we
   are forced to walk the list of arguments types
-  twice. we might be able to accomplish this if
+  twice.
+
+  actually, we might be able to accomplish this if
   we store the attributes computed for a given
   function_type in the type itself. how bad could
   that be?
@@ -960,7 +1046,7 @@ void Environment::ConstructFunctionAttributes(
   }
 }
 
-void Environment::ConstructFunctionArguments(
+void CompilationUnit::ConstructFunctionArguments(
     llvm::Function *llvm_function, pink::Function const *pink_function) {
   // Set up the arguments within the function's first BasicBlock,
   // A) Allocate all arguments

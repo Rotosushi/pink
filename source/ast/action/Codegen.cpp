@@ -43,7 +43,7 @@ class CodegenVisitor : public ConstVisitorResult<CodegenVisitor,
                                                  CodegenResult>,
                        public ConstAstVisitor {
 private:
-  Environment &env;
+  CompilationUnit &env;
 
 public:
   void Visit(const AddressOf *address_of) const noexcept override;
@@ -66,7 +66,7 @@ public:
   void Visit(const Variable *variable) const noexcept override;
   void Visit(const While *loop) const noexcept override;
 
-  CodegenVisitor(Environment &env) noexcept
+  CodegenVisitor(CompilationUnit &env) noexcept
       : ConstVisitorResult(),
         env(env) {}
   ~CodegenVisitor() noexcept override                  = default;
@@ -311,6 +311,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
 
   const auto *cache_type         = function->GetCachedTypeOrAssert();
   const auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
+  auto        attributes         = pink_function_type->GetAttributes();
 
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
   auto *llvm_function_type = [&]() {
@@ -318,6 +319,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
       const auto *main_function_type = env.GetFunctionType(
           env.GetVoidType(),
           FunctionType::Arguments{pink_function_type->GetArguments()});
+      pink_function_type = main_function_type;
       return llvm::cast<llvm::FunctionType>(ToLLVM(main_function_type, env));
     }
     return llvm::cast<llvm::FunctionType>(ToLLVM(pink_function_type, env));
@@ -327,7 +329,8 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
                                            llvm::Function::ExternalLinkage,
                                            function->GetName());
 
-  env.ConstructFunctionAttributes(llvm_function, pink_function_type);
+  llvm_function->setAttributes(attributes);
+  // env.ConstructFunctionAttributes(llvm_function, pink_function_type);
 
   auto *entry_BB = env.CreateAndInsertBasicBlock(function->GetName() +
                                                  std::string("_entry"));
@@ -525,8 +528,8 @@ void CodegenVisitor::Visit(const While *loop) const noexcept {
   result = env.ConstantBoolean(false);
 }
 
-[[nodiscard]] auto Codegen(const Ast::Pointer &ast, Environment &env) noexcept
-    -> CodegenResult {
+[[nodiscard]] auto Codegen(const Ast::Pointer &ast,
+                           CompilationUnit    &env) noexcept -> CodegenResult {
   // 1/27/2023:
   // technically this constructor does extra work, (not too much)
   // as internally we construct a VisitorResult with a member to
@@ -537,11 +540,10 @@ void CodegenVisitor::Visit(const While *loop) const noexcept {
   // As I need to pass a CodegenVisitor * to VisitorResult::Compute
   // in order for the new visitor it constructs to get a copy of any
   // members which this visitor has.
-  // This is necessary because the visitor
+  // This is necessary because *::Compute
   // A) needs more parameters than the one which *::Accept and *::Visit
   //    allows. (namely the single pointer to the derived class)
   // B) needs to allocate another object to hold another return value
-  // on each call to Compute.
   CodegenVisitor visitor(env);
   return visitor.Compute(ast, &visitor);
 }

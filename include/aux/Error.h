@@ -55,6 +55,7 @@ public:
     MissingFnName,
     MissingArgName,
     MissingArgType,
+    MissingRArrow,
     MissingArgColon,
     MissingArraySemicolon,
     MissingArrayNum,

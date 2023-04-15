@@ -23,8 +23,8 @@
 
 #include "support/DisableWarning.h"
 
-auto UnopCodegenFunction([[maybe_unused]] llvm::Value       *term,
-                         [[maybe_unused]] pink::Environment &env)
+auto UnopCodegenFunction([[maybe_unused]] llvm::Value           *term,
+                         [[maybe_unused]] pink::CompilationUnit &env)
     -> llvm::Value * {
   return nullptr;
 }

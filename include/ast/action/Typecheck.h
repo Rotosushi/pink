@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -22,7 +22,7 @@
 #include "aux/Outcome.h"
 
 namespace pink {
-class Environment;
+class CompilationUnit;
 using TypecheckResult = Outcome<Type::Pointer, Error>;
 
 /*
@@ -43,14 +43,14 @@ using TypecheckResult = Outcome<Type::Pointer, Error>;
  * which allow for user types. (other than functions)
  *
  * @param ast the Ast to Typecheck
- * @param env The Environment to typecheck against, an
- * [Environment](#Environment) set up as if by
+ * @param env The CompilationUnit to typecheck against, an
+ * [CompilationUnit](#CompilationUnit) set up as if by
  * [CreateNativeEnvironment](#CreateNativeEnvironment) is suitable
  * @return Outcome<Type*, Error> if the type checking algorithm could
  * assign this term a [type](#Type) then the Outcome holds that type,
  * otherwise the Outcome holds the Error that the type checking algorithm
  * encountered.
  */
-[[nodiscard]] auto Typecheck(const Ast::Pointer &ast, Environment &env) noexcept
-    -> TypecheckResult;
+[[nodiscard]] auto Typecheck(const Ast::Pointer &ast,
+                             CompilationUnit &env) noexcept -> TypecheckResult;
 } // namespace pink

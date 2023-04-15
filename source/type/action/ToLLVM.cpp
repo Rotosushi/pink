@@ -29,7 +29,7 @@ class ToLLVMVisitor : public ConstVisitorResult<ToLLVMVisitor,
                                                 llvm::Type *>,
                       public ConstTypeVisitor {
 private:
-  Environment &env;
+  CompilationUnit &env;
 
 public:
   void Visit(const ArrayType *array_type) const noexcept override;
@@ -44,7 +44,7 @@ public:
   void Visit(const TupleType *tuple_type) const noexcept override;
   void Visit(const VoidType *void_type) const noexcept override;
 
-  ToLLVMVisitor(Environment &env) noexcept
+  ToLLVMVisitor(CompilationUnit &env) noexcept
       : ConstVisitorResult(),
         env(env) {}
   ~ToLLVMVisitor() noexcept override                 = default;
@@ -88,64 +88,59 @@ void ToLLVMVisitor::Visit(const CharacterType *character_type) const noexcept {
 /*
   the layout of a FunctionType is a Function Pointer,
 
-  for llvm we must promote any argument types which cannot
-  fit into a single register to pointer types and then mark
-  that argument with sret<Ty> where Ty is the original layout
-  type of the argument. But the llvm::Function manages
-  the sret<Ty> tag, so we cannot do that here.
-  and we must promote the return type to a hidden first ptr type
-  argument with the sret<Ty> tag if the return type is also not
-  a single value type.
-
-  so, thinking about this more I realized that any given function
-  type will have the same attribute set, no matter which function
-  the type is attached too. (modulo any attributes only knowable
-  by parsing the body of the function), thus we could attach an
-  attribute set to the pink::Function type, and we can very much
-  compute that attribute set here.
+  We use this function to compute a baseline llvm::AttributeSet
+  for any function which has this function type.
 */
 void ToLLVMVisitor::Visit(const FunctionType *function_type) const noexcept {
-  auto address_space = env.AllocaAddressSpace();
-
-  std::vector<llvm::Type *> llvm_argument_types(
-      function_type->GetArguments().size());
-
-  // #RULE we can only pass arguments which are single value types
-  // thus arguments which are larger than a single value type must
-  // be passed via a pointer.
-  auto transform_argument = [&](Type::Pointer type) -> llvm::Type * {
-    llvm::Type *llvm_type = Compute(type, this);
-    if (llvm_type->isSingleValueType()) {
-      return llvm_type;
-    }
-    return env.LLVMPointerType(address_space);
-  };
-
-  std::transform(function_type->begin(),
-                 function_type->end(),
-                 llvm_argument_types.begin(),
-                 transform_argument);
+  auto               address_space  = env.AllocaAddressSpace();
+  std::size_t        arguments_size = function_type->GetArguments().size() + 1;
+  llvm::AttributeSet function_attributes;
+  llvm::AttributeSet return_attributes;
+  std::vector<llvm::AttributeSet> arguments_attributes;
+  arguments_attributes.reserve(arguments_size);
+  std::vector<llvm::Type *> llvm_argument_types;
+  llvm_argument_types.reserve(arguments_size);
 
   auto *llvm_return_type = Compute(function_type->GetReturnType(), this);
-
-  // #RULE we can only return single value types from a function
-  if (llvm_return_type->isSingleValueType() || llvm_return_type->isVoidTy()) {
-    auto *llvm_type = Environment::LLVMFunctionType(llvm_return_type,
-                                                    llvm_argument_types,
-                                                    false);
-    function_type->SetCachedLLVMType(llvm_type);
-    result = llvm_type;
-    return;
+  // #RULE if the return type of a function will not fit into a single
+  // register we must pass it as a hidden parameter, we place it first in
+  // the argument list. This parameter must be a pointer type, with the
+  // sret<Ty> attribute, where Ty is the pointee type of the parameter
+  // (the in memory return type).
+  if (!llvm_return_type->isSingleValueType() && !llvm_return_type->isVoidTy()) {
+    auto return_attributes_builder = env.GetAttributeBuilder();
+    return_attributes_builder.addStructRetAttr(llvm_return_type);
+    arguments_attributes.emplace_back(
+        env.GetAttributeSet(return_attributes_builder));
+    llvm_argument_types.emplace_back(env.LLVMPointerType(address_space));
   }
 
-  // #RULE we return non single value types by way of a hidden first parameter.
-  llvm_argument_types.insert(llvm_argument_types.begin(),
-                             env.LLVMPointerType(address_space));
-  auto *llvm_type = Environment::LLVMFunctionType(env.LLVMVoidType(),
-                                                  llvm_argument_types,
-                                                  false);
-  function_type->SetCachedLLVMType(llvm_type);
-  result = llvm_type;
+  // #RULE we can only pass arguments which are single value types.
+  // arguments which are larger than a single value type must
+  // be passed via a pointer, and we must give these arguments
+  for (const auto *argument : *function_type) {
+    auto *llvm_argument_type = Compute(argument, this);
+
+    if (llvm_argument_type->isSingleValueType()) {
+      llvm_argument_types.emplace_back(llvm_argument_type);
+      arguments_attributes.emplace_back(env.GetAttributeSet());
+    } else {
+      auto argument_attributes_builder = env.GetAttributeBuilder();
+      argument_attributes_builder.addByValAttr(llvm_argument_type);
+      arguments_attributes.emplace_back(
+          env.GetAttributeSet(argument_attributes_builder));
+      llvm_argument_types.emplace_back(env.LLVMPointerType(address_space));
+    }
+  }
+
+  function_type->SetAttributes(env.GetAttributeList(function_attributes,
+                                                    return_attributes,
+                                                    arguments_attributes));
+
+  auto *llvm_function_type =
+      CompilationUnit::LLVMFunctionType(llvm_return_type, llvm_argument_types);
+  function_type->SetCachedLLVMType(llvm_function_type);
+  result = llvm_function_type;
 }
 
 void ToLLVMVisitor::Visit(const TypeVariable *identifier_type) const noexcept {
@@ -222,7 +217,7 @@ void ToLLVMVisitor::Visit(const VoidType *void_type) const noexcept {
   result = llvm_type;
 }
 
-[[nodiscard]] auto ToLLVM(Type::Pointer type, Environment &env) noexcept
+[[nodiscard]] auto ToLLVM(Type::Pointer type, CompilationUnit &env) noexcept
     -> llvm::Type * {
   auto cache = type->CachedLLVMType();
   if (cache) {

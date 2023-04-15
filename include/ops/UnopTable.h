@@ -35,7 +35,7 @@
 #include "front/Token.h" // pink::Token
 
 namespace pink {
-class Environment;
+class CompilationUnit;
 
 class UnopCodegen {
 public:
@@ -43,7 +43,7 @@ public:
    * @brief pointer to a function which can be used
    * to generate an llvm IR implementation of a given unop
    */
-  using Function = llvm::Value *(*)(llvm::Value *term, Environment &env);
+  using Function = llvm::Value *(*)(llvm::Value *term, CompilationUnit &env);
 
 private:
   Type::Pointer return_type;
@@ -66,8 +66,8 @@ public:
     return return_type;
   }
 
-  [[nodiscard]] auto operator()(llvm::Value *value,
-                                Environment &env) const noexcept
+  [[nodiscard]] auto operator()(llvm::Value     *value,
+                                CompilationUnit &env) const noexcept
       -> llvm::Value * {
     return function(value, env);
   }
@@ -92,8 +92,8 @@ public:
     [[nodiscard]] auto ReturnType() const noexcept -> Type::Pointer {
       return literal.Value().GetReturnType();
     }
-    [[nodiscard]] auto operator()(llvm::Value *value,
-                                  Environment &env) const noexcept
+    [[nodiscard]] auto operator()(llvm::Value     *value,
+                                  CompilationUnit &env) const noexcept
         -> llvm::Value * {
       return literal.Value()(value, env);
     }
@@ -131,7 +131,7 @@ public:
  * @brief Represents the set of all known unary operators
  *
  * \todo refactor UnopTable and BinopTable to take a Token
- * as a key, (UnopTable.h, BinopTable.h, Environment.h).
+ * as a key, (UnopTable.h, BinopTable.h, CompilationUnit.h).
  * Add every defined operator to the list of lexed tokens,
  * (Token.h, Lexer.re). Add Parser::IsOperator(Token token) -> bool,
  * which the Parser::InfixParser can use for parsing binop

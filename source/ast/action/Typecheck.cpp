@@ -57,7 +57,7 @@ class TypecheckVisitor : public ConstVisitorResult<TypecheckVisitor,
                                                    TypecheckResult>,
                          public ConstAstVisitor {
 private:
-  Environment &env;
+  CompilationUnit &env;
 
 public:
   void Visit(const AddressOf *address_of) const noexcept override;
@@ -80,7 +80,7 @@ public:
   void Visit(const Variable *variable) const noexcept override;
   void Visit(const While *loop) const noexcept override;
 
-  TypecheckVisitor(Environment &env) noexcept
+  TypecheckVisitor(CompilationUnit &env) noexcept
       : env(env) {}
   ~TypecheckVisitor() noexcept override                    = default;
   TypecheckVisitor(const TypecheckVisitor &other) noexcept = default;
@@ -212,7 +212,6 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
            Compute,
            assignment->GetLeft(),
            this)
-
   env.OnTheLHSOfAssignment(false);
 
   TRY(right_result, right_type, Compute, assignment->GetRight(), this)
@@ -466,13 +465,11 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
 
   std::vector<Type::Pointer> argument_types;
   argument_types.reserve(function->GetArguments().size());
-  auto GetType = [](const Function::Argument &argument) {
-    return argument.second;
-  };
-  std::transform(function->begin(),
-                 function->end(),
-                 argument_types.begin(),
-                 GetType);
+  std::transform(
+      function->begin(),
+      function->end(),
+      argument_types.begin(),
+      [](const Function::Argument &argument) { return argument.second; });
 
   const auto *result_type =
       env.GetFunctionType(body_type, std::move(argument_types));
@@ -679,8 +676,8 @@ void TypecheckVisitor::Visit(const While *loop) const noexcept {
   result = result_type;
 }
 
-[[nodiscard]] auto Typecheck(const Ast::Pointer &ast, Environment &env) noexcept
-    -> TypecheckResult {
+[[nodiscard]] auto Typecheck(const Ast::Pointer &ast,
+                             CompilationUnit &env) noexcept -> TypecheckResult {
   auto cached_type = ast->GetCachedType();
   if (cached_type) {
     return cached_type.value();

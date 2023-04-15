@@ -26,10 +26,13 @@
  */
 
 #pragma once
+#include <bitset>
 #include <memory>   // std::unique_ptr
 #include <optional> // std::optional
 
 #include "llvm/Support/Casting.h" // llvm::isa, llvm::cast, etc
+
+#include "support/ToUnderlying.h" // pink::ToUnderlying
 
 #include "aux/Location.h" // pink::Location
 
@@ -118,19 +121,6 @@ namespace pink {
     (allocate array, store (load a))
 
 */
-class AstFlags {
-public:
-private:
-  enum Flags {
-    Mutable,
-    Variable,
-    Literal,
-    SIZE // must be the last enum value
-         // no enums may have an assigned value
-  };
-
-public:
-};
 
 /**
  * @brief Ast is the base class of all abstract syntax tree nodes
@@ -138,6 +128,47 @@ public:
  * \note Ast is pure virtual
  */
 class Ast {
+private:
+  class Annotations {
+  public:
+  private:
+    enum class Flags : unsigned {
+      Expression, // true -> expression, false -> value
+      Mutable,    // true -> mutable, false -> constant
+      Variable,   // true -> bound to the address of a memory location
+                  // false -> bound to a literal (a llvm::Constant)
+      SIZE        // must be the last enum value
+                  // no enums may have an assigned value
+    };
+
+    static constexpr auto bitset_size = ToUnderlying(Flags::SIZE);
+    using Set                         = std::bitset<bitset_size>;
+
+    Set set;
+
+  public:
+    [[nodiscard]] auto Expression() const noexcept -> bool {
+      return set[ToUnderlying(Flags::Expression)];
+    }
+    auto Expression(bool state) noexcept -> bool {
+      return set[ToUnderlying(Flags::Expression)] = state;
+    }
+
+    [[nodiscard]] auto Mutable() const noexcept -> bool {
+      return set[ToUnderlying(Flags::Mutable)];
+    }
+    auto Mutable(bool state) noexcept -> bool {
+      return set[ToUnderlying(Flags::Mutable)] = state;
+    }
+
+    [[nodiscard]] auto Variable() const noexcept -> bool {
+      return set[ToUnderlying(Flags::Variable)];
+    }
+    auto Variable(bool state) noexcept -> bool {
+      return set[ToUnderlying(Flags::Variable)] = state;
+    }
+  };
+
 public:
   using Pointer = std::unique_ptr<Ast>;
   /**
@@ -179,12 +210,14 @@ public:
 private:
   Kind                  kind;
   Location              location;
+  Annotations           annotations;
   mutable Type::Pointer cached_type;
 
 public:
   Ast(Kind kind, Location location) noexcept
       : kind{kind},
         location{location},
+        annotations{},
         cached_type{nullptr} {}
   virtual ~Ast() noexcept                            = default;
   Ast(const Ast &other) noexcept                     = delete;
@@ -196,6 +229,27 @@ public:
   [[nodiscard]] auto GetLocation() noexcept -> Location & { return location; }
   [[nodiscard]] auto GetLocation() const noexcept -> const Location & {
     return location;
+  }
+
+  [[nodiscard]] auto Expression() const noexcept -> bool {
+    return annotations.Expression();
+  }
+  auto Expression(bool state) noexcept -> bool {
+    return annotations.Expression(state);
+  }
+
+  [[nodiscard]] auto Mutable() const noexcept -> bool {
+    return annotations.Mutable();
+  }
+  auto Mutable(bool state) noexcept -> bool {
+    return annotations.Mutable(state);
+  }
+
+  [[nodiscard]] auto Variable() const noexcept -> bool {
+    return annotations.Variable();
+  }
+  auto Variable(bool state) noexcept -> bool {
+    return annotations.Variable(state);
   }
 
   [[nodiscard]] auto GetCachedType() const noexcept

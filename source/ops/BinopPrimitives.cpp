@@ -18,82 +18,82 @@
 #include "aux/Environment.h"
 
 namespace pink {
-auto BinopIntAdd(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntAdd(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateAdd(left, right, "iadd");
 }
 
-auto BinopIntSub(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntSub(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateSub(left, right, "isub");
 }
 
-auto BinopIntMul(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntMul(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateMul(left, right, "imul");
 }
 
-auto BinopIntSDiv(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntSDiv(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateSDiv(left, right, "idiv");
 }
 
-auto BinopIntMod(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntMod(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateSRem(left, right, "imod");
 }
 
-auto BinopIntEq(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntEq(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpEQ(left, right, "ieq");
 }
 
-auto BinopBoolEq(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopBoolEq(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpEQ(left, right, "ieq");
 }
 
-auto BinopIntNe(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntNe(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpNE(left, right, "ineq");
 }
 
-auto BinopBoolNe(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopBoolNe(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpNE(left, right, "boolneq");
 }
 
-auto BinopIntGt(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntGt(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpSGT(left, right, "igt");
 }
 
-auto BinopIntGe(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntGe(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpSGE(left, right, "ige");
 }
 
-auto BinopIntLt(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntLt(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpSLT(left, right, "ilt");
 }
 
-auto BinopIntLe(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopIntLe(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateICmpSLE(left, right, "ile");
 }
 
-auto BinopBoolAnd(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopBoolAnd(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateAnd(left, right, "and");
 }
 
-auto BinopBoolOr(llvm::Value *left, llvm::Value *right, Environment &env)
+auto BinopBoolOr(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
     -> llvm::Value * {
   return env.CreateOr(left, right, "or");
 }
 
-void InitializeBinopPrimitives(Environment &env) {
+void InitializeBinopPrimitives(CompilationUnit &env) {
   Type::Pointer int_ty  = env.GetIntType();
   Type::Pointer bool_ty = env.GetBoolType();
 

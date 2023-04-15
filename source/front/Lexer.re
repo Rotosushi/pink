@@ -143,8 +143,6 @@ auto Lexer::lex() -> Token {
         "true"    { UpdateLocation(); return Token::True; }
         "false"   { UpdateLocation(); return Token::False; }
         "Boolean" { UpdateLocation(); return Token::BooleanType; }
-        "Pointer" { UpdateLocation(); return Token::Pointer; }
-        "Slice"   { UpdateLocation(); return Token::Slice; }
 
         "fn"	{ UpdateLocation(); return Token::Fn; }
         "var"   { UpdateLocation(); return Token::Var; }
@@ -181,6 +179,7 @@ auto Lexer::lex() -> Token {
         "}"	  	{ UpdateLocation(); return Token::RBrace; }
         "["     { UpdateLocation(); return Token::LBracket; }
         "]"     { UpdateLocation(); return Token::RBracket; }
+        "->"    { UpdateLocation(); return Token::RArrow; }
 
         id      { UpdateLocation(); return Token::Id; }
         int     { UpdateLocation(); return Token::Integer; }

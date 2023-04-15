@@ -20,28 +20,26 @@
 
 #include "llvm/ADT/DenseMap.h"
 
-namespace pink::detail {
-template <typename T>
-concept Enumeration = std::is_enum<T>::value;
-} // namespace pink::detail
-
 namespace llvm {
-// provide DenseMapInfo for Enums
-template <pink::detail::Enumeration E> struct DenseMapInfo<E> {
-  using UnderlyingType = typename std::underlying_type<E>::type;
+// provide DenseMapInfo for enums
+template <typename Enum>
+struct DenseMapInfo<Enum, std::enable_if_t<std::is_enum<Enum>::value>> {
+  using UnderlyingType = typename std::underlying_type<Enum>::type;
   using Info           = DenseMapInfo<UnderlyingType>;
 
-  static auto getEmptyKey() -> E { return static_cast<E>(Info::getEmptyKey()); }
-
-  static auto getTombstoneKey() -> E {
-    return static_cast<E>(Info::getTombstoneKey());
+  static auto getEmptyKey() -> Enum {
+    return static_cast<Enum>(Info::getEmptyKey());
   }
 
-  static auto getHashValue(const E &val) -> UnderlyingType {
-    return Info::getHashValue(static_cast<UnderlyingType>(val));
+  static auto getTombstoneKey() -> Enum {
+    return static_cast<Enum>(Info::getTombstoneKey());
   }
 
-  static auto isEqual(const E &lhs, const E &rhs) -> bool {
+  static auto getHashValue(const Enum &val) -> unsigned {
+    return (unsigned)Info::getHashValue(static_cast<UnderlyingType>(val));
+  }
+
+  static auto isEqual(const Enum &lhs, const Enum &rhs) -> bool {
     return Info::isEqual(static_cast<UnderlyingType>(lhs),
                          static_cast<UnderlyingType>(rhs));
   }
@@ -91,9 +89,6 @@ public:
     return pair.first;
   }
 
-  // #NOTE: 2/24/2023
-  // we have a not const version to allow for a map of maps.
-  // otherwise the client could not call Element::Value::Lookup()
   auto Lookup(Key key) -> std::optional<Element> {
     auto found = table.find(key);
     if (found == table.end()) {

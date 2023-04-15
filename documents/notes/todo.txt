@@ -2,15 +2,25 @@
 
 
 # Test[
-#  Parser(check),
+#  Parser(needs more tests, all currently pass),
 #  Typecheck(in progress),
 #  Codegen
 # ]
 
 
 # Features [
-  Global Declarations(testing),
+  Global Declarations(testing), leaning towards removing these
+  Namespaces****,
+  Modules,
   Functions [
+    Arguments [
+      single value types(testing),
+      aggregate types(testing)
+    ]
+    Return values [
+      single value types(testing),
+      aggregate types(testing)
+    ]
     Expressions [
       Local Declarations,
       Operators [
@@ -41,38 +51,51 @@
     Array*(testing),
     Tuple(testing),
     Pointer(testing),
-    Slice(todo),
+    Slice(in-progress),
 
-    Struct(todo),
-    Union**(todo),
+    Algebraic Data Types**(todo),
+    Templates (todo),
+    Concepts (todo),
+  ],
+  Annotations***(todo) [
+    # the exact annotations are to be decided,
+    # it's just that mutability, the ability 
+    # to take an address, and the ability to 
+    # assign to/of a symbol are all ideas which 
+    # must be expressable to get correct semantics.
+    # question) does mutability need to be attached to the Type
+    #           or is it fine to have it attached to the Ast?
 
-    Annotations [
-      Mutable,
-      Variable,
-      Literal,
-    ],
+    # constness
+    Mutable,
+    Constant,
+
+    # value category
+    Variable,
+    Literal,
+    Temporary,
   ],
 ]
 
 # * Arrays have a size member. w/runtime panic and/or typechecked access
-# ** tagged Unions. w/runtime panic and/or typechecked access.
+
+# ** ADT's subsume Struct, Tagged Unions, and Enums, in one feature!
+#    I want them to be conceptually equivalent to Tagged Enums with 
+#    carrier data. Essentially std::variant, but simpler type errors 
+#    and data inspection during debugging, 
+#    and builtin to the language itself, for better support.
+
+# *** Annotations subsume the semantics of WithinAddressOf 
+#    WithinLHSOfAssignment, and WithinDereferencePtr.
+#    I suspect they are more flexible, easier to extend,
+#    and support as the semantics get more complex.  
+
+# **** Namespaces allows names to be reused easily and 
+#      safely. Functions are a namespace, and modules 
+#      are a namespace
 
 # Rewrite the Parser to a new grammar (maybe entirely, maybe just a little.
  I am debating a parenthesis-less call syntax. I want it to be LL(1))
-  # rewrite operators such that they are treated as tokens in their own right.
-    (no more user defined operators, it introduces a parsing/lexing ambiguity 
-    with operator < and > being used for template syntax.)
-    1) add tokens for existing operators (done)
-    2) add lexer rules for existing operators (done)
-    3) Add IsOperator(Token) for binop parsing
-    4) Add Precedence(Token), Associativity(Token) for binop parsing
-    5) modify Binop/Unop to use Tokens for the operator 
-    6) modify BinopTable/UnopTable to use Tokens for the operator
-    7) modify BinopPrimitives/UnopPrimitives to use Tokens for the operators. 
-    
-    ?) we can declare the Binop and Unop Tables constexpr now that their 
-      full contents are known at compile time.
-
   # optional type annotations in bind expressions, these get checked during typeing.
   # const-ness and mutability specifiers (I think these have to define new types?
     still considering the implementation of this tbch)

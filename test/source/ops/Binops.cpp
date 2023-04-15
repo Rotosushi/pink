@@ -21,9 +21,9 @@
 
 #include "aux/Environment.h"
 
-auto BinopCodegenFunction([[maybe_unused]] llvm::Value       *left_value,
-                          [[maybe_unused]] llvm::Value       *right_value,
-                          [[maybe_unused]] pink::Environment &env)
+auto BinopCodegenFunction([[maybe_unused]] llvm::Value           *left_value,
+                          [[maybe_unused]] llvm::Value           *right_value,
+                          [[maybe_unused]] pink::CompilationUnit &env)
     -> llvm::Value * {
   return nullptr;
 }

@@ -98,6 +98,8 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Syntax Error: Expected ':'";
   case Error::Code::MissingArgType:
     return "Syntax Error: Missing type annotation for argument";
+  case Error::Code::MissingRArrow:
+    return "Syntax Error: Expected '->'";
   case Error::Code::MissingArraySemicolon:
     return "Syntax Error: Missing ';' in array type";
   case Error::Code::MissingArrayNum:

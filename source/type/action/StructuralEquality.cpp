@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -98,21 +98,20 @@ void StructuralEqualityVisitor::Visit(
     return;
   }
 
-  if (function_type->GetArguments().size() !=
-      other_type->GetArguments().size()) {
-    result = false;
-    return;
-  }
-
   if (!StructuralEquality(function_type->GetReturnType(),
                           other_type->GetReturnType())) {
     result = false;
     return;
   }
 
+  if (function_type->GetArguments().size() !=
+      other_type->GetArguments().size()) {
+    result = false;
+    return;
+  }
+
   const auto &function_arguments = function_type->GetArguments();
   const auto &other_arguments    = other_type->GetArguments();
-
   for (size_t index = 0; index < function_arguments.size(); index += 1) {
     if (!StructuralEquality(function_arguments[index],
                             other_arguments[index])) {

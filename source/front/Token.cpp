@@ -115,6 +115,9 @@ auto ToString(const Token token) -> std::string_view {
   case Token::RBracket: {
     return "]";
   }
+  case Token::RArrow: {
+    return "->";
+  }
 
   case Token::Nil: {
     return "nil";
@@ -136,12 +139,6 @@ auto ToString(const Token token) -> std::string_view {
   }
   case Token::BooleanType: {
     return "Boolean";
-  }
-  case Token::Pointer: {
-    return "Pointer";
-  }
-  case Token::Slice: {
-    return "Slice";
   }
 
   case Token::Fn: {

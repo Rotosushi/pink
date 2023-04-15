@@ -16,8 +16,8 @@
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @file Environment.h
- * @brief Header for class Environment
+ * @file CompilationUnit.h
+ * @brief Header for class CompilationUnit
  * @version 0.1
  *
  */
@@ -46,12 +46,12 @@
 namespace pink {
 
 /**
- * @brief Environment owns all of the data structures which are shared between
- * the different algorithms within the compiler. Essentially the Environment
- * exists to keep the call signatures of these algorithms smaller, as the other
- * option is to pass the needed data structures in by reference anyways.
- * another benefiet is that it provides a convienent place for placing the
- * initialization work of the llvm data structures.
+ * @brief CompilationUnit owns all of the data structures which are shared
+ * between the different algorithms within the compiler. Essentially the
+ * CompilationUnit exists to keep the call signatures of these algorithms
+ * smaller, as the other option is to pass the needed data structures in by
+ * reference anyways. another benefiet is that it provides a convienent place
+ * for placing the initialization work of the llvm data structures.
  *
  * #TODO: this class probably does too much, so how do we reduce it in size?
  *  we very much need all of these members working together to typecheck an ast
@@ -59,7 +59,7 @@ namespace pink {
  *
  * #TODO: Environment -> CompilationUnit (because thats what it is)
  */
-class Environment {
+class CompilationUnit {
 private:
   EnvironmentFlags internal_flags;
   CLIOptions       cli_options;
@@ -83,12 +83,12 @@ private:
   // and semantics.
   // std::unique_ptr<llvm::DIBuilder>   debug_builder;
 
-  Environment(CLIOptions                         cli_options,
-              std::istream                      *input,
-              std::unique_ptr<llvm::LLVMContext> context,
-              std::unique_ptr<llvm::Module>      module,
-              std::unique_ptr<llvm::IRBuilder<>> instruction_builder,
-              llvm::TargetMachine               *target_machine)
+  CompilationUnit(CLIOptions                         cli_options,
+                  std::istream                      *input,
+                  std::unique_ptr<llvm::LLVMContext> context,
+                  std::unique_ptr<llvm::Module>      module,
+                  std::unique_ptr<llvm::IRBuilder<>> instruction_builder,
+                  llvm::TargetMachine               *target_machine)
       : internal_flags{},
         cli_options{std::move(cli_options)},
         parser{input},
@@ -106,7 +106,7 @@ private:
     assert(target_machine != nullptr);
   }
 
-  Environment()
+  CompilationUnit()
       : internal_flags{},
         cli_options{},
         parser{},
@@ -122,13 +122,13 @@ private:
         current_function{nullptr} {}
 
 public:
-  ~Environment()                                            = default;
-  Environment(const Environment &other)                     = delete;
-  Environment(Environment &&other)                          = default;
-  auto operator=(const Environment &other) -> Environment & = delete;
-  auto operator=(Environment &&other) -> Environment      & = default;
+  ~CompilationUnit()                                                = default;
+  CompilationUnit(const CompilationUnit &other)                     = delete;
+  CompilationUnit(CompilationUnit &&other)                          = default;
+  auto operator=(const CompilationUnit &other) -> CompilationUnit & = delete;
+  auto operator=(CompilationUnit &&other) -> CompilationUnit      & = default;
 
-  // Environment methods
+  // CompilationUnit methods
   auto ToConstantInit(std::string_view text) -> std::vector<llvm::Constant *>;
 
   auto Gensym(std::string_view prefix = "__") -> InternedString;
@@ -154,13 +154,13 @@ public:
   static auto NativeCPUFeatures() noexcept -> std::string;
   static auto CreateNativeEnvironment(CLIOptions    cli_options,
                                       std::istream *input = &std::cin)
-      -> Environment;
-  static auto CreateNativeEnvironment() -> Environment {
+      -> CompilationUnit;
+  static auto CreateNativeEnvironment() -> CompilationUnit {
     return CreateNativeEnvironment(CLIOptions{});
   }
 
   /**
-   * @brief Create a Test Environment object
+   * @brief Create a Test CompilationUnit object
    *
    * \warning it is not safe to call any member function which
    * requires the llvm::* members to be active from a TestEnvironment.
@@ -177,9 +177,9 @@ public:
    * (though I do understand why they fit the use case of globals, It's just,
    * why are they [the managed static tables] not constexpr???)))
    *
-   * @return Environment
+   * @return CompilationUnit
    */
-  static auto CreateTestEnvironment() -> Environment;
+  static auto CreateTestEnvironment() -> CompilationUnit;
 
   // exposing EnvironmentFlags interface
   [[nodiscard]] auto OnTheLHSOfAssignment() const -> bool {
@@ -533,6 +533,29 @@ public:
    * Optimization
    */
   auto DefaultAnalysis(std::ostream &err) -> int;
+
+  /*
+   * llvm::LLVMContext helpers
+   */
+  auto GetAttributeBuilder() { return llvm::AttrBuilder(*context); }
+
+  auto GetAttributeSet(const llvm::AttrBuilder &builder) {
+    return llvm::AttributeSet::get(*context, builder);
+  }
+
+  auto GetAttributeSet() {
+    return llvm::AttributeSet::get(*context, GetAttributeBuilder());
+  }
+
+  auto
+  GetAttributeList(llvm::AttributeSet                 function_attributes,
+                   llvm::AttributeSet                 return_attributes,
+                   llvm::ArrayRef<llvm::AttributeSet> arguments_attributes) {
+    return llvm::AttributeList::get(*context,
+                                    function_attributes,
+                                    return_attributes,
+                                    arguments_attributes);
+  }
 
   /*
    * llvm::Module interface

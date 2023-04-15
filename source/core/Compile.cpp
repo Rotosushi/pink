@@ -32,17 +32,13 @@
 #include "llvm/Support/TargetSelect.h"
 
 namespace pink {
-static auto CompileEnvironment(std::ostream &out,
-                               std::ostream &err,
-                               Environment  &env) -> int;
-
 auto Compile(int argc, char **argv) -> int {
   auto &out         = std::cout;
   auto &err         = std::cerr;
   auto  cli_options = pink::ParseCLIOptions(err, argc, argv);
-  auto  env         = pink::Environment::CreateNativeEnvironment(cli_options);
+  auto  env = pink::CompilationUnit::CreateNativeEnvironment(cli_options);
 
-  if (CompileEnvironment(out, err, env) == EXIT_FAILURE) {
+  if (env.Compile(out, err) == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
 
@@ -59,89 +55,5 @@ auto Compile(int argc, char **argv) -> int {
   }
 
   return Link(out, err, env);
-}
-
-using Terms = std::vector<pink::Ast::Pointer>;
-
-static auto ParseAndTypecheckInputFile(std::ostream &err, Environment &env)
-    -> std::pair<Terms, bool> {
-  Terms valid_terms;
-  Terms invalid_terms;
-
-  { // empty scope, to destroy infile after we are done using it.
-    std::fstream infile;
-    infile.open(env.GetInputFilename().data());
-    if (!infile.is_open()) {
-      err << "Could not open input file [" << env.GetInputFilename() << "]\n";
-      return {};
-    }
-    env.SetIStream(&infile);
-
-    while (!env.EndOfInput()) {
-      auto term_result = env.Parse();
-      if (!term_result) {
-        auto &error = term_result.GetSecond();
-        if ((error.code == Error::Code::EndOfFile) && (!valid_terms.empty())) {
-          break; // out of while loop
-        }
-        env.PrintErrorWithSourceText(err, error);
-        return {};
-      }
-      auto &term = term_result.GetFirst();
-
-      auto type_result = Typecheck(term, env);
-      if (!type_result) {
-        auto &error = type_result.GetSecond();
-        env.PrintErrorWithSourceText(err, error);
-        invalid_terms.emplace_back(std::move(term));
-      } else {
-        valid_terms.emplace_back(std::move(term));
-      }
-    }
-
-    // reset the scopes so that Codegen
-    // doesn't redeclare variables when
-    // it processes this env.
-    // #NOTE: 2/23/23
-    // This is a bit weird, and I am thinking
-    // about a better way to handle this
-    // issue of symbol redefinition between
-    // Typechecking and Codegeneration.
-    // 3/17/23 since we already allow variables to
-    // be bound to nullptr, perhaps we add an exemption
-    // for variables bound to a null value?
-    // my only concern is that is rather opaque behavior
-    // to be reliant upon.
-    env.ResetScopes();
-  }
-  if (invalid_terms.empty()) {
-    return {std::move(valid_terms), true};
-  }
-  return {std::move(invalid_terms), false};
-}
-
-static void CodegenValidTerms(const Terms &valid_terms, Environment &env) {
-  for (const auto &term : valid_terms) {
-    auto *value = Codegen(term, env);
-    assert(value != nullptr);
-  }
-}
-
-auto CompileEnvironment(std::ostream &out, std::ostream &err, Environment &env)
-    -> int {
-  if (env.DoVerbose()) {
-    out << "Compiling source file [" << env.GetInputFilename() << "]\n";
-  }
-
-  auto terms = ParseAndTypecheckInputFile(err, env);
-  if (!terms.second) {
-    // we can do something with invalid terms here if we wanted/needed to
-    return EXIT_FAILURE;
-  }
-  auto &valid_terms = terms.first;
-
-  CodegenValidTerms(valid_terms, env);
-
-  return EXIT_SUCCESS;
 }
 } // namespace pink

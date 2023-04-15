@@ -36,16 +36,16 @@
 #include "ops/PrecedenceAndAssociativity.h"
 
 namespace pink {
-class Environment;
+class CompilationUnit;
 
 /**
  * @brief Represents an implementation of a particular Binop
  */
 class BinopCodegen {
 public:
-  using Function = llvm::Value *(*)(llvm::Value *left,
-                                    llvm::Value *right,
-                                    Environment &env);
+  using Function = llvm::Value *(*)(llvm::Value     *left,
+                                    llvm::Value     *right,
+                                    CompilationUnit &env);
 
 private:
   Type::Pointer return_type;
@@ -64,9 +64,9 @@ public:
   auto operator=(BinopCodegen &&other) noexcept -> BinopCodegen & = default;
 
   [[nodiscard]] auto ReturnType() const -> Type::Pointer { return return_type; }
-  [[nodiscard]] auto operator()(llvm::Value *left,
-                                llvm::Value *right,
-                                Environment &env) const -> llvm::Value * {
+  [[nodiscard]] auto operator()(llvm::Value     *left,
+                                llvm::Value     *right,
+                                CompilationUnit &env) const -> llvm::Value * {
     return function(left, right, env);
   }
 };
@@ -90,9 +90,9 @@ public:
     auto ReturnType() noexcept -> Type::Pointer {
       return literal.Value().ReturnType();
     }
-    auto operator()(llvm::Value *left,
-                    llvm::Value *right,
-                    Environment &env) const noexcept -> llvm::Value * {
+    auto operator()(llvm::Value     *left,
+                    llvm::Value     *right,
+                    CompilationUnit &env) const noexcept -> llvm::Value * {
       return literal.Value()(left, right, env);
     }
   };

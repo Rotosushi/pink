@@ -23,15 +23,11 @@
  */
 #pragma once
 #include <string_view>
-#include <utility>
-
-#include "llvm/ADT/DenseMapInfo.h"
 
 namespace pink {
 /**
  * @brief Represents an instance of a Token within the [Lexer](#pink::Lexer) and
  * [Parser](#pink::Parser)
- *
  */
 enum class Token : unsigned {
   Error, // an erroneous token
@@ -74,6 +70,7 @@ enum class Token : unsigned {
   RBrace,    // '}'
   LBracket,  // '['
   RBracket,  // ']'
+  RArrow,    // '->'
 
   Nil,         // "nil"
   NilType,     // "Nil"
@@ -82,8 +79,6 @@ enum class Token : unsigned {
   True,        // "true"
   False,       // "false"
   BooleanType, // "Boolean"
-  Pointer,     // "Pointer"
-  Slice,       // "Slice"
 
   Fn,    // 'fn'
   Var,   // 'var'
@@ -93,10 +88,6 @@ enum class Token : unsigned {
   While, // 'while'
   Do,    // 'do'
 };
-
-template <typename Enum> auto ToUnderlying(Enum e) noexcept { // NOLINT
-  return static_cast<std::underlying_type_t<Enum>>(e);
-}
 
 /**
  * @brief Converts a token into a string representation

@@ -36,7 +36,7 @@
 #include "ops/PrecedenceAndAssociativity.h" // pink::Precedence pink::Associativity
 
 namespace pink {
-class Environment;
+class CompilationUnit;
 
 /**
  * @brief Parser implements a LL(1) recursive [descent] parser for the pink
@@ -73,26 +73,24 @@ conditional = "if" "(" affix ")" block "else" block
 while = "while" "(" affix ")" block
 
 affix = composite "=" affix
-      | composite "(" [affix {"," affix}] ")"
       | composite
 
-composite = accessor binop infix-parser
-          | accessor
+composite = builtin binop infix-parser
+          | builtin
 
 binop = "+"  |  "-"  |  "*"  | "/"
       | "&"  |  "|"  |  "!"  | "=="
       | "!=" |  "<"  |  "<=" | ">"
       | ">="
 
-accessor = basic {"." basic}
-         | basic {"[" basic "]"}
+builtin = basic {"." basic | "[" basic "]" | "(" [affix {"," affix}] ")" }
          | basic
 
 basic = id [":=" affix]
       | integer
-      | unop accessor
-      | "&" accessor
-      | "*" accessor
+      | unop builtin
+      | "&" builtin
+      | "*" builtin
       | "nil"
       | "true"
       | "false"
@@ -106,7 +104,9 @@ type = "Nil"
      | "Boolean"
      | "(" type {"," type} ")"
      | "[" type ";" integer "]"
-     | "Pointer" type
+     | "*" type
+     | "*[]" type
+     | type "->" type
 
 // these are the regular expressions used by re2c
 id = [a-zA-Z_][a-zA-Z0-9_]*
@@ -155,7 +155,6 @@ application = basic {basic}
 accessor = basic {("." affix)}
 
 basic = identifier
-      |
       | unop accessor
       | tuple_or_affix
       | array
@@ -183,9 +182,10 @@ block = "{" affix {";" affix} "}"
 type = "Nil"
      | "Integer"
      | "Boolean"
+     | identifier
      | "Pointer" template
-     | "Tuple" template
-     | "Array" template
+     | "(" type {"," type} ")"
+     | "[" type ";" integer "]"
      | type {"->" type}
 
 template = "<" type {"," type} ">"
@@ -257,7 +257,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseTop(Environment &env) -> Result;
+  auto ParseTop(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Function expressions
@@ -275,7 +275,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseFunction(Environment &env) -> Result;
+  auto ParseFunction(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses a Bind expression
@@ -288,7 +288,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBind(Environment &env) -> Result;
+  auto ParseBind(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses a Bind expression
@@ -302,8 +302,9 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBind(InternedString name, Location lhs_location, Environment &env)
-      -> Result;
+  auto ParseBind(InternedString   name,
+                 Location         lhs_location,
+                 CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Argument expressions
@@ -316,7 +317,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseArgument(Environment &env)
+  auto ParseArgument(CompilationUnit &env)
       -> Outcome<std::pair<InternedString, Type::Pointer>, Error>;
   /**
    * @brief Parses Block expressions
@@ -329,7 +330,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBlock(Environment &env) -> Result;
+  auto ParseBlock(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Term expressions
@@ -345,7 +346,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseTerm(Environment &env) -> Result;
+  auto ParseTerm(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses IfThenElse expressions
@@ -354,11 +355,14 @@ private:
       conditional = "if" "(" affix ")" block "else" block
    * \endverbatim
    *
+   * \todo make block expressions replaceable with a single affix expression
+   * \todo make the else clause optional.
+   *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseConditional(Environment &env) -> Result;
+  auto ParseConditional(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses While expressions
@@ -367,26 +371,34 @@ private:
       while = "while" "(" affix ")" block
    * \endverbatim
    *
+   * \todo make the block expression replacable with a single affix expression
+   *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseWhile(Environment &env) -> Result;
+  auto ParseWhile(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Affix expressions
    *
    * \verbatim
       affix = composite "=" affix
-            | composite "(" [affix {"," affix}] ")"
             | composite
    * \endverbatim
+   *
+   * Assignment expressions have a lower precedence than all other
+   * operations, to ensure that composite assignment operations
+   * fully enclose the experssions being assigned from.
+   * a = b = c = ...
+   * where a, b, c, etc, are all expressions themselves. we want this
+   * to parse as expected without requiring parenthesis.
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseAffix(Environment &env) -> Result;
+  auto ParseAffix(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Assignment expressions
@@ -400,13 +412,13 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseAssignment(Ast::Pointer composite, Environment &env) -> Result;
+  auto ParseAssignment(Ast::Pointer composite, CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses an Application expression
    *
    * \verbatim
-      application = composite "(" [affix {"," affix}] ")"
+      application = callee "(" [affix {"," affix}] ")"
    * \endverbatim
    *
    * @param env the environment associated with this compilation unit
@@ -414,7 +426,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseApplication(Ast::Pointer composite, Environment &env) -> Result;
+  auto ParseApplication(Ast::Pointer callee, CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Composite expressions
@@ -431,28 +443,31 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseComposite(Environment &env) -> Result;
+  auto ParseComposite(CompilationUnit &env) -> Result;
 
   /**
-   * @brief Parses accessor expressions
+   * @brief Parses builtin expressions
    *
    * \verbatim
-      accessor = basic {"." basic}
-               | basic {"[" basic "]"}
+      accessor = basic {
+                          "." basic
+                        | "[" basic "]"
+                        | "(" [affix {"," affix}] ")"
+                       }
                | basic
    * \endverbatim
    *
-   * this function is here to give accessor operators a higher
+   * this function is here to give builtin operators a higher
    * operator precedence than any possible operator.
    * so that any actual binary operations can use the
-   * values which were accessed, instead of operating on the
-   * composite structures themselves.
+   * values which were computed, instead of operating on the
+   * expressions themselves.
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseAccessor(Environment &env) -> Result;
+  auto ParseBuiltin(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses member access expressions
@@ -465,7 +480,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseDot(Ast::Pointer left, Environment &env) -> Result;
+  auto ParseDot(Ast::Pointer left, CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses subscript access expressions
@@ -478,7 +493,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseSubscript(Ast::Pointer left, Environment &env) -> Result;
+  auto ParseSubscript(Ast::Pointer left, CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Infix expressions
@@ -496,7 +511,7 @@ private:
    */
   auto ParseInfix(std::unique_ptr<Ast> left,
                   pink::Precedence     precedence,
-                  Environment         &env) -> Result;
+                  CompilationUnit     &env) -> Result;
 
   /**
    * @brief Parses Basic expressions
@@ -515,7 +530,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseBasic(Environment &env) -> Result;
+  auto ParseBasic(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses a Tuple
@@ -531,7 +546,7 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseTuple(Ast::Pointer first_element, Environment &env) -> Result;
+  auto ParseTuple(Ast::Pointer first_element, CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses an Array
@@ -544,31 +559,31 @@ private:
    * @return Outcome<std::unique_ptr<Ast>, Error> if true then the expression,
    * if false then the Error which was encountered.
    */
-  auto ParseArray(Environment &env) -> Result;
+  auto ParseArray(CompilationUnit &env) -> Result;
 
   /**
    * @brief Parses Type expressions
    *
    * \verbatim
-      type = "Integer"
+      type = "Nil"
+           | "Integer"
            | "Boolean"
-           | "Pointer" type
-           | "Slice" type
+           | "*" type
+           | "*[]" type
            | "(" type {"," type} ")"
            | "[" type ";" int "]"
-
+           | "fn" "(" type {"," type} ")" "->" type
    * \endverbatim
    *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto ParseType(Environment &env) -> TypeResult;
-
-  auto ParseArrayType(Environment &env) -> TypeResult;
-  auto ParseTupleType(Environment &env) -> TypeResult;
-  auto ParsePointerType(Environment &env) -> TypeResult;
-  auto ParseSliceType(Environment &env) -> TypeResult;
+  auto ParseType(CompilationUnit &env) -> TypeResult;
+  auto ParseArrayType(CompilationUnit &env) -> TypeResult;
+  auto ParseTupleType(CompilationUnit &env) -> TypeResult;
+  auto ParsePointerType(CompilationUnit &env) -> TypeResult;
+  auto ParseFunctionType(CompilationUnit &env) -> TypeResult;
 
 public:
   Parser();
@@ -641,10 +656,16 @@ public:
    * which boils down to the fact that it never has
    * to reparse any of the input it reads.
    *
+   * \note In theroy we could move this reference into
+   * a pointer member. and to reduce coupling further,
+   * the parser only needs a pointer
+   * to the string_interner and type_interner associated
+   * with the compilation environment.
+   *
    * @param env The environment associated with this compilation unit
    * @return Outcome<std::unique_ptr<Ast>, Error> if true, then the expression
    * which was parsed. if false, then the Error which was encountered.
    */
-  auto Parse(Environment &env) -> Result;
+  auto Parse(CompilationUnit &env) -> Result;
 };
 } // namespace pink

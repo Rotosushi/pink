@@ -1,4 +1,4 @@
-// Copyright (C) 2023 cadence
+// Copyright (C) 2023 Cade Weinberg
 //
 // This file is part of pink.
 //
@@ -14,21 +14,12 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
-
-/**
- * @file BinopPrimitives.h
- * @brief Header for Binop Primitives
- * @version 0.1
- *
- */
 #pragma once
+#include <utility>
 
 namespace pink {
-class CompilationUnit;
-/**
- * @brief Initialize the [BinopTable](#BinopTable) with all predefined binops
- *
- * @param env The env holding the BinopTable to initialize
- */
-void InitializeBinopPrimitives(CompilationUnit &env);
+template <typename Enum>
+constexpr auto ToUnderlying(Enum e) noexcept { // NOLINT
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
 } // namespace pink
