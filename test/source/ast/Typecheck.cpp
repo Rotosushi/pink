@@ -335,6 +335,7 @@ TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
   SECTION("ay := array[element]();") {
     auto fn    = env.GetFunctionType(env.GetBoolType(), {});
     auto array = env.GetArrayType(5, fn);
+    env.BindVariable(std::string_view{"element"}, env.GetIntType(), nullptr);
     env.BindVariable(std::string_view{"array"}, array, nullptr);
     TEST_BIND_TERM_TYPE("ay := array[element]();\n", env.GetBoolType());
   }
