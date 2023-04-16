@@ -176,14 +176,14 @@ TEST_CASE("front/Parser::ParseBind", "[unit][front]") {
   SECTION("ap := f() + g(0);") {
     BIND_AFFIX_IS("ap := f() + g(0);\n", pink::Binop);
   }
-  SECTION("aq := tuple.member();") {
-    BIND_AFFIX_IS("aq := tuple.member();\n", pink::Application);
+  SECTION("aq := tuple.0();") {
+    BIND_AFFIX_IS("aq := tuple.0();\n", pink::Application);
   }
   SECTION("ar := array[element]();") {
     BIND_AFFIX_IS("ar := array[element]();\n", pink::Application);
   }
-  SECTION("as := array[element] + tuple.member;") {
-    BIND_AFFIX_IS("as := array[element] + tuple.member;\n", pink::Binop);
+  SECTION("as := array[element] + tuple.0;") {
+    BIND_AFFIX_IS("as := array[element] + tuple.0;\n", pink::Binop);
   }
 }
 

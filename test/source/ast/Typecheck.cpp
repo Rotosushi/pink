@@ -187,6 +187,167 @@ TEST_CASE("ast/action/TypecheckBind", "[unit][ast][ast/action]") {
                      nullptr);
     TEST_BIND_TERM_TYPE("aa := *y;\n", env.GetBoolType());
   }
+  SECTION("ab := [0, 1, 2, 3, 4];") {
+    TEST_BIND_TERM_TYPE("ab := [0, 1, 2, 3, 4];\n",
+                        env.GetArrayType(5, env.GetIntType()));
+  }
+  SECTION("ac := [true, false, true];") {
+    TEST_BIND_TERM_TYPE("ac := [true, false, true];\n",
+                        env.GetArrayType(3, env.GetBoolType()));
+  }
+  SECTION("ad := [a, b, c, d, e];") {
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"b"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"c"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"d"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"e"}, env.GetIntType(), nullptr);
+    TEST_BIND_TERM_TYPE("ad := [a, b, c, d, e];\n",
+                        env.GetArrayType(5, env.GetIntType()));
+  }
+  SECTION("ae := [[0, 1], [2, 3], [4, 5]];") {
+    TEST_BIND_TERM_TYPE(
+        "ae := [[0, 1], [2, 3], [4, 5]];\n",
+        env.GetArrayType(3, env.GetArrayType(2, env.GetIntType())));
+  }
+  SECTION("af := (0, 1);") {
+    TEST_BIND_TERM_TYPE("af := (0, 1);\n",
+                        env.GetTupleType({env.GetIntType(), env.GetIntType()}));
+  }
+  SECTION("ag := (true, true);") {
+    TEST_BIND_TERM_TYPE(
+        "ag := (true, true);\n",
+        env.GetTupleType({env.GetBoolType(), env.GetBoolType()}));
+  }
+  SECTION("ah := (a, b);") {
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"b"}, env.GetIntType(), nullptr);
+    TEST_BIND_TERM_TYPE("ah := (a, b);\n",
+                        env.GetTupleType({env.GetIntType(), env.GetIntType()}));
+  }
+  SECTION("ai := ((0, 1), (2, 3), (4, 5));") {
+    auto point_type = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    TEST_BIND_TERM_TYPE("ai := ((0, 1), (2, 3), (4, 5));\n",
+                        env.GetTupleType({point_type, point_type, point_type}));
+  }
+  SECTION("aj := [(0, 1), (2, 3), (4, 5)];") {
+    auto point_type = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    TEST_BIND_TERM_TYPE("aj := [(0, 1), (2, 3), (4, 5)];\n",
+                        env.GetArrayType(3, point_type));
+  }
+  SECTION("ak := ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9]);") {
+    auto array_type = env.GetArrayType(5, env.GetIntType());
+    TEST_BIND_TERM_TYPE("ak := ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9]);\n",
+                        env.GetTupleType({array_type, array_type}));
+  }
+  SECTION("al := array[index];") {
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(10, env.GetIntType()),
+                     nullptr);
+    env.BindVariable(std::string_view{"index"}, env.GetIntType(), nullptr);
+    TEST_BIND_TERM_TYPE("al := array[index];\n", env.GetIntType());
+  }
+  SECTION("am := array[index0][index1];") {
+    env.BindVariable(std::string_view{"index0"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"index1"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, env.GetArrayType(5, env.GetIntType())),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("am := array[index0][index1];\n", env.GetIntType());
+  }
+  SECTION("an := tuple.0;") {
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("an := tuple.0;\n", env.GetIntType());
+  }
+  SECTION("ao := tuple.0.1;") {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({point, point}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("ao := tuple.0.1;\n", env.GetIntType());
+  }
+  SECTION("ap := array[index].0;") {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    env.BindVariable(std::string_view{"index"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, point),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("ap := array[index].0;\n", env.GetIntType());
+  }
+  SECTION("aq := tuple.1[index];") {
+    auto array = env.GetArrayType(5, env.GetIntType());
+    env.BindVariable(std::string_view{"index"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({array, array}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("aq := tuple.1[index];\n", env.GetIntType());
+  }
+  SECTION("ar := !tuple.1;") {
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({env.GetBoolType(), env.GetBoolType()}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("ar := !tuple.1;\n", env.GetBoolType());
+  }
+  SECTION("as := -array[index];") {
+    env.BindVariable(std::string_view{"index"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, env.GetIntType()),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("as := -array[index];\n", env.GetIntType());
+  }
+  SECTION("at := f();") {
+    env.BindVariable(std::string_view{"f"},
+                     env.GetFunctionType(env.GetIntType(), {}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("at := f();\n", env.GetIntType());
+  }
+  SECTION("au := f(0);") {
+    env.BindVariable(std::string_view{"f"},
+                     env.GetFunctionType(env.GetIntType(), {env.GetIntType()}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("au := f(0);\n", env.GetIntType());
+  }
+  SECTION("av := f(5, 7);") {
+    env.BindVariable(std::string_view{"f"},
+                     env.GetFunctionType(env.GetIntType(),
+                                         {env.GetIntType(), env.GetIntType()}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("av := f(5, 7);\n", env.GetIntType());
+  }
+  SECTION("aw := f(5, 7) == g(9, 3);") {
+    env.BindVariable(std::string_view{"f"},
+                     env.GetFunctionType(env.GetIntType(),
+                                         {env.GetIntType(), env.GetIntType()}),
+                     nullptr);
+    env.BindVariable(std::string_view{"g"},
+                     env.GetFunctionType(env.GetIntType(),
+                                         {env.GetIntType(), env.GetIntType()}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("aw := f(5, 7) == g(9, 3);\n", env.GetBoolType());
+  }
+  SECTION("ax := tuple.0();") {
+    auto fn    = env.GetFunctionType(env.GetBoolType(), {});
+    auto tuple = env.GetTupleType({fn, fn});
+    env.BindVariable(std::string_view{"tuple"}, tuple, nullptr);
+    TEST_BIND_TERM_TYPE("av := tuple.0();\n", env.GetBoolType());
+  }
+  SECTION("ay := array[element]();") {
+    auto fn    = env.GetFunctionType(env.GetBoolType(), {});
+    auto array = env.GetArrayType(5, fn);
+    env.BindVariable(std::string_view{"array"}, array, nullptr);
+    TEST_BIND_TERM_TYPE("ay := array[element]();\n", env.GetBoolType());
+  }
+  SECTION("az := array[element] + tuple.0;") {
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, env.GetIntType()),
+                     nullptr);
+    env.BindVariable(std::string_view{"element"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     nullptr);
+    TEST_BIND_TERM_TYPE("az := array[element] + tuple.0;\n", env.GetIntType());
+  }
 }
 
 #undef TEST_BIND_TERM_TYPE

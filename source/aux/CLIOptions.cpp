@@ -76,7 +76,10 @@ auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
 }
 
 /*
-  #TODO: rewrite this using LLVM CommandLine
+  #TODO: rewrite this using a custom getopt implementation.
+  then this is cross platform with zero dependencies.
+  this is the only bit of unix specific code in the compiler
+  itself. (we still have to make the emitted code cross platform.)
 */
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   int         numopt        = 0; // count of how many options we parsed

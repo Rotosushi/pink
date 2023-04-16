@@ -514,6 +514,8 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
     return;
   }
 
+  // #TODO iff the index is known at compile type do the range check
+
   TRY(left_result, left_type, Compute, subscript->GetLeft(), this)
 
   auto element_result = [&]() -> TypecheckResult {
