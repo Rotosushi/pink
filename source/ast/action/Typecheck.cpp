@@ -451,8 +451,11 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
 
   env.PushScope();
 
+  std::vector<Type::Pointer> argument_types;
+  argument_types.reserve(function->GetArguments().size());
   for (const auto &argument : *function) {
     env.BindVariable(argument.first, argument.second, nullptr);
+    argument_types.emplace_back(argument.second);
   }
 
   TRY_ELSE(body_result,
@@ -462,14 +465,6 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
            function->GetBody(),
            this)
   env.PopScope();
-
-  std::vector<Type::Pointer> argument_types;
-  argument_types.reserve(function->GetArguments().size());
-  std::transform(
-      function->begin(),
-      function->end(),
-      argument_types.begin(),
-      [](const Function::Argument &argument) { return argument.second; });
 
   const auto *result_type =
       env.GetFunctionType(body_type, std::move(argument_types));

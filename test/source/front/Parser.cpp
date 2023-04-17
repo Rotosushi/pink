@@ -25,13 +25,10 @@
 
 #include "ast/All.h"
 
-#include "llvm/Support/InitLLVM.h"
+#include "support/ComputeLocation.hpp"
+#include "support/LanguageTerms.hpp"
 
-namespace {
-static auto ComputeLocation(std::string_view text) -> pink::Location {
-  return {1U, 0U, 1U, text.length() - 1};
-}
-} // namespace
+#include "llvm/Support/InitLLVM.h"
 
 // #TODO: test failure of the parser. (This has been avoided due to
 // the semi-frequent changes to the grammar as the language is developed)
@@ -77,7 +74,7 @@ static auto ComputeLocation(std::string_view text) -> pink::Location {
   REQUIRE(cursor != block->end());                                             \
   REQUIRE(llvm::dyn_cast<body_type>(cursor->get()))
 
-#define FUNCTION_ARGUMENT_TYPE_IS(text, argument_type)                         \
+#define FUNCTION_ARG_TYPE_IS(text, argument_type)                              \
   std::stringstream stream{text};                                              \
   pink::Location    location = ComputeLocation(text);                          \
   env.SetIStream(&stream);                                                     \
@@ -95,7 +92,6 @@ static auto ComputeLocation(std::string_view text) -> pink::Location {
   REQUIRE(block != nullptr);                                                   \
   auto cursor = block->begin();                                                \
   REQUIRE(cursor != block->end());                                             \
-  REQUIRE(llvm::dyn_cast<pink::Variable>(cursor->get()));                      \
   auto &arguments = function->GetArguments();                                  \
   REQUIRE(arguments.size() == 1);                                              \
   REQUIRE(arguments[0].second == (argument_type))
@@ -106,85 +102,68 @@ TEST_CASE("front/Parser::ParseBind", "[unit][front]") {
   /*
     Parsing Bind Expressions
   */
-  SECTION("a := 42;") { BIND_AFFIX_IS("a := 42;\n", pink::Integer); }
-  SECTION("b := true;") { BIND_AFFIX_IS("b := true;\n", pink::Boolean); }
-  SECTION("c := (false);") { BIND_AFFIX_IS("c := (false);\n", pink::Boolean); }
-  SECTION("d := nil;") { BIND_AFFIX_IS("d := nil;\n", pink::Nil); }
-  SECTION("e := a;") { BIND_AFFIX_IS("e := a;\n", pink::Variable); }
-  SECTION("f := -36;") { BIND_AFFIX_IS("f := -36;\n", pink::Unop); }
-  SECTION("g := !true;") { BIND_AFFIX_IS("g := !true;\n", pink::Unop); }
-  SECTION("h := &a;") { BIND_AFFIX_IS("h := &a;\n", pink::AddressOf); }
-  SECTION("i := *h;") { BIND_AFFIX_IS("i := *h;\n", pink::ValueOf); }
-  SECTION("j := 3 + 7;") { BIND_AFFIX_IS("j := 3 + 7;\n", pink::Binop); }
-  SECTION("k := (6) - (8);") {
-    BIND_AFFIX_IS("k := (6) - (8);\n", pink::Binop);
-  }
-  SECTION("l := (60 * 10);") {
-    BIND_AFFIX_IS("l := (60 * 10);\n", pink::Binop);
-  }
-  SECTION("m := 48 / 4;") { BIND_AFFIX_IS("m := 48 / 4;\n", pink::Binop); }
-  SECTION("n := 77 % 11;") { BIND_AFFIX_IS("n := 77 % 11;\n", pink::Binop); }
-  SECTION("o := true & true;") {
-    BIND_AFFIX_IS("o := true & true;\n", pink::Binop);
-  }
-  SECTION("p := 5 == 10;") { BIND_AFFIX_IS("p := 5 == 10;\n", pink::Binop); }
-  SECTION("q := 12 != 12;") { BIND_AFFIX_IS("q := 12 != 12;\n", pink::Binop); }
-  SECTION("r := 8 < 6;") { BIND_AFFIX_IS("r := 8 < 6;\n", pink::Binop); }
-  SECTION("s := 42 <= 56;") { BIND_AFFIX_IS("s := 42 <= 56;\n", pink::Binop); }
-  SECTION("t := 56 > 10;") { BIND_AFFIX_IS("t := 56 > 10;\n", pink::Binop); }
-  SECTION("u := 21 >= 7;") { BIND_AFFIX_IS("u := 21 >= 7;\n", pink::Binop); }
-  SECTION("v := -21 + -4;") { BIND_AFFIX_IS("v := -21 + -4;\n", pink::Binop); }
-  SECTION("w := !true | !false;") {
-    BIND_AFFIX_IS("w := !true | !false;\n", pink::Binop);
-  }
-  SECTION("x := a = 46;") { BIND_AFFIX_IS("x := a = 46;\n", pink::Assignment); }
-  SECTION("y := [0, 1, 2, 3];") {
-    BIND_AFFIX_IS("y := [0, 1, 2, 3];\n", pink::Array);
-  }
-  SECTION("z := [[0, 1], [2, 3], [4, 5]];") {
-    BIND_AFFIX_IS("z := [[0, 1], [2, 3], [4, 5]];\n", pink::Array);
-  }
-  SECTION("aa := (0, true);") {
-    BIND_AFFIX_IS("aa := (0, true);\n", pink::Tuple);
-  }
-  SECTION("ab := ((0, 0), (1, 1), (2, 2));") {
-    BIND_AFFIX_IS("ab := ((0, 0), (1, 1), (2, 2));\n", pink::Tuple);
-  }
-  SECTION("ac := [(0, 0), (1, 1), (2, 2)];") {
-    BIND_AFFIX_IS("ac := [(0, 0), (1, 1), (2, 2)];\n", pink::Array);
-  }
-  SECTION("ad := ([0, 1, 2, 3], [4, 5, 6, 7]);") {
-    BIND_AFFIX_IS("ad := ([0, 1, 2, 3], [4, 5, 6, 7]);\n", pink::Tuple);
-  }
-  SECTION("ae := y[0];") { BIND_AFFIX_IS("ac := y[0];\n", pink::Subscript); }
-  SECTION("af := y[0][1];") {
-    BIND_AFFIX_IS("af := y[0][1];\n", pink::Subscript);
-  }
-  SECTION("ag := aa.0;") { BIND_AFFIX_IS("ag := aa.0;\n", pink::Dot); }
-  SECTION("ah := ab.1.1;") { BIND_AFFIX_IS("ah := ab.1.1;\n", pink::Dot); }
-  SECTION("ai := ac[0].1;") { BIND_AFFIX_IS("ai := ac[0].1;\n", pink::Dot); }
-  SECTION("aj := ad.0[1];") {
-    BIND_AFFIX_IS("aj := ad.0[1];\n", pink::Subscript);
-  }
-  SECTION("ak := !aa.1;") { BIND_AFFIX_IS("ak := !aa.1;\n", pink::Unop); }
-  SECTION("al := -aa.0;") { BIND_AFFIX_IS("al := -aa.0;\n", pink::Unop); }
-  SECTION("am := f();") { BIND_AFFIX_IS("am := f();\n", pink::Application); }
-  SECTION("an := g(0);") { BIND_AFFIX_IS("an := g(0);\n", pink::Application); }
-  SECTION("ao := h(0, 1, 2);") {
-    BIND_AFFIX_IS("ao := h(0, 1, 2);\n", pink::Application);
-  }
-  SECTION("ap := f() + g(0);") {
-    BIND_AFFIX_IS("ap := f() + g(0);\n", pink::Binop);
-  }
-  SECTION("aq := tuple.0();") {
-    BIND_AFFIX_IS("aq := tuple.0();\n", pink::Application);
-  }
-  SECTION("ar := array[element]();") {
-    BIND_AFFIX_IS("ar := array[element]();\n", pink::Application);
-  }
-  SECTION("as := array[element] + tuple.0;") {
-    BIND_AFFIX_IS("as := array[element] + tuple.0;\n", pink::Binop);
-  }
+  SECTION(term_aaa) { BIND_AFFIX_IS(term_aaa, pink::Integer); }
+  SECTION(term_aab) { BIND_AFFIX_IS(term_aab, pink::Boolean); }
+  SECTION(term_aac) { BIND_AFFIX_IS(term_aac, pink::Boolean); }
+  SECTION(term_aad) { BIND_AFFIX_IS(term_aad, pink::Nil); }
+  SECTION(term_aae) { BIND_AFFIX_IS(term_aae, pink::Variable); }
+  SECTION(term_aaf) { BIND_AFFIX_IS(term_aaf, pink::Unop); }
+  SECTION(term_aag) { BIND_AFFIX_IS(term_aaf, pink::Unop); }
+  SECTION(term_aah) { BIND_AFFIX_IS(term_aah, pink::AddressOf); }
+  SECTION(term_aai) { BIND_AFFIX_IS(term_aai, pink::ValueOf); }
+
+  SECTION(term_aaj) { BIND_AFFIX_IS(term_aaj, pink::Binop); }
+  SECTION(term_aak) { BIND_AFFIX_IS(term_aak, pink::Binop); }
+  SECTION(term_aal) { BIND_AFFIX_IS(term_aal, pink::Binop); }
+  SECTION(term_aam) { BIND_AFFIX_IS(term_aam, pink::Binop); }
+  SECTION(term_aan) { BIND_AFFIX_IS(term_aan, pink::Binop); }
+  SECTION(term_aao) { BIND_AFFIX_IS(term_aao, pink::Binop); }
+  SECTION(term_aap) { BIND_AFFIX_IS(term_aap, pink::Binop); }
+  SECTION(term_aaq) { BIND_AFFIX_IS(term_aaq, pink::Binop); }
+  SECTION(term_aar) { BIND_AFFIX_IS(term_aar, pink::Binop); }
+  SECTION(term_aas) { BIND_AFFIX_IS(term_aas, pink::Binop); }
+  SECTION(term_aat) { BIND_AFFIX_IS(term_aat, pink::Binop); }
+  SECTION(term_aau) { BIND_AFFIX_IS(term_aau, pink::Binop); }
+  SECTION(term_aav) { BIND_AFFIX_IS(term_aav, pink::Binop); }
+  SECTION(term_aaw) { BIND_AFFIX_IS(term_aaw, pink::Binop); }
+  SECTION(term_aax) { BIND_AFFIX_IS(term_aax, pink::Binop); }
+
+  SECTION(term_aay) { BIND_AFFIX_IS(term_aay, pink::Binop); }
+  SECTION(term_aaz) { BIND_AFFIX_IS(term_aaz, pink::Unop); }
+  SECTION(term_aba) { BIND_AFFIX_IS(term_aba, pink::Binop); }
+  SECTION(term_abb) { BIND_AFFIX_IS(term_abb, pink::Unop); }
+  SECTION(term_abc) { BIND_AFFIX_IS(term_abc, pink::Binop); }
+  SECTION(term_abd) { BIND_AFFIX_IS(term_abd, pink::Binop); }
+
+  SECTION(term_abe) { BIND_AFFIX_IS(term_abe, pink::Assignment); }
+  SECTION(term_abf) { BIND_AFFIX_IS(term_abf, pink::Dot); }
+  SECTION(term_abg) { BIND_AFFIX_IS(term_abg, pink::Subscript); }
+  SECTION(term_abh) { BIND_AFFIX_IS(term_abh, pink::Assignment); }
+  SECTION(term_abi) { BIND_AFFIX_IS(term_abi, pink::Assignment); }
+  SECTION(term_abj) { BIND_AFFIX_IS(term_abj, pink::Binop); }
+  SECTION(term_abk) { BIND_AFFIX_IS(term_abk, pink::Binop); }
+  SECTION(term_abl) { BIND_AFFIX_IS(term_abl, pink::Dot); }
+  SECTION(term_abm) { BIND_AFFIX_IS(term_abm, pink::Subscript); }
+  SECTION(term_abn) { BIND_AFFIX_IS(term_abn, pink::Subscript); }
+  SECTION(term_abo) { BIND_AFFIX_IS(term_abo, pink::Dot); }
+  SECTION(term_abp) { BIND_AFFIX_IS(term_abp, pink::Binop); }
+  SECTION(term_abq) { BIND_AFFIX_IS(term_abq, pink::Unop); }
+  SECTION(term_abr) { BIND_AFFIX_IS(term_abr, pink::Unop); }
+
+  SECTION(term_abt) { BIND_AFFIX_IS(term_abt, pink::Variable); }
+  SECTION(term_abu) { BIND_AFFIX_IS(term_abu, pink::Application); }
+  SECTION(term_abv) { BIND_AFFIX_IS(term_abv, pink::Application); }
+  SECTION(term_abw) { BIND_AFFIX_IS(term_abw, pink::Application); }
+  SECTION(term_abx) { BIND_AFFIX_IS(term_abx, pink::Binop); }
+  SECTION(term_aby) { BIND_AFFIX_IS(term_aby, pink::Application); }
+  SECTION(term_abz) { BIND_AFFIX_IS(term_abz, pink::Application); }
+
+  SECTION(term_aca) { BIND_AFFIX_IS(term_aca, pink::Array); }
+  SECTION(term_acb) { BIND_AFFIX_IS(term_acb, pink::Array); }
+  SECTION(term_acc) { BIND_AFFIX_IS(term_acc, pink::Tuple); }
+  SECTION(term_acd) { BIND_AFFIX_IS(term_acd, pink::Tuple); }
+  SECTION(term_ace) { BIND_AFFIX_IS(term_ace, pink::Array); }
+  SECTION(term_acf) { BIND_AFFIX_IS(term_acf, pink::Tuple); }
 }
 
 TEST_CASE("front/Parser::ParseFunction", "[unit][front]") {
@@ -192,182 +171,89 @@ TEST_CASE("front/Parser::ParseFunction", "[unit][front]") {
   /*
     Parsing Function Definitions
   */
-  SECTION("fn a() { 42; }") {
-    FUNCTION_BODY_IS("fn a() { 42; }\n", pink::Integer);
+  SECTION(term_acg) { FUNCTION_BODY_IS(term_acg, pink::Integer); }
+  SECTION(term_ach) { FUNCTION_BODY_IS(term_ach, pink::Boolean); }
+  SECTION(term_aci) { FUNCTION_BODY_IS(term_aci, pink::Boolean); }
+  SECTION(term_acj) { FUNCTION_BODY_IS(term_acj, pink::Nil); }
+  SECTION(term_ack) { FUNCTION_BODY_IS(term_ack, pink::Unop); }
+  SECTION(term_acl) { FUNCTION_BODY_IS(term_acl, pink::Unop); }
+  SECTION(term_acm) { FUNCTION_BODY_IS(term_acm, pink::AddressOf); }
+  SECTION(term_acn) { FUNCTION_BODY_IS(term_acn, pink::ValueOf); }
+
+  SECTION(term_aco) { FUNCTION_BODY_IS(term_aco, pink::Binop); }
+  SECTION(term_acp) { FUNCTION_BODY_IS(term_acp, pink::Binop); }
+  SECTION(term_acq) { FUNCTION_BODY_IS(term_acq, pink::Binop); }
+  SECTION(term_acr) { FUNCTION_BODY_IS(term_acr, pink::Binop); }
+  SECTION(term_acs) { FUNCTION_BODY_IS(term_acs, pink::Binop); }
+  SECTION(term_act) { FUNCTION_BODY_IS(term_act, pink::Binop); }
+  SECTION(term_acu) { FUNCTION_BODY_IS(term_acu, pink::Binop); }
+  SECTION(term_acv) { FUNCTION_BODY_IS(term_acv, pink::Binop); }
+  SECTION(term_acw) { FUNCTION_BODY_IS(term_acw, pink::Binop); }
+  SECTION(term_acx) { FUNCTION_BODY_IS(term_acx, pink::Binop); }
+  SECTION(term_acy) { FUNCTION_BODY_IS(term_acy, pink::Binop); }
+  SECTION(term_acz) { FUNCTION_BODY_IS(term_acz, pink::Binop); }
+  SECTION(term_ada) { FUNCTION_BODY_IS(term_ada, pink::Binop); }
+  SECTION(term_adb) { FUNCTION_BODY_IS(term_adb, pink::Binop); }
+  SECTION(term_adc) { FUNCTION_BODY_IS(term_adc, pink::Binop); }
+
+  SECTION(term_add) { FUNCTION_BODY_IS(term_add, pink::Variable); }
+  SECTION(term_ade) { FUNCTION_BODY_IS(term_ade, pink::Assignment); }
+  SECTION(term_adf) { FUNCTION_BODY_IS(term_adf, pink::Array); }
+  SECTION(term_adg) { FUNCTION_BODY_IS(term_adg, pink::Array); }
+  SECTION(term_adh) { FUNCTION_BODY_IS(term_adh, pink::Tuple); }
+  SECTION(term_adi) { FUNCTION_BODY_IS(term_adi, pink::Tuple); }
+  SECTION(term_adj) { FUNCTION_BODY_IS(term_adj, pink::Array); }
+  SECTION(term_adk) { FUNCTION_BODY_IS(term_adk, pink::Tuple); }
+
+  SECTION(term_adl) { FUNCTION_BODY_IS(term_adl, pink::Subscript); }
+  SECTION(term_adm) { FUNCTION_BODY_IS(term_adm, pink::Subscript); }
+  SECTION(term_adn) { FUNCTION_BODY_IS(term_adn, pink::Dot); }
+  SECTION(term_ado) { FUNCTION_BODY_IS(term_ado, pink::Dot); }
+  SECTION(term_adp) { FUNCTION_BODY_IS(term_adp, pink::Dot); }
+  SECTION(term_adq) { FUNCTION_BODY_IS(term_adq, pink::Subscript); }
+  SECTION(term_adr) { FUNCTION_BODY_IS(term_adr, pink::Unop); }
+  SECTION(term_ads) { FUNCTION_BODY_IS(term_ads, pink::Unop); }
+
+  SECTION(term_adt) { FUNCTION_BODY_IS(term_adt, pink::Variable); }
+  SECTION(term_adu) { FUNCTION_BODY_IS(term_adu, pink::Application); }
+  SECTION(term_adv) { FUNCTION_BODY_IS(term_adv, pink::Application); }
+  SECTION(term_adw) { FUNCTION_BODY_IS(term_adw, pink::Application); }
+  SECTION(term_adx) { FUNCTION_BODY_IS(term_adx, pink::Binop); }
+  SECTION(term_ady) { FUNCTION_BODY_IS(term_ady, pink::Application); }
+  SECTION(term_adz) { FUNCTION_BODY_IS(term_adz, pink::Application); }
+
+  SECTION(term_aea) { FUNCTION_ARG_TYPE_IS(term_aea, env.GetIntType()); }
+  SECTION(term_aeb) { FUNCTION_ARG_TYPE_IS(term_aeb, env.GetBoolType()); }
+  SECTION(term_aec) { FUNCTION_ARG_TYPE_IS(term_aec, env.GetNilType()); }
+  SECTION(term_aed) {
+    FUNCTION_ARG_TYPE_IS(term_aed, env.GetPointerType(env.GetIntType()));
   }
-  SECTION("fn b() { true; }") {
-    FUNCTION_BODY_IS("fn b() { true; }\n", pink::Boolean);
+  SECTION(term_aee) {
+    FUNCTION_ARG_TYPE_IS(term_aee, env.GetSliceType(env.GetIntType()));
   }
-  SECTION("fn c() { false; }") {
-    FUNCTION_BODY_IS("fn c() { false; }\n", pink::Boolean);
-  }
-  SECTION("fn d() { nil; }") {
-    FUNCTION_BODY_IS("fn d() { nil; }\n", pink::Nil);
-  }
-  SECTION("fn e() { -1; }") {
-    FUNCTION_BODY_IS("fn e() { -1; }\n", pink::Unop);
-  }
-  SECTION("fn f() { !true; }") {
-    FUNCTION_BODY_IS("fn f() { !true; }\n", pink::Unop);
-  }
-  SECTION("fn g() { &a; }") {
-    FUNCTION_BODY_IS("fn g() { &a; }\n", pink::AddressOf);
-  }
-  SECTION("fn h() { *a; }") {
-    FUNCTION_BODY_IS("fn h() { *a; }\n", pink::ValueOf);
-  }
-  SECTION("fn i() { 1 + 1; }") {
-    FUNCTION_BODY_IS("fn i() { 1 + 1; }\n", pink::Binop);
-  }
-  SECTION("fn j() { 1 - 1; }") {
-    FUNCTION_BODY_IS("fn j() { 1 - 1; }\n", pink::Binop);
-  }
-  SECTION("fn k() { 1 * 1; }") {
-    FUNCTION_BODY_IS("fn k() { 1 * 1; }\n", pink::Binop);
-  }
-  SECTION("fn l() { 1 / 1; }") {
-    FUNCTION_BODY_IS("fn l() { 1 / 1; }\n", pink::Binop);
-  }
-  SECTION("fn m() { 1 % 1; }") {
-    FUNCTION_BODY_IS("fn m() { 1 % 1; }\n", pink::Binop);
-  }
-  SECTION("fn n() { true & true; }") {
-    FUNCTION_BODY_IS("fn n() { true & true; }\n", pink::Binop);
-  }
-  SECTION("fn o() { false | true; }") {
-    FUNCTION_BODY_IS("fn o() { false | true; }\n", pink::Binop);
-  }
-  SECTION("fn p() { 0 == 1; }") {
-    FUNCTION_BODY_IS("fn p() { 0 == 1; }\n", pink::Binop);
-  }
-  SECTION("fn q() { 0 != 1; }") {
-    FUNCTION_BODY_IS("fn q() { 0 != 1; }\n", pink::Binop);
-  }
-  SECTION("fn r() { 10 < 100; }") {
-    FUNCTION_BODY_IS("fn r() { 10 < 100; }\n", pink::Binop);
-  }
-  SECTION("fn s() { 10 <= 11; }") {
-    FUNCTION_BODY_IS("fn s() { 10 <= 11; }\n", pink::Binop);
-  }
-  SECTION("fn t() { 10 > 10; }") {
-    FUNCTION_BODY_IS("fn t() { 10 > 10; }\n", pink::Binop);
-  }
-  SECTION("fn u() { 10 >= 10; }") {
-    FUNCTION_BODY_IS("fn u() { 10 >= 10; }\n", pink::Binop);
-  }
-  SECTION("fn v() { a; }") {
-    FUNCTION_BODY_IS("fn v() { a; }\n", pink::Variable);
-  }
-  SECTION("fn w() { a = b; }") {
-    FUNCTION_BODY_IS("fn w() { a = b; }\n", pink::Assignment);
-  }
-  SECTION("fn x() { [0, 1, 2, 3, 4] }") {
-    FUNCTION_BODY_IS("fn x() { [0, 1, 2, 3, 4]; }\n", pink::Array);
-  }
-  SECTION("fn y() { [[0,1], [2,3], [4,5]]; }") {
-    FUNCTION_BODY_IS("fn y() { [[0,1], [2,3], [4,5]]; }\n", pink::Array);
-  }
-  SECTION("fn z() { (0, true); }") {
-    FUNCTION_BODY_IS("fn y() { (0, true); }\n", pink::Tuple);
-  }
-  SECTION("fn aa() { ((0, 0), (1, 1), (2, 2)); }") {
-    FUNCTION_BODY_IS("fn aa() { ((0, 0), (1, 1), (2, 2)); }\n", pink::Tuple);
-  }
-  SECTION("fn ab() { [(0, 0), (1, 1), (2, 2)]; }") {
-    FUNCTION_BODY_IS("fn ab() { [(0, 0), (1, 1), (2, 2)]; }\n", pink::Array);
-  }
-  SECTION("fn ac() { ([0, 1, 2, 3], [4, 5, 6, 7]); }") {
-    FUNCTION_BODY_IS("fn ac() { ([0, 1, 2, 3], [4, 5, 6, 7]); }\n",
-                     pink::Tuple);
-  }
-  SECTION("fn ad() { array[element]; }") {
-    FUNCTION_BODY_IS("fn ad() { array[element]; }\n", pink::Subscript);
-  }
-  SECTION("fn ae() { array[element][element]; }") {
-    FUNCTION_BODY_IS("fn ae() { array[element][element]; }\n", pink::Subscript);
-  }
-  SECTION("fn af() { tuple.member; }") {
-    FUNCTION_BODY_IS("fn af() { tuple.member; }\n", pink::Dot);
-  }
-  SECTION("fn ag() { tuple.member.member; }") {
-    FUNCTION_BODY_IS("fn ag() { tuple.member.member; }\n", pink::Dot);
-  }
-  SECTION("fn ah() { array[element].member; }") {
-    FUNCTION_BODY_IS("fn ah() { array[element].member; }\n", pink::Dot);
-  }
-  SECTION("fn ai() { tuple.member[element]; }") {
-    FUNCTION_BODY_IS("fn ai() { tuple.member[element]; }\n", pink::Subscript);
-  }
-  SECTION("fn aj() { !tuple.member; }") {
-    FUNCTION_BODY_IS("fn aj() { !tuple.member; }\n", pink::Unop);
-  }
-  SECTION("fn ak() { -array[element]; }") {
-    FUNCTION_BODY_IS("fn ak() { -array[element]; }\n", pink::Unop);
-  }
-  SECTION("fn al() { function(); }") {
-    FUNCTION_BODY_IS("fn al() { function(); }\n", pink::Application);
-  }
-  SECTION("fn am() { function(0); }") {
-    FUNCTION_BODY_IS("fn am() { function(0); }\n", pink::Application);
-  }
-  SECTION("fn an() { function(0, 1, 2); }") {
-    FUNCTION_BODY_IS("fn an() { function(0, 1, 2); }\n", pink::Application);
-  }
-  SECTION("fn ao() { f(1) + g(2, 3); }") {
-    FUNCTION_BODY_IS("fn ao() { f(1) + g(2, 3); }\n", pink::Binop);
-  }
-  SECTION("fn ap() { tuple.member(); }") {
-    FUNCTION_BODY_IS("fn ap() { tuple.member(); }\n", pink::Application);
-  }
-  SECTION("fn aq() { array[element](); }") {
-    FUNCTION_BODY_IS("fn aq() { array[element](); }\n", pink::Application);
-  }
-  SECTION("fn ar() { array[element] + tuple.member; }") {
-    FUNCTION_BODY_IS("fn ar() { array[element] + tuple.member; }\n",
-                     pink::Binop);
-  }
-  /*
-    Parsing argument types
-  */
-  SECTION("fn as(a: Integer) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS("fn as(a: Integer) { a; }\n", env.GetIntType());
-  }
-  SECTION("fn at(a: Boolean) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS("fn at(a: Boolean) { a; }\n", env.GetBoolType());
-  }
-  SECTION("fn au(a: Nil) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS("fn au(a: Nil) { a; }\n", env.GetNilType());
-  }
-  SECTION("fn av(a: *Integer) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS("fn av(a: *Integer) { a; }\n",
-                              env.GetPointerType(env.GetIntType()));
-  }
-  SECTION("fn aw(a: *[]Integer) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS("fn aw(a: *[]Integer) { a; }\n",
-                              env.GetSliceType(env.GetIntType()));
-  }
-  SECTION("fn ax(a: (Integer, Integer)) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS(
-        "fn ax(a: (Integer, Integer)) { a; }\n",
+  SECTION(term_aef) {
+    FUNCTION_ARG_TYPE_IS(
+        term_aef,
         env.GetTupleType({env.GetIntType(), env.GetIntType()}));
   }
-  SECTION("fn ay(a: [Integer; 10]) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS("fn ay(a: [Integer; 10]) { a; }\n",
-                              env.GetArrayType(10, env.GetIntType()));
+  SECTION(term_aeg) {
+    FUNCTION_ARG_TYPE_IS(term_aeg, env.GetArrayType(10, env.GetIntType()));
   }
-  SECTION("fn az(a: **Integer) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS(
-        "fn az(a: **Integer) { a; }\n",
+  SECTION(term_aeh) {
+    FUNCTION_ARG_TYPE_IS(
+        term_aeh,
         env.GetPointerType(env.GetPointerType(env.GetIntType())));
   }
-  SECTION("fn ba(a: **[]Integer) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS(
-        "fn ba(a: **[]Integer) { a; }\n",
+  SECTION(term_aei) {
+    FUNCTION_ARG_TYPE_IS(
+        term_aei,
         env.GetPointerType(env.GetSliceType(env.GetIntType())));
   }
-  SECTION("fn bb(a: fn() -> Integer) { a; }") {
-    FUNCTION_ARGUMENT_TYPE_IS("fn bb(a: fn() -> Integer) { a; }\n",
-                              env.GetFunctionType(env.GetIntType(), {}));
+  SECTION(term_aej) {
+    FUNCTION_ARG_TYPE_IS(term_aej, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_aek) {
+    FUNCTION_ARG_TYPE_IS(term_aek, env.GetFunctionType(env.GetIntType(), {}));
   }
 }
 
@@ -505,21 +391,21 @@ TEST_CASE("front/Parser", "[unit][front]") {
 
   { FUNCTION_BODY_IS(pink::While); }
 
-  { FUNCTION_ARGUMENT_TYPE_IS(env.GetNilType()); }
+  { FUNCTION_ARG_TYPE_IS(env.GetNilType()); }
 
-  { FUNCTION_ARGUMENT_TYPE_IS(env.GetIntType()); }
+  { FUNCTION_ARG_TYPE_IS(env.GetIntType()); }
 
-  { FUNCTION_ARGUMENT_TYPE_IS(env.GetBoolType()); }
+  { FUNCTION_ARG_TYPE_IS(env.GetBoolType()); }
 
-  { FUNCTION_ARGUMENT_TYPE_IS(env.GetPointerType(env.GetIntType())); }
+  { FUNCTION_ARG_TYPE_IS(env.GetPointerType(env.GetIntType())); }
 
-  { FUNCTION_ARGUMENT_TYPE_IS(env.GetSliceType(env.GetIntType())); }
+  { FUNCTION_ARG_TYPE_IS(env.GetSliceType(env.GetIntType())); }
 
   {
-    FUNCTION_ARGUMENT_TYPE_IS(
+    FUNCTION_ARG_TYPE_IS(
         env.GetTupleType({env.GetIntType(), env.GetIntType()}));
   }
 
-  { FUNCTION_ARGUMENT_TYPE_IS(env.GetArrayType(5, env.GetIntType())); }
+  { FUNCTION_ARG_TYPE_IS(env.GetArrayType(5, env.GetIntType())); }
 }
 */

@@ -44,6 +44,11 @@ using CodegenResult = llvm::Value *;
  * "instruction builder" [module]:
  * https://llvm.org/doxygen/classllvm_1_1Module.html "module"
  *
+ * \todo we need to change CodegenResult to Outcome<llvm::Value *, Error>
+ *  and there are a few errors we need to handle here.
+ * 
+ * \todo we want to add an error for returning the address of a local variable.
+ *
  * @param env The CompilationUnit to generate code against, an
  * [CompilationUnit](#CompilationUnit) set up as if by
  * [CreateNativeEnvironment](#CreateNativeEnvironment) is suitable

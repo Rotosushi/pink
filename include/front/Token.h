@@ -28,21 +28,17 @@ namespace pink {
 /**
  * @brief Represents an instance of a Token within the [Lexer](#pink::Lexer) and
  * [Parser](#pink::Parser)
+ * 
+ * \todo add a bitshift operator 
+ * \todo add a divmod operator/builtin
  */
 enum class Token : unsigned {
   Error, // an erroneous token
   End,   // EOF
 
   Id, // [a-zA-Z_][a-zA-Z0-9_]*
-  // Op, // [+\-*\\%<=>&|\^!~@$]+
-  // #TODO replace string_view based operators
-  // with token based operators, to remove the lexing
-  // ambiguity occuring with << and >> when lexing template
-  // argument lists.
-  // (they must be lexed as '<' '<' and '>' '>' respectively.)
-  // (if we add stream insertion and/or bitwise rotate operators
-  //  we will choose non conflicting symbols.
-  //  i'm considering '<|' and '|>',  or '<|' and '>|')
+
+  /* Operators */
   Add,                // '+'
   Sub,                // '-'
   Star,               // '*'
