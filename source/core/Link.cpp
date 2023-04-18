@@ -19,6 +19,8 @@
 
 #include "lld/Common/Driver.h"
 
+#include "support/FatalError.h"
+
 #include "core/Link.h"
 
 namespace pink {
@@ -38,14 +40,18 @@ namespace pink {
  */
 auto Link(std::ostream &out, std::ostream &err, const CompilationUnit &env)
     -> int {
-  if (!env.DoEmitObject()) {
-    auto objoutfilename = env.GetObjectFilename();
-    err << "No object file [" << objoutfilename << "] exists to link.";
+  // #RULE once we link we clean up the object file
+  auto remove_object_file = [&env]() {
+    std::error_code errc;
+    if (!fs::remove(env.GetObjectFile(), errc)) {
+      FatalError(errc);
+    }
+  };
+
+  if (!fs::exists(env.GetObjectFile())) {
+    err << "No object file [" << env.GetObjectFile() << "] exists to link.";
     return EXIT_FAILURE;
   }
-
-  auto objoutfilename = env.GetObjectFilename();
-  auto exeoutfilename = env.GetExecutableFilename();
 
   llvm::raw_os_ostream      llvm_err = err;
   llvm::raw_os_ostream      llvm_out = out;
@@ -54,17 +60,19 @@ auto Link(std::ostream &out, std::ostream &err, const CompilationUnit &env)
                                         "elf_x86_64",
                                         "--entry",
                                         "main",
-                                        objoutfilename.data(),
+                                        env.GetObjectFile().c_str(),
                                         "-o",
-                                        exeoutfilename.data()};
+                                        env.GetExecutableFile().c_str()};
 
   if (!lld::elf::link(lld_args,
                       llvm_out,
                       llvm_err,
                       /* exitEarly */ false,
                       /* disableOutput */ false)) {
+    remove_object_file();
     return EXIT_FAILURE;
   }
+  remove_object_file();
   return EXIT_SUCCESS;
 }
 

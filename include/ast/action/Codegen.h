@@ -46,12 +46,12 @@ using CodegenResult = llvm::Value *;
  *
  * \todo we need to change CodegenResult to Outcome<llvm::Value *, Error>
  *  and there are a few errors we need to handle here.
- * 
+ *
  * \todo we want to add an error for returning the address of a local variable.
  *
  * @param env The CompilationUnit to generate code against, an
  * [CompilationUnit](#CompilationUnit) set up as if by
- * [CreateNativeEnvironment](#CreateNativeEnvironment) is suitable
+ * [CreateNativeCompilationUnit](#CreateNativeCompilationUnit) is suitable
  * @return CodegenResult if the code generator could assign
  * this term a [value] then the Outcome holds this value, otherwise the
  * Outcome holds the [Error] the code generator constructed.

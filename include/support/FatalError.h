@@ -19,6 +19,7 @@
 #include <iostream>
 #include <source_location>
 #include <string_view>
+#include <system_error>
 
 namespace pink {
 /*
@@ -31,5 +32,11 @@ namespace pink {
             << location.column() << ") " << location.file_name() << "]"
             << " Fatal Error [" << message << "]\n";
   exit(EXIT_FAILURE);
+}
+
+[[noreturn]] inline void FatalError(
+    std::error_code            errc,
+    std::source_location const location = std::source_location::current()) {
+  FatalError(errc.message(), location);
 }
 } // namespace pink

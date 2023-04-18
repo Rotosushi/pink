@@ -25,6 +25,28 @@
 #include "llvm/ADT/StringSet.h"
 
 namespace pink {
+/*
+  \todo make InternedString it's own class instead of a type alias.
+    Construct from char const *, llvm::StringRef, std::string_view,
+  std::string
+
+      convert to std::string_view, llvm::StringRef
+
+      getter for char const *
+
+      operator == does address equality
+
+      equality function for string equality.
+
+  class InternedString {
+  private:
+    std::string_view view;
+
+  public:
+};
+
+*/
+
 using InternedString = char const *;
 
 class StringInterner {

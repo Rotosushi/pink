@@ -92,6 +92,12 @@ auto CompilationUnit::Gensym(std::string_view prefix) -> InternedString {
 }
 
 auto CompilationUnit::EmitFiles(std::ostream &err) const -> int {
+  if (cli_options.DoEmitLLVMIR()) {
+    if (EmitLLVMIRFile(err) == EXIT_FAILURE) {
+      return EXIT_FAILURE;
+    }
+  }
+
   if (cli_options.DoEmitObject()) {
     if (EmitObjectFile(err) == EXIT_FAILURE) {
       return EXIT_FAILURE;
@@ -106,10 +112,10 @@ auto CompilationUnit::EmitFiles(std::ostream &err) const -> int {
   return EXIT_SUCCESS;
 }
 
-auto CompilationUnit::EmitObjectFile(std::ostream &err) const -> int {
-  auto                 filename = cli_options.GetObjectFilename();
+auto CompilationUnit::EmitLLVMIRFile(std::ostream &err) const -> int {
+  auto                 filename = cli_options.GetLLVMIRFile();
   std::error_code      outfile_error;
-  llvm::raw_fd_ostream outfile{filename, outfile_error};
+  llvm::raw_fd_ostream outfile{filename.c_str(), outfile_error};
   if (outfile_error) {
     err << "Couldn't open output file [" << filename << "] " << outfile_error
         << "\n";
@@ -120,10 +126,38 @@ auto CompilationUnit::EmitObjectFile(std::ostream &err) const -> int {
   return EXIT_SUCCESS;
 }
 
-auto CompilationUnit::EmitAssemblyFile(std::ostream &err) const -> int {
-  auto                 filename = cli_options.GetAssemblyFilename();
+auto CompilationUnit::EmitObjectFile(std::ostream &err) const -> int {
+  auto                 filename = cli_options.GetObjectFile();
   std::error_code      outfile_error{};
-  llvm::raw_fd_ostream outfile{filename, outfile_error};
+  llvm::raw_fd_ostream outfile{filename.c_str(), outfile_error};
+  if (outfile_error) {
+    err << "Couldn't open output file [" << filename << "] " << outfile_error
+        << "\n";
+    return EXIT_FAILURE;
+  }
+
+  llvm::legacy::PassManager AssemblyPrinter;
+
+  bool failed{target_machine->addPassesToEmitFile(
+      AssemblyPrinter,
+      outfile,
+      nullptr,
+      llvm::CodeGenFileType::CGFT_ObjectFile)};
+
+  if (failed) {
+    err << "Cannot write an object file for Target Machine ["
+        << target_machine->getTargetCPU().data() << ","
+        << target_machine->getTargetTriple().str() << "]\n";
+    return EXIT_FAILURE;
+  }
+  AssemblyPrinter.run(module.operator*());
+  return EXIT_SUCCESS;
+}
+
+auto CompilationUnit::EmitAssemblyFile(std::ostream &err) const -> int {
+  auto                 filename = cli_options.GetAssemblyFile();
+  std::error_code      outfile_error{};
+  llvm::raw_fd_ostream outfile{filename.c_str(), outfile_error};
   if (outfile_error) {
     err << "Couldn't open output file [" << filename << "] " << outfile_error
         << "\n";
@@ -150,7 +184,7 @@ auto CompilationUnit::EmitAssemblyFile(std::ostream &err) const -> int {
 
 auto CompilationUnit::Compile(std::ostream &out, std::ostream &err) -> int {
   if (DoVerbose()) {
-    out << "Compiling source file [" << GetInputFilename() << "]\n";
+    out << "Compiling source file [" << GetInputFile() << "]\n";
   }
 
   auto parse_result = ParseInputFile(err);
@@ -170,15 +204,16 @@ auto CompilationUnit::Compile(std::ostream &out, std::ostream &err) -> int {
   CodegenTerms(parse_result.GetFirst());
   return EXIT_SUCCESS;
 }
+
 auto CompilationUnit::ParseInputFile([[maybe_unused]] std::ostream &err)
     -> Outcome<Terms, Error> {
   Terms terms;
   {
     std::fstream infile;
-    infile.open(GetInputFilename().data());
+    infile.open(GetInputFile());
     if (!infile.is_open()) {
       std::string errmsg{"Could not open input file ["};
-      errmsg += GetInputFilename();
+      errmsg += GetInputFile();
       errmsg += "]\n";
       FatalError(errmsg);
     }
@@ -256,8 +291,8 @@ auto CompilationUnit::NativeCPUFeatures() noexcept -> std::string {
   return cpu_features;
 }
 
-auto CompilationUnit::CreateNativeEnvironment(CLIOptions    cli_options,
-                                              std::istream *input)
+auto CompilationUnit::CreateNativeCompilationUnit(CLIOptions    cli_options,
+                                                  std::istream *input)
     -> CompilationUnit {
   auto        context       = std::make_unique<llvm::LLVMContext>();
   std::string target_triple = llvm::sys::getProcessTriple();
@@ -280,8 +315,9 @@ auto CompilationUnit::CreateNativeEnvironment(CLIOptions    cli_options,
 
   auto instruction_builder = std::make_unique<llvm::IRBuilder<>>(*context);
   auto module =
-      std::make_unique<llvm::Module>(cli_options.GetInputFilename(), *context);
-  module->setSourceFileName(cli_options.GetInputFilename());
+      std::make_unique<llvm::Module>(cli_options.GetInputFile().stem().c_str(),
+                                     *context);
+  module->setSourceFileName(cli_options.GetInputFile().c_str());
   module->setDataLayout(data_layout);
   module->setTargetTriple(target_triple);
 
@@ -298,7 +334,7 @@ auto CompilationUnit::CreateNativeEnvironment(CLIOptions    cli_options,
   return env;
 }
 
-auto CompilationUnit::CreateTestEnvironment() -> CompilationUnit {
+auto CompilationUnit::CreateTestCompilationUnit() -> CompilationUnit {
   CompilationUnit env;
   InitializeBinopPrimitives(env);
   InitializeUnopPrimitives(env);

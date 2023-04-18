@@ -55,7 +55,10 @@ namespace pink {
  *
  * #TODO: this class probably does too much, so how do we reduce it in size?
  *  we very much need all of these members working together to typecheck an ast
- *  and to generate code from an ast.
+ *  and to generate code from an ast. we dont want to have multiple 'kinds' of
+ *  compilation unit, because then there is the issue of bookeeping the data
+ *  between the two units. (these two classes become tightly coupled)
+ *
  *
  * #TODO: Environment -> CompilationUnit (because thats what it is)
  */
@@ -139,6 +142,7 @@ public:
   }
 
   auto EmitFiles(std::ostream &err) const -> int;
+  auto EmitLLVMIRFile(std::ostream &err) const -> int;
   auto EmitObjectFile(std::ostream &err) const -> int;
   auto EmitAssemblyFile(std::ostream &err) const -> int;
 
@@ -152,11 +156,11 @@ public:
   void CodegenTerms(Terms &terms);
 
   static auto NativeCPUFeatures() noexcept -> std::string;
-  static auto CreateNativeEnvironment(CLIOptions    cli_options,
-                                      std::istream *input = &std::cin)
+  static auto CreateNativeCompilationUnit(CLIOptions    cli_options,
+                                          std::istream *input = &std::cin)
       -> CompilationUnit;
-  static auto CreateNativeEnvironment() -> CompilationUnit {
-    return CreateNativeEnvironment(CLIOptions{});
+  static auto CreateNativeCompilationUnit() -> CompilationUnit {
+    return CreateNativeCompilationUnit(CLIOptions{});
   }
 
   /**
@@ -179,7 +183,7 @@ public:
    *
    * @return CompilationUnit
    */
-  static auto CreateTestEnvironment() -> CompilationUnit;
+  static auto CreateTestCompilationUnit() -> CompilationUnit;
 
   // exposing EnvironmentFlags interface
   [[nodiscard]] auto OnTheLHSOfAssignment() const -> bool {
@@ -223,17 +227,20 @@ public:
     return cli_options.DoEmitAssembly();
   }
 
-  [[nodiscard]] auto GetInputFilename() const -> std::string_view {
-    return cli_options.GetInputFilename();
+  [[nodiscard]] auto GetInputFile() const -> const fs::path & {
+    return cli_options.GetInputFile();
   }
-  [[nodiscard]] auto GetExecutableFilename() const -> std::string_view {
-    return cli_options.GetExecutableFilename();
+  [[nodiscard]] auto GetExecutableFile() const -> const fs::path & {
+    return cli_options.GetExecutableFile();
   }
-  [[nodiscard]] auto GetObjectFilename() const -> std::string_view {
-    return cli_options.GetObjectFilename();
+  [[nodiscard]] auto GetLLVMIRFile() const -> const fs::path & {
+    return cli_options.GetLLVMIRFile();
   }
-  [[nodiscard]] auto GetAssemblyFilename() const -> std::string_view {
-    return cli_options.GetAssemblyFilename();
+  [[nodiscard]] auto GetObjectFile() const -> const fs::path & {
+    return cli_options.GetObjectFile();
+  }
+  [[nodiscard]] auto GetAssemblyFile() const -> const fs::path & {
+    return cli_options.GetAssemblyFile();
   }
 
   [[nodiscard]] auto GetOptimizationLevel() const -> llvm::OptimizationLevel {

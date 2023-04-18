@@ -68,7 +68,7 @@
 // that this function is too complex. when it really isn't.
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("ast/action/Typecheck::Bind", "[unit][ast][ast/action]") {
-  auto env = pink::CompilationUnit::CreateTestEnvironment();
+  auto env = pink::CompilationUnit::CreateTestCompilationUnit();
 
   SECTION(term_aaa) { TYPE_IS(term_aaa, env.GetIntType()); }
   SECTION(term_aab) { TYPE_IS(term_aab, env.GetBoolType()); }
@@ -249,9 +249,389 @@ TEST_CASE("ast/action/Typecheck::Bind", "[unit][ast][ast/action]") {
                      nullptr);
     TYPE_IS(term_abx, env.GetIntType());
   }
+  SECTION(term_aby) {
+    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({fn, fn}),
+                     nullptr);
+    TYPE_IS(term_aby, env.GetIntType());
+  }
+  SECTION(term_abz) {
+    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
+    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, fn),
+                     nullptr);
+    TYPE_IS(term_abz, env.GetIntType());
+  }
+
+  SECTION(term_aca) {
+    TYPE_IS(term_aca, env.GetArrayType(5, env.GetIntType()));
+  }
+  SECTION(term_acb) {
+    TYPE_IS(term_acb,
+            env.GetArrayType(3, env.GetArrayType(2, env.GetIntType())));
+  }
+  SECTION(term_acc) {
+    TYPE_IS(term_acc, env.GetTupleType({env.GetIntType(), env.GetIntType()}));
+  }
+  SECTION(term_acd) {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    TYPE_IS(term_acd, env.GetTupleType({point, point}));
+  }
+  SECTION(term_ace) {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    TYPE_IS(term_ace, env.GetArrayType(3, point));
+  }
+  SECTION(term_acf) {
+    auto array = env.GetArrayType(3, env.GetIntType());
+    TYPE_IS(term_acf, env.GetTupleType({array, array}));
+  }
 }
 
 // NOLINTNEXTLINE
 TEST_CASE("ast/action/Typecheck::Function", "[unit][ast][ast/action]") {
-  auto env = pink::CompilationUnit::CreateTestEnvironment();
+  auto env = pink::CompilationUnit::CreateTestCompilationUnit();
+
+  SECTION(term_acg) {
+    TYPE_IS(term_acg, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_ach) {
+    TYPE_IS(term_ach, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_aci) {
+    TYPE_IS(term_aci, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acj) {
+    TYPE_IS(term_acj, env.GetFunctionType(env.GetNilType(), {}));
+  }
+  SECTION(term_ack) {
+    TYPE_IS(term_ack, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_acl) {
+    TYPE_IS(term_acl, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acm) {
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    TYPE_IS(term_acm,
+            env.GetFunctionType(env.GetPointerType(env.GetIntType()), {}));
+  }
+  SECTION(term_acn) {
+    env.BindVariable(std::string_view{"a"},
+                     env.GetPointerType(env.GetIntType()),
+                     nullptr);
+    TYPE_IS(term_acn, env.GetFunctionType(env.GetIntType(), {}));
+  }
+
+  SECTION(term_aco) {
+    TYPE_IS(term_aco, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_acp) {
+    TYPE_IS(term_acp, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_acq) {
+    TYPE_IS(term_acq, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_acr) {
+    TYPE_IS(term_acr, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_acs) {
+    TYPE_IS(term_acs, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_act) {
+    TYPE_IS(term_act, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acu) {
+    TYPE_IS(term_acu, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acv) {
+    TYPE_IS(term_acv, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acw) {
+    TYPE_IS(term_acw, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acx) {
+    TYPE_IS(term_acx, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acy) {
+    TYPE_IS(term_acy, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_acz) {
+    TYPE_IS(term_acz, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_ada) {
+    TYPE_IS(term_ada, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_adb) {
+    TYPE_IS(term_adb, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+  SECTION(term_adc) {
+    TYPE_IS(term_adc, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+
+  SECTION(term_add) {
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    TYPE_IS(term_add, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_ade) {
+    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    TYPE_IS(term_ade, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adf) {
+    auto array = env.GetArrayType(5, env.GetIntType());
+    TYPE_IS(term_adf, env.GetFunctionType(array, {}));
+  }
+  SECTION(term_adg) {
+    auto array = env.GetArrayType(3, env.GetArrayType(2, env.GetIntType()));
+    TYPE_IS(term_adg, env.GetFunctionType(array, {}));
+  }
+  SECTION(term_adh) {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    TYPE_IS(term_adh, env.GetFunctionType(point, {}));
+  }
+  SECTION(term_adi) {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    auto pair  = env.GetTupleType({point, point});
+    TYPE_IS(term_adi, env.GetFunctionType(pair, {}));
+  }
+  SECTION(term_adj) {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    auto array = env.GetArrayType(3, point);
+    TYPE_IS(term_adj, env.GetFunctionType(array, {}));
+  }
+  SECTION(term_adk) {
+    auto array = env.GetArrayType(3, env.GetIntType());
+    auto pair  = env.GetTupleType({array, array});
+    TYPE_IS(term_adk, env.GetFunctionType(pair, {}));
+  }
+
+  SECTION(term_adl) {
+    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, env.GetIntType()),
+                     nullptr);
+    TYPE_IS(term_adl, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adm) {
+    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"y"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, env.GetArrayType(5, env.GetIntType())),
+                     nullptr);
+    TYPE_IS(term_adm, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adn) {
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     nullptr);
+    TYPE_IS(term_adn, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_ado) {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    auto pair  = env.GetTupleType({point, point});
+    env.BindVariable(std::string_view{"tuple"}, pair, nullptr);
+    TYPE_IS(term_ado, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adp) {
+    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    auto array = env.GetArrayType(5, point);
+    env.BindVariable(std::string_view{"array"}, array, nullptr);
+    TYPE_IS(term_adp, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adq) {
+    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
+    auto array = env.GetArrayType(5, env.GetIntType());
+    auto pair  = env.GetTupleType({array, array});
+    env.BindVariable(std::string_view{"tuple"}, pair, nullptr);
+    TYPE_IS(term_adq, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adr) {
+    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, env.GetIntType()),
+                     nullptr);
+    TYPE_IS(term_adr, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_ads) {
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({env.GetBoolType(), env.GetBoolType()}),
+                     nullptr);
+    TYPE_IS(term_ads, env.GetFunctionType(env.GetBoolType(), {}));
+  }
+
+  SECTION(term_adt) {
+    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    env.BindVariable(std::string_view{"f"}, fn, nullptr);
+    TYPE_IS(term_adt, env.GetFunctionType(fn, {}));
+  }
+  SECTION(term_adu) {
+    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    env.BindVariable(std::string_view{"f"}, fn, nullptr);
+    TYPE_IS(term_adu, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adv) {
+    auto fn = env.GetFunctionType(env.GetIntType(), {env.GetIntType()});
+    env.BindVariable(std::string_view{"f"}, fn, nullptr);
+    TYPE_IS(term_adv, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adw) {
+    auto fn = env.GetFunctionType(env.GetIntType(),
+                                  {env.GetIntType(), env.GetIntType()});
+    env.BindVariable(std::string_view{"f"}, fn, nullptr);
+    TYPE_IS(term_adw, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adx) {
+    auto fn = env.GetFunctionType(env.GetIntType(),
+                                  {env.GetIntType(), env.GetIntType()});
+    env.BindVariable(std::string_view{"f"}, fn, nullptr);
+    env.BindVariable(std::string_view{"g"}, fn, nullptr);
+    TYPE_IS(term_adx, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_ady) {
+    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
+    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(5, fn),
+                     nullptr);
+    TYPE_IS(term_ady, env.GetFunctionType(env.GetIntType(), {}));
+  }
+  SECTION(term_adz) {
+    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType({fn, fn}),
+                     nullptr);
+    TYPE_IS(term_adz, env.GetFunctionType(env.GetIntType(), {}));
+  }
+
+  SECTION(term_aea) {
+    TYPE_IS(term_aea,
+            env.GetFunctionType(env.GetIntType(), {env.GetIntType()}));
+  }
+  SECTION(term_aeb) {
+    TYPE_IS(term_aeb,
+            env.GetFunctionType(env.GetBoolType(), {env.GetBoolType()}));
+  }
+  SECTION(term_aec) {
+    TYPE_IS(term_aec,
+            env.GetFunctionType(env.GetNilType(), {env.GetNilType()}));
+  }
+  SECTION(term_aed) {
+    auto pointer = env.GetPointerType(env.GetIntType());
+    TYPE_IS(term_aed, env.GetFunctionType(pointer, {pointer}));
+  }
+  SECTION(term_aee) {
+    auto slice = env.GetSliceType(env.GetIntType());
+    TYPE_IS(term_aee, env.GetFunctionType(slice, {slice}));
+  }
+  SECTION(term_aef) {
+    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    TYPE_IS(term_aef, env.GetFunctionType(point, {point}));
+  }
+  SECTION(term_aeg) {
+    auto array = env.GetArrayType(10, env.GetIntType());
+    TYPE_IS(term_aeg, env.GetFunctionType(array, {array}));
+  }
+  SECTION(term_aeh) {
+    auto pointer = env.GetPointerType(env.GetPointerType(env.GetIntType()));
+    TYPE_IS(term_aeh, env.GetFunctionType(pointer, {pointer}));
+  }
+  SECTION(term_aei) {
+    auto pointer = env.GetPointerType(env.GetSliceType(env.GetIntType()));
+    TYPE_IS(term_aei, env.GetFunctionType(pointer, {pointer}));
+  }
+  SECTION(term_aej) {
+    auto slice = env.GetSliceType(env.GetSliceType(env.GetIntType()));
+    TYPE_IS(term_aej, env.GetFunctionType(slice, {slice}));
+  }
+  SECTION(term_aek) {
+    auto slice = env.GetSliceType(env.GetPointerType(env.GetIntType()));
+    TYPE_IS(term_aek, env.GetFunctionType(slice, {slice}));
+  }
+  SECTION(term_ael) {
+    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    TYPE_IS(term_ael, env.GetFunctionType(fn, {fn}));
+  }
+
+  SECTION(term_aem) {
+    TYPE_IS(term_aem,
+            env.GetFunctionType(env.GetIntType(),
+                                {env.GetIntType(), env.GetIntType()}));
+  }
+  SECTION(term_aen) {
+    TYPE_IS(term_aen,
+            env.GetFunctionType(env.GetBoolType(),
+                                {env.GetBoolType(), env.GetBoolType()}));
+  }
+  SECTION(term_aeo) {
+    TYPE_IS(term_aeo,
+            env.GetFunctionType(
+                env.GetIntType(),
+                {env.GetPointerType(env.GetIntType()), env.GetIntType()}));
+  }
+  SECTION(term_aep) {
+    TYPE_IS(term_aep,
+            env.GetFunctionType(env.GetIntType(),
+                                {env.GetSliceType(env.GetIntType()),
+                                 env.GetIntType(),
+                                 env.GetIntType()}));
+  }
+  SECTION(term_aeq) {
+    TYPE_IS(term_aeq,
+            env.GetFunctionType(
+                env.GetIntType(),
+                {env.GetTupleType({env.GetIntType(), env.GetIntType()})}));
+  }
+  SECTION(term_aer) {
+    TYPE_IS(term_aer,
+            env.GetFunctionType(env.GetIntType(),
+                                {env.GetArrayType(10, env.GetIntType()),
+                                 env.GetIntType(),
+                                 env.GetIntType()}));
+  }
+  SECTION(term_aes) {
+    TYPE_IS(term_aes,
+            env.GetFunctionType(
+                env.GetIntType(),
+                {env.GetPointerType(env.GetPointerType(env.GetIntType())),
+                 env.GetIntType()}));
+  }
+  SECTION(term_aet) {
+    TYPE_IS(term_aet,
+            env.GetFunctionType(
+                env.GetIntType(),
+                {env.GetPointerType(env.GetSliceType(env.GetIntType())),
+                 env.GetIntType(),
+                 env.GetIntType()}));
+  }
+  SECTION(term_aeu) {
+    TYPE_IS(term_aeu,
+            env.GetFunctionType(
+                env.GetIntType(),
+                {env.GetSliceType(env.GetSliceType(env.GetIntType())),
+                 env.GetIntType(),
+                 env.GetIntType()}));
+  }
+  SECTION(term_aev) {
+    TYPE_IS(term_aev,
+            env.GetFunctionType(
+                env.GetIntType(),
+                {env.GetSliceType(env.GetPointerType(env.GetIntType())),
+                 env.GetIntType(),
+                 env.GetIntType()}));
+  }
+  SECTION(term_aew) {
+    TYPE_IS(term_aew,
+            env.GetFunctionType(env.GetIntType(),
+                                {env.GetFunctionType(env.GetIntType(), {})}));
+  }
+  SECTION(term_aex) {
+    TYPE_IS(term_aex,
+            env.GetFunctionType(
+                env.GetIntType(),
+                {env.GetFunctionType(env.GetIntType(),
+                                     {env.GetIntType(), env.GetIntType()}),
+                 env.GetIntType(),
+                 env.GetIntType()}));
+  }
 }

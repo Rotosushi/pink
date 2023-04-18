@@ -20,34 +20,6 @@ message(STATUS "build directory: ${PROJECT_BINARY_DIR}")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
-set(CMAKE_CXX_FLAGS_CFG "-emit-llvm -S" CACHE STRING 
-"Flags used by the C++ compiler during Control Flow Graph builds."
-FORCE)
-
-set(CMAKE_C_FLAGS_CFG "-emit-llvm -S" CACHE STRING
-"flags used by the C compiler during Control Flow Graph builds."
-FORCE)
-
-set(CMAKE_EXE_LINKER_FLAGS_CFG "" CACHE STRING 
-"Flags used by the linker to link binaries during Control Flow Graph builds."
-FORCE)
-
-set(CMAKE_SHARED_LINKER_FLAGS_CFG "" CACHE STRING 
-"Flags used by the linker to like shared libraries during Control Flow Graph builds."
-FORCE)
-
-mark_as_advanced(
-  CMAKE_CXX_FLAGS_CFG 
-  CMAKE_C_FLAGS_CFG 
-  CMAKE_EXE_LINKER_FLAGS_CFG 
-  CMAKE_SHARED_LINKER_FLAGS_CFG
-)
-
-set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING 
-"Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel CFG."
-FORCE)
-
-
 # TODO: split build of project and build of tests 
 
 # TODO: split project build into a CMakeLists within 
@@ -85,7 +57,7 @@ add_compile_options(
 
 add_link_options(
   #-flto=thin
-  -gdwarf-4
+  #-gdwarf-4
   #-fsanitize=address
   #-fsanitize=undefined
   -fno-omit-frame-pointer
@@ -94,7 +66,7 @@ add_link_options(
 find_package(Catch2 3 REQUIRED)
 
 # finding and setting up LLVM to be linked into this project
-find_package(LLVM 17 REQUIRED CONFIG)
+find_package(LLVM 16 REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
@@ -259,6 +231,7 @@ add_executable(tests
 
   test/source/ast/Ast.cpp
   test/source/ast/Typecheck.cpp
+  test/source/ast/Codegen.cpp
 
   test/source/type/Type.cpp
   test/source/type/TypeInterner.cpp

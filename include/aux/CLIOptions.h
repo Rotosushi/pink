@@ -23,9 +23,11 @@
  */
 #pragma once
 #include <bitset>
+#include <filesystem>
 #include <iostream>
 #include <memory>
-#include <string>
+
+namespace fs = std::filesystem;
 
 #include "llvm/Passes/OptimizationLevel.h"
 
@@ -34,6 +36,7 @@ class CLIFlags {
 private:
   enum Flags {
     verbose,
+    emit_llvmir,
     emit_assembly,
     emit_object,
     link,
@@ -53,6 +56,13 @@ public:
 
   auto DoVerbose(bool state) noexcept -> bool { return set[verbose] = state; }
   [[nodiscard]] auto DoVerbose() const noexcept -> bool { return set[verbose]; }
+
+  auto DoEmitLLVMIR(bool state) noexcept -> bool {
+    return set[emit_llvmir] = state;
+  }
+  [[nodiscard]] auto DoEmitLLVMIR() const noexcept -> bool {
+    return set[emit_llvmir];
+  }
 
   auto DoEmitAssembly(bool state) noexcept -> bool {
     return set[emit_assembly] = state;
@@ -79,10 +89,11 @@ public:
  */
 class CLIOptions {
 private:
-  std::string             input_file;
-  std::string             output_file;
-  std::string             assembly_file;
-  std::string             object_file;
+  fs::path                input_file;
+  fs::path                output_file;
+  fs::path                llvmir_file;
+  fs::path                assembly_file;
+  fs::path                object_file;
   CLIFlags                flags;
   llvm::OptimizationLevel optimization_level;
 
@@ -92,16 +103,21 @@ public:
   // we can lazily construct assembly_file and object_file
   // here for minor savings in the cases where we are not
   // generating assembly or object files.
-  CLIOptions(std::string_view        infile,
-             std::string_view        outfile,
+  CLIOptions(fs::path                infile,
+             fs::path                outfile,
              CLIFlags                flags,
              llvm::OptimizationLevel optimization_level)
-      : input_file{infile},
-        output_file{outfile},
-        assembly_file{output_file + ".s"},
-        object_file{output_file + ".ll"},
+      : input_file{std::move(infile)},
+        output_file{std::move(outfile)},
+        llvmir_file{output_file},
+        assembly_file{output_file},
+        object_file{output_file},
         flags{flags},
-        optimization_level{optimization_level} {}
+        optimization_level{optimization_level} {
+    llvmir_file.replace_extension("ll");
+    assembly_file.replace_extension("s");
+    object_file.replace_extension("o");
+  }
   ~CLIOptions() noexcept                                           = default;
   CLIOptions(const CLIOptions &other) noexcept                     = default;
   CLIOptions(CLIOptions &&other) noexcept                          = default;
@@ -125,32 +141,33 @@ public:
   static auto PrintVersion(std::ostream &out) -> std::ostream &;
   static auto PrintHelp(std::ostream &out) -> std::ostream &;
 
+  [[nodiscard]] auto DoEmitLLVMIR() const noexcept -> bool {
+    return flags.DoEmitLLVMIR();
+  }
   [[nodiscard]] auto DoEmitAssembly() const noexcept -> bool {
     return flags.DoEmitAssembly();
   }
-
   [[nodiscard]] auto DoEmitObject() const noexcept -> bool {
     return flags.DoEmitObject();
   }
-
   [[nodiscard]] auto DoLink() const noexcept -> bool { return flags.DoLink(); }
-
   [[nodiscard]] auto DoVerbose() const noexcept -> bool {
     return flags.DoVerbose();
   }
 
-  [[nodiscard]] auto GetInputFilename() const -> std::string_view {
+  [[nodiscard]] auto GetInputFile() const -> const fs::path & {
     return input_file;
   }
-
-  [[nodiscard]] auto GetExecutableFilename() const -> std::string_view {
+  [[nodiscard]] auto GetExecutableFile() const -> const fs::path & {
     return output_file;
   }
-  [[nodiscard]] auto GetObjectFilename() const -> std::string_view {
+  [[nodiscard]] auto GetLLVMIRFile() const -> const fs::path & {
+    return llvmir_file;
+  }
+  [[nodiscard]] auto GetObjectFile() const -> const fs::path & {
     return object_file;
   }
-
-  [[nodiscard]] auto GetAssemblyFilename() const -> std::string_view {
+  [[nodiscard]] auto GetAssemblyFile() const -> const fs::path & {
     return assembly_file;
   }
 

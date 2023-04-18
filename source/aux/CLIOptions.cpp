@@ -76,17 +76,19 @@ auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
 }
 
 /*
-  #TODO: rewrite this using a custom getopt implementation.
-  then this is cross platform with zero dependencies.
-  this is the only bit of unix specific code in the compiler
-  itself. (we still have to make the emitted code cross platform.)
+  #TODO: rewrite this using some other cross platform
+  getopt or getopt like function.
+
+  #TODO: this function really needs to return Outcome<CLIOptions, Error>
+  to handle the case of bad arguments gracefully. (currently they are
+  fatal errors.)
 */
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   int         numopt        = 0; // count of how many options we parsed
-  const char *short_options = "hvi:o:O:ls";
+  const char *short_options = "hvi:o:O:lcs";
 
-  std::string             input_file;
-  std::string             output_file;
+  fs::path                input_file;
+  fs::path                output_file;
   CLIFlags                flags;
   llvm::OptimizationLevel optimization_level = llvm::OptimizationLevel::O0;
 
@@ -100,6 +102,8 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       {"outfile", required_argument, nullptr, 'o'},
       {"output", required_argument, nullptr, 'o'},
       {"optimize", required_argument, nullptr, 'O'},
+      {"emit-llvm", no_argument, nullptr, 'l'},
+      {"emit-ll", no_argument, nullptr, 'l'},
       {"emit-object", no_argument, nullptr, 'c'},
       {"emit-obj", no_argument, nullptr, 'c'},
       {"emit-assembly", no_argument, nullptr, 's'},
@@ -111,7 +115,11 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   int optind = 0;
 
   while (true) {
-    option = getopt_long(argc, argv, short_options, long_options, &optind);
+    option = getopt_long(argc,
+                         argv,
+                         short_options,
+                         (struct option *)long_options,
+                         &optind);
 
     if (option == -1) {
       break; // end of options.
@@ -144,6 +152,12 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
 
     case 'o': {
       output_file = optarg;
+      break;
+    }
+
+    case 'l': {
+      flags.DoEmitLLVMIR(true);
+      flags.DoLink(false);
       break;
     }
 
@@ -192,9 +206,11 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       }
 
       default: {
-        FatalError("Option: " + std::string(optarg) +
-                   " is not a valid optimization level, use one of: 0, 1, "
-                   "2, 3, s, z");
+        std::string errmsg{"Unkown optimization level ["};
+        errmsg += (char)option;
+        errmsg += "]; Use one of [0, 1, "
+                  "2, 3, s, z]";
+        FatalError(errmsg);
       }
       }
       break;
@@ -206,7 +222,10 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
     }
 
     default: {
-      FatalError("Error while parsing option: " + std::string(optarg));
+      std::string errmsg{"Unknown option ["};
+      errmsg += (char)option;
+      errmsg += "]";
+      FatalError(errmsg);
       break;
     }
     }
@@ -221,13 +240,15 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
     char *option = argv[infile_option_index];
     if (option != nullptr) {
       input_file = option;
+      input_file = fs::absolute(input_file);
     } else {
       FatalError("input file is required");
     }
   }
 
   if (output_file.empty()) {
-    output_file = CLIOptions::RemoveTrailingExtensions(input_file);
+    output_file = input_file;
+    output_file.replace_extension();
   }
 
   return {input_file, output_file, flags, optimization_level};

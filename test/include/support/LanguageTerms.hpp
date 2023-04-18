@@ -96,7 +96,7 @@ constexpr inline auto term_abv = "abv := f(0);";
 constexpr inline auto term_abw = "abw := f(0, 1);";
 constexpr inline auto term_abx = "abx := f(1, 2) + g(3, 4);";
 constexpr inline auto term_aby = "aby := tuple.0();";
-constexpr inline auto term_abz = "aby := array[x]();";
+constexpr inline auto term_abz = "abz := array[x]();";
 
 constexpr inline auto term_aca = "aac := [0, 1, 2, 3, 4];";
 constexpr inline auto term_acb = "acb := [[0, 1], [2, 3], [4, 5]];";
@@ -165,5 +165,26 @@ constexpr inline auto term_aef = "fn aef(a: (Integer, Integer)) { a; }";
 constexpr inline auto term_aeg = "fn aeg(a: [Integer; 10]) { a; }";
 constexpr inline auto term_aeh = "fn aeh(a: **Integer) { a; }";
 constexpr inline auto term_aei = "fn aei(a: **[]Integer) { a; }";
-constexpr inline auto term_aej = "fn aej(a: fn() -> Integer) { a; }";
-constexpr inline auto term_aek = "fn aek(a: fn() -> Integer) { a(); }";
+constexpr inline auto term_aej = "fn aej(a: *[]*[]Integer) { a; }";
+constexpr inline auto term_aek = "fn aek(a: *[]*Integer) { a; }";
+constexpr inline auto term_ael = "fn ael(a: fn() -> Integer) { a; }";
+
+constexpr inline auto term_aem = "fn aem(a: Integer, b: Integer) { a + b; }";
+constexpr inline auto term_aen = "fn aen(a: Boolean, b: Boolean) { a & b; }";
+constexpr inline auto term_aeo = "fn aeo(a: *Integer, b: Integer) { *a + b; }";
+constexpr inline auto term_aep =
+    "fn aep(a: *[]Integer, x: Integer, b: Integer) { a[x] + b; }";
+constexpr inline auto term_aeq = "fn aeq(a: (Integer, Integer)) { a.0 + a.1; }";
+constexpr inline auto term_aer =
+    "fn aer(a: [Integer; 10], x: Integer, b: Integer) { a[x] + b; }";
+constexpr inline auto term_aes =
+    "fn aes(a: **Integer, b: Integer) { **a + b; }";
+constexpr inline auto term_aet =
+    "fn aet(a: **[]Integer, x: Integer, b: Integer) { (*a)[x] + b; }";
+constexpr inline auto term_aeu =
+    "fn aeu(a: *[]*[]Integer, x: Integer, y: Integer) { a[x][y]; }";
+constexpr inline auto term_aev =
+    "fn aev(a: *[]*Integer, x: Integer, b: Integer) { *a[x] + b; }";
+constexpr inline auto term_aew = "fn aew(a: fn() -> Integer) { a(); }";
+constexpr inline auto term_aex = "fn aex(a: fn(Integer, Integer) -> Integer, "
+                                 "b: Integer, c: Integer) { a(b, c); }";
