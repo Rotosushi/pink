@@ -22,8 +22,9 @@
  *
  */
 #pragma once
-#include <iostream>
-#include <string>
+#include <initializer_list> // std::initializer_list
+#include <ostream>          // std::ostream
+#include <string>           // std::string
 
 #include "aux/Location.h"
 
@@ -114,9 +115,7 @@ public:
   Error()
       : code(Error::Code::None) {}
   Error(Code code, Location location, std::string_view text = "");
-  [[noreturn]] Error(std::errc        errc,
-                     Location         location,
-                     std::string_view text = "");
+  Error(std::errc errc, Location location, std::string_view text = "");
   ~Error()                                      = default;
   Error(const Error &other)                     = default;
   Error(Error &&other)                          = default;

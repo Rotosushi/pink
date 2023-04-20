@@ -19,8 +19,6 @@
 #include "ast/action/ToString.h"
 #include "ast/action/Typecheck.h"
 
-#include "type/action/ToString.h"
-
 #include "ast/visitor/AstVisitor.h"
 #include "visitor/VisitorResult.h"
 
@@ -93,6 +91,15 @@ public:
 
 /*
   Address of has the type Pointer<T> iff the right hand side has a type T
+
+  Address of can only take the address if the type T is backed by memory.
+  we cannot take the address of a literal.
+  it can take the address of a const or mutable (the pointer is then const or
+  mutable),
+  and it can only take the address of a non-temporary value.
+  the address of a stack allocated object is a constant, runtime, temporary,
+  literal. the address of a function is a constant, runtime, non-temporary,
+  literal.
 */
 void TypecheckVisitor::Visit(const AddressOf *address_of) const noexcept {
   env.WithinAddressOf(true);
@@ -114,6 +121,22 @@ void TypecheckVisitor::Visit(const AddressOf *address_of) const noexcept {
   callee function if and only if each argument type present in
   the Ast::Application matches the corresponding argument type
   present in the type of the callee function.
+
+  Function Types are always constant, runtime, literal, non-temporary types,
+  they are implicitly function pointers.
+
+  arguments are taken by value (which implies a copy),
+  therefore the type can be in memory or literal,
+  comptime or runtime, and temporary or not.
+
+  as a special case, an in memory temporary type may be
+  used directly, (without a copy), due to it's lifetime being
+  restricted to the evaluation of the call operation.
+  (we can consider this a move.)
+
+  a constant actual argument type can only bind to a constant formal argument
+  a mutable actual argument type can bind to a constant or mutable formal
+  argument.
 */
 void TypecheckVisitor::Visit(const Application *application) const noexcept {
   TRY(callee_result, callee_type, Compute, application->GetCallee(), this)
@@ -123,13 +146,13 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
   if (callee_type == nullptr) {
     result = Error(Error::Code::TypeCannotBeCalled,
                    application->GetLocation(),
-                   ToString(function_type));
+                   function_type->ToString());
     return;
   }
 
   if (application->GetArguments().size() !=
       function_type->GetArguments().size()) {
-    std::string errmsg = "Function takes [";
+    std::string errmsg  = "Function takes [";
     errmsg             += std::to_string(function_type->GetArguments().size());
     errmsg             += "] arguments; [";
     errmsg             += std::to_string(application->GetArguments().size());
@@ -151,13 +174,15 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
                                 computed_argument_types.cbegin());
 
   if (mismatch.first != function_type->end()) {
-    std::string errmsg = "Expected argument type [";
-    errmsg             += ToString(*mismatch.first);
-    errmsg             += "], Actual argument type [";
-    errmsg             += ToString(*mismatch.second);
-    errmsg             += "]";
-    result =
-        Error(Error::Code::ArgTypeMismatch, application->GetLocation(), errmsg);
+    std::stringstream errmsg;
+    errmsg << "Expected argument type [";
+    errmsg << *mismatch.first;
+    errmsg << "], Actual argument type [";
+    errmsg << *mismatch.second;
+    errmsg << "]";
+    result = Error(Error::Code::ArgTypeMismatch,
+                   application->GetLocation(),
+                   std::move(errmsg).str());
     return;
   }
 
@@ -171,6 +196,13 @@ void TypecheckVisitor::Visit(const Application *application) const noexcept {
   same length and type as the Array if and only if
   each element of the Array is the same type as the
   first element of the Array.
+
+  an array is-a literal iff all it's elements are literals
+  otherwise we construct an in-memory type.
+  when we construct an array literal it is constant,
+  when we construct an array in memory it is mutable,
+  when we construct an array it is a temporary value.
+  (it must be bound to something to have it's lifetime extended)
 */
 void TypecheckVisitor::Visit(const Array *array) const noexcept {
   std::vector<Type::Pointer> computed_element_types;
@@ -182,14 +214,15 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
     computed_element_types.emplace_back(element_type);
 
     if (element_type != computed_element_types[0]) {
-      std::string errmsg = "Element type [";
-      errmsg             += ToString(element_type);
-      errmsg += "] does not match type predicted by first element [";
-      errmsg += ToString(computed_element_types[0]);
-      errmsg += "]";
+      std::stringstream errmsg;
+      errmsg << "Element type [";
+      errmsg << element_type;
+      errmsg << "] does not match type predicted by first element [";
+      errmsg << computed_element_types[0];
+      errmsg << "]";
       result = Error(Error::Code::ArrayMemberTypeMismatch,
                      element->GetLocation(),
-                     errmsg);
+                     std::move(errmsg).str());
       return;
     }
   }
@@ -203,6 +236,11 @@ void TypecheckVisitor::Visit(const Array *array) const noexcept {
 /* 1/24/2023
   The type of an assignment is the Type of it's left hand side,
   if and only if the right hand side is the same type
+
+  the lhs of an assignment must be a mutable, in memory type
+  (I think this implies runtime and non-temporary).
+  the rhs can be comptime or runtime, literal or in memory, const or mutable,
+  temporary or not.
 */
 void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
   env.OnTheLHSOfAssignment(true);
@@ -217,14 +255,15 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
   TRY(right_result, right_type, Compute, assignment->GetRight(), this)
 
   if (left_type != right_type) {
-    std::string errmsg = "left type [";
-    errmsg             += ToString(left_type);
-    errmsg             += "] does not match right type [";
-    errmsg             += ToString(right_type);
-    errmsg             += "]";
-    result             = Error(Error::Code::AssigneeTypeMismatch,
+    std::stringstream errmsg;
+    errmsg << "left type [";
+    errmsg << left_type;
+    errmsg << "] does not match right type [";
+    errmsg << right_type;
+    errmsg << "]";
+    result = Error(Error::Code::AssigneeTypeMismatch,
                    assignment->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 
@@ -235,19 +274,34 @@ void TypecheckVisitor::Visit(const Assignment *assignment) const noexcept {
 /* 1/24/2023
   The Type of an Ast::Bind is the type of it's right hand side,
   if and only if the name being bound is not already bound.
+
+  the rhs can be a literal or an in memory type.
+  the rhs can be constant or mutable (as bind is a read only operation).
+  the rhs can be temporary or non-temporary.
+  the rhs can be runtime or comptime.
+
+  bind always introduces a non-temporary type.
+  bind introduces a constant, literal, comptime type iff the
+  rhs is constant, literal, and comptime.
+  bind introduces an in memory type iff the rhs is mutable,
+  in-memory, or runtime.
+  as a special case, iff the rhs is temporary and in-memory,
+  then the bind expression does not allocate new memory or copy
+  it simply 'steals'|'moves' the temporary allocation.
 */
 void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
   auto bound = env.LookupLocalVariable(bind->GetSymbol());
 
   if (bound.has_value()) {
-    std::string errmsg = "symbol [";
-    errmsg             += bind->GetSymbol();
-    errmsg             += "] is already bound to type [";
-    errmsg             += ToString(bound->Type());
-    errmsg             += "]";
-    result             = Error(Error::Code::NameAlreadyBoundInScope,
+    std::stringstream errmsg;
+    errmsg << "symbol [";
+    errmsg << bind->GetSymbol();
+    errmsg << "] is already bound to type [";
+    errmsg << bound->Type();
+    errmsg << "]";
+    result = Error(Error::Code::NameAlreadyBoundInScope,
                    bind->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 
@@ -270,6 +324,12 @@ void TypecheckVisitor::Visit(const Bind *bind) const noexcept {
   implementation given the types of it's left and right hand
   side expressions if and only if there is an implementation
   of the binop given the left and right expressions.
+
+  binop works like a function call in that the lhs and rhs types
+  may be const or mutable, in memory or a literal, temporary
+  or non-temporary, comptime or runtime.
+  the result type of a binop is dependent upon the result type of
+  the implementation of the binop.
 */
 void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
   TRY(left_result, left_type, Compute, binop->GetLeft(), this)
@@ -279,7 +339,7 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
   auto optional_literal = env.LookupBinop(binop->GetOp());
 
   if (!optional_literal || optional_literal->Empty()) {
-    std::string errmsg = "Unknown binop [";
+    std::string errmsg  = "Unknown binop [";
     errmsg             += ToString(binop->GetOp());
     errmsg             += "]";
     result = Error(Error::Code::UnknownBinop, binop->GetLocation(), errmsg);
@@ -290,14 +350,17 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
 
   auto optional_implementation = literal.Lookup(left_type, right_type);
   if (!optional_implementation.has_value()) {
-    std::string errmsg = "Could not find an implementation of [";
-    errmsg             += ToString(binop->GetOp());
-    errmsg             += "] given the types [";
-    errmsg             += ToString(left_type);
-    errmsg             += ", ";
-    errmsg             += ToString(right_type);
-    errmsg             += "]";
-    result = Error(Error::Code::ArgTypeMismatch, binop->GetLocation(), errmsg);
+    std::stringstream errmsg;
+    errmsg << "Could not find an implementation of [";
+    errmsg << ToString(binop->GetOp());
+    errmsg << "] given the types [";
+    errmsg << left_type;
+    errmsg << ", ";
+    errmsg << right_type;
+    errmsg << "]";
+    result = Error(Error::Code::ArgTypeMismatch,
+                   binop->GetLocation(),
+                   std::move(errmsg).str());
     return;
   }
   auto implementation = optional_implementation.value();
@@ -311,6 +374,16 @@ void TypecheckVisitor::Visit(const Binop *binop) const noexcept {
   The type of a block is the type of it's last expression,
   if and only if each expression within the block can be
   typed. An empty block has type Nil.
+
+  block acts like a heterogeneous container, and therefore
+  does not place any additional constraints upon it's
+  data types.
+
+  #TODO: implement some sort of 'delay(expr)' builtin.
+  then we can build some lifetime annotations on top of
+  it. as well as some kind of dynamic memory cleanup builtin.
+  this intrinsic works at the block level, and lifetime
+  also needs to be accounted for at the expression level itself.
 */
 void TypecheckVisitor::Visit(const Block *block) const noexcept {
   if (block->IsEmpty()) {
@@ -333,7 +406,9 @@ void TypecheckVisitor::Visit(const Block *block) const noexcept {
 }
 
 /* 1/24/2023
-  The type of a boolean literal is Boolean.
+  The type of an ast::Boolean is Boolean.
+
+  an ast::Boolean is a temporary, comptime, constant, literal.
 */
 void TypecheckVisitor::Visit(const Boolean *boolean) const noexcept {
   const auto *result_type = env.GetBoolType();
@@ -345,32 +420,39 @@ void TypecheckVisitor::Visit(const Boolean *boolean) const noexcept {
   The type of a IfThenElse expression is the type of the first of it's
   alternative expressions if and only if the test expression has type
   Boolean, and both alternative expressions have the same type.
+
+  The test expression can work using a boolean type that is const or mutable,
+  in memory or a literal, temporary or non-temporary, comptime or runtime.
+
+  the then and else blocks are blocks, and so they can be in memory or literal,
+  const or mutable, temporary or non-temporary.
 */
 void TypecheckVisitor::Visit(const IfThenElse *conditional) const noexcept {
   TRY(test_result, test_type, Compute, conditional->GetTest(), this)
 
   if (test_type != env.GetBoolType()) {
-    std::string errmsg = "Test expression has type [";
-    errmsg             += ToString(test_type);
-    errmsg             += "] expected type [Boolean]";
-    result             = Error(Error::Code::CondTestExprTypeMismatch,
+    std::stringstream errmsg;
+    errmsg << "Test expression has type [";
+    errmsg << test_type;
+    errmsg << "] expected type [Boolean]";
+    result = Error(Error::Code::CondTestExprTypeMismatch,
                    conditional->GetTest()->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 
   TRY(first_result, first_type, Compute, conditional->GetFirst(), this)
   TRY(second_result, second_type, Compute, conditional->GetSecond(), this)
-
   if (first_type != second_type) {
-    std::string errmsg = "first type [";
-    errmsg             += ToString(first_type);
-    errmsg             += "] second type [";
-    errmsg             += ToString(second_type);
-    errmsg             += "]";
-    result             = Error(Error::Code::CondBodyExprTypeMismatch,
+    std::stringstream errmsg;
+    errmsg << "first type [";
+    errmsg << first_type;
+    errmsg << "] second type [";
+    errmsg << second_type;
+    errmsg << "]";
+    result = Error(Error::Code::CondBodyExprTypeMismatch,
                    conditional->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 
@@ -389,51 +471,54 @@ void TypecheckVisitor::Visit(const IfThenElse *conditional) const noexcept {
 
   #ASIDE: theoretically we could support runtime variable indecies if
   we computed the result type as the union of all of the available
-  structure types, though that might get dicey depending upon
-  the semantics of unions. (which are useful and so we are going
-  to try and have them, tagged i think, as that is safe and reasonably
-  efficient)
+  structure types, though that might get dicey.
+
+  the left of a dot operator (the tuple) can be temporary or non-temporary,
+  const or mutable, and in memory or a literal, comptime or runtime.
+  the right (the index) needs to be a comptime value, it can be temporary
+  or not, it must be a literal (cannot reside in-memory), and it can be
+  const or mutable (though there is no way to construct )
+
+  the result type is dependent upon the type of the tuple.
 */
 void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
   TRY(left_result, left_type, Compute, dot->GetLeft(), this)
 
   const auto *structure_type = llvm::dyn_cast<TupleType>(left_type);
   if (structure_type == nullptr) {
-    std::string errmsg = "Left has type [";
-    errmsg             += ToString(left_type);
-    errmsg             += "] which is not an accessable type.";
-    result             = Error(Error::Code::DotLeftIsNotATuple,
+    std::stringstream errmsg;
+    errmsg << "Left has type [";
+    errmsg << left_type;
+    errmsg << "] which is not an accessable type.";
+    result = Error(Error::Code::DotLeftIsNotATuple,
                    dot->GetLeft()->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 
-  // we cannot accept runtime values here, we could accept
-  // a variable if it was a llvm::ConstantInt. and that opens
-  // the door to comptime evaluation.
-  // runtime values are disallowed because the return type
-  // would have to be an implicit union type to be statically
-  // semantically meaningful.
-  // non owning reference to right
   auto *right = llvm::dyn_cast<Integer>(dot->GetRight().get());
   if (right == nullptr) {
-    std::string errmsg = "Right [";
-    errmsg             += ToString(dot->GetRight());
-    errmsg             += "] is not an Integer literal.";
-    result             = Error(Error::Code::DotRightIsNotAnInt,
+    std::stringstream errmsg;
+    errmsg << "Right [";
+    errmsg << ToString(dot->GetRight());
+    errmsg << "] is not an Integer literal.";
+    result = Error(Error::Code::DotRightIsNotAnInt,
                    dot->GetRight()->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 
   auto index = static_cast<std::size_t>(right->GetValue());
   if (index > structure_type->GetElements().size()) {
-    std::string errmsg = "Index [";
-    errmsg             += std::to_string(index);
-    errmsg             += "] is larger than the highest indexable element [";
-    errmsg += std::to_string(structure_type->GetElements().size() - 1);
-    errmsg += "]";
-    result = Error(Error::Code::DotIndexOutOfRange, dot->GetLocation(), errmsg);
+    std::stringstream errmsg;
+    errmsg << "Index [";
+    errmsg << std::to_string(index);
+    errmsg << "] is larger than the highest indexable element [";
+    errmsg << std::to_string(structure_type->GetElements().size() - 1);
+    errmsg << "]";
+    result = Error(Error::Code::DotIndexOutOfRange,
+                   dot->GetLocation(),
+                   std::move(errmsg).str());
     return;
   }
 
@@ -446,6 +531,13 @@ void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
   The type of a function is it's FunctionType if and only if
   the body typechecks given that all of the function's arguments
   are bound to their respective types.
+
+  since this is the definition of a given function, and not an
+  operation, we don't need to impose any particular rules on
+  what types are allowed. (though this does not imply that the
+  programmer is disallowed from annotating the types present within
+  the function.)
+  the result type is dependent upon the type of the function body.
 */
 void TypecheckVisitor::Visit(const Function *function) const noexcept {
 
@@ -474,6 +566,8 @@ void TypecheckVisitor::Visit(const Function *function) const noexcept {
 
 /*
   The type of an integer literal is Integer
+
+  an Integer is a constant, temporary, literal
 */
 void TypecheckVisitor::Visit(const Integer *integer) const noexcept {
   const auto *result_type = env.GetIntType();
@@ -483,6 +577,8 @@ void TypecheckVisitor::Visit(const Integer *integer) const noexcept {
 
 /*
   The type of the nil literal is Nil.
+
+  a nil is a constant, temporary, literal.
 */
 void TypecheckVisitor::Visit(const Nil *nil) const noexcept {
   const auto *result_type = env.GetNilType();
@@ -495,17 +591,25 @@ void TypecheckVisitor::Visit(const Nil *nil) const noexcept {
   subscriptable pointer being accessed if and only if the left
   expression has slice or array type, and the right expression
   has Integer type.
+
+  the lhs of a subscript can be a literal or in memory, it can
+  be constant or mutable, and it can be temporary or not.
+  the rhs of a subscript can be a literal or in memory, it can
+  be constant or mutable, and it can be temporary or not.
+
+  the result type is dependent upon the type of the array.
 */
 void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
   TRY(right_result, right_type, Compute, subscript->GetRight(), this)
 
   if ((llvm::dyn_cast<IntegerType>(right_type)) == nullptr) {
-    std::string errmsg = "Cannot use type [";
-    errmsg             += ToString(right_type);
-    errmsg             += "] as an index.";
-    result             = Error(Error::Code::SubscriptRightIsNotAnIndex,
+    std::stringstream errmsg;
+    errmsg << "Cannot use type [";
+    errmsg << right_type;
+    errmsg << "] as an index.";
+    result = Error(Error::Code::SubscriptRightIsNotAnIndex,
                    subscript->GetRight()->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 
@@ -524,12 +628,13 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
       return slice_type->GetPointeeType();
     }
 
-    std::string errmsg = "Cannot subscript type [";
-    errmsg             += ToString(left_type);
-    errmsg             += "]";
+    std::stringstream errmsg;
+    errmsg << "Cannot subscript type [";
+    errmsg << left_type;
+    errmsg << "]";
     return Error(Error::Code::SubscriptLeftIsNotSubscriptable,
                  subscript->GetLeft()->GetLocation(),
-                 errmsg);
+                 std::move(errmsg).str());
   }();
   if (!element_result) {
     result = element_result;
@@ -544,6 +649,13 @@ void TypecheckVisitor::Visit(const Subscript *subscript) const noexcept {
   The type of a Tuple is a TupleType containing the type of
   each of the elements of the Tuple if and only if each of
   the elements of the Tuple Typecheck.
+
+  a tuple is a literal iff all it's components are also literal.
+  otherwise it is in-memory.
+  a tuple can be const or mutable, a literal is always const,
+  an in-memory can be either.
+  a tuple is always a temporary value. (it must be bound to something
+  to have it's lifetime extended.)
 */
 void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
   std::vector<Type::Pointer> element_types;
@@ -564,14 +676,22 @@ void TypecheckVisitor::Visit(const Tuple *tuple) const noexcept {
   given the type of it's right hand side expression as argument
   if and only if the unop has an implementation for the type of
   the right expression
+
+  like a function the arguments to a unop can be const or mutable,
+  they can be in-memory or literal, and they can be temporary or not.
+  the result type is dependent upon the result type of the
+  implementation of the unop.
 */
 void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   auto optional_literal = env.LookupUnop(unop->GetOp());
   if (!optional_literal) {
-    std::string errmsg = "Unknown unop [";
-    errmsg             += ToString(unop->GetOp());
-    errmsg             += "]";
-    result = Error(Error::Code::UnknownUnop, unop->GetLocation(), errmsg);
+    std::stringstream errmsg;
+    errmsg << "Unknown unop [";
+    errmsg << ToString(unop->GetOp());
+    errmsg << "]";
+    result = Error(Error::Code::UnknownUnop,
+                   unop->GetLocation(),
+                   std::move(errmsg).str());
     return;
   }
   auto &literal = optional_literal.value();
@@ -581,12 +701,15 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
   auto found = literal.Lookup(right_type);
 
   if (!found) {
-    std::string errmsg = "No implementation of unop [";
-    errmsg             += ToString(unop->GetOp());
-    errmsg             += "] found for type [";
-    errmsg             += ToString(right_type);
-    errmsg             += "]";
-    result = Error(Error::Code::ArgTypeMismatch, unop->GetLocation(), errmsg);
+    std::stringstream errmsg;
+    errmsg << "No implementation of unop [";
+    errmsg << ToString(unop->GetOp());
+    errmsg << "] found for type [";
+    errmsg << right_type;
+    errmsg << "]";
+    result = Error(Error::Code::ArgTypeMismatch,
+                   unop->GetLocation(),
+                   std::move(errmsg).str());
     return;
   }
   auto implementation = found.value();
@@ -599,6 +722,12 @@ void TypecheckVisitor::Visit(const Unop *unop) const noexcept {
 /*
   The type of Value of is T iff the right hand side has type
   Pointer<T>
+
+  ValueOf can only dereference the pointer, (it's right hand side)
+  iff that pointer is backed by some memory.
+  the pointer may be const or mutable, temporary or not.
+  because pointers only 'exist' at runtime, so does the type
+  need to be runtime.
 */
 void TypecheckVisitor::Visit(const ValueOf *value_of) const noexcept {
   env.WithinDereferencePtr(true);
@@ -617,13 +746,13 @@ void TypecheckVisitor::Visit(const ValueOf *value_of) const noexcept {
              slice_type != nullptr) {
     result = slice_type->GetPointeeType();
   } else {
-    std::string errmsg = "[";
-    errmsg             += ToString(right_type);
-    errmsg             += "]";
-
+    std::stringstream errmsg;
+    errmsg << "[";
+    errmsg << right_type;
+    errmsg << "]";
     result = Error{Error::Code::CannotDereferenceNonPointer,
                    value_of->GetLocation(),
-                   errmsg};
+                   std::move(errmsg).str()};
   }
 }
 
@@ -631,6 +760,9 @@ void TypecheckVisitor::Visit(const ValueOf *value_of) const noexcept {
   The type of a variable is the type the variable is
   bound to in scope if and only if the type is bound
   in scope.
+
+  the type annotations of a variable are completely dependent upon
+  the annotations of the type it is bound to.
 */
 void TypecheckVisitor::Visit(const Variable *variable) const noexcept {
   auto found = env.LookupVariable(variable->GetSymbol());
@@ -641,28 +773,35 @@ void TypecheckVisitor::Visit(const Variable *variable) const noexcept {
     return;
   }
 
-  std::string errmsg = "[";
-  errmsg             += variable->GetSymbol();
-  errmsg             += "]";
-  result =
-      Error(Error::Code::NameNotBoundInScope, variable->GetLocation(), errmsg);
+  std::stringstream errmsg;
+  errmsg << "[";
+  errmsg << variable->GetSymbol();
+  errmsg << "]";
+  result = Error(Error::Code::NameNotBoundInScope,
+                 variable->GetLocation(),
+                 std::move(errmsg).str());
 }
 
 /*
   The type of a While loop is Nil if and only if the
   test expression has type Boolean and the body expression
   is typeable.
+
+  the test expression can be comptime or runtime, const or mutable,
+  temporary or not, and backed by memory or not. the body of
+  the while loop acts like a new block of code.
 */
 void TypecheckVisitor::Visit(const While *loop) const noexcept {
   TRY(test_result, test_type, Compute, loop->GetTest(), this)
 
   if (test_type != env.GetBoolType()) {
-    std::string errmsg = "Test expression has type [";
-    errmsg             += ToString(test_type);
-    errmsg             += "] expected type [Boolean]";
-    result             = Error(Error::Code::WhileTestTypeMismatch,
+    std::stringstream errmsg;
+    errmsg << "Test expression has type [";
+    errmsg << test_type;
+    errmsg << "] expected type [Boolean]";
+    result = Error(Error::Code::WhileTestTypeMismatch,
                    loop->GetTest()->GetLocation(),
-                   errmsg);
+                   std::move(errmsg).str());
     return;
   }
 

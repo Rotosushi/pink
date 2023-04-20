@@ -25,22 +25,11 @@ namespace pink {
 class CompilationUnit;
 using TypecheckResult = Outcome<Type::Pointer, Error>;
 
-/*
-  #TODO: 2/18/2023 we are changing the conceptualization of what
-  the Typechecker is. as a result, it is going to make more sense
-  to define the TypecheckVisitor class in the header file, instead
-  of only exporting the single procedure.
-
-*/
-
 /**
  * @brief Computes the [Type](#Type) of this [ast](#Ast)
  *
  * This function runs the, as far as I know, standard simple typing algorithm,
  * eagerly evaluated, with no implicit casting.
- *
- * \todo There are currently no syntactic forms
- * which allow for user types. (other than functions)
  *
  * @param ast the Ast to Typecheck
  * @param env The CompilationUnit to typecheck against, an

@@ -26,7 +26,6 @@
 #include "type/Type.h"                       // pink::Type
 #include "type/action/PolymorphicEquality.h" // pink::PolymorphicEquality
 #include "type/action/Substitution.h"        // pink::Substitution
-#include "type/action/ToString.h"            // pink::ToString
 
 #include "aux/Error.h"   // pink::Error
 #include "aux/Map.h"     // pink::Map<K, V>

@@ -26,7 +26,6 @@
 
 #include "type/Type.h"
 #include "type/action/ToLLVM.h"
-#include "type/action/ToString.h"
 
 #include "support/FatalError.h"
 #include "support/LLVMErrorToString.h"
@@ -360,7 +359,7 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
     out << " llvm function [\n"
         << LLVMValueToString(llvm_function) << "]\n"
         << "llvm type [" << LLVMTypeToString(llvm_function_type) << "]\n"
-        << "pink type [" << ToString(pink_function_type) << "]\n"
+        << "pink type [" << pink_function_type->ToString() << "]\n"
         << "number of function attributes ["
         << llvm_function->getAttributes().getNumAttrSets() << "]\n";
     FatalError(buffer);

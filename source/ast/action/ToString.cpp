@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 #include "ast/action/ToString.h"
-#include "type/action/ToString.h"
 
 #include "ast/All.h"
 
@@ -183,7 +182,7 @@ void AstToStringVisitor::Visit(const Function *function) const noexcept {
   std::size_t length = function->GetArguments().size();
   for (const auto &argument : *function) {
     buffer.append(argument.first);
-    buffer.append(ToString(argument.second));
+    buffer.append(argument.second->ToString());
 
     if (index < (length - 1)) {
       buffer.append(", ");

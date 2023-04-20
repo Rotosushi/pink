@@ -127,6 +127,22 @@ public:
     return Type::Kind::Function == type->GetKind();
   }
 
+  void Print(std::ostream &stream) const noexcept override {
+    stream << "fn (";
+    std::size_t index  = 0;
+    std::size_t length = arguments.size();
+    for (const auto *type : arguments) {
+      type->Print(stream);
+
+      if (index < (length - 1)) {
+        stream << ", ";
+      }
+      index++;
+    }
+    stream << ") -> ";
+    return_type->Print(stream);
+  }
+
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
   void Accept(ConstTypeVisitor *visitor) const noexcept override {
     visitor->Visit(this);

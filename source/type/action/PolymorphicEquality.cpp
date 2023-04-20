@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <sstream> // std::stringstream
+
 #include "type/action/PolymorphicEquality.h"
-#include "type/action/ToString.h"
 
 #include "type/visitor/TypeVisitor.h"
 #include "visitor/VisitorResult.h"
@@ -55,12 +56,12 @@ void PolymorphicEqualityVisitor::Visit(
   if (const auto *array_left = llvm::dyn_cast<ArrayType>(left);
       array_left != nullptr) {
     if (array_left->GetSize() != array_type->GetSize()) {
-      std::string errmsg = "left size [";
+      std::string errmsg  = "left size [";
       errmsg             += std::to_string(array_left->GetSize());
       errmsg             += "], right size [";
       errmsg             += std::to_string(array_type->GetSize());
       errmsg             += "]";
-      result             = Error{Error::Code::ArraySizeMismatch, {}, errmsg};
+      result              = Error{Error::Code::ArraySizeMismatch, {}, errmsg};
       return;
     }
 
@@ -69,12 +70,14 @@ void PolymorphicEqualityVisitor::Visit(
     return;
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(array_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << array_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(
@@ -84,12 +87,14 @@ void PolymorphicEqualityVisitor::Visit(
     result = PolymorphicEqualityResult{};
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(boolean_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << boolean_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(
@@ -99,12 +104,14 @@ void PolymorphicEqualityVisitor::Visit(
     result = PolymorphicEqualityResult{};
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(character_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << character_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(
@@ -140,12 +147,14 @@ void PolymorphicEqualityVisitor::Visit(
     return;
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(function_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << function_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 /*
@@ -158,12 +167,15 @@ void PolymorphicEqualityVisitor::Visit(
     [[maybe_unused]] const TypeVariable *type_variable) const noexcept {
   if (const auto *poly_left = llvm::dyn_cast<TypeVariable>(left);
       poly_left != nullptr) {
-    std::string errmsg = "Cannot substitute type variable [";
-    errmsg             += ToString(poly_left);
-    errmsg             += "] for type variable [";
-    errmsg             += ToString(type_variable);
-    errmsg             += "]";
-    result = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+    std::stringstream errmsg;
+    errmsg << "Cannot substitute type variable [";
+    errmsg << poly_left;
+    errmsg << "] for type variable [";
+    errmsg << type_variable;
+    errmsg << "]";
+    result = Error{Error::Code::TypeSubstitutionInvalid,
+                   {},
+                   std::move(errmsg).str()};
     return;
   }
   result = PolymorphicEqualityResult{};
@@ -176,12 +188,14 @@ void PolymorphicEqualityVisitor::Visit(
     result = PolymorphicEqualityResult{};
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(integer_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << integer_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(const NilType *nil_type) const noexcept {
@@ -190,12 +204,14 @@ void PolymorphicEqualityVisitor::Visit(const NilType *nil_type) const noexcept {
     result = PolymorphicEqualityResult{};
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(nil_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << nil_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(
@@ -206,12 +222,14 @@ void PolymorphicEqualityVisitor::Visit(
                                  pointer_type->GetPointeeType());
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(pointer_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << pointer_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(
@@ -222,12 +240,14 @@ void PolymorphicEqualityVisitor::Visit(
                                  slice_type->GetPointeeType());
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(slice_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << slice_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(
@@ -235,12 +255,14 @@ void PolymorphicEqualityVisitor::Visit(
   if (const auto *left_tuple = llvm::dyn_cast<TupleType>(left);
       left_tuple != nullptr) {
     if (tuple_type->GetElements().size() != left_tuple->GetElements().size()) {
-      std::string errmsg = "left tuple [";
-      errmsg             += ToString(left_tuple);
-      errmsg             += "], right tuple [";
-      errmsg             += ToString(tuple_type);
-      errmsg             += "]";
-      result             = Error{Error::Code::TupleSizeMismatch, {}, errmsg};
+      std::stringstream errmsg;
+      errmsg << "left tuple [";
+      errmsg << left_tuple;
+      errmsg << "], right tuple [";
+      errmsg << tuple_type;
+      errmsg << "]";
+      result =
+          Error{Error::Code::TupleSizeMismatch, {}, std::move(errmsg).str()};
       return;
     }
 
@@ -252,12 +274,15 @@ void PolymorphicEqualityVisitor::Visit(
       auto right_element = *right_iterator;
 
       if (!PolymorphicEquality(left_element, right_element)) {
-        std::string errmsg = "left element [";
-        errmsg             += ToString(left_element);
-        errmsg             += "], right element [";
-        errmsg             += ToString(right_element);
-        errmsg             += "]";
-        result = Error{Error::Code::TupleElementMismatch, {}, errmsg};
+        std::stringstream errmsg;
+        errmsg << "left element [";
+        errmsg << left_element;
+        errmsg << "], right element [";
+        errmsg << right_element;
+        errmsg << "]";
+        result = Error{Error::Code::TupleElementMismatch,
+                       {},
+                       std::move(errmsg).str()};
         return;
       }
 
@@ -269,12 +294,14 @@ void PolymorphicEqualityVisitor::Visit(
     return;
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(tuple_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << tuple_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 void PolymorphicEqualityVisitor::Visit(
@@ -284,12 +311,14 @@ void PolymorphicEqualityVisitor::Visit(
     result = PolymorphicEqualityResult{};
   }
 
-  std::string errmsg = "Cannot substitute type [";
-  errmsg             += ToString(left);
-  errmsg             += "] for type [";
-  errmsg             += ToString(void_type);
-  errmsg             += "]";
-  result             = Error{Error::Code::TypeSubstitutionInvalid, {}, errmsg};
+  std::stringstream errmsg;
+  errmsg << "Cannot substitute type [";
+  errmsg << left;
+  errmsg << "] for type [";
+  errmsg << void_type;
+  errmsg << "]";
+  result =
+      Error{Error::Code::TypeSubstitutionInvalid, {}, std::move(errmsg).str()};
 }
 
 /*

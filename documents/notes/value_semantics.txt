@@ -1,117 +1,16 @@
-broadly speaking there are a few kinds of value within the language.
-the two main categories are immediate values (or literal values)
-and memory locations.
+programming is about three things, 
+  control flow 
+  data layout
+  operations
 
-now literal integers, booleans, and nil are simply literal values,
-that is they do not reside in memory somewhere, they live in a 
-register, or are encoded into instructions themselves as immediates.
+the programming language is exists to facilitate the ease of 
+combining these three things to write programs.
 
-memory locations are just that. They can be used to store everything 
-too big to fit inside a register. So, Tuples and Arrays.
+what we are concerned with here is types and values.
+and more specifically how to cleanly and safely create/use/update values.
 
-now, there are types which do not fit so neatly, that is pointer types.
-a pointer itself is a literal value. (the address of some memory location 
-is itself an integer literal), however you can treat the address as a 
-memory location, where it can be used to load and store, and compute GEPs.
-we will call a pointer to some memory location a reference to that memory.
+a value is any 'thing' which 'exists' during runtime or comptime.
 
-so categorically, pointers are literal values.
-and the operation '*' takes a pointer literal and transforms it into
-it's refferent literal or into a memory reference.
-and the '&' operation which take references and transform them into pointers
-(note that we cannot take the address of a literal itself!)
+the Type of a value describes it's layout in memory. 
 
-now we need to look at syntax to tell what is going on.
-
-if we see a "nil" anywhere in an expression, we know that is a literal value.
-if we see a "34" anywhere in an expression, we know that is a literal value.
-if we see a "true" anywhere in an expression, we know that is a literal value.
-
-literal values can fit inside a register and as such,
-a) cannot have their address taken
-b) cannot be dereferenced either
-c) cannot be assigned
-d) can be used in all expressions of the correct type (+, -, [], ., etc..)
-   using the literal itself directly.
-
-conversely
-
-if we see a "(a, b, c, ...)" anywhere in an expression, we know that is a reference 
-if we see a "[a, b, c, ...]" anywhere in an expression, we know that is a reference
-if we bind a variable "x := ..." then we know the variable is a reference.
-
-references cannot generally fit inside registers, and instead live in memory and as such,
-a) can have their address taken 
-b) cannot be dereferenced (unless it's a reference to a pointer type)
-c) can be assigned (to the value of a matching type)
-d) can be used in all expressions of the correct type using the reference itself 
-    directly. (however in this case we must emit loads/stores correctly to handle 
-    values which are too bit to fit inside a register directly.)
-  
-pointers (types created via the '&' operator) can live inside a register 
-and can be syntactically treated as references to memory. (unlike regular references, 
-where the memory is handled implicitly by the language semantics)
-and as such,
-a) cannot have their address taken directly (only a reference to a pointer can have it's 
-  address taken)
-b) can be dereferenced
-c) cannot be assigned (only a reference to a pointer can be assigned)
-d) can be used in all expressions of the correct type using the literal or reference itself 
-  directly
-
-looking at pointers, it would seem that if we treated them identically to how we treat 
-references, that would simplify the semantics of the langauge in two ways. (a and c)
-this means that the expression "&a" would allocate memory for the pointer, then store the 
-computed address at the memory.
-
-I understand literal values, they can be handled by constructing constants directly,
-and then they can be used everywhere they are allowed.
-that is, something like:
-"nil"
-or "3"
-or "4 + 5"
-or "true"
-or "true | false"
-can be handled with llvm::Constant and used wherever a value of that type is expected.
-in this case the bind expression would allocate memory for the constant before 
-assigning the constant to that memory.
-
-and, I understand constructing references to memory allocations 
-when it is directly and singly associated with a bind expression. 
-that is, something like:
-"a := (b, c, ...);" 
-or "a := [b, c, ...];" 
-or "a := &b;" 
-or "a := *b;" 
-this can be handled by allocating memory in the rhs of the bind, then 
-storing the referenced memory using the bind expression. keeping 
-that allocation alive as long as the name is alive.
-
-but what if the expression composes a reference literal with another operation like 
-   "a := (b, c).0;" 
-or "a := [b, c][0];" 
-or "a := &(b, c).1;"
-or "a := (b, c).0 + (c, d).1;"
-
-in this situation, technically we are losing all ability to syntactically reference 
-the literals again after their construction. that is, the expression itself is extracting 
-the value to be bound, and then the larger structure the value came from is not bound 
-in scope any longer. making the value a temporary value, which is only 'alive' as long 
-as the expression itself is being evaluated.
-
-and how do we tell the difference between the above situation and the case when 
-the reference is already bound in scope?
-1) "a0 := (b, c, ...).1;"
-vs.
-2) "a0 := (b, c, ...);
-    a1 := a0.1;"
-
-this also affects values which have operations defined for them,
-where the operation is not a register-wise operation.
-not "3 + 4", instead something like "slice + 2"
-where the add operation here needs to allocate a new slice 
-with a new offset into the array and return that as the result,
-but a slice only fits into memory, so how do we account for that memory.
-that becomes as simple as "it's handled like all temporary memory references"
-if we design a systematic way of handling temporary memory references.
-
+however that is not the full story. because there are more distinctions we can make

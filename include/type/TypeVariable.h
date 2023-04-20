@@ -42,6 +42,10 @@ public:
     return identifier;
   }
 
+  void Print(std::ostream &stream) const noexcept override {
+    stream << identifier;
+  }
+
   void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
   void Accept(ConstTypeVisitor *visitor) const noexcept override {
     visitor->Visit(this);

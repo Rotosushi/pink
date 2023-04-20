@@ -2,23 +2,22 @@
 # general project properties
 cmake_minimum_required(VERSION 3.10)
 
-# we need to use LANGUAGES C CXX to get cmake to stop complaining 
-# about not finding the termInfo package. 
-project(pink LANGUAGES C CXX VERSION 0.1 DESCRIPTION "")
-
 set(CMAKE_C_STANDARD 11)
-# since this project uses some c++20 features
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 cmake_policy(SET CMP0076 NEW)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS True)
+
+# we need to use LANGUAGES C CXX to get cmake to stop complaining 
+# about not finding the termInfo package. 
+project(pink LANGUAGES C CXX VERSION 0.1 DESCRIPTION "")
+
 message(STATUS "using c++ compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "using c++ standard: ${CXX_STANDARD}")
 message(STATUS "build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "build directory: ${PROJECT_BINARY_DIR}")
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS True)
 
 # TODO: split build of project and build of tests 
 
@@ -151,7 +150,6 @@ add_library(common
   source/type/action/PolymorphicEquality.cpp
   source/type/action/StructuralEquality.cpp
   source/type/action/Substitution.cpp 
-  source/type/action/ToString.cpp
   source/type/action/ToLLVM.cpp
   source/type/interner/TypeInterner.cpp
 
@@ -189,6 +187,7 @@ set_target_properties(common PROPERTIES PUBLIC_HEADER include/common.h)
 
 set_target_properties(common PROPERTIES LIBRARY_OUTPUT_DIRECTORY lib)
 
+target_compile_features(common PUBLIC cxx_std_20)
 
 set_property(
 	TARGET common 
@@ -210,6 +209,8 @@ ${LLVM_LIBRARY_DIRS}/liblldELF.a
 add_executable(pink 
   source/core/main.cpp
 )
+
+target_compile_features(pink PUBLIC cxx_std_20)
 
 target_link_options(pink PUBLIC ${llvm_ldflags} ${llvm_syslibs} -fuse-ld=lld)
 
@@ -265,19 +266,3 @@ PUBLIC common
 include(CTest)
 include(Catch)
 catch_discover_tests(tests)
-
-
-if ($<Config:CFG>) 
-set (PINK_BUILD_DIR "${PROJECT_BINARY_DIR}/CMakeFiles")
-set(PINK_LLVM_IR_FILES 
-  
-)
-
-add_custom_command(
-  TARGET pink POST_BUILD 
-  COMMAND opt --dot-cfg-mssa=pink-cfg.dot 
-  COMMAND dot -Tsvg pink-cfg.dot -o pink-cfg.svg
-  DEPENDS 
-VERBATIM 
-)
-endif()

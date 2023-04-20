@@ -43,6 +43,7 @@ TEST_CASE("aux/CLIFlags", "[unit][aux]") {
   REQUIRE(flags.DoLink() == true);
 }
 
+// #TODO rewrite this test case
 TEST_CASE("aux/CLIOptions", "[unit][aux]") {
   const auto *infile  = "infile.p";
   auto        outfile = pink::CLIOptions::RemoveTrailingExtensions(infile);
@@ -61,7 +62,7 @@ TEST_CASE("aux/CLIOptions", "[unit][aux]") {
   REQUIRE(options.GetInputFile() == infile);
   REQUIRE(options.GetExecutableFile() == outfile);
   REQUIRE(options.GetAssemblyFile() == outfile + ".s");
-  REQUIRE(options.GetObjectFile() == outfile + ".ll");
+  REQUIRE(options.GetObjectFile() == outfile + ".o");
 
   std::stringstream version;
   pink::CLIOptions::PrintVersion(version);

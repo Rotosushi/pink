@@ -21,8 +21,6 @@
 
 #include "aux/Environment.h"
 
-#include "type/action/ToString.h"
-
 #include "support/ComputeLocation.hpp"
 #include "support/LanguageTerms.hpp"
 
@@ -49,8 +47,8 @@
   auto term_type = typecheck_result.GetFirst();                                \
   CHECK(term_type == (target_type));                                           \
   if (term_type != (target_type)) {                                            \
-    std::cerr << "actual type [" << ToString(term_type) << "]\n target type [" \
-              << ToString(target_type) << "]\n";                               \
+    std::cerr << "actual type [" << term_type << "]\n target type ["           \
+              << target_type << "]\n";                                         \
   }
 
 // #REASON Normally I agree with this metric. and avoid macros
