@@ -28,16 +28,23 @@
 #pragma once
 #include <memory>   // std::unique_ptr
 #include <optional> // std::optional
+#include <ostream>  // std::ostream
 
 #include "llvm/Support/Casting.h" // llvm::isa, llvm::cast, etc
 
 #include "support/ToUnderlying.h" // pink::ToUnderlying
 
+#include "aux/Error.h"    // pink::Error
 #include "aux/Location.h" // pink::Location
+#include "aux/Outcome.h"  // pink::Outcome
 
 #include "type/Type.h" // pink::Type
 
 #include "ast/visitor/AstVisitor.h"
+
+namespace llvm {
+class Value;
+}
 
 namespace pink {
 
@@ -135,7 +142,23 @@ public:
 
   void SetCachedType(Type::Pointer type) const noexcept { cached_type = type; }
 
+  virtual auto Typecheck(CompilationUnit &unit) const noexcept
+      -> Outcome<Type::Pointer, Error> = 0;
+  virtual auto Codegen(CompilationUnit &unit) const noexcept
+      -> Outcome<llvm::Value *, Error>                    = 0;
+  virtual void Print(std::ostream &stream) const noexcept = 0;
+
   virtual void Accept(AstVisitor *visitor) noexcept            = 0;
   virtual void Accept(ConstAstVisitor *visitor) const noexcept = 0;
 };
+
+inline auto Typecheck(const Ast::Pointer &ast, CompilationUnit &unit) noexcept {
+  return ast->Typecheck(unit);
+}
+
+inline auto operator<<(std::ostream &stream, const Ast::Pointer &ast)
+    -> std::ostream & {
+  ast->Print(stream);
+  return stream;
+}
 } // namespace pink

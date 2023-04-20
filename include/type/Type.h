@@ -125,6 +125,15 @@ public:
   }
 };
 
+inline auto ToLLVM(Type::Pointer type, CompilationUnit &unit) noexcept
+    -> llvm::Type * {
+  return type->ToLLVM(unit);
+}
+
+inline auto Equals(Type::Pointer left, Type::Pointer right) noexcept -> bool {
+  return left->Equals(right);
+}
+
 inline auto operator<<(std::ostream &out, const Type &type) -> std::ostream & {
   type.Print(out);
   return out;

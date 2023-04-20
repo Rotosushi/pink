@@ -17,14 +17,10 @@
 
 #include "catch2/catch_test_macros.hpp"
 
-#include "ast/action/Typecheck.h"
-
 #include "aux/Environment.h"
 
 #include "support/ComputeLocation.hpp"
 #include "support/LanguageTerms.hpp"
-
-#include "llvm/Support/InitLLVM.h"
 
 #define TYPE_IS(bind_text, target_type)                                        \
   std::stringstream stream{bind_text};                                         \

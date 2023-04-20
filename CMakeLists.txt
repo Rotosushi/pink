@@ -48,7 +48,7 @@ add_compile_options(
   -Woverriding-method-mismatch 
   -Wfloat-conversion
   
-  #-Werror
+  -Werror
   #-fsanitize=address
   #-fsanitize=undefined
   -fno-omit-frame-pointer
@@ -141,9 +141,26 @@ add_library(common
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
-  source/ast/action/ToString.cpp
-  source/ast/action/Typecheck.cpp
   source/ast/action/Codegen.cpp
+  source/ast/AddressOf.cpp 
+  source/ast/Application.cpp 
+  source/ast/Array.cpp 
+  source/ast/Assignment.cpp 
+  source/ast/Bind.cpp 
+  source/ast/Binop.cpp 
+  source/ast/Block.cpp 
+  source/ast/Boolean.cpp 
+  source/ast/Conditional.cpp 
+  source/ast/Dot.cpp 
+  source/ast/Function.cpp 
+  source/ast/Integer.cpp 
+  source/ast/Nil.cpp 
+  source/ast/Subscript.cpp 
+  source/ast/Tuple.cpp 
+  source/ast/Unop.cpp 
+  source/ast/ValueOf.cpp 
+  source/ast/Variable.cpp 
+  source/ast/While.cpp 
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.

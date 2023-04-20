@@ -15,21 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <fstream> // std::fstream
-
 #include "core/Compile.h"
 #include "core/Link.h"
 
-#include "aux/Error.h" // pink::FatalError
-
-#include "ast/action/Codegen.h"
-#include "ast/action/Typecheck.h"
-
-#include "llvm/Analysis/AliasAnalysis.h" // llvm::AAManager
-
-#include "llvm/Passes/PassBuilder.h" // llvm::PassBuilder
-
-#include "llvm/Support/TargetSelect.h"
+#include "aux/Environment.h" // pink::CompilationUnit
 
 namespace pink {
 auto Compile(int argc, char **argv) -> int {

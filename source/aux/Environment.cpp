@@ -23,7 +23,6 @@
 
 #include "ast/Function.h"
 #include "ast/action/Codegen.h"
-#include "ast/action/Typecheck.h"
 
 #include "ops/BinopPrimitives.h"
 #include "ops/UnopPrimitives.h"

@@ -16,7 +16,6 @@
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 
-#include "ast/action/ToString.h"
 #include "ast/action/Typecheck.h"
 
 #include "ast/visitor/AstVisitor.h"
@@ -500,7 +499,7 @@ void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
   if (right == nullptr) {
     std::stringstream errmsg;
     errmsg << "Right [";
-    errmsg << ToString(dot->GetRight());
+    errmsg << dot->GetRight();
     errmsg << "] is not an Integer literal.";
     result = Error(Error::Code::DotRightIsNotAnInt,
                    dot->GetRight()->GetLocation(),
@@ -540,7 +539,6 @@ void TypecheckVisitor::Visit(const Dot *dot) const noexcept {
   the result type is dependent upon the type of the function body.
 */
 void TypecheckVisitor::Visit(const Function *function) const noexcept {
-
   env.PushScope();
 
   std::vector<Type::Pointer> argument_types;

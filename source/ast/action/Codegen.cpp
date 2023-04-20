@@ -16,8 +16,6 @@
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ast/action/Codegen.h"
-#include "ast/action/ToString.h"
-#include "ast/action/Typecheck.h"
 
 #include "ast/All.h"
 

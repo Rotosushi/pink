@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -46,8 +46,8 @@ namespace pink {
  */
 class Tuple : public Ast {
 public:
-  using Elements = std::vector<Ast::Pointer>;
-  using iterator = Elements::iterator;
+  using Elements       = std::vector<Ast::Pointer>;
+  using iterator       = Elements::iterator;
   using const_iterator = Elements::const_iterator;
 
 private:
@@ -55,12 +55,13 @@ private:
 
 public:
   Tuple(const Location &location, Elements elements) noexcept
-      : Ast(Ast::Kind::Tuple, location), elements(std::move(elements)) {}
-  ~Tuple() noexcept override = default;
-  Tuple(const Tuple &other) noexcept = delete;
-  Tuple(Tuple &&other) noexcept = default;
+      : Ast(Ast::Kind::Tuple, location),
+        elements(std::move(elements)) {}
+  ~Tuple() noexcept override                             = default;
+  Tuple(const Tuple &other) noexcept                     = delete;
+  Tuple(Tuple &&other) noexcept                          = default;
   auto operator=(const Tuple &other) noexcept -> Tuple & = delete;
-  auto operator=(Tuple &&other) noexcept -> Tuple & = default;
+  auto operator=(Tuple &&other) noexcept -> Tuple      & = default;
 
   auto GetElements() noexcept -> Elements & { return elements; }
   auto GetElements() const noexcept -> const Elements & { return elements; }
@@ -83,6 +84,12 @@ public:
   static auto classof(const Ast *ast) noexcept -> bool {
     return Ast::Kind::Tuple == ast->GetKind();
   }
+
+  auto Typecheck(CompilationUnit &unit) const noexcept
+      -> Outcome<Type::Pointer, Error> override;
+  auto Codegen(CompilationUnit &unit) const noexcept
+      -> Outcome<llvm::Value *, Error> override;
+  void Print(std::ostream &stream) const noexcept override;
 
   void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }
   void Accept(ConstAstVisitor *visitor) const noexcept override {

@@ -24,10 +24,10 @@
 namespace pink {
 class Value : public Ast {
 public:
-  enum struct Annotation : unsigned { Temporary, Runtime, SIZE };
+  enum struct Annotation : unsigned { Temporary, Comptime, SIZE };
 
 private:
-  static constexpr auto    bitset_size = Annotation::SIZE;
+  static constexpr auto    bitset_size = ToUnderlying(Annotation::SIZE);
   std::bitset<bitset_size> set;
 
 public:
@@ -35,16 +35,33 @@ public:
     every literal is a temporary, comptime value.
     (Boolean, Integer, Nil).
   */
-  Value(Kind     kind,
-        Location location,
-        bool     temporary = true,
-        bool     runtime   = false) noexcept
+  Value(Ast::Kind kind,
+        Location  location,
+        bool      temporary = true,
+        bool      comptime  = true) noexcept
       : Ast(kind, location),
         set() {
     set[ToUnderlying(Annotation::Temporary)] = temporary;
-    set[ToUnderlying(Annotation::Runtime)]   = runtime;
+    set[ToUnderlying(Annotation::Comptime)]  = comptime;
   }
-  ~Value() noexcept override = default;
+  ~Value() noexcept override                             = default;
+  Value(const Value &other) noexcept                     = delete;
+  Value(Value &&other) noexcept                          = default;
+  auto operator=(const Value &other) noexcept -> Value & = delete;
+  auto operator=(Value &&other) noexcept -> Value      & = default;
+
+  [[nodiscard]] auto IsTemporary() const noexcept -> bool {
+    return set[ToUnderlying(Annotation::Temporary)];
+  }
+  auto IsTemporary(bool state) noexcept -> bool {
+    return set[ToUnderlying(Annotation::Temporary)] = state;
+  }
+  [[nodiscard]] auto IsComptime() const noexcept -> bool {
+    return set[ToUnderlying(Annotation::Comptime)];
+  }
+  auto IsComptime(bool state) noexcept -> bool {
+    return set[ToUnderlying(Annotation::Comptime)] = state;
+  }
 
   void Accept(AstVisitor *visitor) noexcept override            = 0;
   void Accept(ConstAstVisitor *visitor) const noexcept override = 0;

@@ -34,7 +34,7 @@ namespace fs = std::filesystem;
     6) repeat for each test.
 */
 
-static fs::path CreateUniqueTempFilename() {
+[[maybe_unused]] static fs::path CreateUniqueTempFilename() {
   auto temp_path = []() {
     std::error_code errc;
     fs::path        temp_path = fs::temp_directory_path(errc);
@@ -64,8 +64,8 @@ static fs::path CreateUniqueTempFilename() {
   return unique_tempfile();
 }
 
-static void EmitTempFile(const std::string &contents,
-                         const fs::path    &tempfile) {
+[[maybe_unused]] static void EmitTempFile(const std::string &contents,
+                                          const fs::path    &tempfile) {
   std::fstream file{tempfile};
   if (!file.is_open()) {
     std::string errmsg{"Unable to open file "};
@@ -75,4 +75,3 @@ static void EmitTempFile(const std::string &contents,
 
   file << contents;
 }
-

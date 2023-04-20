@@ -1,40 +1,44 @@
-// Copyright (C) 2023 cadence
-// 
+// Copyright (C) 2023 Cade Weinberg
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
+#include "ast/Boolean.h"
 
-/**
- * @file Compile.h
- * @brief Header for the function Compile
- * @version 0.1
- *
- */
-#pragma once
-/**
- * @brief The namespace for the entire project
- *
- * \todo where is the best place to put the documentation for the whole
- * namespace?
- *
- */
+#include "aux/Environment.h"
+
 namespace pink {
-/**
- * @brief Runs the main process of compilation given the command line arguments.
- *
- * @param argc
- * @param argv
- */
-auto Compile(int argc, char **argv) -> int;
+/* 1/24/2023
+  The type of an ast::Boolean is Boolean.
+
+  an ast::Boolean is a temporary, comptime, constant, literal.
+*/
+auto Boolean::Typecheck(CompilationUnit &unit) const noexcept
+    -> Outcome<Type::Pointer, Error> {
+  const auto *return_type = unit.GetBoolType();
+  SetCachedType(return_type);
+  return return_type;
+}
+
+auto Boolean::Codegen(CompilationUnit &unit) const noexcept
+    -> Outcome<llvm::Value *, Error> {}
+
+void Boolean::Print(std::ostream &stream) const noexcept {
+  if (value) {
+    stream << "true";
+  } else {
+    stream << "false";
+  }
+}
 } // namespace pink
