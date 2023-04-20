@@ -44,13 +44,14 @@ public:
     return Type::Kind::Integer == type->GetKind();
   }
 
-  void Print(std::ostream &stream) const noexcept override {
-    stream << "Integer";
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
+
+  auto Equals(Type::Pointer right) const noexcept -> bool override {
+    return llvm::dyn_cast<const IntegerType>(right) != nullptr;
   }
 
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
+  void Print(std::ostream &stream) const noexcept override {
+    stream << "Integer";
   }
 };
 } // namespace pink

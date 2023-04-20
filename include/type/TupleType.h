@@ -73,26 +73,8 @@ public:
     return Type::Kind::Tuple == type->GetKind();
   }
 
-  void Print(std::ostream &stream) const noexcept override {
-    stream << "(";
-
-    std::size_t index  = 0;
-    std::size_t length = elements.size();
-    for (const auto *type : elements) {
-      type->Print(stream);
-
-      if (index < (length - 1)) {
-        stream << ", ";
-      }
-      index++;
-    }
-
-    stream << ")";
-  }
-
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
-  }
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
+  auto Equals(Type::Pointer right) const noexcept -> bool override;
+  void Print(std::ostream &stream) const noexcept override;
 };
 } // namespace pink

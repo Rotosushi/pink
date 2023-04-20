@@ -38,13 +38,14 @@ public:
     return Type::Kind::Boolean == type->GetKind();
   }
 
-  void Print(std::ostream &stream) const noexcept override {
-    stream << "Boolean";
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
+
+  auto Equals(Type::Pointer right) const noexcept -> bool override {
+    return llvm::dyn_cast<const BooleanType>(right) != nullptr;
   }
 
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
+  void Print(std::ostream &stream) const noexcept override {
+    stream << "Boolean";
   }
 };
 } // namespace pink

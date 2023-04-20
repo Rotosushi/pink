@@ -42,13 +42,20 @@ public:
     return identifier;
   }
 
-  void Print(std::ostream &stream) const noexcept override {
-    stream << identifier;
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
+
+  auto Equals(Type::Pointer right) const noexcept -> bool override {
+    const auto *other = llvm::dyn_cast<const TypeVariable>(right);
+
+    if (other == nullptr) {
+      return false;
+    }
+
+    return identifier == other->identifier;
   }
 
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
+  void Print(std::ostream &stream) const noexcept override {
+    stream << identifier;
   }
 };
 } // namespace pink

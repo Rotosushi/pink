@@ -1,4 +1,4 @@
-// Copyright (C) 2023 cadence
+// Copyright (C) 2023 Cade Weinberg
 //
 // This file is part of pink.
 //
@@ -14,14 +14,14 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
+#include "type/BoolType.h"
 
-#pragma once
-#include "type/Type.h"
-
-#include "llvm/IR/Type.h"
+#include "aux/Environment.h"
 
 namespace pink {
-class CompilationUnit;
-[[nodiscard]] auto ToLLVM(Type::Pointer type, CompilationUnit &env) noexcept
-    -> llvm::Type *;
+auto BooleanType::ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * {
+  auto *llvm_boolean_type = unit.LLVMBooleanType();
+  SetCachedLLVMType(llvm_boolean_type);
+  return llvm_boolean_type;
+}
 } // namespace pink

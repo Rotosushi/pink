@@ -74,10 +74,6 @@ public:
   auto operator=(const PointerType &other) noexcept -> PointerType & = default;
   auto operator=(PointerType &&other) noexcept -> PointerType      & = default;
 
-  static auto classof(const Type::Pointer type) noexcept -> bool {
-    return Type::Kind::Pointer == type->GetKind();
-  }
-
   [[nodiscard]] auto GetPointeeType() noexcept -> Type::Pointer {
     return pointee_type;
   }
@@ -85,14 +81,24 @@ public:
     return pointee_type;
   }
 
+  static auto classof(const Type::Pointer type) noexcept -> bool {
+    return Type::Kind::Pointer == type->GetKind();
+  }
+
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
+
+  auto Equals(Type::Pointer right) const noexcept -> bool override {
+    const auto *other = llvm::dyn_cast<const PointerType>(right);
+    if (other == nullptr) {
+      return false;
+    }
+
+    return pointee_type->Equals(other->pointee_type);
+  }
+
   void Print(std::ostream &stream) const noexcept override {
     stream << "*";
     pointee_type->Print(stream);
-  }
-
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
   }
 };
 } // namespace pink

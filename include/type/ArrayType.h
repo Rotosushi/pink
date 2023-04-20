@@ -59,17 +59,8 @@ public:
     return Type::Kind::Array == type->GetKind();
   }
 
-  void Print(std::ostream &stream) const noexcept override {
-    stream << "[";
-    element_type->Print(stream);
-    stream << "; ";
-    stream << std::to_string(size);
-    stream << "]";
-  }
-
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
-  }
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
+  auto Equals(Type::Pointer right) const noexcept -> bool override;
+  void Print(std::ostream &stream) const noexcept override;
 };
 } // namespace pink

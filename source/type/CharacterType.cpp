@@ -14,17 +14,15 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
-#pragma once
-#include <optional>
+#include "type/CharacterType.h"
 
-#include "type/Type.h"
-
-#include "aux/Error.h"
+#include "aux/Environment.h"
 
 namespace pink {
-using PolymorphicEqualityResult = std::optional<Error>;
-
-[[nodiscard]] auto PolymorphicEquality(Type::Pointer left,
-                                       Type::Pointer right) noexcept
-    -> PolymorphicEqualityResult;
+auto CharacterType::ToLLVM(CompilationUnit &unit) const noexcept
+    -> llvm::Type * {
+  auto *llvm_character_type = unit.LLVMCharacterType();
+  SetCachedLLVMType(llvm_character_type);
+  return llvm_character_type;
+}
 } // namespace pink

@@ -25,8 +25,6 @@
 #include "ast/action/Codegen.h"
 #include "ast/action/Typecheck.h"
 
-#include "type/action/ToLLVM.h"
-
 #include "ops/BinopPrimitives.h"
 #include "ops/UnopPrimitives.h"
 
@@ -1073,7 +1071,7 @@ void CompilationUnit::ConstructFunctionAttributes(
   const auto  number_of_parameters = llvm_function_type->getNumParams();
   for (; index < number_of_parameters; ++index) {
     llvm::AttrBuilder parameter_attribute(*context);
-    auto             *parameter_type = ToLLVM(arguments[index], *this);
+    auto             *parameter_type = arguments[index]->ToLLVM(*this);
 
     if (!parameter_type->isSingleValueType() && !parameter_type->isVoidTy()) {
       parameter_attribute.addByValAttr(parameter_type);

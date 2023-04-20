@@ -25,7 +25,6 @@
 #include "visitor/VisitorResult.h"
 
 #include "type/Type.h"
-#include "type/action/ToLLVM.h"
 
 #include "support/FatalError.h"
 #include "support/LLVMErrorToString.h"
@@ -124,7 +123,7 @@ void CodegenVisitor::Visit(const Array *array) const noexcept {
   const auto *cached_type = array->GetCachedTypeOrAssert();
 
   auto *array_layout_type =
-      llvm::cast<llvm::StructType>(ToLLVM(cached_type, env));
+      llvm::cast<llvm::StructType>(cached_type->ToLLVM(env));
 
   auto *array_alloca = env.CreateAlloca(array_layout_type);
 
@@ -175,7 +174,7 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
   // #RULE We must not allocate space for non-singleValueType()s
   // as the Codegen visitor for non-singleValueType() literals
   // allocates stack space for them.
-  auto *llvm_type = ToLLVM(affix_type, env);
+  auto *llvm_type = affix_type->ToLLVM(env);
   if (llvm_type->isSingleValueType()) {
     affix_value =
         env.AllocateVariable(bind->GetSymbol(), llvm_type, affix_value);
@@ -191,11 +190,11 @@ void CodegenVisitor::Visit(const Bind *bind) const noexcept {
 */
 void CodegenVisitor::Visit(const Binop *binop) const noexcept {
   const auto *left_type      = binop->GetLeft()->GetCachedTypeOrAssert();
-  auto       *llvm_left_type = ToLLVM(left_type, env);
+  auto       *llvm_left_type = left_type->ToLLVM(env);
   assert(llvm_left_type != nullptr);
 
   const auto *right_type      = binop->GetRight()->GetCachedTypeOrAssert();
-  auto       *llvm_right_type = ToLLVM(right_type, env);
+  auto       *llvm_right_type = right_type->ToLLVM(env);
   assert(llvm_right_type != nullptr);
 
   auto *left_value = Compute(binop->GetLeft(), this);
@@ -312,16 +311,16 @@ void CodegenVisitor::Visit(const Function *function) const noexcept {
   const auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
   auto        attributes         = pink_function_type->GetAttributes();
 
-  auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), env);
+  auto *llvm_return_type   = pink_function_type->GetReturnType()->ToLLVM(env);
   auto *llvm_function_type = [&]() {
     if (is_main) {
       const auto *main_function_type = env.GetFunctionType(
           env.GetVoidType(),
           FunctionType::Arguments{pink_function_type->GetArguments()});
       pink_function_type = main_function_type;
-      return llvm::cast<llvm::FunctionType>(ToLLVM(main_function_type, env));
+      return llvm::cast<llvm::FunctionType>(main_function_type->ToLLVM(env));
     }
-    return llvm::cast<llvm::FunctionType>(ToLLVM(pink_function_type, env));
+    return llvm::cast<llvm::FunctionType>(pink_function_type->ToLLVM(env));
   }();
 
   auto *llvm_function = env.CreateFunction(llvm_function_type,
@@ -406,7 +405,7 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
   if (const auto *array_type = llvm::dyn_cast<ArrayType const>(left_type);
       array_type != nullptr) {
     auto *llvm_array_type =
-        llvm::cast<llvm::StructType>(ToLLVM(array_type, env));
+        llvm::cast<llvm::StructType>(array_type->ToLLVM(env));
     result = env.ArraySubscript(llvm_array_type, left_value, right_value);
     return;
   }
@@ -414,8 +413,8 @@ void CodegenVisitor::Visit(const Subscript *subscript) const noexcept {
   if (const auto *slice_type = llvm::dyn_cast<SliceType const>(left_type);
       slice_type != nullptr) {
     auto *llvm_slice_type =
-        llvm::cast<llvm::StructType>(ToLLVM(slice_type, env));
-    auto *llvm_element_type = ToLLVM(slice_type->GetPointeeType(), env);
+        llvm::cast<llvm::StructType>(slice_type->ToLLVM(env));
+    auto *llvm_element_type = slice_type->GetPointeeType()->ToLLVM(env);
     result                  = env.SliceSubscript(llvm_slice_type,
                                 llvm_element_type,
                                 left_value,
@@ -433,7 +432,7 @@ void CodegenVisitor::Visit(const Tuple *tuple) const noexcept {
   const auto *tuple_type = tuple_result.value();
 
   auto *tuple_layout_type =
-      llvm::cast<llvm::StructType>(ToLLVM(tuple_type, env));
+      llvm::cast<llvm::StructType>(tuple_type->ToLLVM(env));
   auto *tuple_alloca = env.CreateAlloca(tuple_layout_type);
 
   unsigned index = 0;
@@ -483,7 +482,7 @@ void CodegenVisitor::Visit(const ValueOf *value_of) const noexcept {
     expression is T iff the type of the right hand side has type
     Pointer<T>
   */
-  auto *pointee_type = ToLLVM(value_of->GetCachedTypeOrAssert(), env);
+  auto *pointee_type = value_of->GetCachedTypeOrAssert()->ToLLVM(env);
 
   result = env.Load(pointee_type, right_value);
 }
@@ -495,7 +494,7 @@ void CodegenVisitor::Visit(const Variable *variable) const noexcept {
   auto bound = env.LookupVariable(variable->GetSymbol());
   assert(bound.has_value());
   assert(bound->Value() != nullptr);
-  result = env.Load(ToLLVM(bound->Type(), env), bound->Value());
+  result = env.Load(bound->Type()->ToLLVM(env), bound->Value());
 }
 
 /*

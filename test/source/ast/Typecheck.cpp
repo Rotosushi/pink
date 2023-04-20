@@ -48,7 +48,7 @@
   CHECK(term_type == (target_type));                                           \
   if (term_type != (target_type)) {                                            \
     std::cerr << "actual type [" << term_type << "]\n target type ["           \
-              << target_type << "]\n";                                         \
+              << (target_type) << "]\n";                                       \
   }
 
 // #REASON Normally I agree with this metric. and avoid macros

@@ -147,11 +147,18 @@ add_library(common
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
-  source/type/action/PolymorphicEquality.cpp
-  source/type/action/StructuralEquality.cpp
-  source/type/action/Substitution.cpp 
-  source/type/action/ToLLVM.cpp
   source/type/interner/TypeInterner.cpp
+  source/type/ArrayType.cpp 
+  source/type/BooleanType.cpp
+  source/type/CharacterType.cpp
+  source/type/FunctionType.cpp 
+  source/type/IntegerType.cpp 
+  source/type/NilType.cpp 
+  source/type/PointerType.cpp 
+  source/type/SliceType.cpp 
+  source/type/TupleType.cpp 
+  source/type/TypeVariable.cpp 
+  source/type/VoidType.cpp 
 
 	# the 'aux' directory is for the classes which are necessary or convenient 
 	# for the functioning of the compiler, which are additionally small enough 

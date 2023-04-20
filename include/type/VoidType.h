@@ -44,11 +44,12 @@ public:
     return Type::Kind::Void == type->GetKind();
   }
 
-  void Print(std::ostream &stream) const noexcept override { stream << "Void"; }
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
 
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
+  auto Equals(Type::Pointer right) const noexcept -> bool override {
+    return llvm::dyn_cast<const VoidType>(right) != nullptr;
   }
+
+  void Print(std::ostream &stream) const noexcept override { stream << "Void"; }
 };
 } // namespace pink

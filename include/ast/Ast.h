@@ -26,7 +26,6 @@
  */
 
 #pragma once
-#include <bitset>   // std::bitset
 #include <memory>   // std::unique_ptr
 #include <optional> // std::optional
 
@@ -43,13 +42,13 @@
 namespace pink {
 
 /*
-  okay, so it seemed weird at the time, however, if we 
-  add a split in the Ast heirarchy between Expressions 
-  and Values we can extend the compiler to perform evaluation 
-  of Asts at compile time. 
+  okay, so it seemed weird at the time, however, if we
+  add a split in the Ast heirarchy between Expressions
+  and Values we can extend the compiler to perform evaluation
+  of Asts at compile time.
 
   I think it would be a cool to design & build around
-  sticking to the phrase 
+  sticking to the phrase
   "if it can happen at comptime it does happen at comptime."
 */
 
@@ -75,7 +74,6 @@ public:
    *
    */
   enum class Kind {
-    // Expressions
     AddressOf,
     Application,
     Assignment,
@@ -90,12 +88,14 @@ public:
     Variable,
     ValueOf,
     While,
-    // Values
+    LastExpression,
+
     Nil,
     Boolean,
     Integer,
     Array,
     Tuple,
+    LastValue,
   };
 
 private:

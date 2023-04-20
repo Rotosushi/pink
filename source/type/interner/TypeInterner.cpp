@@ -1,25 +1,23 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>
 
 #include "type/interner/TypeInterner.h"
-
-#include "type/action/StructuralEquality.h"
 
 namespace pink {
 
@@ -38,7 +36,7 @@ auto TypeInterner::GetFunctionType(Type::Pointer             return_type,
       std::make_unique<FunctionType>(this, return_type, std::move(arg_types));
 
   for (auto &function_type : function_types) {
-    if (StructuralEquality(possible.get(), function_type.get())) {
+    if (possible->Equals(function_type.get())) {
       return function_type.get();
     }
   }
@@ -53,7 +51,7 @@ auto TypeInterner::GetPointerType(Type::Pointer pointee_type)
   auto possible = std::make_unique<PointerType>(this, pointee_type);
 
   for (auto &pointer_type : pointer_types) {
-    if (StructuralEquality(pointer_type.get(), possible.get())) {
+    if (possible->Equals(pointer_type.get())) {
       return pointer_type.get();
     }
   }
@@ -69,7 +67,7 @@ auto TypeInterner::GetSliceType(Type::Pointer pointee_type)
   auto possible = std::make_unique<SliceType>(this, pointee_type);
 
   for (auto &slice_type : slice_types) {
-    if (StructuralEquality(slice_type.get(), possible.get())) {
+    if (possible->Equals(slice_type.get())) {
       return slice_type.get();
     }
   }
@@ -84,7 +82,7 @@ auto TypeInterner::GetArrayType(std::size_t size, Type::Pointer member_type)
   auto possible = std::make_unique<ArrayType>(this, size, member_type);
 
   for (auto &array_type : array_types) {
-    if (StructuralEquality(array_type.get(), possible.get())) {
+    if (possible->Equals(array_type.get())) {
       return array_type.get();
     }
   }
@@ -100,7 +98,7 @@ auto TypeInterner::GetTupleType(TupleType::Elements &&member_types)
   auto possible = std::make_unique<TupleType>(this, std::move(member_types));
 
   for (auto &tuple_type : tuple_types) {
-    if (StructuralEquality(tuple_type.get(), possible.get())) {
+    if (possible->Equals(tuple_type.get())) {
       return tuple_type.get();
     }
   }
@@ -118,7 +116,7 @@ auto TypeInterner::GetTypeVariable(InternedString identifier)
     -> TypeVariable::Pointer {
   auto possible = std::make_unique<TypeVariable>(this, identifier);
   for (auto &identifier_type : identifier_types) {
-    if (StructuralEquality(identifier_type.get(), possible.get())) {
+    if (possible->Equals(identifier_type.get())) {
       return identifier_type.get();
     }
   }

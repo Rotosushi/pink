@@ -26,13 +26,7 @@
 #include <ostream>  // std::ostream
 #include <sstream>  // std::stringstream
 
-// #include "llvm/Support/Casting.h" // llvm::isa, llvm::cast, etc
-
 #include "llvm/IR/Type.h"
-
-#include "type/visitor/TypeVisitor.h"
-
-#include "support/ToUnderlying.h" // pink::ToUnderlying
 
 namespace pink {
 class CompilationUnit;
@@ -120,15 +114,15 @@ public:
     return llvm_type;
   }
 
+  virtual auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * = 0;
+  virtual auto Equals(Type::Pointer right) const noexcept -> bool           = 0;
+
   virtual void Print(std::ostream &result) const noexcept = 0;
   auto         ToString() const noexcept -> std::string {
     std::stringstream stream;
     Print(stream);
     return std::move(stream).str();
   }
-
-  virtual void Accept(TypeVisitor *vistor) noexcept             = 0;
-  virtual void Accept(ConstTypeVisitor *visitor) const noexcept = 0;
 };
 
 inline auto operator<<(std::ostream &out, const Type &type) -> std::ostream & {

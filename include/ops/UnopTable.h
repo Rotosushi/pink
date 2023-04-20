@@ -23,9 +23,7 @@
 #pragma once
 #include "llvm/IR/Value.h" // llvm::Value
 
-#include "type/Type.h"                       // pink::Type
-#include "type/action/PolymorphicEquality.h" // pink::PolymorphicEquality
-#include "type/action/Substitution.h"        // pink::Substitution
+#include "type/Type.h" // pink::Type
 
 #include "aux/Error.h"   // pink::Error
 #include "aux/Map.h"     // pink::Map<K, V>

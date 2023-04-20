@@ -36,13 +36,14 @@ public:
     return Type::Kind::Character == type->GetKind();
   }
 
-  void Print(std::ostream &stream) const noexcept override {
-    stream << "Character";
+  auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
+
+  auto Equals(Type::Pointer right) const noexcept -> bool override {
+    return llvm::dyn_cast<const CharacterType>(right) != nullptr;
   }
 
-  void Accept(TypeVisitor *visitor) noexcept override { visitor->Visit(this); }
-  void Accept(ConstTypeVisitor *visitor) const noexcept override {
-    visitor->Visit(this);
+  void Print(std::ostream &stream) const noexcept override {
+    stream << "Character";
   }
 };
 } // namespace pink
