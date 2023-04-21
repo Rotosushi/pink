@@ -198,7 +198,11 @@ auto CompilationUnit::Compile(std::ostream &out, std::ostream &err) -> int {
     return EXIT_FAILURE;
   }
 
-  CodegenTerms(parse_result.GetFirst());
+  auto codegen_error = CodegenTerms(parse_result.GetFirst());
+  if (codegen_error) {
+    PrintErrorWithSourceText(err, codegen_error.value());
+    return EXIT_FAILURE;
+  }
   return EXIT_SUCCESS;
 }
 
@@ -250,11 +254,14 @@ auto CompilationUnit::TypecheckTerms(Terms &terms) -> std::optional<Errors> {
   return errors;
 }
 
-void CompilationUnit::CodegenTerms(Terms &terms) {
+auto CompilationUnit::CodegenTerms(Terms &terms) -> std::optional<Error> {
   for (const auto &term : terms) {
-    auto *value = Codegen(term, *this);
-    assert(value != nullptr);
+    auto outcome = term->Codegen(*this);
+    if (!outcome) {
+      return std::move(outcome.GetSecond());
+    }
   }
+  return {};
 }
 
 auto CompilationUnit::NativeCPUFeatures() noexcept -> std::string {

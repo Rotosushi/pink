@@ -85,7 +85,54 @@ auto Subscript::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Subscript::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  auto left_outcome = left->Codegen(unit);
+  if (!left_outcome) {
+    return left_outcome;
+  }
+  auto *left_value = left_outcome.GetFirst();
+  assert(left_value != nullptr);
+  auto left_type = left->GetCachedTypeOrAssert();
+
+  auto right_outcome = [&]() {
+    // #NOTE: a subscript term on the LHS of assignment
+    // must not suppress any loads of variables occuring
+    // within the evaluation of it's index expression.
+    // so we pretend like we are not on the LHS of assignment.
+    if (unit.OnTheLHSOfAssignment()) {
+      unit.OnTheLHSOfAssignment(false);
+      auto right_outcome = right->Codegen(unit);
+      unit.OnTheLHSOfAssignment(true);
+      return right_outcome;
+    }
+    return right->Codegen(unit);
+  }();
+  if (!right_outcome) {
+    return right_outcome;
+  }
+  auto right_value = right_outcome.GetFirst();
+
+  if (const auto *array_type = llvm::dyn_cast<ArrayType const>(left_type);
+      array_type != nullptr) {
+    auto *llvm_array_type =
+        llvm::cast<llvm::StructType>(array_type->ToLLVM(unit));
+    return unit.ArraySubscript(llvm_array_type, left_value, right_value);
+  }
+
+  if (const auto *slice_type = llvm::dyn_cast<SliceType const>(left_type);
+      slice_type != nullptr) {
+    auto *llvm_slice_type =
+        llvm::cast<llvm::StructType>(slice_type->ToLLVM(unit));
+    auto *llvm_element_type = slice_type->GetPointeeType()->ToLLVM(unit);
+    return unit.SliceSubscript(llvm_slice_type,
+                               llvm_element_type,
+                               left_value,
+                               right_value);
+  }
+
+  // we should never reach here, just in case
+  assert(false);
+}
 
 void Subscript::Print(std::ostream &stream) const noexcept {
   stream << left << "[" << right << "]";

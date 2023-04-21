@@ -100,6 +100,9 @@ auto Bind::Codegen(CompilationUnit &unit) const noexcept
   if (llvm_type->isSingleValueType()) {
     affix_value = unit.AllocateVariable(symbol, llvm_type, affix_value);
   }
+
+  unit.BindVariable(symbol, affix_type, affix_value);
+  return affix_value;
 }
 
 void Bind::Print(std::ostream &stream) const noexcept {

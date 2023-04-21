@@ -190,6 +190,8 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
     return "Semantic Error: Cannot cast value to the target type";
   case Error::Code::CannotCastFromType:
     return "Semantic Error: Cannot cast from value type";
+  case Error::Code::MalformedFunction:
+    return "Semantic Error: Malformed Function";
   default:
     return "Unknown Error Code";
   }

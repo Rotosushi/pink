@@ -18,6 +18,11 @@
 
 #include "aux/Environment.h"
 
+#include "support/LLVMTypeToString.h"
+#include "support/LLVMValueToString.h"
+
+#include "llvm/IR/Verifier.h"
+
 namespace pink {
 /*
 The type of a function is it's FunctionType if and only if
@@ -77,7 +82,76 @@ auto Function::Typecheck(CompilationUnit &unit) const noexcept
 
 */
 auto Function::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  auto is_main = [&]() {
+    if (name[0] == 'm') {
+      return strcmp(name, "main") == 0;
+    }
+    return false;
+  }();
+
+  const auto *cache_type         = GetCachedTypeOrAssert();
+  const auto *pink_function_type = llvm::cast<FunctionType>(cache_type);
+  auto        attributes         = pink_function_type->GetAttributes();
+
+  auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), unit);
+  auto *llvm_function_type = [&]() {
+    if (is_main) {
+      const auto *main_function_type = unit.GetFunctionType(
+          unit.GetVoidType(),
+          FunctionType::Arguments{pink_function_type->GetArguments()});
+      pink_function_type = main_function_type;
+      return llvm::cast<llvm::FunctionType>(main_function_type->ToLLVM(unit));
+    }
+    return llvm::cast<llvm::FunctionType>(pink_function_type->ToLLVM(unit));
+  }();
+
+  auto *llvm_function = unit.CreateFunction(llvm_function_type,
+                                            llvm::Function::ExternalLinkage,
+                                            name);
+
+  llvm_function->setAttributes(attributes);
+
+  auto *entry_BB = unit.CreateAndInsertBasicBlock(name + std::string("_entry"));
+  unit.SetInsertionPoint(entry_BB);
+  unit.PushScope();
+
+  unit.ConstructFunctionArguments(llvm_function, this);
+
+  auto body_outcome = body->Codegen(unit);
+  if (!body_outcome) {
+    return body_outcome;
+  }
+  auto *body_value = body_outcome.GetFirst();
+  assert(body_value != nullptr);
+
+  if (is_main) {
+    unit.SysExit(body_value);
+    unit.CreateRetVoid();
+  } else {
+    if (llvm_return_type->isSingleValueType()) {
+      unit.CreateRet(body_value);
+    } else {
+      unit.Store(llvm_return_type, body_value, llvm_function->getArg(0));
+    }
+  }
+
+  std::string              buffer;
+  llvm::raw_string_ostream out(buffer);
+  if (llvm::verifyFunction(*llvm_function, &out)) {
+    out << " llvm function [\n"
+        << LLVMValueToString(llvm_function) << "]\n"
+        << "llvm type [" << LLVMTypeToString(llvm_function_type) << "]\n"
+        << "pink type [" << pink_function_type->ToString() << "]\n"
+        << "number of function attributes ["
+        << llvm_function->getAttributes().getNumAttrSets() << "]\n";
+    return Error(Error::Code::MalformedFunction, GetLocation(), buffer);
+  }
+
+  unit.LeaveCurrentFunction();
+  unit.BindVariable(name, pink_function_type, llvm_function);
+  return llvm_function;
+}
 
 void Function::Print(std::ostream &stream) const noexcept {
   stream << "fn " << name << " (";

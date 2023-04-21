@@ -76,8 +76,65 @@ auto IfThenElse::Typecheck(CompilationUnit &unit) const noexcept
   return first_type;
 }
 
+/*
+  We lower a conditional into a branch between two basic
+  blocks, and a phi node which merges the two incoming
+  values from the branches.
+
+  #TODO: add if blocks without else branches. (these have Type Nil)
+*/
 auto IfThenElse::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  // emit the test expression into whatever basic_block we
+  // are currently inserting into.
+  auto test_outcome = test->Codegen(unit);
+  if (!test_outcome) {
+    return test_outcome;
+  }
+  auto test_value = test_outcome.GetFirst();
+
+  // #NOTE: 2/25/2023: We must not add the 'else' and 'merge'
+  // basic blocks to the function upon creation, as the Codegen
+  // for the first or second alternative may change which
+  // basic block is last in the then or else block, and we want to append
+  // exclusively to the end of the functions basic block list.
+  auto *then_BB  = unit.CreateAndInsertBasicBlock("then");
+  auto *else_BB  = unit.CreateBasicBlock("else");
+  auto *merge_BB = unit.CreateBasicBlock("merge");
+
+  unit.CreateCondBr(test_value, then_BB, else_BB);
+  unit.SetInsertionPoint(then_BB);
+
+  auto first_outcome = first->Codegen(unit);
+  if (!first_outcome) {
+    return first_outcome;
+  }
+  auto *first_value = first_outcome.GetFirst();
+  assert(first_value != nullptr);
+
+  unit.CreateBr(merge_BB);
+  then_BB = unit.GetInsertionPoint().block;
+
+  unit.InsertBasicBlock(else_BB);
+  unit.SetInsertionPoint(else_BB);
+
+  auto second_outcome = second->Codegen(unit);
+  if (!second_outcome) {
+    return second_outcome;
+  }
+  auto *second_value = second_outcome.GetFirst();
+  assert(second_value != nullptr);
+
+  unit.CreateBr(merge_BB);
+  else_BB = unit.GetInsertionPoint().block;
+
+  unit.InsertBasicBlock(merge_BB);
+  unit.SetInsertionPoint(merge_BB);
+  auto *phi = unit.CreatePHI(first_value->getType(), 2, "phi");
+  phi->addIncoming(first_value, then_BB);
+  phi->addIncoming(second_value, else_BB);
+  return phi;
+}
 
 void IfThenElse::Print(std::ostream &stream) const noexcept {
   stream << "if (" << test << ")" << first << " else " << second;

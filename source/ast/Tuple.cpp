@@ -51,7 +51,29 @@ auto Tuple::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Tuple::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  const auto *tuple_type = GetCachedTypeOrAssert();
+
+  auto *tuple_layout_type =
+      llvm::cast<llvm::StructType>(ToLLVM(tuple_type, unit));
+
+  auto *tuple_alloca = unit.CreateAlloca(tuple_layout_type);
+
+  unsigned index = 0;
+  for (const auto &element : elements) {
+    auto  element_outcome = element->Codegen(unit);
+    auto *element_value   = element_outcome.GetFirst();
+    assert(element_value != nullptr);
+    auto *element_type    = tuple_layout_type->getStructElementType(index);
+    auto *element_pointer = unit.CreateConstInBoundsGEP2_32(tuple_layout_type,
+                                                            tuple_alloca,
+                                                            0,
+                                                            index);
+    unit.Store(element_type, element_value, element_pointer);
+  }
+
+  return tuple_alloca;
+}
 
 void Tuple::Print(std::ostream &stream) const noexcept {
   stream << "(";

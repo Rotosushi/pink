@@ -61,8 +61,25 @@ auto Block::Typecheck(CompilationUnit &unit) const noexcept
   return return_type;
 }
 
+/*
+  simply emits the code for each expression in sequence.
+
+  #TODO: emit llvm.lifetime.end(ptr) for each alloca
+  created by the last codegen'ed expression that is
+  temporary.
+*/
 auto Block::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  llvm::Value *result = nullptr;
+  for (const auto &expression : expressions) {
+    auto expression_outcome = expression->Codegen(unit);
+    if (!expression_outcome) {
+      return expression_outcome;
+    }
+    result = expression_outcome.GetFirst();
+  }
+  return result;
+}
 
 void Block::Print(std::ostream &stream) const noexcept {
   stream << "{";

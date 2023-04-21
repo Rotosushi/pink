@@ -63,7 +63,20 @@ auto ValueOf::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto ValueOf::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  unit.WithinDereferencePtr(true);
+  auto right_outcome = right->Codegen(unit);
+  if (!right_outcome) {
+    unit.WithinDereferencePtr(false);
+    return right_outcome;
+  }
+  unit.WithinDereferencePtr(false);
+  auto right_value = right_outcome.GetFirst();
+
+  auto pointee_type = ToLLVM(GetCachedTypeOrAssert(), unit);
+
+  return unit.Load(pointee_type, right_value);
+}
 
 void ValueOf::Print(std::ostream &stream) const noexcept {
   stream << "*" << right;

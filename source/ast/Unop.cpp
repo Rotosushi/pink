@@ -71,7 +71,25 @@ auto Unop::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Unop::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  auto right_type = right->GetCachedTypeOrAssert();
+
+  auto right_outcome = right->Codegen(unit);
+  if (!right_outcome) {
+    return right_outcome;
+  }
+  auto *right_value = right_outcome.GetFirst();
+
+  auto optional_literal = unit.LookupUnop(op);
+  assert(optional_literal.has_value());
+  auto literal = optional_literal.value();
+
+  auto optional_implementation = literal.Lookup(right_type);
+  assert(optional_implementation.has_value());
+  auto &implementation = optional_implementation.value();
+
+  return implementation(right_value, unit);
+}
 
 void Unop::Print(std::ostream &stream) const noexcept {
   stream << ToString(op) << right;

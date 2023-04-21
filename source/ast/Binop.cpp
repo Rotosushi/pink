@@ -76,8 +76,38 @@ auto Binop::Typecheck(CompilationUnit &unit) const noexcept
   return result_type;
 }
 
+/*
+  Codegen the left hand side, the right hand side,
+  then emit the implementation of the binop using 
+  the values of the left and right.
+*/
 auto Binop::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  auto left_type      = left->GetCachedTypeOrAssert();
+  auto right_type      = right->GetCachedTypeOrAssert();
+
+  auto left_outcome = left->Codegen(unit);
+  if (!left_outcome) {
+    return left_outcome;
+  }
+  auto left_value = left_outcome.GetFirst();
+
+  auto right_outcome = right->Codegen(unit);
+  if (!right_outcome) {
+    return right_outcome;
+  }
+  auto right_value = right_outcome.GetFirst();
+
+  auto optional_binop = unit.LookupBinop(op);
+  assert(optional_binop.has_value());
+  auto &binop = optional_binop.value();
+
+  auto optional_impl = binop.Lookup(left_type, right_type);
+  assert(optional_impl.has_value());
+  auto impl = optional_impl.value();
+
+  return impl(left_value, right_value, unit);
+}
 
 void Binop::Print(std::ostream &stream) const noexcept {
   if (llvm::isa<Binop>(left)) {

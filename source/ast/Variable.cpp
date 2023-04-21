@@ -46,7 +46,12 @@ auto Variable::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Variable::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  auto bound = unit.LookupVariable(symbol);
+  assert(bound.has_value());
+  assert(bound->Value() != nullptr);
+  return unit.Load(ToLLVM(bound->Type(), unit), bound->Value());
+}
 
 void Variable::Print(std::ostream &stream) const noexcept { stream << symbol; }
 } // namespace pink

@@ -57,7 +57,37 @@ auto While::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto While::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  auto *test_BB = unit.CreateAndInsertBasicBlock("test");
+  auto *body_BB = unit.CreateBasicBlock("body");
+  auto *end_BB  = unit.CreateBasicBlock("end");
+
+  unit.CreateBr(test_BB);
+
+  unit.SetInsertionPoint(test_BB);
+  auto test_outcome = test->Codegen(unit);
+  if (!test_outcome) {
+    return test_outcome;
+  }
+  auto *test_value = test_outcome.GetFirst();
+  assert(test_value != nullptr);
+  unit.CreateCondBr(test_value, body_BB, end_BB);
+
+  unit.SetInsertionPoint(body_BB);
+  unit.InsertBasicBlock(body_BB);
+  auto body_outcome = body->Codegen(unit);
+  if (!body_outcome) {
+    return body_outcome;
+  }
+  auto *body_value = body_outcome.GetFirst();
+  assert(body_value != nullptr);
+  unit.CreateBr(test_BB);
+
+  unit.SetInsertionPoint(end_BB);
+  unit.InsertBasicBlock(end_BB);
+
+  return unit.ConstantBoolean(false);
+}
 
 void While::Print(std::ostream &stream) const noexcept {
   stream << "while (" << test << ") " << body;

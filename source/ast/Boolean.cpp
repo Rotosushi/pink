@@ -31,8 +31,13 @@ auto Boolean::Typecheck(CompilationUnit &unit) const noexcept
   return return_type;
 }
 
+/*
+  construct a llvm::Constant boolean
+*/
 auto Boolean::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  return unit.ConstantBoolean(value);
+}
 
 void Boolean::Print(std::ostream &stream) const noexcept {
   if (value) {

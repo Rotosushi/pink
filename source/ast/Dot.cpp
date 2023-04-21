@@ -127,7 +127,27 @@ auto Dot::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Dot::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  auto left_outcome = left->Codegen(unit);
+  if (!left_outcome) {
+    return left_outcome;
+  }
+  auto *left_value = left_outcome.GetFirst();
+  assert(left_value != nullptr);
+  auto left_type = ToLLVM(left->GetCachedTypeOrAssert(), unit);
+
+  auto *index = llvm::dyn_cast<Integer>(right.get());
+  assert(index != nullptr);
+  auto *struct_type = llvm::cast<llvm::StructType>(left_type);
+  auto *gep =
+      unit.CreateConstInBoundsGEP2_32(struct_type,
+                                      left_value,
+                                      0,
+                                      static_cast<unsigned>(index->GetValue()));
+  auto *element_type =
+      struct_type->getTypeAtIndex(static_cast<unsigned>(index->GetValue()));
+  return unit.Load(element_type, gep);
+}
 
 void Dot::Print(std::ostream &stream) const noexcept {
   stream << left << "." << right;

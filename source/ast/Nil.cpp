@@ -27,7 +27,9 @@ auto Nil::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Nil::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  return unit.ConstantBoolean(false);
+}
 
 void Nil::Print(std::ostream &stream) const noexcept { stream << "nil"; }
 } // namespace pink

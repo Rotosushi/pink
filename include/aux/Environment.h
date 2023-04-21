@@ -153,7 +153,7 @@ public:
   auto Compile(std::ostream &out, std::ostream &err) -> int;
   auto ParseInputFile(std::ostream &err) -> Outcome<Terms, Error>;
   auto TypecheckTerms(Terms &terms) -> std::optional<Errors>;
-  void CodegenTerms(Terms &terms);
+  auto CodegenTerms(Terms &terms) -> std::optional<Error>;
 
   static auto NativeCPUFeatures() noexcept -> std::string;
   static auto CreateNativeCompilationUnit(CLIOptions    cli_options,

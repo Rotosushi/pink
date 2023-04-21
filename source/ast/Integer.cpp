@@ -27,7 +27,9 @@ auto Integer::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Integer::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {}
+    -> Outcome<llvm::Value *, Error> {
+  return unit.ConstantInteger(value);
+}
 
 void Integer::Print(std::ostream &stream) const noexcept { stream << value; }
 } // namespace pink

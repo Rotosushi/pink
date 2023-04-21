@@ -104,6 +104,7 @@ public:
     CannotDereferenceNonPointer,
     CannotCastToType,
     CannotCastFromType,
+    MalformedFunction,
   };
 
   Code        code;
