@@ -41,8 +41,8 @@
   }                                                                            \
   REQUIRE(typecheck_result);                                                   \
   auto term_type = typecheck_result.GetFirst();                                \
-  CHECK(term_type == (target_type));                                           \
-  if (term_type != (target_type)) {                                            \
+  CHECK(Equals(term_type, (target_type)));                                     \
+  if (!Equals(term_type, (target_type))) {                                     \
     std::cerr << "actual type [" << term_type << "]\n target type ["           \
               << (target_type) << "]\n";                                       \
   }
@@ -62,570 +62,787 @@
 // that this function is too complex. when it really isn't.
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 TEST_CASE("ast/action/Typecheck::Bind", "[unit][ast][ast/action]") {
+  pink::Type::Annotations annotations;
+  annotations.IsInMemory(false);
   auto env = pink::CompilationUnit::CreateTestCompilationUnit();
 
-  SECTION(term_aaa) { TYPE_IS(term_aaa, env.GetIntType()); }
-  SECTION(term_aab) { TYPE_IS(term_aab, env.GetBoolType()); }
-  SECTION(term_aac) { TYPE_IS(term_aac, env.GetBoolType()); }
-  SECTION(term_aad) { TYPE_IS(term_aad, env.GetNilType()); }
+  SECTION(term_aaa) { TYPE_IS(term_aaa, env.GetIntType(annotations)); }
+  SECTION(term_aab) { TYPE_IS(term_aab, env.GetBoolType(annotations)); }
+  SECTION(term_aac) { TYPE_IS(term_aac, env.GetBoolType(annotations)); }
+  SECTION(term_aad) { TYPE_IS(term_aad, env.GetNilType(annotations)); }
   SECTION(term_aae) {
-    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
-    TYPE_IS(term_aae, env.GetIntType());
+    env.BindVariable(std::string_view{"a"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    TYPE_IS(term_aae, env.GetIntType(annotations));
   }
-  SECTION(term_aaf) { TYPE_IS(term_aaf, env.GetIntType()); }
-  SECTION(term_aag) { TYPE_IS(term_aag, env.GetBoolType()); }
+  SECTION(term_aaf) { TYPE_IS(term_aaf, env.GetIntType(annotations)); }
+  SECTION(term_aag) { TYPE_IS(term_aag, env.GetBoolType(annotations)); }
   SECTION(term_aah) {
-    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
-    TYPE_IS(term_aah, env.GetPointerType(env.GetIntType()));
+    annotations.IsInMemory(true);
+    env.BindVariable(std::string_view{"a"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    TYPE_IS(term_aah,
+            env.GetPointerType(annotations, env.GetIntType(annotations)));
   }
   SECTION(term_aai) {
-    env.BindVariable(std::string_view{"a"},
-                     env.GetPointerType(env.GetIntType()),
-                     nullptr);
-    TYPE_IS(term_aai, env.GetIntType());
+    env.BindVariable(
+        std::string_view{"a"},
+        env.GetPointerType(annotations, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_aai, env.GetIntType(annotations));
   }
 
-  SECTION(term_aaj) { TYPE_IS(term_aaj, env.GetIntType()); }
-  SECTION(term_aak) { TYPE_IS(term_aak, env.GetIntType()); }
-  SECTION(term_aal) { TYPE_IS(term_aal, env.GetIntType()); }
-  SECTION(term_aam) { TYPE_IS(term_aam, env.GetIntType()); }
-  SECTION(term_aan) { TYPE_IS(term_aan, env.GetIntType()); }
-  SECTION(term_aao) { TYPE_IS(term_aao, env.GetBoolType()); }
-  SECTION(term_aap) { TYPE_IS(term_aap, env.GetBoolType()); }
-  SECTION(term_aaq) { TYPE_IS(term_aaq, env.GetBoolType()); }
-  SECTION(term_aar) { TYPE_IS(term_aar, env.GetBoolType()); }
-  SECTION(term_aas) { TYPE_IS(term_aas, env.GetBoolType()); }
-  SECTION(term_aat) { TYPE_IS(term_aat, env.GetBoolType()); }
-  SECTION(term_aau) { TYPE_IS(term_aau, env.GetBoolType()); }
-  SECTION(term_aav) { TYPE_IS(term_aav, env.GetBoolType()); }
-  SECTION(term_aaw) { TYPE_IS(term_aaw, env.GetBoolType()); }
-  SECTION(term_aax) { TYPE_IS(term_aax, env.GetBoolType()); }
+  SECTION(term_aaj) { TYPE_IS(term_aaj, env.GetIntType(annotations)); }
+  SECTION(term_aak) { TYPE_IS(term_aak, env.GetIntType(annotations)); }
+  SECTION(term_aal) { TYPE_IS(term_aal, env.GetIntType(annotations)); }
+  SECTION(term_aam) { TYPE_IS(term_aam, env.GetIntType(annotations)); }
+  SECTION(term_aan) { TYPE_IS(term_aan, env.GetIntType(annotations)); }
+  SECTION(term_aao) { TYPE_IS(term_aao, env.GetBoolType(annotations)); }
+  SECTION(term_aap) { TYPE_IS(term_aap, env.GetBoolType(annotations)); }
+  SECTION(term_aaq) { TYPE_IS(term_aaq, env.GetBoolType(annotations)); }
+  SECTION(term_aar) { TYPE_IS(term_aar, env.GetBoolType(annotations)); }
+  SECTION(term_aas) { TYPE_IS(term_aas, env.GetBoolType(annotations)); }
+  SECTION(term_aat) { TYPE_IS(term_aat, env.GetBoolType(annotations)); }
+  SECTION(term_aau) { TYPE_IS(term_aau, env.GetBoolType(annotations)); }
+  SECTION(term_aav) { TYPE_IS(term_aav, env.GetBoolType(annotations)); }
+  SECTION(term_aaw) { TYPE_IS(term_aaw, env.GetBoolType(annotations)); }
+  SECTION(term_aax) { TYPE_IS(term_aax, env.GetBoolType(annotations)); }
 
-  SECTION(term_aay) { TYPE_IS(term_aay, env.GetIntType()); }
-  SECTION(term_aaz) { TYPE_IS(term_aaz, env.GetIntType()); }
-  SECTION(term_aba) { TYPE_IS(term_aba, env.GetBoolType()); }
-  SECTION(term_abb) { TYPE_IS(term_abb, env.GetBoolType()); }
-  SECTION(term_abc) { TYPE_IS(term_abc, env.GetBoolType()); }
-  SECTION(term_abd) { TYPE_IS(term_abd, env.GetBoolType()); }
+  SECTION(term_aay) { TYPE_IS(term_aay, env.GetIntType(annotations)); }
+  SECTION(term_aaz) { TYPE_IS(term_aaz, env.GetIntType(annotations)); }
+  SECTION(term_aba) { TYPE_IS(term_aba, env.GetBoolType(annotations)); }
+  SECTION(term_abb) { TYPE_IS(term_abb, env.GetBoolType(annotations)); }
+  SECTION(term_abc) { TYPE_IS(term_abc, env.GetBoolType(annotations)); }
+  SECTION(term_abd) { TYPE_IS(term_abd, env.GetBoolType(annotations)); }
 
   SECTION(term_abe) {
-    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
-    TYPE_IS(term_abe, env.GetIntType());
+    env.BindVariable(std::string_view{"a"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    TYPE_IS(term_abe, env.GetIntType(annotations));
   }
   SECTION(term_abf) {
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     env.GetTupleType(annotations,
+                                      {env.GetIntType(annotations),
+                                       env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_abf, env.GetIntType());
+    TYPE_IS(term_abf, env.GetIntType(annotations));
   }
   SECTION(term_abg) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetIntType()),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abg, env.GetIntType());
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(annotations, 5, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_abg, env.GetIntType(annotations));
   }
   SECTION(term_abh) {
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     env.GetTupleType(annotations,
+                                      {env.GetIntType(annotations),
+                                       env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_abh, env.GetIntType());
+    TYPE_IS(term_abh, env.GetIntType(annotations));
   }
   SECTION(term_abi) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetIntType()),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abi, env.GetIntType());
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(annotations, 5, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_abi, env.GetIntType(annotations));
   }
   SECTION(term_abj) {
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     env.GetTupleType(annotations,
+                                      {env.GetIntType(annotations),
+                                       env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_abj, env.GetIntType());
+    TYPE_IS(term_abj, env.GetIntType(annotations));
   }
   SECTION(term_abk) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetIntType()),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abk, env.GetIntType());
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(annotations, 5, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_abk, env.GetIntType(annotations));
   }
   SECTION(term_abl) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({point, point}),
+                     env.GetTupleType(annotations, {point, point}),
                      nullptr);
-    TYPE_IS(term_abl, env.GetIntType());
+    TYPE_IS(term_abl, env.GetIntType(annotations));
   }
   SECTION(term_abm) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    auto array = env.GetArrayType(5, env.GetIntType());
-    env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({array, array}),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abm, env.GetIntType());
+    auto array = env.GetArrayType(annotations, 5, env.GetIntType(annotations));
+    env.BindVariable(std::string_view{"tuple"},
+                     env.GetTupleType(annotations, {array, array}),
+                     nullptr);
+    TYPE_IS(term_abm, env.GetIntType(annotations));
   }
   SECTION(term_abn) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"y"}, env.GetIntType(), nullptr);
-    auto array = env.GetArrayType(5, env.GetIntType());
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, array),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abn, env.GetIntType());
+    env.BindVariable(std::string_view{"y"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    auto array = env.GetArrayType(annotations, 5, env.GetIntType(annotations));
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(annotations, 5, array),
+                     nullptr);
+    TYPE_IS(term_abn, env.GetIntType(annotations));
   }
   SECTION(term_abo) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    auto tuple = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, tuple),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abo, env.GetIntType());
+    auto tuple = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(annotations, 5, tuple),
+                     nullptr);
+    TYPE_IS(term_abo, env.GetIntType(annotations));
   }
   SECTION(term_abp) {
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     env.GetTupleType(annotations,
+                                      {env.GetIntType(annotations),
+                                       env.GetIntType(annotations)}),
                      nullptr);
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetIntType()),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abp, env.GetIntType());
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(annotations, 5, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_abp, env.GetIntType(annotations));
   }
   SECTION(term_abq) {
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     env.GetTupleType(annotations,
+                                      {env.GetIntType(annotations),
+                                       env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_abq, env.GetIntType());
+    TYPE_IS(term_abq, env.GetIntType(annotations));
   }
   SECTION(term_abr) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetBoolType()),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abr, env.GetBoolType());
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(annotations, 5, env.GetBoolType(annotations)),
+        nullptr);
+    TYPE_IS(term_abr, env.GetBoolType(annotations));
   }
 
   SECTION(term_abt) {
-    env.BindVariable(std::string_view{"f"},
-                     env.GetFunctionType(env.GetIntType(), {}),
-                     nullptr);
-    TYPE_IS(term_abt, env.GetFunctionType(env.GetIntType(), {}));
+    env.BindVariable(
+        std::string_view{"f"},
+        env.GetFunctionType(annotations, env.GetIntType(annotations), {}),
+        nullptr);
+    TYPE_IS(term_abt,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_abu) {
-    env.BindVariable(std::string_view{"f"},
-                     env.GetFunctionType(env.GetIntType(), {}),
-                     nullptr);
-    TYPE_IS(term_abu, env.GetIntType());
+    env.BindVariable(
+        std::string_view{"f"},
+        env.GetFunctionType(annotations, env.GetIntType(annotations), {}),
+        nullptr);
+    TYPE_IS(term_abu, env.GetIntType(annotations));
   }
   SECTION(term_abv) {
     env.BindVariable(std::string_view{"f"},
-                     env.GetFunctionType(env.GetIntType(), {env.GetIntType()}),
+                     env.GetFunctionType(annotations,
+                                         env.GetIntType(annotations),
+                                         {env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_abv, env.GetIntType());
+    TYPE_IS(term_abv, env.GetIntType(annotations));
   }
   SECTION(term_abw) {
     env.BindVariable(std::string_view{"f"},
-                     env.GetFunctionType(env.GetIntType(),
-                                         {env.GetIntType(), env.GetIntType()}),
+                     env.GetFunctionType(annotations,
+                                         env.GetIntType(annotations),
+                                         {env.GetIntType(annotations),
+                                          env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_abw, env.GetIntType());
+    TYPE_IS(term_abw, env.GetIntType(annotations));
   }
   SECTION(term_abx) {
     env.BindVariable(std::string_view{"f"},
-                     env.GetFunctionType(env.GetIntType(),
-                                         {env.GetIntType(), env.GetIntType()}),
+                     env.GetFunctionType(annotations,
+                                         env.GetIntType(annotations),
+                                         {env.GetIntType(annotations),
+                                          env.GetIntType(annotations)}),
                      nullptr);
     env.BindVariable(std::string_view{"g"},
-                     env.GetFunctionType(env.GetIntType(),
-                                         {env.GetIntType(), env.GetIntType()}),
+                     env.GetFunctionType(annotations,
+                                         env.GetIntType(annotations),
+                                         {env.GetIntType(annotations),
+                                          env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_abx, env.GetIntType());
+    TYPE_IS(term_abx, env.GetIntType(annotations));
   }
   SECTION(term_aby) {
-    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    auto fn = env.GetFunctionType(annotations, env.GetIntType(annotations), {});
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({fn, fn}),
+                     env.GetTupleType(annotations, {fn, fn}),
                      nullptr);
-    TYPE_IS(term_aby, env.GetIntType());
+    TYPE_IS(term_aby, env.GetIntType(annotations));
   }
   SECTION(term_abz) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    auto fn = env.GetFunctionType(env.GetIntType(), {});
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, fn),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_abz, env.GetIntType());
+    auto fn = env.GetFunctionType(annotations, env.GetIntType(annotations), {});
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(annotations, 5, fn),
+                     nullptr);
+    TYPE_IS(term_abz, env.GetIntType(annotations));
   }
 
   SECTION(term_aca) {
-    TYPE_IS(term_aca, env.GetArrayType(5, env.GetIntType()));
+    TYPE_IS(term_aca,
+            env.GetArrayType(annotations, 5, env.GetIntType(annotations)));
   }
   SECTION(term_acb) {
     TYPE_IS(term_acb,
-            env.GetArrayType(3, env.GetArrayType(2, env.GetIntType())));
+            env.GetArrayType(
+                annotations,
+                3,
+                env.GetArrayType(annotations, 2, env.GetIntType(annotations))));
   }
   SECTION(term_acc) {
-    TYPE_IS(term_acc, env.GetTupleType({env.GetIntType(), env.GetIntType()}));
+    TYPE_IS(term_acc,
+            env.GetTupleType(
+                annotations,
+                {env.GetIntType(annotations), env.GetIntType(annotations)}));
   }
   SECTION(term_acd) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    TYPE_IS(term_acd, env.GetTupleType({point, point}));
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    TYPE_IS(term_acd, env.GetTupleType(annotations, {point, point}));
   }
   SECTION(term_ace) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    TYPE_IS(term_ace, env.GetArrayType(3, point));
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    TYPE_IS(term_ace, env.GetArrayType(annotations, 3, point));
   }
   SECTION(term_acf) {
-    auto array = env.GetArrayType(3, env.GetIntType());
-    TYPE_IS(term_acf, env.GetTupleType({array, array}));
+    auto array = env.GetArrayType(annotations, 3, env.GetIntType(annotations));
+    TYPE_IS(term_acf, env.GetTupleType(annotations, {array, array}));
   }
 }
 
 // NOLINTNEXTLINE
 TEST_CASE("ast/action/Typecheck::Function", "[unit][ast][ast/action]") {
+  pink::Type::Annotations annotations;
+  annotations.IsInMemory(true);
   auto env = pink::CompilationUnit::CreateTestCompilationUnit();
 
   SECTION(term_acg) {
-    TYPE_IS(term_acg, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_acg,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_ach) {
-    TYPE_IS(term_ach, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_ach,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_aci) {
-    TYPE_IS(term_aci, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_aci,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acj) {
-    TYPE_IS(term_acj, env.GetFunctionType(env.GetNilType(), {}));
+    TYPE_IS(term_acj,
+            env.GetFunctionType(annotations, env.GetNilType(annotations), {}));
   }
   SECTION(term_ack) {
-    TYPE_IS(term_ack, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_ack,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_acl) {
-    TYPE_IS(term_acl, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_acl,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acm) {
-    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
+    env.BindVariable(std::string_view{"a"},
+                     env.GetIntType(annotations),
+                     nullptr);
     TYPE_IS(term_acm,
-            env.GetFunctionType(env.GetPointerType(env.GetIntType()), {}));
+            env.GetFunctionType(
+                annotations,
+                env.GetPointerType(annotations, env.GetIntType(annotations)),
+                {}));
   }
   SECTION(term_acn) {
-    env.BindVariable(std::string_view{"a"},
-                     env.GetPointerType(env.GetIntType()),
-                     nullptr);
-    TYPE_IS(term_acn, env.GetFunctionType(env.GetIntType(), {}));
+    env.BindVariable(
+        std::string_view{"a"},
+        env.GetPointerType(annotations, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_acn,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
 
   SECTION(term_aco) {
-    TYPE_IS(term_aco, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_aco,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_acp) {
-    TYPE_IS(term_acp, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_acp,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_acq) {
-    TYPE_IS(term_acq, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_acq,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_acr) {
-    TYPE_IS(term_acr, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_acr,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_acs) {
-    TYPE_IS(term_acs, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_acs,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_act) {
-    TYPE_IS(term_act, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_act,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acu) {
-    TYPE_IS(term_acu, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_acu,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acv) {
-    TYPE_IS(term_acv, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_acv,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acw) {
-    TYPE_IS(term_acw, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_acw,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acx) {
-    TYPE_IS(term_acx, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_acx,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acy) {
-    TYPE_IS(term_acy, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_acy,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_acz) {
-    TYPE_IS(term_acz, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_acz,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_ada) {
-    TYPE_IS(term_ada, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_ada,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_adb) {
-    TYPE_IS(term_adb, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_adb,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
   SECTION(term_adc) {
-    TYPE_IS(term_adc, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_adc,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
 
   SECTION(term_add) {
-    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
-    TYPE_IS(term_add, env.GetFunctionType(env.GetIntType(), {}));
+    env.BindVariable(std::string_view{"a"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    TYPE_IS(term_add,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_ade) {
-    env.BindVariable(std::string_view{"a"}, env.GetIntType(), nullptr);
-    TYPE_IS(term_ade, env.GetFunctionType(env.GetIntType(), {}));
+    env.BindVariable(std::string_view{"a"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    TYPE_IS(term_ade,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adf) {
-    auto array = env.GetArrayType(5, env.GetIntType());
-    TYPE_IS(term_adf, env.GetFunctionType(array, {}));
+    auto array = env.GetArrayType(annotations, 5, env.GetIntType(annotations));
+    TYPE_IS(term_adf, env.GetFunctionType(annotations, array, {}));
   }
   SECTION(term_adg) {
-    auto array = env.GetArrayType(3, env.GetArrayType(2, env.GetIntType()));
-    TYPE_IS(term_adg, env.GetFunctionType(array, {}));
+    auto array = env.GetArrayType(
+        annotations,
+        3,
+        env.GetArrayType(annotations, 2, env.GetIntType(annotations)));
+    TYPE_IS(term_adg, env.GetFunctionType(annotations, array, {}));
   }
   SECTION(term_adh) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    TYPE_IS(term_adh, env.GetFunctionType(point, {}));
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    TYPE_IS(term_adh, env.GetFunctionType(annotations, point, {}));
   }
   SECTION(term_adi) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    auto pair  = env.GetTupleType({point, point});
-    TYPE_IS(term_adi, env.GetFunctionType(pair, {}));
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    auto pair = env.GetTupleType(annotations, {point, point});
+    TYPE_IS(term_adi, env.GetFunctionType(annotations, pair, {}));
   }
   SECTION(term_adj) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    auto array = env.GetArrayType(3, point);
-    TYPE_IS(term_adj, env.GetFunctionType(array, {}));
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    auto array = env.GetArrayType(annotations, 3, point);
+    TYPE_IS(term_adj, env.GetFunctionType(annotations, array, {}));
   }
   SECTION(term_adk) {
-    auto array = env.GetArrayType(3, env.GetIntType());
-    auto pair  = env.GetTupleType({array, array});
-    TYPE_IS(term_adk, env.GetFunctionType(pair, {}));
+    auto array = env.GetArrayType(annotations, 3, env.GetIntType(annotations));
+    auto pair  = env.GetTupleType(annotations, {array, array});
+    TYPE_IS(term_adk, env.GetFunctionType(annotations, pair, {}));
   }
 
   SECTION(term_adl) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetIntType()),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_adl, env.GetFunctionType(env.GetIntType(), {}));
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(annotations, 5, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_adl,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adm) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"y"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetArrayType(5, env.GetIntType())),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_adm, env.GetFunctionType(env.GetIntType(), {}));
+    env.BindVariable(std::string_view{"y"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(
+            annotations,
+            5,
+            env.GetArrayType(annotations, 5, env.GetIntType(annotations))),
+        nullptr);
+    TYPE_IS(term_adm,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adn) {
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({env.GetIntType(), env.GetIntType()}),
+                     env.GetTupleType(annotations,
+                                      {env.GetIntType(annotations),
+                                       env.GetIntType(annotations)}),
                      nullptr);
-    TYPE_IS(term_adn, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adn,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_ado) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    auto pair  = env.GetTupleType({point, point});
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    auto pair = env.GetTupleType(annotations, {point, point});
     env.BindVariable(std::string_view{"tuple"}, pair, nullptr);
-    TYPE_IS(term_ado, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_ado,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adp) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    auto array = env.GetArrayType(5, point);
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    auto array = env.GetArrayType(annotations, 5, point);
     env.BindVariable(std::string_view{"array"}, array, nullptr);
-    TYPE_IS(term_adp, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adp,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adq) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    auto array = env.GetArrayType(5, env.GetIntType());
-    auto pair  = env.GetTupleType({array, array});
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
+                     nullptr);
+    auto array = env.GetArrayType(annotations, 5, env.GetIntType(annotations));
+    auto pair  = env.GetTupleType(annotations, {array, array});
     env.BindVariable(std::string_view{"tuple"}, pair, nullptr);
-    TYPE_IS(term_adq, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adq,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adr) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, env.GetIntType()),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_adr, env.GetFunctionType(env.GetIntType(), {}));
+    env.BindVariable(
+        std::string_view{"array"},
+        env.GetArrayType(annotations, 5, env.GetIntType(annotations)),
+        nullptr);
+    TYPE_IS(term_adr,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_ads) {
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({env.GetBoolType(), env.GetBoolType()}),
+                     env.GetTupleType(annotations,
+                                      {env.GetBoolType(annotations),
+                                       env.GetBoolType(annotations)}),
                      nullptr);
-    TYPE_IS(term_ads, env.GetFunctionType(env.GetBoolType(), {}));
+    TYPE_IS(term_ads,
+            env.GetFunctionType(annotations, env.GetBoolType(annotations), {}));
   }
 
   SECTION(term_adt) {
-    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    auto fn = env.GetFunctionType(annotations, env.GetIntType(annotations), {});
     env.BindVariable(std::string_view{"f"}, fn, nullptr);
-    TYPE_IS(term_adt, env.GetFunctionType(fn, {}));
+    TYPE_IS(term_adt, env.GetFunctionType(annotations, fn, {}));
   }
   SECTION(term_adu) {
-    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    auto fn = env.GetFunctionType(annotations, env.GetIntType(annotations), {});
     env.BindVariable(std::string_view{"f"}, fn, nullptr);
-    TYPE_IS(term_adu, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adu,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adv) {
-    auto fn = env.GetFunctionType(env.GetIntType(), {env.GetIntType()});
+    auto fn = env.GetFunctionType(annotations,
+                                  env.GetIntType(annotations),
+                                  {env.GetIntType(annotations)});
     env.BindVariable(std::string_view{"f"}, fn, nullptr);
-    TYPE_IS(term_adv, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adv,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adw) {
-    auto fn = env.GetFunctionType(env.GetIntType(),
-                                  {env.GetIntType(), env.GetIntType()});
+    auto fn = env.GetFunctionType(
+        annotations,
+        env.GetIntType(annotations),
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
     env.BindVariable(std::string_view{"f"}, fn, nullptr);
-    TYPE_IS(term_adw, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adw,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adx) {
-    auto fn = env.GetFunctionType(env.GetIntType(),
-                                  {env.GetIntType(), env.GetIntType()});
+    auto fn = env.GetFunctionType(
+        annotations,
+        env.GetIntType(annotations),
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
     env.BindVariable(std::string_view{"f"}, fn, nullptr);
     env.BindVariable(std::string_view{"g"}, fn, nullptr);
-    TYPE_IS(term_adx, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adx,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_ady) {
-    env.BindVariable(std::string_view{"x"}, env.GetIntType(), nullptr);
-    auto fn = env.GetFunctionType(env.GetIntType(), {});
-    env.BindVariable(std::string_view{"array"},
-                     env.GetArrayType(5, fn),
+    env.BindVariable(std::string_view{"x"},
+                     env.GetIntType(annotations),
                      nullptr);
-    TYPE_IS(term_ady, env.GetFunctionType(env.GetIntType(), {}));
+    auto fn = env.GetFunctionType(annotations, env.GetIntType(annotations), {});
+    env.BindVariable(std::string_view{"array"},
+                     env.GetArrayType(annotations, 5, fn),
+                     nullptr);
+    TYPE_IS(term_ady,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
   SECTION(term_adz) {
-    auto fn = env.GetFunctionType(env.GetIntType(), {});
+    auto fn = env.GetFunctionType(annotations, env.GetIntType(annotations), {});
     env.BindVariable(std::string_view{"tuple"},
-                     env.GetTupleType({fn, fn}),
+                     env.GetTupleType(annotations, {fn, fn}),
                      nullptr);
-    TYPE_IS(term_adz, env.GetFunctionType(env.GetIntType(), {}));
+    TYPE_IS(term_adz,
+            env.GetFunctionType(annotations, env.GetIntType(annotations), {}));
   }
 
   SECTION(term_aea) {
     TYPE_IS(term_aea,
-            env.GetFunctionType(env.GetIntType(), {env.GetIntType()}));
+            env.GetFunctionType(annotations,
+                                env.GetIntType(annotations),
+                                {env.GetIntType(annotations)}));
   }
   SECTION(term_aeb) {
     TYPE_IS(term_aeb,
-            env.GetFunctionType(env.GetBoolType(), {env.GetBoolType()}));
+            env.GetFunctionType(annotations,
+                                env.GetBoolType(annotations),
+                                {env.GetBoolType(annotations)}));
   }
   SECTION(term_aec) {
     TYPE_IS(term_aec,
-            env.GetFunctionType(env.GetNilType(), {env.GetNilType()}));
+            env.GetFunctionType(annotations,
+                                env.GetNilType(annotations),
+                                {env.GetNilType(annotations)}));
   }
   SECTION(term_aed) {
-    auto pointer = env.GetPointerType(env.GetIntType());
-    TYPE_IS(term_aed, env.GetFunctionType(pointer, {pointer}));
+    auto pointer = env.GetPointerType(annotations, env.GetIntType(annotations));
+    TYPE_IS(term_aed, env.GetFunctionType(annotations, pointer, {pointer}));
   }
   SECTION(term_aee) {
-    auto slice = env.GetSliceType(env.GetIntType());
-    TYPE_IS(term_aee, env.GetFunctionType(slice, {slice}));
+    auto slice = env.GetSliceType(annotations, env.GetIntType(annotations));
+    TYPE_IS(term_aee, env.GetFunctionType(annotations, slice, {slice}));
   }
   SECTION(term_aef) {
-    auto point = env.GetTupleType({env.GetIntType(), env.GetIntType()});
-    TYPE_IS(term_aef, env.GetFunctionType(point, {point}));
+    auto point = env.GetTupleType(
+        annotations,
+        {env.GetIntType(annotations), env.GetIntType(annotations)});
+    TYPE_IS(term_aef, env.GetFunctionType(annotations, point, {point}));
   }
   SECTION(term_aeg) {
-    auto array = env.GetArrayType(10, env.GetIntType());
-    TYPE_IS(term_aeg, env.GetFunctionType(array, {array}));
+    auto array = env.GetArrayType(annotations, 10, env.GetIntType(annotations));
+    TYPE_IS(term_aeg, env.GetFunctionType(annotations, array, {array}));
   }
   SECTION(term_aeh) {
-    auto pointer = env.GetPointerType(env.GetPointerType(env.GetIntType()));
-    TYPE_IS(term_aeh, env.GetFunctionType(pointer, {pointer}));
+    auto pointer = env.GetPointerType(
+        annotations,
+        env.GetPointerType(annotations, env.GetIntType(annotations)));
+    TYPE_IS(term_aeh, env.GetFunctionType(annotations, pointer, {pointer}));
   }
   SECTION(term_aei) {
-    auto pointer = env.GetPointerType(env.GetSliceType(env.GetIntType()));
-    TYPE_IS(term_aei, env.GetFunctionType(pointer, {pointer}));
+    auto pointer = env.GetPointerType(
+        annotations,
+        env.GetSliceType(annotations, env.GetIntType(annotations)));
+    TYPE_IS(term_aei, env.GetFunctionType(annotations, pointer, {pointer}));
   }
   SECTION(term_aej) {
-    auto slice = env.GetSliceType(env.GetSliceType(env.GetIntType()));
-    TYPE_IS(term_aej, env.GetFunctionType(slice, {slice}));
+    auto slice = env.GetSliceType(
+        annotations,
+        env.GetSliceType(annotations, env.GetIntType(annotations)));
+    TYPE_IS(term_aej, env.GetFunctionType(annotations, slice, {slice}));
   }
   SECTION(term_aek) {
-    auto slice = env.GetSliceType(env.GetPointerType(env.GetIntType()));
-    TYPE_IS(term_aek, env.GetFunctionType(slice, {slice}));
+    auto slice = env.GetSliceType(
+        annotations,
+        env.GetPointerType(annotations, env.GetIntType(annotations)));
+    TYPE_IS(term_aek, env.GetFunctionType(annotations, slice, {slice}));
   }
   SECTION(term_ael) {
-    auto fn = env.GetFunctionType(env.GetIntType(), {});
-    TYPE_IS(term_ael, env.GetFunctionType(fn, {fn}));
+    auto fn = env.GetFunctionType(annotations, env.GetIntType(annotations), {});
+    TYPE_IS(term_ael, env.GetFunctionType(annotations, fn, {fn}));
   }
 
   SECTION(term_aem) {
     TYPE_IS(term_aem,
-            env.GetFunctionType(env.GetIntType(),
-                                {env.GetIntType(), env.GetIntType()}));
+            env.GetFunctionType(
+                annotations,
+                env.GetIntType(annotations),
+                {env.GetIntType(annotations), env.GetIntType(annotations)}));
   }
   SECTION(term_aen) {
     TYPE_IS(term_aen,
-            env.GetFunctionType(env.GetBoolType(),
-                                {env.GetBoolType(), env.GetBoolType()}));
+            env.GetFunctionType(
+                annotations,
+                env.GetBoolType(annotations),
+                {env.GetBoolType(annotations), env.GetBoolType(annotations)}));
   }
   SECTION(term_aeo) {
     TYPE_IS(term_aeo,
             env.GetFunctionType(
-                env.GetIntType(),
-                {env.GetPointerType(env.GetIntType()), env.GetIntType()}));
+                annotations,
+                env.GetIntType(annotations),
+                {env.GetPointerType(annotations, env.GetIntType(annotations)),
+                 env.GetIntType(annotations)}));
   }
   SECTION(term_aep) {
     TYPE_IS(term_aep,
-            env.GetFunctionType(env.GetIntType(),
-                                {env.GetSliceType(env.GetIntType()),
-                                 env.GetIntType(),
-                                 env.GetIntType()}));
+            env.GetFunctionType(
+                annotations,
+                env.GetIntType(annotations),
+                {env.GetSliceType(annotations, env.GetIntType(annotations)),
+                 env.GetIntType(annotations),
+                 env.GetIntType(annotations)}));
   }
   SECTION(term_aeq) {
-    TYPE_IS(term_aeq,
-            env.GetFunctionType(
-                env.GetIntType(),
-                {env.GetTupleType({env.GetIntType(), env.GetIntType()})}));
+    TYPE_IS(
+        term_aeq,
+        env.GetFunctionType(annotations,
+                            env.GetIntType(annotations),
+                            {env.GetTupleType(annotations,
+                                              {env.GetIntType(annotations),
+                                               env.GetIntType(annotations)})}));
   }
   SECTION(term_aer) {
     TYPE_IS(term_aer,
-            env.GetFunctionType(env.GetIntType(),
-                                {env.GetArrayType(10, env.GetIntType()),
-                                 env.GetIntType(),
-                                 env.GetIntType()}));
+            env.GetFunctionType(
+                annotations,
+                env.GetIntType(annotations),
+                {env.GetArrayType(annotations, 10, env.GetIntType(annotations)),
+                 env.GetIntType(annotations),
+                 env.GetIntType(annotations)}));
   }
   SECTION(term_aes) {
-    TYPE_IS(term_aes,
-            env.GetFunctionType(
-                env.GetIntType(),
-                {env.GetPointerType(env.GetPointerType(env.GetIntType())),
-                 env.GetIntType()}));
+    TYPE_IS(
+        term_aes,
+        env.GetFunctionType(
+            annotations,
+            env.GetIntType(annotations),
+            {env.GetPointerType(
+                 annotations,
+                 env.GetPointerType(annotations, env.GetIntType(annotations))),
+             env.GetIntType(annotations)}));
   }
   SECTION(term_aet) {
-    TYPE_IS(term_aet,
-            env.GetFunctionType(
-                env.GetIntType(),
-                {env.GetPointerType(env.GetSliceType(env.GetIntType())),
-                 env.GetIntType(),
-                 env.GetIntType()}));
+    TYPE_IS(
+        term_aet,
+        env.GetFunctionType(
+            annotations,
+            env.GetIntType(annotations),
+            {env.GetPointerType(
+                 annotations,
+                 env.GetSliceType(annotations, env.GetIntType(annotations))),
+             env.GetIntType(annotations),
+             env.GetIntType(annotations)}));
   }
   SECTION(term_aeu) {
-    TYPE_IS(term_aeu,
-            env.GetFunctionType(
-                env.GetIntType(),
-                {env.GetSliceType(env.GetSliceType(env.GetIntType())),
-                 env.GetIntType(),
-                 env.GetIntType()}));
+    TYPE_IS(
+        term_aeu,
+        env.GetFunctionType(
+            annotations,
+            env.GetIntType(annotations),
+            {env.GetSliceType(
+                 annotations,
+                 env.GetSliceType(annotations, env.GetIntType(annotations))),
+             env.GetIntType(annotations),
+             env.GetIntType(annotations)}));
   }
   SECTION(term_aev) {
-    TYPE_IS(term_aev,
-            env.GetFunctionType(
-                env.GetIntType(),
-                {env.GetSliceType(env.GetPointerType(env.GetIntType())),
-                 env.GetIntType(),
-                 env.GetIntType()}));
+    TYPE_IS(
+        term_aev,
+        env.GetFunctionType(
+            annotations,
+            env.GetIntType(annotations),
+            {env.GetSliceType(
+                 annotations,
+                 env.GetPointerType(annotations, env.GetIntType(annotations))),
+             env.GetIntType(annotations),
+             env.GetIntType(annotations)}));
   }
   SECTION(term_aew) {
-    TYPE_IS(term_aew,
-            env.GetFunctionType(env.GetIntType(),
-                                {env.GetFunctionType(env.GetIntType(), {})}));
+    TYPE_IS(
+        term_aew,
+        env.GetFunctionType(annotations,
+                            env.GetIntType(annotations),
+                            {env.GetFunctionType(annotations,
+                                                 env.GetIntType(annotations),
+                                                 {})}));
   }
   SECTION(term_aex) {
-    TYPE_IS(term_aex,
-            env.GetFunctionType(
-                env.GetIntType(),
-                {env.GetFunctionType(env.GetIntType(),
-                                     {env.GetIntType(), env.GetIntType()}),
-                 env.GetIntType(),
-                 env.GetIntType()}));
+    TYPE_IS(
+        term_aex,
+        env.GetFunctionType(annotations,
+                            env.GetIntType(annotations),
+                            {env.GetFunctionType(annotations,
+                                                 env.GetIntType(annotations),
+                                                 {env.GetIntType(annotations),
+                                                  env.GetIntType(annotations)}),
+                             env.GetIntType(annotations),
+                             env.GetIntType(annotations)}));
   }
 }

@@ -23,8 +23,8 @@ class CharacterType : public Type {
 public:
   using Pointer = CharacterType const *;
 
-  CharacterType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Character, context) {}
+  CharacterType(TypeInterner *context, Annotations annotations) noexcept
+      : Type(Type::Kind::Character, context, annotations) {}
   ~CharacterType() noexcept override                 = default;
   CharacterType(const CharacterType &other) noexcept = default;
   CharacterType(CharacterType &&other) noexcept      = default;
@@ -40,6 +40,13 @@ public:
 
   auto Equals(Type::Pointer right) const noexcept -> bool override {
     return llvm::dyn_cast<const CharacterType>(right) != nullptr;
+  }
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
   }
 
   void Print(std::ostream &stream) const noexcept override {

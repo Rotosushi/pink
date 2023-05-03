@@ -27,8 +27,15 @@ auto UnopBoolNegate(llvm::Value *term, CompilationUnit &env) -> llvm::Value * {
 }
 
 void InitializeUnopPrimitives(CompilationUnit &env) {
-  Type::Pointer integer_type = env.GetIntType();
-  Type::Pointer boolean_type = env.GetBoolType();
+  // #RULE we use the looser version of equality within
+  // the UnopTable which does not check that annotations match.
+  // yet we still need to provide annotations to construct
+  // a type to compare to, so we somewhat arbitrarily select
+  // a boolean literal type for comparison.
+  Type::Annotations annotations;
+  annotations.IsInMemory(true);
+  Type::Pointer integer_type = env.GetIntType(annotations);
+  Type::Pointer boolean_type = env.GetBoolType(annotations);
 
   env.RegisterUnop(Token::Sub, integer_type, integer_type, UnopIntNegate);
   env.RegisterUnop(Token::Not, boolean_type, boolean_type, UnopBoolNegate);

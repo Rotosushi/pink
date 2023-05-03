@@ -42,7 +42,31 @@ auto AddressOf::Typecheck(CompilationUnit &unit) const noexcept
   unit.WithinAddressOf(false);
   auto right_type = right_outcome.GetFirst();
 
-  auto pointer_type = unit.GetPointerType(right_type);
+  if (right_type->IsLiteral()) {
+    std::stringstream errmsg;
+    errmsg << "[" << right << "]";
+    return Error{Error::Code::CannotTakeAddressOfLiteral,
+                 GetLocation(),
+                 errmsg.str()};
+  }
+
+  /*
+    A pointer is the address of a value in memory.
+    a pointer value can live in registers, so they
+    are allowed to exist at runtime and not be
+    in memory.
+    The result of Address of is a Temporary,
+    and is not constant. (this is so by default
+    you can mutate a variable of address type.)
+    the annotations of the pointee are taken directly
+    from the type of the right hand side of Address of
+  */
+  Type::Annotations annotations;
+  // annotations.IsTemporary(true);
+  annotations.IsInMemory(false);
+  // annotations.IsConstant(false);
+  // annotations.IsComptime(false);
+  auto pointer_type = unit.GetPointerType(annotations, right_type);
   SetCachedType(pointer_type);
   return pointer_type;
 }

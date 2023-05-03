@@ -70,9 +70,10 @@ private:
 
 public:
   FunctionType(TypeInterner *context,
+               Annotations   annotations,
                Type::Pointer return_type,
                Arguments     arguments) noexcept
-      : Type(Type::Kind::Function, context),
+      : Type(Type::Kind::Function, context, annotations),
         return_type(return_type),
         arguments(std::move(arguments)),
         attributes() {
@@ -129,6 +130,14 @@ public:
 
   auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
   auto Equals(Type::Pointer right) const noexcept -> bool override;
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
+  }
+
   void Print(std::ostream &stream) const noexcept override;
 };
 } // namespace pink

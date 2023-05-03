@@ -26,8 +26,8 @@ class BooleanType : public Type {
 public:
   using Pointer = BooleanType const *;
 
-  BooleanType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Boolean, context) {}
+  BooleanType(TypeInterner *context, Annotations annotations) noexcept
+      : Type(Type::Kind::Boolean, context, annotations) {}
   ~BooleanType() noexcept override                                   = default;
   BooleanType(const BooleanType &other) noexcept                     = default;
   BooleanType(BooleanType &&other) noexcept                          = default;
@@ -42,6 +42,13 @@ public:
 
   auto Equals(Type::Pointer right) const noexcept -> bool override {
     return llvm::dyn_cast<const BooleanType>(right) != nullptr;
+  }
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
   }
 
   void Print(std::ostream &stream) const noexcept override {

@@ -28,8 +28,8 @@ namespace pink {
 [[noreturn]] inline void FatalError(
     std::string_view           message,
     std::source_location const location = std::source_location::current()) {
-  std::cerr << "[" << location.function_name() << "(" << location.line() << ":"
-            << location.column() << ") " << location.file_name() << "]"
+  std::cerr << location.function_name() << " @ [" << location.line() << ":"
+            << location.column() << "] " << location.file_name()
             << " Fatal Error [" << message << "]\n";
   exit(EXIT_FAILURE);
 }

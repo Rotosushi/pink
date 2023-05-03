@@ -37,9 +37,10 @@ private:
 
 public:
   ArrayType(TypeInterner *context,
+            Annotations   annotations,
             std::size_t   size,
             Type::Pointer element_type) noexcept
-      : Type(Type::Kind::Array, context),
+      : Type(Type::Kind::Array, context, annotations),
         size(size),
         element_type(element_type) {
     assert(element_type != nullptr);
@@ -61,6 +62,14 @@ public:
 
   auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
   auto Equals(Type::Pointer right) const noexcept -> bool override;
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
+  }
+
   void Print(std::ostream &stream) const noexcept override;
 };
 } // namespace pink

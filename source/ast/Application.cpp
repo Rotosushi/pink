@@ -54,9 +54,7 @@ auto Application::Typecheck(CompilationUnit &unit) const noexcept
   if (function_type == nullptr) {
     std::stringstream stream;
     stream << function_type;
-    return Error{Error::Code::TypeCannotBeCalled,
-                 GetLocation(),
-                 std::move(stream).str()};
+    return Error{Error::Code::TypeCannotBeCalled, GetLocation(), stream.str()};
   }
 
   if (arguments.size() != function_type->GetArguments().size()) {
@@ -64,9 +62,7 @@ auto Application::Typecheck(CompilationUnit &unit) const noexcept
     stream << "Function takes [" << function_type->GetArguments().size();
     stream << "] arguments; [" << arguments.size()
            << "] arguments were provided.";
-    return Error{Error::Code::ArgNumMismatch,
-                 GetLocation(),
-                 std::move(stream).str()};
+    return Error{Error::Code::ArgNumMismatch, GetLocation(), stream.str()};
   }
 
   FunctionType::Arguments actual_arguments;
@@ -84,6 +80,7 @@ auto Application::Typecheck(CompilationUnit &unit) const noexcept
   auto actual_cursor = actual_arguments.begin();
   auto formal_cursor = function_type->GetArguments().begin();
   while (actual_cursor != actual_arguments.end()) {
+
     if (!Equals(*actual_cursor, *formal_cursor)) {
       std::stringstream errmsg;
       errmsg << "Expected argument type [";
@@ -91,10 +88,22 @@ auto Application::Typecheck(CompilationUnit &unit) const noexcept
       errmsg << "], Actual argument type [";
       errmsg << *actual_cursor;
       errmsg << "]";
-      return Error(Error::Code::ArgTypeMismatch,
-                   GetLocation(),
-                   std::move(errmsg).str());
+      return Error(Error::Code::ArgTypeMismatch, GetLocation(), errmsg.str());
     }
+
+    // Actual Arguments are simply allowed to be
+    // temporary or non-temporary, in-memory or literal.
+    // and comptime or runtime known. const actual arguments
+    // can bind to const formal arguments and cannot bind to
+    // non const formal arguments. non-const actual can bind
+    // to const and non-const formal.
+    // if ((*actual_cursor)->IsConstant() && !(*formal_cursor)->IsConstant()) {
+    //  std::stringstream errmsg;
+    //  errmsg << "constant argument [" << *actual_cursor
+    //         << "] cannot bind to mutable parameter [" << (*formal_cursor)
+    //         << "]";
+    //  return Error{Error::Code::ArgTypeMismatch, GetLocation(), errmsg.str()};
+    //}
 
     actual_cursor++;
     formal_cursor++;

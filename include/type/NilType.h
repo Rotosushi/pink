@@ -31,8 +31,8 @@ class NilType : public Type {
 public:
   using Pointer = NilType const *;
 
-  NilType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Nil, context) {}
+  NilType(TypeInterner *context, Annotations annotations) noexcept
+      : Type(Type::Kind::Nil, context, annotations) {}
   ~NilType() noexcept override                               = default;
   NilType(const NilType &other) noexcept                     = default;
   NilType(NilType &&other) noexcept                          = default;
@@ -47,6 +47,13 @@ public:
 
   auto Equals(Type::Pointer right) const noexcept -> bool override {
     return llvm::dyn_cast<const NilType>(right) != nullptr;
+  }
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
   }
 
   void Print(std::ostream &stream) const noexcept override { stream << "Nil"; }

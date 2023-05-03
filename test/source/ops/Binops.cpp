@@ -29,16 +29,18 @@ auto BinopCodegenFunction([[maybe_unused]] llvm::Value           *left_value,
 }
 
 TEST_CASE("ops/BinopCodegen", "[unit][ops]") {
-  auto interner     = pink::TypeInterner{};
-  auto integer_type = interner.GetIntType();
+  pink::Type::Annotations annotations;
+  auto                    interner     = pink::TypeInterner{};
+  auto                    integer_type = interner.GetIntType(annotations);
 
   pink::BinopCodegen binop_implementation(integer_type, BinopCodegenFunction);
   REQUIRE(binop_implementation.ReturnType() == integer_type);
 }
 
 TEST_CASE("ops/BinopOverloadSet", "[unit][ops]") {
+  pink::Type::Annotations annotations;
   auto interner     = pink::TypeInterner{};
-  auto integer_type = interner.GetIntType();
+  auto integer_type = interner.GetIntType(annotations);
 
   pink::BinopOverloadSet binop_literal;
   REQUIRE(binop_literal.Empty());
@@ -57,8 +59,9 @@ TEST_CASE("ops/BinopOverloadSet", "[unit][ops]") {
 }
 
 TEST_CASE("ops/BinopTable", "[unit][ops]") {
+  pink::Type::Annotations annotations;
   auto        interner     = pink::TypeInterner{};
-  auto        integer_type = interner.GetIntType();
+  auto        integer_type = interner.GetIntType(annotations);
   pink::Token op           = pink::Token::Add;
 
   pink::BinopTable binop_table;

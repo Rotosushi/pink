@@ -35,8 +35,13 @@ when we construct an array it is a temporary value.
 */
 auto Array::Typecheck(CompilationUnit &unit) const noexcept
     -> Outcome<Type::Pointer, Error> {
+  Type::Annotations          annotations;
   std::vector<Type::Pointer> element_types;
   element_types.reserve(elements.size());
+
+  //annotations.IsConstant(true);  // array literals are constant
+  //annotations.IsTemporary(true); // array literals are temporaries
+  bool is_in_memory = false;
 
   for (auto &element : elements) {
     auto element_outcome = element->Typecheck(unit);
@@ -44,6 +49,9 @@ auto Array::Typecheck(CompilationUnit &unit) const noexcept
       return element_outcome;
     }
     auto element_type = element_outcome.GetFirst();
+    // an array is in memory if any of it's elements
+    // are in memory.
+    is_in_memory |= element_type->IsInMemory();
 
     element_types.emplace_back(element_type);
 
@@ -60,7 +68,11 @@ auto Array::Typecheck(CompilationUnit &unit) const noexcept
     }
   }
 
-  auto array_type = unit.GetArrayType(elements.size(), element_types[0]);
+  annotations.IsInMemory(is_in_memory);
+  //annotations.IsComptime(!is_in_memory);
+
+  auto array_type =
+      unit.GetArrayType(annotations, elements.size(), element_types[0]);
   SetCachedType(array_type);
   return array_type;
 }
@@ -73,6 +85,8 @@ auto Array::Typecheck(CompilationUnit &unit) const noexcept
 auto Array::Codegen(CompilationUnit &unit) const noexcept
     -> Outcome<llvm::Value *, Error> {
   auto cached_type = GetCachedTypeOrAssert();
+  // #TODO if the array is composed entirely of literals 
+  // create a llvm::ConstantArray instead of a stack allocation.
 
   auto *layout_type = llvm::cast<llvm::StructType>(ToLLVM(cached_type, unit));
 

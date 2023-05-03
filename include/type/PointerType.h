@@ -63,8 +63,10 @@ private:
   Type::Pointer pointee_type;
 
 public:
-  PointerType(TypeInterner *context, Type::Pointer pointee_type) noexcept
-      : Type(Type::Kind::Pointer, context),
+  PointerType(TypeInterner *context,
+              Annotations   annotations,
+              Type::Pointer pointee_type) noexcept
+      : Type(Type::Kind::Pointer, context, annotations),
         pointee_type(pointee_type) {
     assert(pointee_type != nullptr);
   }
@@ -94,6 +96,13 @@ public:
     }
 
     return pointee_type->Equals(other->pointee_type);
+  }
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
   }
 
   void Print(std::ostream &stream) const noexcept override {

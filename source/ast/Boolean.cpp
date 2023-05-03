@@ -26,7 +26,10 @@ namespace pink {
 */
 auto Boolean::Typecheck(CompilationUnit &unit) const noexcept
     -> Outcome<Type::Pointer, Error> {
-  const auto *return_type = unit.GetBoolType();
+  // #RULE a boolean literal is not in memory.
+  Type::Annotations annotations;
+  annotations.IsInMemory(false);
+  const auto *return_type = unit.GetBoolType(annotations);
   SetCachedType(return_type);
   return return_type;
 }

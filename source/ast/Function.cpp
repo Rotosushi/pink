@@ -72,8 +72,11 @@ auto Function::Typecheck(CompilationUnit &unit) const noexcept
   unit.PopScope();
   auto body_type = body_outcome.GetFirst();
 
+  // we can take the address of a function.
+  Type::Annotations annotations;
+  annotations.IsInMemory(true);
   const auto *result_type =
-      unit.GetFunctionType(body_type, std::move(argument_types));
+      unit.GetFunctionType(annotations, body_type, std::move(argument_types));
   SetCachedType(result_type);
   return result_type;
 }
@@ -97,8 +100,14 @@ auto Function::Codegen(CompilationUnit &unit) const noexcept
   auto *llvm_return_type   = ToLLVM(pink_function_type->GetReturnType(), unit);
   auto *llvm_function_type = [&]() {
     if (is_main) {
+      // we can take the address of a function.
+      Type::Annotations function_annotations;
+      function_annotations.IsInMemory(true);
+      Type::Annotations void_annotations;
+      void_annotations.IsInMemory(false); // void types are never in memory
       const auto *main_function_type = unit.GetFunctionType(
-          unit.GetVoidType(),
+          function_annotations,
+          unit.GetVoidType(void_annotations),
           FunctionType::Arguments{pink_function_type->GetArguments()});
       pink_function_type = main_function_type;
       return llvm::cast<llvm::FunctionType>(main_function_type->ToLLVM(unit));

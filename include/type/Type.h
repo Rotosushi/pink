@@ -28,6 +28,8 @@
 
 #include "llvm/IR/Type.h"
 
+#include "support/ToUnderlying.h"
+
 namespace pink {
 class CompilationUnit;
 class TypeInterner;
@@ -62,6 +64,60 @@ public:
     Void,
   };
 
+  class Annotations {
+  private:
+    enum Flags : unsigned {
+      InMemory,  // true -> backed by memory (stack, heap, global),
+                 // false -> backed by a literal value (llvm::Constant, or
+                 // similar)
+      Constant,  // true -> cannot be written, false -> can be written
+      Temporary, // true -> represents a temporary value,
+                 // false -> represents some longer lifetime
+      Comptime,  // true -> known at compile time, false -> known at runtime
+                 // (for now, link-time known is under runtime)
+      SIZE       // must be the last enum value
+                 // no enums may have an assigned value
+    };
+
+    static constexpr auto bitset_size = ToUnderlying(Flags::SIZE);
+    using Set                         = std::bitset<bitset_size>;
+    Set set;
+
+  public:
+    [[nodiscard]] auto IsInMemory() const noexcept -> bool {
+      return set[InMemory];
+    }
+    auto IsInMemory(bool state) noexcept -> bool {
+      return set[InMemory] = state;
+    }
+    /*
+    [[nodiscard]] auto IsConstant() const noexcept -> bool {
+      return set[Constant];
+    }
+    auto IsConstant(bool state) noexcept -> bool {
+      return set[Constant] = state;
+    }
+
+    [[nodiscard]] auto IsTemporary() const noexcept -> bool {
+      return set[Temporary];
+    }
+    auto IsTemporary(bool state) noexcept -> bool {
+      return set[Temporary] = state;
+    }
+
+    [[nodiscard]] auto IsComptime() const noexcept -> bool {
+      return set[Constant];
+    }
+    auto IsComptime(bool state) noexcept -> bool {
+      return set[Constant] = state;
+    }
+    */
+
+    auto operator==(const Annotations &other) const noexcept -> bool {
+      return set == other.set;
+    }
+  };
+
 private:
   Kind                kind;
   /*
@@ -81,12 +137,14 @@ private:
    * that they are so tightly coupled.
    */
   TypeInterner       *context;
+  Annotations         annotations;
 
 public:
-  Type(Kind kind, TypeInterner *context) noexcept
+  Type(Kind kind, TypeInterner *context, Annotations annotations) noexcept
       : kind{kind},
         llvm_type{nullptr},
-        context{context} {
+        context{context},
+        annotations{annotations} {
     assert(context != nullptr);
   }
   virtual ~Type() noexcept                             = default;
@@ -97,6 +155,9 @@ public:
 
   [[nodiscard]] auto GetKind() const -> Kind { return kind; }
   [[nodiscard]] auto GetContext() const -> TypeInterner * { return context; }
+  [[nodiscard]] auto GetAnnotations() const noexcept -> const Annotations & {
+    return annotations;
+  }
 
   void SetCachedLLVMType(llvm::Type *llvm_type) const noexcept {
     this->llvm_type = llvm_type;
@@ -114,8 +175,32 @@ public:
     return llvm_type;
   }
 
+  [[nodiscard]] auto IsInMemory() const noexcept -> bool {
+    return annotations.IsInMemory();
+  }
+  [[nodiscard]] auto IsLiteral() const noexcept -> bool {
+    return !IsInMemory();
+  }
+  /*
+  [[nodiscard]] auto IsConstant() const noexcept -> bool {
+    return annotations.IsConstant();
+  }
+  [[nodiscard]] auto IsMutable() const noexcept -> bool {
+    return !IsConstant();
+  }
+  [[nodiscard]] auto IsTemporary() const noexcept -> bool {
+    return annotations.IsTemporary();
+  }
+  [[nodiscard]] auto IsComptime() const noexcept -> bool {
+    return annotations.IsComptime();
+  }
+  [[nodiscard]] auto IsRuntime() const noexcept -> bool {
+    return !IsComptime();
+  }*/
+
   virtual auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * = 0;
   virtual auto Equals(Type::Pointer right) const noexcept -> bool           = 0;
+  virtual auto StrictEquals(Type::Pointer right) const noexcept -> bool     = 0;
 
   virtual void Print(std::ostream &result) const noexcept = 0;
   auto         ToString() const noexcept -> std::string {

@@ -32,8 +32,8 @@ class IntegerType : public Type {
 public:
   using Pointer = IntegerType const *;
 
-  IntegerType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Integer, context) {}
+  IntegerType(TypeInterner *context, Annotations annotations) noexcept
+      : Type(Type::Kind::Integer, context, annotations) {}
   ~IntegerType() noexcept override                                   = default;
   IntegerType(const IntegerType &other) noexcept                     = default;
   IntegerType(IntegerType &&other) noexcept                          = default;
@@ -48,6 +48,13 @@ public:
 
   auto Equals(Type::Pointer right) const noexcept -> bool override {
     return llvm::dyn_cast<const IntegerType>(right) != nullptr;
+  }
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
   }
 
   void Print(std::ostream &stream) const noexcept override {

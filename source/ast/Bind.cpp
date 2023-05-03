@@ -89,6 +89,10 @@ auto Bind::Codegen(CompilationUnit &unit) const noexcept
   unit.WithinBindExpression(false);
   auto affix_value = affix_outcome.GetFirst();
 
+  /*
+    #TODO: allocate space for literal types, and 
+    steal the memory allocated for in memory types.
+  */
   // #RULE we must allocate stack space for singleValueType()s
   // as these types are not allocated when literals appear in
   // expressions.

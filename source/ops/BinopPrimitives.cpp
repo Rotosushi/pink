@@ -94,8 +94,15 @@ auto BinopBoolOr(llvm::Value *left, llvm::Value *right, CompilationUnit &env)
 }
 
 void InitializeBinopPrimitives(CompilationUnit &env) {
-  Type::Pointer int_ty  = env.GetIntType();
-  Type::Pointer bool_ty = env.GetBoolType();
+  // #RULE we use the looser version of equality within
+  // the UnopTable which does not check that annotations match.
+  // yet we still need to provide annotations to construct
+  // a type to compare to, so we somewhat arbitrarily select
+  // a boolean literal type for comparison.
+  Type::Annotations annotations;
+  annotations.IsInMemory(true);
+  Type::Pointer int_ty  = env.GetIntType(annotations);
+  Type::Pointer bool_ty = env.GetBoolType(annotations);
 
   env.RegisterBinop(Token::Equals, int_ty, int_ty, bool_ty, BinopIntEq);
   env.RegisterBinop(Token::Equals, bool_ty, bool_ty, bool_ty, BinopBoolEq);

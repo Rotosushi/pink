@@ -38,8 +38,12 @@ also needs to be accounted for at the expression level itself.
 */
 auto Block::Typecheck(CompilationUnit &unit) const noexcept
     -> Outcome<Type::Pointer, Error> {
+  // #RULE An empty block is equivalent to a nil literal.
   if (IsEmpty()) {
-    const auto *nil_type = unit.GetNilType();
+    // #RULE Nil literals are never in memory.
+    Type::Annotations annotations;
+    annotations.IsInMemory(false);
+    const auto *nil_type = unit.GetNilType(annotations);
     SetCachedType(nil_type);
     return nil_type;
   }

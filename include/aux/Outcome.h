@@ -27,6 +27,7 @@
 
 namespace pink {
 
+
 /**
  * @brief A container holding one of two alternatives, but not both.
  *

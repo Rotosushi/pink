@@ -32,8 +32,8 @@ class VoidType : public Type {
 public:
   using Pointer = VoidType const *;
 
-  VoidType(TypeInterner *context) noexcept
-      : Type(Type::Kind::Void, context) {}
+  VoidType(TypeInterner *context, Annotations annotations) noexcept
+      : Type(Type::Kind::Void, context, annotations) {}
   ~VoidType() noexcept override                                = default;
   VoidType(const VoidType &other) noexcept                     = default;
   VoidType(VoidType &&other) noexcept                          = default;
@@ -48,6 +48,13 @@ public:
 
   auto Equals(Type::Pointer right) const noexcept -> bool override {
     return llvm::dyn_cast<const VoidType>(right) != nullptr;
+  }
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
   }
 
   void Print(std::ostream &stream) const noexcept override { stream << "Void"; }

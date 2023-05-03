@@ -75,25 +75,25 @@ class BinopOverloadSet {
 public:
   using Key       = std::pair<Type::Pointer, Type::Pointer>;
   using Value     = BinopCodegen;
-  using Overloads = Map<Key, Value>;
+  using Overloads = std::vector<std::pair<Key, Value>>;
 
   // Proxy class so users don't have to
   // use the Map::Element correctly
   class Overload {
   private:
-    Overloads::Element literal;
+    Overloads::iterator literal;
 
   public:
-    Overload(Overloads::Element element) noexcept
-        : literal(std::move(element)) {}
-    auto ArgumentTypes() noexcept -> Key { return literal.Key(); }
+    Overload(Overloads::iterator element) noexcept
+        : literal(element) {}
+    auto ArgumentTypes() noexcept -> Key { return literal->first; }
     auto ReturnType() noexcept -> Type::Pointer {
-      return literal.Value().ReturnType();
+      return literal->second.ReturnType();
     }
     auto operator()(llvm::Value     *left,
                     llvm::Value     *right,
                     CompilationUnit &env) const noexcept -> llvm::Value * {
-      return literal.Value()(left, right, env);
+      return literal->second(left, right, env);
     }
   };
 
@@ -111,22 +111,33 @@ public:
       -> BinopOverloadSet & = default;
 
   [[nodiscard]] auto Empty() const noexcept -> bool {
-    return overloads.Size() == 0;
+    return overloads.empty();
   }
 
   auto Register(Type::Pointer          left_type,
                 Type::Pointer          right_type,
                 Type::Pointer          return_type,
                 BinopCodegen::Function generator) -> Overload {
-    return overloads.Register({left_type, right_type},
-                              {return_type, generator});
+    auto found = Lookup(left_type, right_type);
+    if (found) {
+      return found.value();
+    }
+
+    overloads.emplace_back(std::make_pair(left_type, right_type),
+                           BinopCodegen(return_type, generator));
+    return std::prev(overloads.end());
   }
 
   auto Lookup(Type::Pointer left_type, Type::Pointer right_type)
       -> std::optional<Overload> {
-    auto found = overloads.Lookup({left_type, right_type});
-    if (found) {
-      return {found.value()};
+    auto cursor = overloads.begin();
+    auto end    = overloads.end();
+    while (cursor != end) {
+      if (Equals(left_type, cursor->first.first) &&
+          Equals(right_type, cursor->first.second)) {
+        return cursor;
+      }
+      cursor++;
     }
     return {};
   }
@@ -146,7 +157,7 @@ public:
 
   public:
     Binop(BinopTable::Table::Element element) noexcept
-        : element(std::move(element)) {}
+        : element(element) {}
     [[nodiscard]] auto Empty() const noexcept -> bool {
       return element.Value()->Empty();
     }

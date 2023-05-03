@@ -141,7 +141,6 @@ add_library(common
 	# the 'ast' directory is for all the classes which together 
 	# comprise the representation of abstract syntax trees within
 	# our compiler.
-  source/ast/action/Codegen.cpp
   source/ast/AddressOf.cpp 
   source/ast/Application.cpp 
   source/ast/Array.cpp 
@@ -164,7 +163,6 @@ add_library(common
 
 	# the 'type' directory is for all of the classes which together 
 	# comprise the representation of types within our compiler.
-  source/type/interner/TypeInterner.cpp
   source/type/ArrayType.cpp 
   source/type/BooleanType.cpp
   source/type/CharacterType.cpp

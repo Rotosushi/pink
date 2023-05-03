@@ -41,7 +41,21 @@ auto Subscript::Typecheck(CompilationUnit &unit) const noexcept
   auto right_type = right_outcome.GetFirst();
 
   // #TODO iff the index is known at compile type do the range check
-  if (llvm::dyn_cast<IntegerType>(right_type) == nullptr) {
+  // I think the strategy here can be,
+  // 1) check if the type is an Integer,
+  //  if no -> fail here (as we do now)
+  // 2) check if the integer type is a literal type
+  //    if type is in memory -> move on to the rest of the
+  //      typechecking routine
+  //    if the type is literal -> evaluate the rhs to it's literal value
+  //    do the range check on the value
+  // we can further generalize this strategy for each location where
+  // we could make use of some value at compile time.
+  // Though i am somewhat concerned about the validity of interleaving 
+  // typechecking and interpretation. This might be tricky to get right.
+  Type::Annotations annotations;
+  annotations.IsInMemory(false);
+  if (!Equals(right_type, unit.GetIntType(annotations))) {
     std::stringstream errmsg;
     errmsg << "Cannot use type [";
     errmsg << right_type;

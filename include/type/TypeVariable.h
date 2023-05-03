@@ -30,8 +30,10 @@ private:
   InternedString identifier;
 
 public:
-  TypeVariable(TypeInterner *context, InternedString identifier) noexcept
-      : Type(Type::Kind::Variable, context),
+  TypeVariable(TypeInterner  *context,
+               Annotations    annotations,
+               InternedString identifier) noexcept
+      : Type(Type::Kind::Variable, context, annotations),
         identifier(identifier) {}
 
   static auto classof(Type const *type) noexcept -> bool {
@@ -52,6 +54,13 @@ public:
     }
 
     return identifier == other->identifier;
+  }
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
   }
 
   void Print(std::ostream &stream) const noexcept override {

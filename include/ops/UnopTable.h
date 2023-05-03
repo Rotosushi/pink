@@ -21,11 +21,48 @@
  * @version 0.1
  */
 #pragma once
+#include <vector>
+
 #include "llvm/IR/Value.h" // llvm::Value
 
 #include "type/Type.h" // pink::Type
 
-#include "aux/Error.h"   // pink::Error
+#include "aux/Error.h" // pink::Error
+/*
+  so, types ~must~ be interned using StrictEquality
+  which means that Type::Pointer address equality
+  also models StrictEquality. Which adds a problem
+  to the way we handle operator overload sets.
+  more specifically how we handle lookup. up until
+  now the lookup has been fine using pointer equality,
+  and thus the problem could be reduced into
+  a map (token -> overload set) of maps (type -> overload).
+  however, due to StrictEquality a const T != T.
+  so, even though T == T, and the operator works with T,
+  because we defined the operator to take const T (or T)
+  then lookup fails when using a T (or const T). in fact
+  this problem exists for each flag we choose to track within
+  a type. so,
+  A) we can insert an overload for each kind of flag present in the Map.
+  this means 2 overloads per flag state, which means 2^(the number of flags)
+  overloads, per Type T we want the operator to handle. the has a benefit of
+  keeping the map structure, and a downside of implementing a new
+  binop or a new type onto an existing binop take a lot of boilerplate code.
+  another upside is that we can choose to not implement an overload if the
+  particular combination of flags means the operator cannot work.
+
+  B) we can use a relaxed form of equality to perform lookup. that does not
+    care about the state of the flags. then T == const T == other-flag T == ...
+    then we get to use the same implementation for all possible variants
+    of T. this has a benefit of scaling implicitly no matter if we add
+    more flags later. and a downside of losing the abiltiy to use a traditional,
+    map implementation. a downside of this approach is that there is no way to
+    express that one overload for a given type and combination of flags
+    does not work. for instance Address of cannot be implemented given a
+    literal value, as they do not reside within the emitted program.
+
+
+*/
 #include "aux/Map.h"     // pink::Map<K, V>
 #include "aux/Outcome.h" // pink::Outcome
 
@@ -74,25 +111,25 @@ class UnopOverloadSet {
 public:
   using Key       = Type::Pointer;
   using Value     = UnopCodegen;
-  using Overloads = Map<Key, Value>;
+  using Overloads = std::vector<std::pair<Key, Value>>;
 
   class Overload {
   private:
-    Overloads::Element literal;
+    Overloads::iterator literal;
 
   public:
-    Overload(Overloads::Element element) noexcept
-        : literal{std::move(element)} {}
+    Overload(Overloads::iterator element) noexcept
+        : literal{element} {}
     [[nodiscard]] auto ArgumentType() const noexcept -> Key {
-      return literal.Key();
+      return literal->first;
     }
     [[nodiscard]] auto ReturnType() const noexcept -> Type::Pointer {
-      return literal.Value().GetReturnType();
+      return literal->second.GetReturnType();
     }
     [[nodiscard]] auto operator()(llvm::Value     *value,
                                   CompilationUnit &env) const noexcept
         -> llvm::Value * {
-      return literal.Value()(value, env);
+      return literal->second(value, env);
     }
   };
 
@@ -110,30 +147,36 @@ public:
       -> UnopOverloadSet & = default;
 
   [[nodiscard]] auto Empty() const noexcept -> bool {
-    return overloads.Size() == 0;
+    return overloads.empty();
   }
 
   auto Register(Type::Pointer         argument_type,
                 Type::Pointer         return_type,
                 UnopCodegen::Function generator) -> Overload {
-    return overloads.Register(argument_type, {return_type, generator});
+    auto found = Lookup(argument_type);
+    if (found) {
+      return found.value();
+    }
+
+    overloads.emplace_back(argument_type, UnopCodegen(return_type, generator));
+    return std::prev(overloads.end());
   }
 
   auto Lookup(Type::Pointer argument_type) -> std::optional<Overload> {
-    return overloads.Lookup(argument_type);
+    auto cursor = overloads.begin();
+    auto end    = overloads.end();
+    while (cursor != end) {
+      if (Equals(argument_type, cursor->first)) {
+        return cursor;
+      }
+      cursor++;
+    }
+    return {};
   }
 };
 
 /**
  * @brief Represents the set of all known unary operators
- *
- * \todo refactor UnopTable and BinopTable to take a Token
- * as a key, (UnopTable.h, BinopTable.h, CompilationUnit.h).
- * Add every defined operator to the list of lexed tokens,
- * (Token.h, Lexer.re). Add Parser::IsOperator(Token token) -> bool,
- * which the Parser::InfixParser can use for parsing binop
- * expressions and the Parser::ParseBasic routine can have the list
- * of defined unops fallthrough to the unop basic case.
  */
 class UnopTable {
 public:

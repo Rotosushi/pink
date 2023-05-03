@@ -932,6 +932,21 @@ auto Parser::ParseTuple(Ast::Pointer first_element, CompilationUnit &env)
 }
 
 /*
+  #TODO add syntax for specifying type annotations
+  for now, each type specified directly will represent
+  an in memory type. (as it makes sense to assign an
+  in memory type to the value of a literal type, but
+  not visa-versa.)
+  additionally, as of 5/2/2023 the only place we allow
+  types within the grammar is function declarations
+  and composite types.
+  and function types specify the type of the arguments
+  and arguments are always in memory.
+  I am planning to allow types within bind expressions,
+  (which will be checked during typechecking)
+  at some point, which we can note that bind expressions
+  also represent some type in memory.
+
   type = "Nil"
        | "Int"
        | "Bool"
@@ -942,25 +957,27 @@ auto Parser::ParseTuple(Ast::Pointer first_element, CompilationUnit &env)
        | "fn" "(" type {"," type} ")" "->" type
 */
 auto Parser::ParseType(CompilationUnit &env) -> Parser::TypeResult {
+  Type::Annotations annotations;
+  annotations.IsInMemory(true);
   switch (token) {
   // #RULE Token::NilType is the type Nil
   case Token::NilType: {
     nexttok(); // eat 'Nil'
-    return {env.GetNilType()};
+    return {env.GetNilType(annotations)};
     break;
   }
 
   // #RULE Token::IntegerType is the type Int
   case Token::IntegerType: {
     nexttok(); // Eat "Int"
-    return {env.GetIntType()};
+    return {env.GetIntType(annotations)};
     break;
   }
 
   // #RULE Token::BooleanType is the type Bool
   case Token::BooleanType: {
     nexttok(); // Eat "Bool"
-    return {env.GetBoolType()};
+    return {env.GetBoolType(annotations)};
     break;
   }
 
@@ -1004,7 +1021,9 @@ auto Parser::ParseTupleType(CompilationUnit &env) -> TypeResult {
       elements.push_back(element);
     } while (token == Token::Comma);
 
-    left = env.GetTupleType(std::move(elements));
+    Type::Annotations annotations;
+    annotations.IsInMemory(true);
+    left = env.GetTupleType(annotations, std::move(elements));
   }
 
   if (!Expect(Token::RParen)) {
@@ -1038,22 +1057,29 @@ auto Parser::ParseArrayType(CompilationUnit &env) -> TypeResult {
     return {Error(Error::Code::MissingRBracket, location, text)};
   }
 
-  return {env.GetArrayType(maybe_integer.GetFirst(), array_type)};
+  Type::Annotations annotations;
+  annotations.IsInMemory(true);
+  return {env.GetArrayType(annotations, maybe_integer.GetFirst(), array_type)};
 }
 
 auto Parser::ParsePointerType(CompilationUnit &env) -> TypeResult {
   nexttok(); // eat "*"
+  // #RULE pointer types must refer to an in memory type
+  // as pointers themselves only make sense given something
+  // which exists at some address, in memory.
+  Type::Annotations annotations;
+  annotations.IsInMemory(true);
 
   if (Expect(Token::LBracket)) {
     if (!Expect(Token::RBracket)) {
       return {Error{Error::Code::MissingRBrace, location, text}};
     }
     TRY(type_result, type, ParseType, env)
-    return {env.GetSliceType(type)};
+    return {env.GetSliceType(annotations, type)};
   }
 
   TRY(type_result, type, ParseType, env)
-  return {env.GetPointerType(type)};
+  return {env.GetPointerType(annotations, type)};
 }
 
 auto Parser::ParseFunctionType(CompilationUnit &env) -> TypeResult {
@@ -1088,8 +1114,12 @@ auto Parser::ParseFunctionType(CompilationUnit &env) -> TypeResult {
     return {Error{Error::Code::MissingRArrow, location, text}};
   }
 
+  // #RULE it makes sense to take the address of a function,
+  // as functions only ever exist at some location in memory
+  Type::Annotations annotations;
+  annotations.IsInMemory(true);
   TRY(result_result, result, ParseType, env)
-  return {env.GetFunctionType(result, std::move(arguments))};
+  return {env.GetFunctionType(annotations, result, std::move(arguments))};
 }
 
 } // namespace pink

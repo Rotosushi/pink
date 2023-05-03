@@ -40,8 +40,10 @@ private:
   Elements elements;
 
 public:
-  TupleType(TypeInterner *context, Elements elements) noexcept
-      : Type(Type::Kind::Tuple, context),
+  TupleType(TypeInterner *context,
+            Annotations   annotations,
+            Elements      elements) noexcept
+      : Type(Type::Kind::Tuple, context, annotations),
         elements(std::move(elements)) {}
   ~TupleType() noexcept override                                 = default;
   TupleType(const TupleType &other) noexcept                     = default;
@@ -75,6 +77,14 @@ public:
 
   auto ToLLVM(CompilationUnit &unit) const noexcept -> llvm::Type * override;
   auto Equals(Type::Pointer right) const noexcept -> bool override;
+
+  auto StrictEquals(Type::Pointer right) const noexcept -> bool override {
+    if (GetAnnotations() != right->GetAnnotations()) {
+      return false;
+    }
+    return Equals(right);
+  }
+
   void Print(std::ostream &stream) const noexcept override;
 };
 } // namespace pink

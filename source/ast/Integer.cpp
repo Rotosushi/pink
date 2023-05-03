@@ -21,7 +21,10 @@
 namespace pink {
 auto Integer::Typecheck(CompilationUnit &unit) const noexcept
     -> Outcome<Type::Pointer, Error> {
-  auto return_type = unit.GetIntType();
+  // #RULE an integer literal is never in memory
+  Type::Annotations annotations;
+  annotations.IsInMemory(false);
+  auto return_type = unit.GetIntType(annotations);
   SetCachedType(return_type);
   return return_type;
 }

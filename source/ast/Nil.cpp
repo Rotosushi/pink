@@ -21,7 +21,10 @@
 namespace pink {
 auto Nil::Typecheck(CompilationUnit &unit) const noexcept
     -> Outcome<Type::Pointer, Error> {
-  auto return_type = unit.GetNilType();
+  // #RULE a nil literal is never in memory
+  Type::Annotations annotations;
+  annotations.IsInMemory(false);
+  auto return_type = unit.GetNilType(annotations);
   SetCachedType(return_type);
   return return_type;
 }

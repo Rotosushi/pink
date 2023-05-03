@@ -38,7 +38,14 @@ auto IfThenElse::Typecheck(CompilationUnit &unit) const noexcept
   }
   auto test_type = test_outcome.GetFirst();
 
-  if (!Equals(test_type, unit.GetBoolType())) {
+  // #RULE we use the looser version of equality here
+  // which does not check that annotations match.
+  // yet we still need to provide annotations to construct
+  // a type to compare to, so we somewhat arbitrarily select
+  // a boolean literal type for comparison.
+  Type::Annotations annotations;
+  annotations.IsInMemory(false);
+  if (!Equals(test_type, unit.GetBoolType(annotations))) {
     std::stringstream errmsg;
     errmsg << "Test expression has type [";
     errmsg << test_type;

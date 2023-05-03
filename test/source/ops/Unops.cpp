@@ -30,8 +30,9 @@ auto UnopCodegenFunction([[maybe_unused]] llvm::Value           *term,
 }
 
 TEST_CASE("ops/UnopCodegen", "[unit][ops]") {
-  auto        interner     = pink::TypeInterner{};
-  const auto *integer_type = interner.GetIntType();
+  pink::Type::Annotations annotations;
+  auto                    interner     = pink::TypeInterner{};
+  const auto             *integer_type = interner.GetIntType(annotations);
 
   pink::UnopCodegen implementation(integer_type, UnopCodegenFunction);
 
@@ -39,8 +40,9 @@ TEST_CASE("ops/UnopCodegen", "[unit][ops]") {
 }
 
 TEST_CASE("ops/UnopOverloadSet", "[unit][ops]") {
-  auto        interner     = pink::TypeInterner{};
-  const auto *integer_type = interner.GetIntType();
+  pink::Type::Annotations annotations;
+  auto                    interner     = pink::TypeInterner{};
+  const auto             *integer_type = interner.GetIntType(annotations);
 
   pink::UnopOverloadSet unop_literal;
   unop_literal.Register(integer_type, integer_type, UnopCodegenFunction);
@@ -52,9 +54,10 @@ TEST_CASE("ops/UnopOverloadSet", "[unit][ops]") {
 }
 
 TEST_CASE("ops/UnopTable", "[unit][ops]") {
-  pink::Token op           = pink::Token::Sub;
-  auto        interner     = pink::TypeInterner{};
-  const auto *integer_type = interner.GetIntType();
+  pink::Type::Annotations annotations;
+  pink::Token             op           = pink::Token::Sub;
+  auto                    interner     = pink::TypeInterner{};
+  const auto             *integer_type = interner.GetIntType(annotations);
 
   pink::UnopTable unop_table;
   unop_table.RegisterUnop(op, integer_type, integer_type, UnopCodegenFunction);

@@ -267,56 +267,66 @@ public:
   }
 
   // exposing TypeInterner's interface
-  auto GetNilType() -> NilType::Pointer { return type_interner.GetNilType(); }
-  auto GetBoolType() -> BooleanType::Pointer {
-    return type_interner.GetBoolType();
+  auto GetNilType(Type::Annotations annotations) -> NilType::Pointer {
+    return type_interner.GetNilType(annotations);
   }
-  auto GetIntType() -> IntegerType::Pointer {
-    return type_interner.GetIntType();
+  auto GetBoolType(Type::Annotations annotations) -> BooleanType::Pointer {
+    return type_interner.GetBoolType(annotations);
   }
-  auto GetCharacterType() -> CharacterType::Pointer {
-    return type_interner.GetCharacterType();
+  auto GetIntType(Type::Annotations annotations) -> IntegerType::Pointer {
+    return type_interner.GetIntType(annotations);
   }
-  auto GetVoidType() -> VoidType::Pointer {
-    return type_interner.GetVoidType();
+  auto GetCharacterType(Type::Annotations annotations)
+      -> CharacterType::Pointer {
+    return type_interner.GetCharacterType(annotations);
+  }
+  auto GetVoidType(Type::Annotations annotations) -> VoidType::Pointer {
+    return type_interner.GetVoidType(annotations);
   }
 
-  auto GetFunctionType(Type::Pointer             ret_type,
+  auto GetFunctionType(Type::Annotations         annotations,
+                       Type::Pointer             ret_type,
                        FunctionType::Arguments &&arg_types)
       -> FunctionType::Pointer {
-    return type_interner.GetFunctionType(ret_type, std::move(arg_types));
+    return type_interner.GetFunctionType(annotations,
+                                         ret_type,
+                                         std::move(arg_types));
   }
 
-  auto GetPointerType(Type::Pointer pointee_type) -> PointerType::Pointer {
-    return type_interner.GetPointerType(pointee_type);
+  auto GetPointerType(Type::Annotations annotations, Type::Pointer pointee_type)
+      -> PointerType::Pointer {
+    return type_interner.GetPointerType(annotations, pointee_type);
   }
-  auto GetSliceType(Type::Pointer pointee_type) -> SliceType::Pointer {
-    return type_interner.GetSliceType(pointee_type);
+  auto GetSliceType(Type::Annotations annotations, Type::Pointer pointee_type)
+      -> SliceType::Pointer {
+    return type_interner.GetSliceType(annotations, pointee_type);
   }
 
-  auto GetArrayType(std::size_t size, Type::Pointer element_type)
+  auto GetArrayType(Type::Annotations annotations,
+                    std::size_t       size,
+                    Type::Pointer     element_type) -> ArrayType::Pointer {
+    return type_interner.GetArrayType(annotations, size, element_type);
+  }
+
+  auto GetTupleType(Type::Annotations     annotations,
+                    TupleType::Elements &&elements) -> TupleType::Pointer {
+    return type_interner.GetTupleType(annotations, std::move(elements));
+  }
+
+  auto GetTextType(Type::Annotations annotations, std::size_t length)
       -> ArrayType::Pointer {
-    return type_interner.GetArrayType(size, element_type);
+    return type_interner.GetTextType(annotations, length);
   }
 
-  auto GetTupleType(TupleType::Elements &&elements) -> TupleType::Pointer {
-    return type_interner.GetTupleType(std::move(elements));
+  auto GetTypeVariable(Type::Annotations annotations,
+                       std::string_view  identifier) -> TypeVariable::Pointer {
+    return type_interner.GetTypeVariable(annotations,
+                                         variable_interner.Intern(identifier));
   }
 
-  auto GetTextType(std::size_t length) -> ArrayType::Pointer {
-    return type_interner.GetTextType(length);
-  }
-
-  auto GetTypeVariable(std::string_view identifier) -> TypeVariable::Pointer {
-    return type_interner.GetTypeVariable(variable_interner.Intern(identifier));
-  }
-
-  auto GetTypeVariable(InternedString identifier) -> TypeVariable::Pointer {
-    return type_interner.GetTypeVariable(identifier);
-  }
-
-  auto GetTypeVariable(std::string_view &identifier) -> TypeVariable::Pointer {
-    return GetTypeVariable(InternVariable(identifier));
+  auto GetTypeVariable(Type::Annotations annotations, InternedString identifier)
+      -> TypeVariable::Pointer {
+    return type_interner.GetTypeVariable(annotations, identifier);
   }
 
   // exposing ScopeStack's interface

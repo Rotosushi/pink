@@ -1,17 +1,17 @@
 // Copyright (C) 2023 cadence
-// 
+//
 // This file is part of pink.
-// 
+//
 // pink is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // pink is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with pink.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -21,10 +21,11 @@
 #include "type/interner/TypeInterner.h"
 
 TEST_CASE("type/ArrayType", "[unit][type]") {
-  auto        interner     = pink::TypeInterner{};
-  const auto *integer_type = interner.GetIntType();
-  size_t      array_size   = 2;
-  auto        type         = interner.GetArrayType(array_size, integer_type);
+  pink::Type::Annotations annotations;
+  auto                    interner     = pink::TypeInterner{};
+  const auto             *integer_type = interner.GetIntType(annotations);
+  size_t                  array_size   = 2;
+  auto type = interner.GetArrayType(annotations, array_size, integer_type);
   REQUIRE(type->GetKind() == pink::Type::Kind::Array);
   REQUIRE(llvm::isa<pink::ArrayType>(type));
   pink::ArrayType::Pointer array_type = llvm::dyn_cast<pink::ArrayType>(type);
@@ -34,28 +35,32 @@ TEST_CASE("type/ArrayType", "[unit][type]") {
 }
 
 TEST_CASE("type/BooleanType", "[unit][type]") {
-  auto interner = pink::TypeInterner{};
-  auto type     = interner.GetBoolType();
+  pink::Type::Annotations annotations;
+  auto                    interner = pink::TypeInterner{};
+  auto                    type     = interner.GetBoolType(annotations);
   REQUIRE(type->GetKind() == pink::Type::Kind::Boolean);
   REQUIRE(llvm::isa<pink::BooleanType>(type));
   REQUIRE(llvm::dyn_cast<pink::BooleanType>(type) != nullptr);
 }
 
 TEST_CASE("type/CharacterType", "[unit][type]") {
-  auto interner = pink::TypeInterner{};
-  auto type     = interner.GetCharacterType();
+  pink::Type::Annotations annotations;
+  auto                    interner = pink::TypeInterner{};
+  auto                    type     = interner.GetCharacterType(annotations);
   REQUIRE(type->GetKind() == pink::Type::Kind::Character);
   REQUIRE(llvm::isa<pink::CharacterType>(type));
   REQUIRE(llvm::dyn_cast<pink::CharacterType>(type) != nullptr);
 }
 
 TEST_CASE("type/FunctionType", "[unit][type]") {
-  auto                          interner       = pink::TypeInterner{};
-  const auto                   *integer_type   = interner.GetIntType();
-  const auto                   *return_type    = integer_type;
+  pink::Type::Annotations       annotations;
+  auto                          interner     = pink::TypeInterner{};
+  const auto                   *integer_type = interner.GetIntType(annotations);
+  const auto                   *return_type  = integer_type;
   pink::FunctionType::Arguments argument_types = {integer_type, integer_type};
   const auto                   *type =
-      interner.GetFunctionType(return_type,
+      interner.GetFunctionType(annotations,
+                               return_type,
                                pink::FunctionType::Arguments{argument_types});
   REQUIRE(type->GetKind() == pink::Type::Kind::Function);
   REQUIRE(llvm::isa<pink::FunctionType>(type));
@@ -75,25 +80,28 @@ TEST_CASE("type/FunctionType", "[unit][type]") {
 }
 
 TEST_CASE("type/IntegerType", "[unit][type]") {
-  auto        interner = pink::TypeInterner{};
-  const auto *type     = interner.GetIntType();
+  pink::Type::Annotations annotations;
+  auto                    interner = pink::TypeInterner{};
+  const auto             *type     = interner.GetIntType(annotations);
   REQUIRE(type->GetKind() == pink::Type::Kind::Integer);
   REQUIRE(llvm::isa<pink::IntegerType>(type));
   REQUIRE(llvm::dyn_cast<pink::IntegerType>(type) != nullptr);
 }
 
 TEST_CASE("type/NilType", "[unit][type]") {
-  auto        interner = pink::TypeInterner{};
-  const auto *type     = interner.GetNilType();
+  pink::Type::Annotations annotations;
+  auto                    interner = pink::TypeInterner{};
+  const auto             *type     = interner.GetNilType(annotations);
   REQUIRE(type->GetKind() == pink::Type::Kind::Nil);
   REQUIRE(llvm::isa<pink::NilType>(type));
   REQUIRE(llvm::dyn_cast<pink::NilType>(type) != nullptr);
 }
 
 TEST_CASE("type/PointerType", "[unit][type]") {
-  auto        interner     = pink::TypeInterner{};
-  const auto *integer_type = interner.GetIntType();
-  const auto *type         = interner.GetPointerType(integer_type);
+  pink::Type::Annotations annotations;
+  auto                    interner     = pink::TypeInterner{};
+  const auto             *integer_type = interner.GetIntType(annotations);
+  const auto *type = interner.GetPointerType(annotations, integer_type);
   REQUIRE(type->GetKind() == pink::Type::Kind::Pointer);
   REQUIRE(llvm::isa<pink::PointerType>(type));
   const auto *pointer_type = llvm::dyn_cast<pink::PointerType>(type);
@@ -102,9 +110,10 @@ TEST_CASE("type/PointerType", "[unit][type]") {
 }
 
 TEST_CASE("type/SliceType", "[unit][type]") {
-  auto        interner     = pink::TypeInterner{};
-  const auto *integer_type = interner.GetIntType();
-  const auto *type         = interner.GetSliceType(integer_type);
+  pink::Type::Annotations annotations;
+  auto                    interner     = pink::TypeInterner{};
+  const auto             *integer_type = interner.GetIntType(annotations);
+  const auto *type = interner.GetSliceType(annotations, integer_type);
   REQUIRE(type->GetKind() == pink::Type::Kind::Slice);
   REQUIRE(llvm::isa<pink::SliceType>(type));
   const auto *slice_type = llvm::dyn_cast<pink::SliceType>(type);
@@ -113,10 +122,11 @@ TEST_CASE("type/SliceType", "[unit][type]") {
 }
 
 TEST_CASE("type/TupleType", "[unit][type]") {
-  auto                      interner     = pink::TypeInterner{};
-  const auto               *integer_type = interner.GetIntType();
-  pink::TupleType::Elements elements     = {integer_type, integer_type};
-  const auto *type = interner.GetTupleType(pink::TupleType::Elements{elements});
+  pink::Type::Annotations annotations;
+  auto                    interner     = pink::TypeInterner{};
+  const auto             *integer_type = interner.GetIntType(annotations);
+  const auto             *type =
+      interner.GetTupleType(annotations, {integer_type, integer_type});
   REQUIRE(type->GetKind() == pink::Type::Kind::Tuple);
   REQUIRE(llvm::isa<pink::TupleType>(type));
   const auto *tuple_type = llvm::dyn_cast<pink::TupleType>(type);
@@ -127,8 +137,9 @@ TEST_CASE("type/TupleType", "[unit][type]") {
 }
 
 TEST_CASE("type/VoidType", "[unit][type]") {
-  auto        interner = pink::TypeInterner{};
-  const auto *type     = interner.GetVoidType();
+  pink::Type::Annotations annotations;
+  auto                    interner = pink::TypeInterner{};
+  const auto             *type     = interner.GetVoidType(annotations);
   REQUIRE(type->GetKind() == pink::Type::Kind::Void);
   REQUIRE(llvm::isa<pink::VoidType>(type));
   REQUIRE(llvm::dyn_cast<pink::VoidType>(type) != nullptr);

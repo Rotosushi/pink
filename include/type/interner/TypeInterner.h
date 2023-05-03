@@ -22,9 +22,9 @@
  *
  */
 #pragma once
+#include <list>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "type/All.h"
 
@@ -35,58 +35,114 @@ namespace pink {
  */
 class TypeInterner {
 private:
-  NilType       nil_type;
-  BooleanType   bool_type;
-  IntegerType   int_type;
-  CharacterType character_type;
-  VoidType      void_type;
+  template <typename T> class Set {
+  private:
+    // we use a list so we can construct the types directly
+    // within the list. There is no iterator invalidation
+    // so we can safely return the address of a particular
+    // type held within the list, and that Pointer will be
+    // valid for the lifetime of the TypeInterner.
+    // with vectors each time the vector needs to grow
+    // we get a new + copy, so pointers to vector elements
+    // would get out of sync as we added types to the set.
+    // so using a list here allows each type to save a malloc.
+    // as each node of the list is malloc'ed, but we save
+    // malloc'ing a vector of unique ptrs.
+    std::list<T> set;
 
-  // #TODO: vector may not be the best solution as
-  // we scale up to larger programs with an abundance of types.
-  // a map might help access time scale favorably with size.
-  // the only question is how? what is the key and what is the
-  // value? the 'key' is truly the uniqueness of each type.
-  std::vector<std::unique_ptr<FunctionType>> function_types;
-  std::vector<std::unique_ptr<PointerType>>  pointer_types;
-  std::vector<std::unique_ptr<ArrayType>>    array_types;
-  std::vector<std::unique_ptr<SliceType>>    slice_types;
-  std::vector<std::unique_ptr<TupleType>>    tuple_types;
-  std::vector<std::unique_ptr<TypeVariable>> identifier_types;
+  public:
+    template <class... Args> auto Get(Args &&...args) -> T::Pointer {
+      std::list<T> possible;
+      possible.emplace_back(std::forward<Args>(args)...);
+      for (auto &type : set) {
+        if (possible.front().StrictEquals(&type)) {
+          return &type;
+        }
+      }
+
+      set.splice(set.end(), std::move(possible));
+      return &set.back();
+    }
+  };
+
+  Set<NilType>       nil_types;
+  Set<BooleanType>   boolean_types;
+  Set<IntegerType>   integer_types;
+  Set<CharacterType> character_types;
+  Set<VoidType>      void_types;
+  Set<FunctionType>  function_types;
+  Set<PointerType>   pointer_types;
+  Set<ArrayType>     array_types;
+  Set<SliceType>     slice_types;
+  Set<TupleType>     tuple_types;
+  Set<TypeVariable>  type_variables;
 
 public:
-  TypeInterner() noexcept
-      : nil_type(this),
-        bool_type(this),
-        int_type(this),
-        character_type(this),
-        void_type(this) {}
+  TypeInterner() noexcept                                     = default;
   ~TypeInterner()                                             = default;
   TypeInterner(const TypeInterner &other)                     = delete;
   TypeInterner(TypeInterner &&other)                          = default;
   auto operator=(const TypeInterner &other) -> TypeInterner & = delete;
   auto operator=(TypeInterner &&other) -> TypeInterner      & = default;
 
-  auto GetNilType() -> NilType::Pointer;
-  auto GetBoolType() -> BooleanType::Pointer;
-  auto GetIntType() -> IntegerType::Pointer;
-  auto GetCharacterType() -> CharacterType::Pointer;
-  auto GetVoidType() -> VoidType::Pointer;
+  auto GetNilType(Type::Annotations annotations) -> NilType::Pointer {
+    return nil_types.Get(this, annotations);
+  }
+  auto GetBoolType(Type::Annotations annotations) -> BooleanType::Pointer {
+    return boolean_types.Get(this, annotations);
+  };
+  auto GetIntType(Type::Annotations annotations) -> IntegerType::Pointer {
+    return integer_types.Get(this, annotations);
+  }
+  auto GetCharacterType(Type::Annotations annotations)
+      -> CharacterType::Pointer {
+    return character_types.Get(this, annotations);
+  }
+  auto GetVoidType(Type::Annotations annotations) -> VoidType::Pointer {
+    return void_types.Get(this, annotations);
+  }
 
-  auto GetFunctionType(Type::Pointer             ret_type,
+  auto GetFunctionType(Type::Annotations         annotations,
+                       Type::Pointer             ret_type,
                        FunctionType::Arguments &&arg_types)
-      -> FunctionType::Pointer;
+      -> FunctionType::Pointer {
+    return function_types.Get(this, annotations, ret_type, arg_types);
+  }
 
-  auto GetPointerType(Type::Pointer pointee_type) -> PointerType::Pointer;
-  auto GetSliceType(Type::Pointer pointee_type) -> SliceType::Pointer;
+  auto GetPointerType(Type::Annotations annotations, Type::Pointer pointee_type)
+      -> PointerType::Pointer {
+    return pointer_types.Get(this, annotations, pointee_type);
+  }
+  auto GetSliceType(Type::Annotations annotations, Type::Pointer pointee_type)
+      -> SliceType::Pointer {
+    return slice_types.Get(this, annotations, pointee_type);
+  }
 
-  auto GetArrayType(std::size_t size, Type::Pointer element_type)
-      -> ArrayType::Pointer;
+  auto GetArrayType(Type::Annotations annotations,
+                    std::size_t       size,
+                    Type::Pointer     element_type) -> ArrayType::Pointer {
+    return array_types.Get(this, annotations, size, element_type);
+  }
 
-  auto GetTupleType(TupleType::Elements &&elements) -> TupleType::Pointer;
+  auto GetTupleType(Type::Annotations     annotations,
+                    TupleType::Elements &&elements) -> TupleType::Pointer {
+    return tuple_types.Get(this, annotations, elements);
+  }
 
-  auto GetTextType(std::size_t length) -> ArrayType::Pointer;
+  auto GetTextType(Type::Annotations annotations, std::size_t length)
+      -> ArrayType::Pointer {
+    // text is the type of literal strings.
+    // string literals are (Constant, InMemory,
+    // non-Temporary, Comptime) ArrayTypes of
+    // (Constant, InMemory, Non-Temporary, Comptime)
+    // Characters.
+    return GetArrayType(annotations, length, GetCharacterType(annotations));
+  }
 
-  auto GetTypeVariable(InternedString identifier) -> TypeVariable::Pointer;
+  auto GetTypeVariable(Type::Annotations annotations, InternedString identifier)
+      -> TypeVariable::Pointer {
+    return type_variables.Get(this, annotations, identifier);
+  }
 };
 
 } // namespace pink
