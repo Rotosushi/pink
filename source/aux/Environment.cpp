@@ -390,7 +390,7 @@ auto CompilationUnit::AllocateGlobalText(std::string_view name,
                                          std::string_view text)
     -> llvm::GlobalVariable * {
   // #TODO: ensure that globally allocated text is unique per module.
-  // (and later between modules being combined) ((we can accomplish 
+  // (and later between modules being combined) ((we can accomplish
   //  this with a llvm::StringMap<std::string_view>, where the value
   //  being looked up is the global strings name.))
   auto *type = LLVMTextType(text.size());
@@ -732,7 +732,7 @@ auto CompilationUnit::PtrToArrayElement(llvm::StructType *array_type,
   auto *buffer_type   = array_type->getTypeAtIndex(1);
   auto [size, buffer] = LoadArray(array_type, array_ptr);
   BoundsCheck(size, index);
-  return CreateInBoundsGEP(buffer_type, buffer, {index});
+  return CreateInBoundsGEP(buffer_type, buffer, {ConstantSize(0), index});
 }
 
 auto CompilationUnit::UncheckedPtrToArrayElement(llvm::StructType *array_type,
