@@ -37,7 +37,7 @@ this intrinsic works at the block level, and lifetime
 also needs to be accounted for at the expression level itself.
 */
 auto Block::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   // #RULE An empty block is equivalent to a nil literal.
   if (IsEmpty()) {
     // #RULE Nil literals are never in memory.
@@ -73,7 +73,7 @@ auto Block::Typecheck(CompilationUnit &unit) const noexcept
   temporary.
 */
 auto Block::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   llvm::Value *result = nullptr;
   for (const auto &expression : expressions) {
     auto expression_outcome = expression->Codegen(unit);

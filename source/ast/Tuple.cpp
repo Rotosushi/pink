@@ -32,7 +32,7 @@ a tuple is always a temporary value. (it must be bound to something
 to have it's lifetime extended.)
 */
 auto Tuple::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   Type::Annotations          annotations;
   std::vector<Type::Pointer> element_types;
   element_types.reserve(elements.size());
@@ -60,7 +60,7 @@ auto Tuple::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Tuple::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   const auto *tuple_type = GetCachedTypeOrAssert();
 
   auto *tuple_layout_type =

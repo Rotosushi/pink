@@ -31,7 +31,7 @@ the result type is dependent upon the result type of the
 implementation of the unop.
 */
 auto Unop::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto optional_literal = unit.LookupUnop(op);
   if (!optional_literal) {
     std::stringstream errmsg;
@@ -71,7 +71,7 @@ auto Unop::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Unop::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto right_type = right->GetCachedTypeOrAssert();
 
   auto right_outcome = right->Codegen(unit);

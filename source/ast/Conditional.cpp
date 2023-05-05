@@ -31,7 +31,7 @@ the then and else blocks are blocks, and so they can be in memory or literal,
 const or mutable, temporary or non-temporary.
 */
 auto IfThenElse::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto test_outcome = test->Typecheck(unit);
   if (!test_outcome) {
     return test_outcome;
@@ -91,7 +91,7 @@ auto IfThenElse::Typecheck(CompilationUnit &unit) const noexcept
   #TODO: add if blocks without else branches. (these have Type Nil)
 */
 auto IfThenElse::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   // emit the test expression into whatever basic_block we
   // are currently inserting into.
   auto test_outcome = test->Codegen(unit);

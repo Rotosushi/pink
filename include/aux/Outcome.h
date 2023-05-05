@@ -25,6 +25,8 @@
 #include <cassert> // assert
 #include <variant> // std::variant
 
+#include "aux/Error.h"
+
 namespace pink {
 
 /**
@@ -33,7 +35,7 @@ namespace pink {
  * @tparam T the first alternative's type
  * @tparam U the second alternative's type
  */
-template <class T, class U> class Outcome {
+template <class T, class U = Error> class Outcome {
 private:
   std::variant<std::monostate, T, U> member;
 

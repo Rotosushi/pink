@@ -32,7 +32,7 @@ namespace pink {
   literal.
 */
 auto AddressOf::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   unit.WithinAddressOf(true);
   auto right_outcome = right->Typecheck(unit);
   if (!right_outcome) {
@@ -72,7 +72,7 @@ auto AddressOf::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto AddressOf::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   unit.WithinAddressOf(true);
   auto right_outcome = right->Codegen(unit);
   unit.WithinAddressOf(false);

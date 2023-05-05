@@ -32,7 +32,7 @@ the result type of a binop is dependent upon the result type of
 the implementation of the binop.
 */
 auto Binop::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto left_outcome = left->Typecheck(unit);
   if (!left_outcome) {
     return left_outcome;
@@ -78,13 +78,13 @@ auto Binop::Typecheck(CompilationUnit &unit) const noexcept
 
 /*
   Codegen the left hand side, the right hand side,
-  then emit the implementation of the binop using 
+  then emit the implementation of the binop using
   the values of the left and right.
 */
 auto Binop::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
-  auto left_type      = left->GetCachedTypeOrAssert();
-  auto right_type      = right->GetCachedTypeOrAssert();
+    -> Outcome<llvm::Value *> {
+  auto left_type  = left->GetCachedTypeOrAssert();
+  auto right_type = right->GetCachedTypeOrAssert();
 
   auto left_outcome = left->Codegen(unit);
   if (!left_outcome) {

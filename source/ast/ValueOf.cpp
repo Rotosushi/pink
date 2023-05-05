@@ -30,7 +30,7 @@ because pointers only 'exist' at runtime, so does the type
 need to be runtime.
 */
 auto ValueOf::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   unit.WithinDereferencePtr(true);
   auto right_outcome = right->Typecheck(unit);
   if (!right_outcome) {
@@ -63,7 +63,7 @@ auto ValueOf::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto ValueOf::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   unit.WithinDereferencePtr(true);
   auto right_outcome = right->Codegen(unit);
   if (!right_outcome) {

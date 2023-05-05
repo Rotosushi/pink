@@ -28,7 +28,7 @@ the type annotations of a variable are completely dependent upon
 the annotations of the type it is bound to.
 */
 auto Variable::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto found = unit.LookupVariable(symbol);
 
   if (found.has_value()) {
@@ -46,7 +46,7 @@ auto Variable::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Variable::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto bound = unit.LookupVariable(symbol);
   assert(bound.has_value());
   assert(bound->Value() != nullptr);

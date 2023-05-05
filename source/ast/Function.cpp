@@ -54,7 +54,7 @@ that type.
 
 */
 auto Function::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   unit.PushScope();
 
   std::vector<Type::Pointer> argument_types;
@@ -85,7 +85,7 @@ auto Function::Typecheck(CompilationUnit &unit) const noexcept
 
 */
 auto Function::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto is_main = [&]() {
     if (name[0] == 'm') {
       return strcmp(name, "main") == 0;

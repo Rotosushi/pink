@@ -111,9 +111,9 @@ public:
   }
 
   auto Typecheck(CompilationUnit &unit) const noexcept
-      -> Outcome<Type::Pointer, Error> override;
+      -> Outcome<Type::Pointer> override;
   auto Codegen(CompilationUnit &unit) const noexcept
-      -> Outcome<llvm::Value *, Error> override;
+      -> Outcome<llvm::Value *> override;
   void Print(std::ostream &stream) const noexcept override;
 
   void Accept(AstVisitor *visitor) noexcept override { visitor->Visit(this); }

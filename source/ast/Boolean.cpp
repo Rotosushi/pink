@@ -25,7 +25,7 @@ namespace pink {
   an ast::Boolean is a temporary, comptime, constant, literal.
 */
 auto Boolean::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   // #RULE a boolean literal is not in memory.
   Type::Annotations annotations;
   annotations.IsInMemory(false);
@@ -38,7 +38,7 @@ auto Boolean::Typecheck(CompilationUnit &unit) const noexcept
   construct a llvm::Constant boolean
 */
 auto Boolean::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   return unit.ConstantBoolean(value);
 }
 

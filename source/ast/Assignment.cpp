@@ -29,7 +29,7 @@ namespace pink {
   temporary or not.
 */
 auto Assignment::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   unit.OnTheLHSOfAssignment(true);
   auto left_outcome = left->Typecheck(unit);
   if (!left_outcome) {
@@ -69,7 +69,7 @@ auto Assignment::Typecheck(CompilationUnit &unit) const noexcept
 
 */
 auto Assignment::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   unit.OnTheLHSOfAssignment(true);
   auto left_outcome = left->Codegen(unit);
   if (!left_outcome) {

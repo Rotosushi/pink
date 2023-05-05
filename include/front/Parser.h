@@ -24,7 +24,6 @@
 #pragma once
 #include <iostream>
 
-#include "aux/Error.h"   // pink::Error
 #include "aux/Outcome.h" // pink::Outcome<>
 
 #include "ast/Ast.h" // pink::Ast
@@ -196,8 +195,8 @@ integer = [0-9]+
 
 class Parser {
 public:
-  using Result     = Outcome<Ast::Pointer, Error>;
-  using TypeResult = Outcome<Type::Pointer, Error>;
+  using Result     = Outcome<Ast::Pointer>;
+  using TypeResult = Outcome<Type::Pointer>;
 
 private:
   std::istream *input_stream;

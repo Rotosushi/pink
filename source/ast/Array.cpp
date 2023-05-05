@@ -34,13 +34,13 @@ when we construct an array it is a temporary value.
 (it must be bound to something to have it's lifetime extended)
 */
 auto Array::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   Type::Annotations          annotations;
   std::vector<Type::Pointer> element_types;
   element_types.reserve(elements.size());
 
-  //annotations.IsConstant(true);  // array literals are constant
-  //annotations.IsTemporary(true); // array literals are temporaries
+  // annotations.IsConstant(true);  // array literals are constant
+  // annotations.IsTemporary(true); // array literals are temporaries
   bool is_in_memory = false;
 
   for (auto &element : elements) {
@@ -69,7 +69,7 @@ auto Array::Typecheck(CompilationUnit &unit) const noexcept
   }
 
   annotations.IsInMemory(is_in_memory);
-  //annotations.IsComptime(!is_in_memory);
+  // annotations.IsComptime(!is_in_memory);
 
   auto array_type =
       unit.GetArrayType(annotations, elements.size(), element_types[0]);
@@ -83,9 +83,9 @@ auto Array::Typecheck(CompilationUnit &unit) const noexcept
   #TODO: emit stack lifetime intrisics for the array
 */
 auto Array::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto cached_type = GetCachedTypeOrAssert();
-  // #TODO if the array is composed entirely of literals 
+  // #TODO if the array is composed entirely of literals
   // create a llvm::ConstantArray instead of a stack allocation.
 
   auto *layout_type = llvm::cast<llvm::StructType>(ToLLVM(cached_type, unit));

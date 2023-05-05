@@ -33,7 +33,7 @@ be constant or mutable, and it can be temporary or not.
 the result type is dependent upon the element type of the array.
 */
 auto Subscript::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto right_outcome = right->Typecheck(unit);
   if (!right_outcome) {
     return right_outcome;
@@ -51,7 +51,7 @@ auto Subscript::Typecheck(CompilationUnit &unit) const noexcept
   //    do the range check on the value
   // we can further generalize this strategy for each location where
   // we could make use of some value at compile time.
-  // Though i am somewhat concerned about the validity of interleaving 
+  // Though i am somewhat concerned about the validity of interleaving
   // typechecking and interpretation. This might be tricky to get right.
   Type::Annotations annotations;
   annotations.IsInMemory(false);
@@ -71,7 +71,7 @@ auto Subscript::Typecheck(CompilationUnit &unit) const noexcept
   }
   auto left_type = left_outcome.GetFirst();
 
-  auto element_outcome = [&]() -> Outcome<Type::Pointer, Error> {
+  auto element_outcome = [&]() -> Outcome<Type::Pointer> {
     if (const auto *array_type = llvm::dyn_cast<ArrayType>(left_type);
         array_type != nullptr) {
       return array_type->GetElementType();
@@ -99,7 +99,7 @@ auto Subscript::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Subscript::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto left_outcome = left->Codegen(unit);
   if (!left_outcome) {
     return left_outcome;

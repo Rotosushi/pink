@@ -20,7 +20,7 @@
 
 namespace pink {
 auto Nil::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   // #RULE a nil literal is never in memory
   Type::Annotations annotations;
   annotations.IsInMemory(false);
@@ -30,7 +30,7 @@ auto Nil::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Nil::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   return unit.ConstantBoolean(false);
 }
 

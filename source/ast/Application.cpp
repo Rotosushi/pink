@@ -43,7 +43,7 @@ a mutable actual argument type can bind to a constant or mutable formal
 argument.
 */
 auto Application::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto callee_outcome = callee->Typecheck(unit);
   if (!callee_outcome) {
     return callee_outcome;
@@ -121,7 +121,7 @@ auto Application::Typecheck(CompilationUnit &unit) const noexcept
 
 */
 auto Application::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto callee_outcome = callee->Codegen(unit);
   if (!callee_outcome) {
     return callee_outcome;

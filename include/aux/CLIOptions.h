@@ -27,7 +27,6 @@
 #include <iostream>
 #include <memory>
 
-#include "aux/Error.h"
 #include "aux/Outcome.h"
 
 #include "llvm/Passes/OptimizationLevel.h"
@@ -180,6 +179,6 @@ public:
 };
 
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
-    -> Outcome<CLIOptions, Error>;
+    -> Outcome<CLIOptions>;
 
 } // namespace pink

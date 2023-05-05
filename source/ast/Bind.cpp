@@ -38,7 +38,7 @@ namespace pink {
   it simply 'steals'|'moves' the temporary allocation.
 */
 auto Bind::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto bound = unit.LookupLocalVariable(symbol);
 
   if (bound.has_value()) {
@@ -74,7 +74,7 @@ auto Bind::Typecheck(CompilationUnit &unit) const noexcept
   where T is the type of the affix expression.
 */
 auto Bind::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto found = unit.LookupLocalVariable(symbol);
   assert(!found);
 
@@ -90,7 +90,7 @@ auto Bind::Codegen(CompilationUnit &unit) const noexcept
   auto affix_value = affix_outcome.GetFirst();
 
   /*
-    #TODO: allocate space for literal types, and 
+    #TODO: allocate space for literal types, and
     steal the memory allocated for in memory types.
   */
   // #RULE we must allocate stack space for singleValueType()s

@@ -78,13 +78,9 @@ auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
 /*
   #TODO: rewrite this using some other cross platform
   getopt or getopt like function.
-
-  #TODO: this function really needs to return Outcome<CLIOptions, Error>
-  to handle the case of bad arguments gracefully. (currently they are
-  fatal errors.)
 */
 auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
-    -> Outcome<CLIOptions, Error> {
+    -> Outcome<CLIOptions> {
   int         numopt        = 0; // count of how many options we parsed
   const char *short_options = "hvi:o:O:lcs";
 

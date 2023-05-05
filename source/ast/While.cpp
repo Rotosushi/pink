@@ -29,7 +29,7 @@ namespace pink {
   the while loop acts like a new block of code.
 */
 auto While::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto test_outcome = test->Typecheck(unit);
   if (!test_outcome) {
     return test_outcome;
@@ -65,7 +65,7 @@ auto While::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto While::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto *test_BB = unit.CreateAndInsertBasicBlock("test");
   auto *body_BB = unit.CreateBasicBlock("body");
   auto *end_BB  = unit.CreateBasicBlock("end");

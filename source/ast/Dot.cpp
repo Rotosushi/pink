@@ -79,7 +79,7 @@ that is, loop over the elements of a tuple as you would an array.
 )
 */
 auto Dot::Typecheck(CompilationUnit &unit) const noexcept
-    -> Outcome<Type::Pointer, Error> {
+    -> Outcome<Type::Pointer> {
   auto left_outcome = left->Typecheck(unit);
   if (!left_outcome) {
     return left_outcome;
@@ -127,7 +127,7 @@ auto Dot::Typecheck(CompilationUnit &unit) const noexcept
 }
 
 auto Dot::Codegen(CompilationUnit &unit) const noexcept
-    -> Outcome<llvm::Value *, Error> {
+    -> Outcome<llvm::Value *> {
   auto left_outcome = left->Codegen(unit);
   if (!left_outcome) {
     return left_outcome;

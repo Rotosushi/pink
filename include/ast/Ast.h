@@ -142,9 +142,9 @@ public:
   void SetCachedType(Type::Pointer type) const noexcept { cached_type = type; }
 
   virtual auto Typecheck(CompilationUnit &unit) const noexcept
-      -> Outcome<Type::Pointer, Error> = 0;
+      -> Outcome<Type::Pointer> = 0;
   virtual auto Codegen(CompilationUnit &unit) const noexcept
-      -> Outcome<llvm::Value *, Error>                    = 0;
+      -> Outcome<llvm::Value *>                           = 0;
   virtual void Print(std::ostream &stream) const noexcept = 0;
 
   virtual void Accept(AstVisitor *visitor) noexcept            = 0;

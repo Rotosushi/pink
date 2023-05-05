@@ -63,8 +63,7 @@
 
 
 */
-#include "aux/Map.h"     // pink::Map<K, V>
-#include "aux/Outcome.h" // pink::Outcome
+#include "aux/Map.h" // pink::Map<K, V>
 
 #include "front/Token.h" // pink::Token
 
