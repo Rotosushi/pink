@@ -51,15 +51,17 @@ auto Error::ToString(std::string_view bad_source) const -> std::string {
 auto Error::Print(std::ostream &out, std::string_view bad_source) const
     -> std::ostream & {
   out << CodeToErrText(code) << ": " << text << "\n";
-  out << bad_source << "\n";
-  for (std::size_t i = 0; i < bad_source.size(); i++) {
-    if ((i < location.firstColumn) || (i >= location.lastColumn)) {
-      out << " ";
-    } else {
-      out << "^";
+  if (!bad_source.empty()) {
+    out << bad_source << "\n";
+    for (std::size_t i = 0; i < bad_source.size(); i++) {
+      if ((i < location.firstColumn) || (i >= location.lastColumn)) {
+        out << " ";
+      } else {
+        out << "^";
+      }
     }
+    out << "\n";
   }
-  out << "\n";
   return out;
 }
 
@@ -67,6 +69,14 @@ constexpr auto Error::CodeToErrText(Error::Code code) -> const char * {
   switch (code) {
   case Error::Code::None:
     return "Default Error, this should not be printed";
+  // command line argument errors
+  case Error::Code::UnknownOption:
+    return "Unknown option";
+  case Error::Code::BadOptimizationLevel:
+    return "Unknown optimization level, use one of [0, 1, 2, 3, s, z]";
+  case Error::Code::MissingInputFile:
+    return "Missing input file";
+
   // syntax error descriptions
   case Error::Code::EndOfFile:
     return "End of source file encountered";

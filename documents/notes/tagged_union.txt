@@ -1,0 +1,58 @@
+
+   * The layout of a tagged union can be
+   * { i64, [ sizeof(largest-union-element) x i8 ] }
+   *
+   * the first element is a tag, which enumerates which
+   * member of the union is active. This allows us to
+   * emit runtime checks on union access.
+   * and the second element is the buffer which holds
+   * the current active member. We can access it as
+   * different types simply by providing a different type
+   * when we load/store from the union.
+   *
+   * "type" <name> = <type> ";"
+   *
+   * "union" "{"
+   *  <identifer> ":" <type> {"," <identifier> ":" <type>}
+   * "}"
+   *
+   * the layout of a struct is simply a named struct directly
+   *
+   * "struct" "{"
+   *  <identifer> ":" <type> {"," <identifier> ":" <type>}
+   * "}"
+   *
+   * do we want tuples to be convertable to struct types?
+   *
+   *
+   * match statements can be used to handle union types.
+   *
+   * match "(" <expr> ")" "{"
+   *  <tag> "=>" <block>
+   *  {<tag> "=>" <block>}
+   * "}"
+   *
+   * each alternative of the union type must be handled by
+   * the match expression, and this can be checked at compile
+   * time.
+   *
+   * theroetically, we can also match on Integer, Boolean, 
+   * Struct and Tuple types. however this implementation is 
+   * less clear.
+   * for integers this can be broken down to a set of if 
+   * conditions, but may also be implemented with a switch 
+   * statement.
+   * for booleans match is equivalent to an if conditional.
+   * for Struct and Tuple types this essentially boils down 
+   * to matching on the value of the individual members.
+   * if you have a tuple of two integers then you could 
+   * match over the values held within those two integers
+   * as you would match over one of those integers and 
+   * then the other. ditto for a tuple of two Booleans,
+   * and similarly for a tuple with an Integer and a 
+   * Boolean. What Matching on a structure type 
+   * boils down to is matching on the shape of it's 
+   * components.
+   * 
+   * 
+   * 

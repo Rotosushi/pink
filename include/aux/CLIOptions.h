@@ -27,9 +27,12 @@
 #include <iostream>
 #include <memory>
 
-namespace fs = std::filesystem;
+#include "aux/Error.h"
+#include "aux/Outcome.h"
 
 #include "llvm/Passes/OptimizationLevel.h"
+
+namespace fs = std::filesystem;
 
 namespace pink {
 class CLIFlags {
@@ -176,6 +179,7 @@ public:
   }
 };
 
-auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions;
+auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
+    -> Outcome<CLIOptions, Error>;
 
 } // namespace pink

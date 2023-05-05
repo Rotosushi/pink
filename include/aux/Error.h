@@ -39,6 +39,11 @@ public:
   enum Code {
     None,
 
+    // command line argument errors
+    UnknownOption,
+    BadOptimizationLevel,
+    MissingInputFile,
+
     // syntax errors
     EndOfFile,
     MissingSemicolon,
@@ -123,8 +128,9 @@ public:
   auto operator=(const Error &other) -> Error & = default;
   auto operator=(Error &&other) -> Error      & = default;
 
-  [[nodiscard]] auto ToString(std::string_view bad_source) const -> std::string;
-  auto               Print(std::ostream &out, std::string_view bad_source) const
+  [[nodiscard]] auto ToString(std::string_view bad_source = "") const
+      -> std::string;
+  auto Print(std::ostream &out, std::string_view bad_source = "") const
       -> std::ostream &;
 };
 } // namespace pink

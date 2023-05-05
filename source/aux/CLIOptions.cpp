@@ -83,7 +83,8 @@ auto CLIOptions::PrintHelp(std::ostream &out) -> std::ostream & {
   to handle the case of bad arguments gracefully. (currently they are
   fatal errors.)
 */
-auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
+auto ParseCLIOptions(std::ostream &out, int argc, char **argv)
+    -> Outcome<CLIOptions, Error> {
   int         numopt        = 0; // count of how many options we parsed
   const char *short_options = "hvi:o:O:lcs";
 
@@ -92,8 +93,8 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   CLIFlags                flags;
   llvm::OptimizationLevel optimization_level = llvm::OptimizationLevel::O0;
 
-  // note: we have to use a c style array here because of the api of
-  // getopt_long(3) NOLINTBEGIN
+  // note: we have to use c style programming here to interop with getopt_long
+  // NOLINTBEGIN
   static struct option long_options[] = {
       {"help", no_argument, nullptr, 'h'},
       {"version", no_argument, nullptr, 'v'},
@@ -109,7 +110,6 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       {"emit-assembly", no_argument, nullptr, 's'},
       {"emit-asm", no_argument, nullptr, 's'},
       {nullptr, 0, nullptr, 0}};
-  // NOLINTEND
 
   int option = 0;
   int optind = 0;
@@ -208,11 +208,10 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       }
 
       default: {
-        std::string errmsg{"Unkown optimization level ["};
+        std::string errmsg{"saw ["};
         errmsg += (char)option;
-        errmsg += "]; Use one of [0, 1, "
-                  "2, 3, s, z]";
-        FatalError(errmsg);
+        errmsg += "]";
+        return Error{Error::Code::BadOptimizationLevel, {}, errmsg};
       }
       }
       break;
@@ -224,11 +223,10 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
     }
 
     default: {
-      std::string errmsg{"Unknown option ["};
+      std::string errmsg{"saw ["};
       errmsg += (char)option;
       errmsg += "]";
-      FatalError(errmsg);
-      break;
+      return Error{Error::Code::UnknownOption, {}, errmsg};
     }
     }
   }
@@ -236,7 +234,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
   if (input_file.empty()) {
     int infile_option_index = optind + 1 + numopt;
     if (optind >= argc || infile_option_index >= argc) {
-      FatalError("input file is required");
+      return Error{Error::Code::MissingInputFile, {}};
     }
 
     char *option = argv[infile_option_index];
@@ -244,7 +242,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
       input_file = option;
       input_file = fs::absolute(input_file);
     } else {
-      FatalError("input file is required");
+      return Error{Error::Code::MissingInputFile, {}};
     }
   }
 
@@ -253,6 +251,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
     output_file.replace_extension();
   }
 
-  return {input_file, output_file, flags, optimization_level};
+  return CLIOptions{input_file, output_file, flags, optimization_level};
 }
+// NOLINTEND
 } // namespace pink

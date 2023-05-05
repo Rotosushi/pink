@@ -25,7 +25,11 @@ auto Compile(int argc, char **argv) -> int {
   auto &out         = std::cout;
   auto &err         = std::cerr;
   auto  cli_options = pink::ParseCLIOptions(err, argc, argv);
-  auto  env = pink::CompilationUnit::CreateNativeCompilationUnit(cli_options);
+  if (!cli_options) {
+    cli_options.GetSecond().Print(out);
+  }
+  auto env = pink::CompilationUnit::CreateNativeCompilationUnit(
+      cli_options.GetFirst());
 
   if (env.Compile(out, err) == EXIT_FAILURE) {
     return EXIT_FAILURE;
