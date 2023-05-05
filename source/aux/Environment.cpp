@@ -72,12 +72,11 @@ auto CompilationUnit::ToConstantInit(std::string_view text)
  * to be decided later.
  */
 auto CompilationUnit::Gensym(std::string_view prefix) -> InternedString {
-  std::random_device                  random;
-  std::mt19937                        generator{random()};
-  std::uniform_int_distribution<long> distribution;
-  auto                                generate = [&]() {
+  std::random_device                 seed;
+  std::mt19937                       generator{seed()};
+  std::uniform_int_distribution<int> distribution;
+  auto                               generate = [&]() {
     std::string sym{prefix};
-    sym += "__";
     sym += std::to_string(distribution(generator));
     return sym;
   };
@@ -264,6 +263,40 @@ auto CompilationUnit::CodegenTerms(Terms &terms) -> std::optional<Error> {
   return {};
 }
 
+// we may want to print errors at some point. (it happened for Compile and Link)
+auto CompilationUnit::DefaultAnalysis([[maybe_unused]] std::ostream &err)
+    -> int {
+  // quote: buildPerModuleDefaultPipeline "... Level cannot be 'O0' here ..."
+  if (GetOptimizationLevel() != llvm::OptimizationLevel::O0) {
+    llvm::LoopAnalysisManager     LAM;
+    llvm::FunctionAnalysisManager FAM;
+    llvm::CGSCCAnalysisManager    CGAM;
+    llvm::ModuleAnalysisManager   MAM;
+
+    // https://llvm.org/doxygen/classllvm_1_1PassBuilder.html
+    llvm::PassBuilder passBuilder;
+
+    // #TODO: what are the default analysis that this constructs?
+    FAM.registerPass([&] { return passBuilder.buildDefaultAAPipeline(); });
+
+    // Register the AnalysisManagers with the Pass Builder
+    passBuilder.registerModuleAnalyses(MAM);
+    passBuilder.registerCGSCCAnalyses(CGAM);
+    passBuilder.registerFunctionAnalyses(FAM);
+    passBuilder.registerLoopAnalyses(LAM);
+    // This registers each of the passes with eachother, so they
+    // can perform optimizations together, lazily
+    passBuilder.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+    llvm::ModulePassManager MPM =
+        passBuilder.buildPerModuleDefaultPipeline(GetOptimizationLevel());
+
+    // Run the optimizer against the IR
+    MPM.run(*module, MAM);
+  }
+  return EXIT_SUCCESS;
+}
+
 auto CompilationUnit::NativeCPUFeatures() noexcept -> std::string {
   std::string           cpu_features;
   llvm::StringMap<bool> features;
@@ -356,6 +389,10 @@ auto CompilationUnit::CreateTestCompilationUnit() -> CompilationUnit {
 auto CompilationUnit::AllocateGlobalText(std::string_view name,
                                          std::string_view text)
     -> llvm::GlobalVariable * {
+  // #TODO: ensure that globally allocated text is unique per module.
+  // (and later between modules being combined) ((we can accomplish 
+  //  this with a llvm::StringMap<std::string_view>, where the value
+  //  being looked up is the global strings name.))
   auto *type = LLVMTextType(text.size());
   auto *init = ConstantText(text);
   return AllocateGlobal(name, type, init);
@@ -391,13 +428,13 @@ auto CompilationUnit::AllocateLocal(std::string_view name,
   auto *entry = &current_function->getEntryBlock();
   instruction_builder->SetInsertPoint(entry, entry->begin());
 
-  auto *local = CreateAlloca(type, nullptr, name);
+  auto *alloca = CreateAlloca(type, nullptr, name);
   if (init != nullptr) {
-    Store(type, local, init);
+    Store(type, init, alloca);
   }
 
   SetInsertionPoint(save);
-  return local;
+  return alloca;
 }
 
 auto CompilationUnit::AllocateVariable(std::string_view name,
@@ -669,8 +706,9 @@ void CompilationUnit::StoreArray(llvm::StructType             *array_type,
   auto  num_elements = buffer_type->getArrayNumElements();
   assert(init.size() <= num_elements);
   auto *element_type = buffer_type->getArrayElementType();
+  auto *buffer       = ArrayBuffer(array_type, array_ptr);
   for (std::size_t index = 0; index < num_elements; ++index) {
-    auto *element = UncheckedPtrToArrayElement(array_type, array_ptr, index);
+    auto *element = CreateConstInBoundsGEP2_64(buffer_type, buffer, 0, index);
     Store(element_type, init[index], element);
   }
   StoreArraySize(array_type, array_ptr, ConstantSize(num_elements));
@@ -824,7 +862,7 @@ auto CompilationUnit::SysWrite(llvm::Value *filenum,
 
   auto *mov_rdi = [&]() {
     if (llvm::isa<llvm::ConstantInt>(filenum)) {
-      return InlineAsm(mov_rdi_type, "mov_rdi, $1", "={rdi},i");
+      return InlineAsm(mov_rdi_type, "mov rdi, $1", "={rdi},i");
     }
     return InlineAsm(mov_rdi_type, "mov rdi, $1", "={rdi},r");
   }();
@@ -851,7 +889,7 @@ void CompilationUnit::SysExit(llvm::Value *exit_code) {
     if (llvm::isa<llvm::ConstantInt>(exit_code)) {
       return InlineAsm(mov_rdi_type, "mov rdi, $1", "={rdi},i");
     }
-    return InlineAsm(mov_rdi_type, "mov rdi $1", "={rdi},r");
+    return InlineAsm(mov_rdi_type, "mov rdi, $1", "={rdi},r");
   }();
   auto *mov_rax = InlineAsm(mov_rax_type, "mov rax, 60", "={rax}");
   auto *syscall = InlineAsm(syscall_type, "syscall", "");
@@ -861,41 +899,6 @@ void CompilationUnit::SysExit(llvm::Value *exit_code) {
   CreateCall(mov_rdi, {return_value});
   CreateCall(mov_rax, {});
   CreateCall(syscall);
-}
-
-/***************************** Optimization *****************************/
-// we may want to print errors at some point. (it happened for Compile and Link)
-auto CompilationUnit::DefaultAnalysis([[maybe_unused]] std::ostream &err)
-    -> int {
-  // quote: buildPerModuleDefaultPipeline "... Level cannot be 'O0' here ..."
-  if (GetOptimizationLevel() != llvm::OptimizationLevel::O0) {
-    llvm::LoopAnalysisManager     LAM;
-    llvm::FunctionAnalysisManager FAM;
-    llvm::CGSCCAnalysisManager    CGAM;
-    llvm::ModuleAnalysisManager   MAM;
-
-    // https://llvm.org/doxygen/classllvm_1_1PassBuilder.html
-    llvm::PassBuilder passBuilder;
-
-    // #TODO: what are the default analysis that this constructs?
-    FAM.registerPass([&] { return passBuilder.buildDefaultAAPipeline(); });
-
-    // Register the AnalysisManagers with the Pass Builder
-    passBuilder.registerModuleAnalyses(MAM);
-    passBuilder.registerCGSCCAnalyses(CGAM);
-    passBuilder.registerFunctionAnalyses(FAM);
-    passBuilder.registerLoopAnalyses(LAM);
-    // This registers each of the passes with eachother, so they
-    // can perform optimizations together, lazily
-    passBuilder.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-    llvm::ModulePassManager MPM =
-        passBuilder.buildPerModuleDefaultPipeline(GetOptimizationLevel());
-
-    // Run the optimizer against the IR
-    MPM.run(*module, MAM);
-  }
-  return EXIT_SUCCESS;
 }
 
 /***************************** Casting *****************************/

@@ -58,9 +58,6 @@ namespace pink {
  *  and to generate code from an ast. we dont want to have multiple 'kinds' of
  *  compilation unit, because then there is the issue of bookeeping the data
  *  between the two units. (these two classes become tightly coupled)
- *
- *
- * #TODO: Environment -> CompilationUnit (because thats what it is)
  */
 class CompilationUnit {
 private:
@@ -535,6 +532,9 @@ public:
   void RuntimeError(std::string_view description, llvm::Value *exit_code);
 
   // System Calls
+  // #TODO: we could place these into library functions
+  // and emit function calls here. This would clean up
+  // emitted code.
   auto SysWriteSlice(llvm::Value      *filedes,
                      llvm::StructType *slice_type,
                      llvm::Value      *slice_pointer) -> llvm::Value *;
@@ -955,7 +955,7 @@ public:
   auto CreateICmpSLE(llvm::Value       *left,
                      llvm::Value       *right,
                      const llvm::Twine &name = "") {
-    return instruction_builder->CreateICmpSGT(left, right, name);
+    return instruction_builder->CreateICmpSLE(left, right, name);
   }
 
   auto CreateAnd(llvm::Value       *left,

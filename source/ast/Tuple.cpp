@@ -79,6 +79,7 @@ auto Tuple::Codegen(CompilationUnit &unit) const noexcept
                                                             0,
                                                             index);
     unit.Store(element_type, element_value, element_pointer);
+    index++;
   }
 
   return tuple_alloca;

@@ -157,6 +157,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
 
     case 'l': {
       flags.DoEmitLLVMIR(true);
+      flags.DoEmitObject(false);
       flags.DoLink(false);
       break;
     }
@@ -169,6 +170,7 @@ auto ParseCLIOptions(std::ostream &out, int argc, char **argv) -> CLIOptions {
 
     case 's': {
       flags.DoEmitAssembly(true);
+      flags.DoEmitObject(false);
       flags.DoLink(false);
       break;
     }
