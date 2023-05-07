@@ -676,6 +676,20 @@ auto CompilationUnit::SliceSubscript(llvm::StructType *slice_type,
                                      llvm::Type       *element_type,
                                      llvm::Value      *slice_ptr,
                                      llvm::Value      *index) -> llvm::Value * {
+
+  if (OnTheLHSOfAssignment()) {
+    OnTheLHSOfAssignment(false);
+    auto result = PtrToSliceElement(slice_type, element_type, slice_ptr, index);
+    OnTheLHSOfAssignment(true);
+    return result;
+  }
+
+  if (WithinAddressOf()) {
+    WithinAddressOf(false);
+    auto result = PtrToSliceElement(slice_type, element_type, slice_ptr, index);
+    WithinAddressOf(true);
+    return result;
+  }
   auto *element_ptr =
       PtrToSliceElement(slice_type, element_type, slice_ptr, index);
   return Load(element_type, element_ptr);
@@ -723,6 +737,30 @@ void CompilationUnit::StoreArraySize(llvm::StructType *array_type,
 auto CompilationUnit::ArraySubscript(llvm::StructType *array_type,
                                      llvm::Value      *array_ptr,
                                      llvm::Value      *index) -> llvm::Value * {
+  // #TODO remove InternalFlags, this is a hacky solution to the
+  // problem of when to emit Loads/Stores.
+  // It might be cleaner to always deal in pointers, and make code
+  // that needs a value emit the load then and there, instead of
+  // 'knowning' when to emit a load or not deep in nested code
+  // that handles values.
+  // as it stands know, essentially each use case of InternalFlags
+  // is a workaround to a bug that gets created by misusing InternalFlags
+  // in a location I didn't think it was necessary. The solution
+  // is essentially virulent accross functions dealing with values.
+  if (OnTheLHSOfAssignment()) {
+    OnTheLHSOfAssignment(false);
+    auto result = PtrToArrayElement(array_type, array_ptr, index);
+    OnTheLHSOfAssignment(true);
+    return result;
+  }
+
+  if (WithinAddressOf()) {
+    WithinAddressOf(false);
+    auto result = PtrToArrayElement(array_type, array_ptr, index);
+    WithinAddressOf(true);
+    return result;
+  }
+
   return LoadArrayElement(array_type, array_ptr, index);
 }
 

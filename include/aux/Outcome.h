@@ -104,3 +104,20 @@ public:
 };
 
 } // namespace pink
+
+/*
+// this is like 90% of the way there, but how do I spell
+// the unique name generated via UNIQUE_NAME?
+// then the TRY macro can be used within functions returning
+// an Outcome.
+#define CONCAT_INNER(a, b) a##b
+#define CONCAT(a, b)       CONCAT_INNER(a, b)
+#define UNIQUE_NAME(base)  CONCAT(base, __COUNTER__)
+
+#define TRY(variable, function, ...)                                           \
+  auto UNIQUE_NAME(outcome) = function(__VA_ARGS__);                           \
+  if (!UNIQUE_NAME(outcome)) {                                                 \
+    return UNIQUE_NAME(outcome).GetSecond();                                   \
+  }                                                                            \
+  auto &variable = UNIQUE_NAME(outcome).GetFirst();
+*/

@@ -681,6 +681,39 @@ TEST_CASE("ast/Codegen: Tuple Dot Access", "[integration][ast][ast/action]") {
   CHECK(result.value() == elements[element]);
 }
 
+TEST_CASE("ast/Codegen: Tuple Dot Assignment",
+          "[integration][ast][ast/action]") {
+  std::random_device                         seed;
+  std::mt19937                               gen{seed()};
+  std::uniform_int_distribution              dist{0, 100};
+  std::uniform_int_distribution<std::size_t> access_range{0, 5};
+  std::array                                 elements =
+      {dist(gen), dist(gen), dist(gen), dist(gen), dist(gen), dist(gen)};
+  auto element = access_range(gen);
+  auto value   = dist(gen);
+
+  std::string main = "fn main() { a := (";
+  for (std::size_t index = 0; index < elements.size(); ++index) {
+    main += std::to_string(elements[index]);
+
+    if (index < (elements.size() - 1)) {
+      main += ", ";
+    }
+  }
+  main += ");\n a.";
+  main += std::to_string(element);
+  main += " = ";
+  main += std::to_string(value);
+  main += ";\n a.";
+  main += std::to_string(element);
+  main += ";\n}";
+
+  auto result = CompileAndRunProgram(main);
+
+  REQUIRE(result.has_value());
+  CHECK(result.value() == value);
+}
+
 TEST_CASE("ast/Codegen: Array Subscript Access",
           "[integration][ast][ast/action]") {
   std::random_device                         seed;
@@ -708,4 +741,69 @@ TEST_CASE("ast/Codegen: Array Subscript Access",
   REQUIRE(result.has_value());
   CHECK(result.value() == elements[element]);
 }
+
+TEST_CASE("ast/Codegen: Array Subscript Assignment",
+          "[integration][ast][ast/action]") {
+  std::random_device                         seed;
+  std::mt19937                               gen{seed()};
+  std::uniform_int_distribution              dist{0, 100};
+  std::uniform_int_distribution<std::size_t> access_range{0, 5};
+  std::array                                 elements =
+      {dist(gen), dist(gen), dist(gen), dist(gen), dist(gen), dist(gen)};
+  auto element = access_range(gen);
+  auto value   = dist(gen);
+
+  std::string main = "fn main() { a := [";
+  for (std::size_t index = 0; index < elements.size(); ++index) {
+    main += std::to_string(elements[index]);
+
+    if (index < (elements.size() - 1)) {
+      main += ", ";
+    }
+  }
+  main += "];\n a[";
+  main += std::to_string(element);
+  main += "] = ";
+  main += std::to_string(value);
+  main += ";\n a[";
+  main += std::to_string(element);
+  main += "];\n}";
+
+  auto result = CompileAndRunProgram(main);
+
+  REQUIRE(result.has_value());
+  CHECK(result.value() == value);
+}
+
+TEST_CASE("ast/Codegen: Array Subscript Binop",
+          "[integration][ast][ast/action]") {
+  std::random_device                         seed;
+  std::mt19937                               gen{seed()};
+  std::uniform_int_distribution              dist{0, 100};
+  std::uniform_int_distribution<std::size_t> access_range{0, 5};
+  std::array                                 elements =
+      {dist(gen), dist(gen), dist(gen), dist(gen), dist(gen), dist(gen)};
+  auto element = access_range(gen);
+  auto value   = dist(gen);
+
+  std::string main = "fn main() { a := [";
+  for (std::size_t index = 0; index < elements.size(); ++index) {
+    main += std::to_string(elements[index]);
+
+    if (index < (elements.size() - 1)) {
+      main += ", ";
+    }
+  }
+  main += "];\n a[";
+  main += std::to_string(element);
+  main += "] + ";
+  main += std::to_string(value);
+  main += ";\n}";
+
+  auto result = CompileAndRunProgram(main);
+
+  REQUIRE(result.has_value());
+  CHECK(result.value() == (elements[element] + value));
+}
+
 // NOLINTEND
