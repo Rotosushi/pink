@@ -24,7 +24,7 @@ private:
   Ast::Pointer right;
 
 public:
-  ValueOf(const Location &location, Ast::Pointer right) noexcept
+  ValueOf(Location location, Ast::Pointer right) noexcept
       : Ast(Ast::Kind::ValueOf, location),
         right(std::move(right)) {}
   ~ValueOf() noexcept override                               = default;
@@ -32,6 +32,10 @@ public:
   ValueOf(ValueOf &&other) noexcept                          = default;
   auto operator=(const ValueOf &other) noexcept -> ValueOf & = delete;
   auto operator=(ValueOf &&other) noexcept -> ValueOf      & = default;
+
+  static auto Create(Location location, Ast::Pointer right) noexcept {
+    return std::make_unique<ValueOf>(location, std::move(right));
+  }
 
   [[nodiscard]] auto GetRight() noexcept -> Ast::Pointer & { return right; }
   [[nodiscard]] auto GetRight() const noexcept -> const Ast::Pointer & {

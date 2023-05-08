@@ -41,9 +41,9 @@ private:
   Arguments    arguments;
 
 public:
-  Application(const Location &location,
-              Ast::Pointer    callee,
-              Arguments       arguments) noexcept
+  Application(Location     location,
+              Ast::Pointer callee,
+              Arguments    arguments) noexcept
       : Ast(Ast::Kind::Application, location),
         callee(std::move(callee)),
         arguments(std::move(arguments)) {}
@@ -52,6 +52,13 @@ public:
   Application(Application &&other) noexcept                          = default;
   auto operator=(const Application &other) noexcept -> Application & = delete;
   auto operator=(Application &&other) noexcept -> Application      & = default;
+
+  static auto
+  Create(Location location, Ast::Pointer callee, Arguments arguments) noexcept {
+    return std::make_unique<Application>(location,
+                                         std::move(callee),
+                                         std::move(arguments));
+  }
 
   [[nodiscard]] auto GetCallee() noexcept -> Ast::Pointer & { return callee; }
   [[nodiscard]] auto GetCallee() const noexcept -> const Ast::Pointer & {

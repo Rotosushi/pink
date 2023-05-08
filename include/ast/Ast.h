@@ -51,11 +51,23 @@ namespace pink {
   okay, so it seemed weird at the time, however, if we
   add a split in the Ast heirarchy between Expressions
   and Values we can extend the compiler to perform evaluation
-  of Asts at compile time.
+  of Asts at compile time. (along the same lines of the
+  original C interpreter I wrote for this language.)
 
   I think it would be a cool to design & build around
   sticking to the phrase
   "if it can happen at comptime it does happen at comptime."
+  this would reduce much of what A programmer writes down
+  into hard coded precomputed values, except for what cannot
+  be due to the fact that it is tied to information only
+  knowable at runtime, which by the very nature of the
+  language essentially means I/O, threads can be implemented
+  in an interpreter and so can process spawning. as I think about
+  it, given that programming languages can be implemented 
+  as interpreters essentially means everything except I/O is 
+  information which can be computed during an interpretation 
+  phase. We can even imagine opening up files at comptime and 
+  read/write/modify-ing them.
 */
 
 /**

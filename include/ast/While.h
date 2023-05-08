@@ -34,7 +34,7 @@ private:
   Ast::Pointer body;
 
 public:
-  While(const Location &location, Ast::Pointer test, Ast::Pointer body) noexcept
+  While(Location location, Ast::Pointer test, Ast::Pointer body) noexcept
       : Ast(Ast::Kind::While, location),
         test(std::move(test)),
         body(std::move(body)) {}
@@ -43,6 +43,11 @@ public:
   While(While &&other) noexcept                          = default;
   auto operator=(const While &other) noexcept -> While & = delete;
   auto operator=(While &&other) noexcept -> While      & = default;
+
+  static auto
+  Create(Location location, Ast::Pointer test, Ast::Pointer right) noexcept {
+    return std::make_unique<While>(location, std::move(test), std::move(right));
+  }
 
   auto GetTest() noexcept -> Ast::Pointer & { return test; }
   auto GetTest() const noexcept -> const Ast::Pointer & { return test; }

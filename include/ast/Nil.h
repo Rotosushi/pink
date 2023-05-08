@@ -38,13 +38,17 @@ namespace pink {
  */
 class Nil : public Ast {
 public:
-  Nil(const Location &location) noexcept
+  Nil(Location location) noexcept
       : Ast(Ast::Kind::Nil, location) {}
   ~Nil() noexcept override                           = default;
   Nil(const Nil &other) noexcept                     = delete;
   Nil(Nil &&other) noexcept                          = default;
   auto operator=(const Nil &other) noexcept -> Nil & = delete;
   auto operator=(Nil &&other) noexcept -> Nil      & = default;
+
+  static auto Create(Location location) noexcept {
+    return std::make_unique<Nil>(location);
+  }
 
   static auto classof(const Ast *ast) -> bool {
     return Ast::Kind::Nil == ast->GetKind();

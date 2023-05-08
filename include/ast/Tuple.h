@@ -54,7 +54,7 @@ private:
   Elements elements;
 
 public:
-  Tuple(const Location &location, Elements elements) noexcept
+  Tuple(Location location, Elements elements) noexcept
       : Ast(Ast::Kind::Tuple, location),
         elements(std::move(elements)) {}
   ~Tuple() noexcept override                             = default;
@@ -62,6 +62,10 @@ public:
   Tuple(Tuple &&other) noexcept                          = default;
   auto operator=(const Tuple &other) noexcept -> Tuple & = delete;
   auto operator=(Tuple &&other) noexcept -> Tuple      & = default;
+
+  static auto Create(Location location, Elements elements) noexcept {
+    return std::make_unique<Tuple>(location, std::move(elements));
+  }
 
   auto GetElements() noexcept -> Elements & { return elements; }
   auto GetElements() const noexcept -> const Elements & { return elements; }

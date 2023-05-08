@@ -48,10 +48,10 @@ private:
   Ast::Pointer   body;
 
 public:
-  Function(const Location      &location,
-           const InternedString name,
-           Arguments            arguments,
-           Ast::Pointer         body) noexcept
+  Function(Location       location,
+           InternedString name,
+           Arguments      arguments,
+           Ast::Pointer   body) noexcept
       : Ast(Ast::Kind::Function, location),
         name(name),
         arguments(std::move(arguments)),
@@ -61,6 +61,16 @@ public:
   Function(Function &&other) noexcept                          = default;
   auto operator=(const Function &other) noexcept -> Function & = delete;
   auto operator=(Function &&other) noexcept -> Function      & = default;
+
+  static auto Create(Location       location,
+                     InternedString name,
+                     Arguments      arguments,
+                     Ast::Pointer   body) noexcept {
+    return std::make_unique<Function>(location,
+                                      name,
+                                      std::move(arguments),
+                                      std::move(body));
+  }
 
   auto GetName() noexcept -> InternedString { return name; }
   auto GetName() const noexcept -> InternedString { return name; }

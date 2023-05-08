@@ -47,10 +47,10 @@ private:
   Ast::Pointer right;
 
 public:
-  Binop(const Location &location,
-        Token           opr,
-        Ast::Pointer    left,
-        Ast::Pointer    right) noexcept
+  Binop(Location     location,
+        Token        opr,
+        Ast::Pointer left,
+        Ast::Pointer right) noexcept
       : Ast(Ast::Kind::Binop, location),
         op(opr),
         left(std::move(left)),
@@ -60,6 +60,16 @@ public:
   Binop(Binop &&other) noexcept                          = default;
   auto operator=(const Binop &other) noexcept -> Binop & = delete;
   auto operator=(Binop &&other) noexcept -> Binop      & = default;
+
+  static auto Create(Location     location,
+                     Token        opr,
+                     Ast::Pointer left,
+                     Ast::Pointer right) noexcept {
+    return std::make_unique<Binop>(location,
+                                   opr,
+                                   std::move(left),
+                                   std::move(right));
+  }
 
   auto GetOp() noexcept -> Token { return op; }
   auto GetOp() const noexcept -> Token { return op; }

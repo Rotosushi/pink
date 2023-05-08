@@ -21,6 +21,7 @@
 
 #include "support/ComputeLocation.hpp"
 #include "support/LanguageTerms.hpp"
+#include "support/TestTerms.hpp"
 
 #define TYPE_IS(bind_text, target_type)                                        \
   std::stringstream stream{bind_text};                                         \
@@ -46,6 +47,54 @@
     std::cerr << "actual type [" << term_type << "]\n target type ["           \
               << (target_type) << "]\n";                                       \
   }
+
+template <typename T>
+inline static auto TypecheckTerm(TermGenFn<T> fn) -> bool {
+  bool result   = true;
+  auto unit     = pink::CompilationUnit::CreateTestCompilationUnit();
+  auto expected = fn(unit);
+  auto location = ComputeLocation(expected.term.str());
+  unit.SetIStream(&expected.term);
+
+  auto parse_outcome = unit.Parse();
+  if (!parse_outcome) {
+    unit.PrintErrorWithSourceText(std::cerr, parse_outcome.GetSecond());
+    return false;
+  }
+  auto &expression = parse_outcome.GetFirst();
+
+  if (expression->GetLocation() != location) {
+    std::cerr << "actual location " << expression->GetLocation()
+              << "\n expected location " << location << "\n";
+    // location information being incorrect
+    // does not stop type information from
+    // being created and checked, so this
+    // merely fails the test, it doesn't
+    // cause early return.
+    result = false;
+  }
+
+  auto typecheck_outcome = expression->Typecheck(unit);
+  if (!typecheck_outcome) {
+    unit.PrintErrorWithSourceText(std::cerr, typecheck_outcome.GetSecond());
+    return false;
+  }
+  auto type = typecheck_outcome.GetFirst();
+
+  auto equal = type->Equals(expected.type);
+  if (!equal) {
+    std::cerr << "actual type [" << type << "]\n target type [" << expected.type
+              << "]\n";
+    result = false;
+  }
+
+  return result;
+}
+
+TEST_CASE("Typecheck: Term0001", "[unit]") {
+  auto test = TypecheckTerm(Term0001);
+  REQUIRE(test);
+}
 
 // #REASON Normally I agree with this metric. and avoid macros
 // like the plague, however this is a test

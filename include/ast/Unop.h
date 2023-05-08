@@ -38,7 +38,7 @@ private:
   Ast::Pointer right;
 
 public:
-  Unop(const Location &location, Token opr, Ast::Pointer right) noexcept
+  Unop(Location location, Token opr, Ast::Pointer right) noexcept
       : Ast(Ast::Kind::Unop, location),
         op(opr),
         right(std::move(right)) {}
@@ -47,6 +47,10 @@ public:
   Unop(Unop &&other) noexcept                          = default;
   auto operator=(const Unop &other) noexcept -> Unop & = delete;
   auto operator=(Unop &&other) noexcept -> Unop      & = default;
+
+  static auto Create(Location location, Token op, Ast::Pointer right) noexcept {
+    return std::make_unique<Unop>(location, op, std::move(right));
+  }
 
   auto GetOp() noexcept -> Token { return op; }
   auto GetOp() const noexcept -> Token { return op; }

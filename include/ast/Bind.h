@@ -36,9 +36,7 @@ private:
   Ast::Pointer   affix;
 
 public:
-  Bind(const Location &location,
-       InternedString  symbol,
-       Ast::Pointer    affix) noexcept
+  Bind(Location location, InternedString symbol, Ast::Pointer affix) noexcept
       : Ast(Ast::Kind::Bind, location),
         symbol(symbol),
         affix(std::move(affix)) {}
@@ -52,6 +50,12 @@ public:
   auto GetSymbol() const noexcept -> InternedString { return symbol; }
   auto GetAffix() noexcept -> Ast::Pointer & { return affix; }
   auto GetAffix() const noexcept -> const Ast::Pointer & { return affix; }
+
+  static auto Create(Location       location,
+                     InternedString symbol,
+                     Ast::Pointer   affix) noexcept {
+    return std::make_unique<Bind>(location, symbol, std::move(affix));
+  }
 
   static auto classof(const Ast *ast) noexcept -> bool {
     return Ast::Kind::Bind == ast->GetKind();

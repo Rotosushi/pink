@@ -35,7 +35,7 @@ private:
   InternedString symbol;
 
 public:
-  Variable(const Location &location, InternedString symbol) noexcept
+  Variable(Location location, InternedString symbol) noexcept
       : Ast(Ast::Kind::Variable, location),
         symbol(symbol) {}
   ~Variable() noexcept override                                = default;
@@ -43,6 +43,10 @@ public:
   Variable(Variable &&other) noexcept                          = default;
   auto operator=(const Variable &other) noexcept -> Variable & = delete;
   auto operator=(Variable &&other) noexcept -> Variable      & = default;
+
+  static auto Create(Location location, InternedString symbol) noexcept {
+    return std::make_unique<Variable>(location, symbol);
+  }
 
   auto GetSymbol() noexcept -> InternedString { return symbol; }
   auto GetSymbol() const noexcept -> InternedString { return symbol; }

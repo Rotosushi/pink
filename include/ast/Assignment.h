@@ -33,9 +33,7 @@ private:
   Ast::Pointer right;
 
 public:
-  Assignment(const Location &location,
-             Ast::Pointer    left,
-             Ast::Pointer    right) noexcept
+  Assignment(Location location, Ast::Pointer left, Ast::Pointer right) noexcept
       : Ast(Ast::Kind::Assignment, location),
         left(std::move(left)),
         right(std::move(right)) {}
@@ -44,6 +42,13 @@ public:
   Assignment(Assignment &&other) noexcept                          = default;
   auto operator=(const Assignment &other) noexcept -> Assignment & = delete;
   auto operator=(Assignment &&other) noexcept -> Assignment      & = default;
+
+  static auto
+  Create(Location location, Ast::Pointer left, Ast::Pointer right) noexcept {
+    return std::make_unique<Assignment>(location,
+                                        std::move(left),
+                                        std::move(right));
+  }
 
   auto GetLeft() noexcept -> Ast::Pointer & { return left; }
   auto GetLeft() const noexcept -> const Ast::Pointer & { return left; }

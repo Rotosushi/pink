@@ -51,7 +51,7 @@ private:
   Value value;
 
 public:
-  Integer(const Location &location, Value value) noexcept
+  Integer(Location location, Value value) noexcept
       : Ast(Ast::Kind::Integer, location),
         value(value) {}
   ~Integer() noexcept override                               = default;
@@ -59,6 +59,10 @@ public:
   Integer(Integer &&other) noexcept                          = default;
   auto operator=(const Integer &other) noexcept -> Integer & = delete;
   auto operator=(Integer &&other) noexcept -> Integer      & = default;
+
+  static auto Create(Location location, Value value) noexcept {
+    return std::make_unique<Integer>(location, value);
+  }
 
   auto GetValue() const noexcept -> Value { return value; }
 

@@ -35,10 +35,10 @@ private:
   Ast::Pointer second;
 
 public:
-  IfThenElse(const Location &location,
-             Ast::Pointer    test,
-             Ast::Pointer    first,
-             Ast::Pointer    second) noexcept
+  IfThenElse(Location     location,
+             Ast::Pointer test,
+             Ast::Pointer first,
+             Ast::Pointer second) noexcept
       : Ast(Ast::Kind::IfThenElse, location),
         test(std::move(test)),
         first(std::move(first)),
@@ -48,6 +48,16 @@ public:
   IfThenElse(IfThenElse &&other) noexcept                          = default;
   auto operator=(const IfThenElse &other) noexcept -> IfThenElse & = delete;
   auto operator=(IfThenElse &&other) noexcept -> IfThenElse      & = default;
+
+  static auto Create(Location     location,
+                     Ast::Pointer test,
+                     Ast::Pointer first,
+                     Ast::Pointer second) noexcept {
+    return std::make_unique<IfThenElse>(location,
+                                        std::move(test),
+                                        std::move(first),
+                                        std::move(second));
+  }
 
   auto GetTest() noexcept -> Ast::Pointer & { return test; }
   auto GetTest() const noexcept -> const Ast::Pointer & { return test; }

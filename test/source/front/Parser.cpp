@@ -27,6 +27,7 @@
 
 #include "support/ComputeLocation.hpp"
 #include "support/LanguageTerms.hpp"
+#include "support/TestTerms.hpp"
 
 #include "llvm/Support/InitLLVM.h"
 
@@ -45,6 +46,38 @@
   REQUIRE(parse_result);                                                       \
   auto *expression = parse_result.GetFirst().get();                            \
   CHECK(expression->GetLocation() == location)
+
+template <typename T> inline static auto ParseTerm(TermGenFn<T> fn) -> bool {
+  bool result   = true;
+  auto unit     = pink::CompilationUnit::CreateTestCompilationUnit();
+  auto expected = fn(unit);
+  auto location = ComputeLocation(expected.term.str());
+  unit.SetIStream(&expected.term);
+
+  auto parse_outcome = unit.Parse();
+  if (!parse_outcome) {
+    unit.PrintErrorWithSourceText(std::cerr, parse_outcome.GetSecond());
+    return false;
+  }
+  auto &expression = parse_outcome.GetFirst();
+  if (expression->GetLocation() != location) {
+    std::cerr << "actual location " << expression->GetLocation()
+              << "\n expected location " << location << "\n";
+    // location information being incorrect
+    // does not stop type information from
+    // being created and checked, so this
+    // merely fails the test, it doesn't
+    // cause early return.
+    result = false;
+  }
+
+  return result;
+}
+
+TEST_CASE("Parse: Term0001", "[unit]") {
+  auto result = ParseTerm(Term0001);
+  REQUIRE(result);
+}
 
 // NOLINTNEXTLINE
 TEST_CASE("front/Parser::ParseBind", "[unit][front]") {

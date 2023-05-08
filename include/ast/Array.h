@@ -74,7 +74,7 @@ private:
   Elements elements;
 
 public:
-  Array(const Location &location, Elements elements) noexcept
+  Array(Location location, Elements elements) noexcept
       : Ast(Ast::Kind::Array, location),
         elements(std::move(elements)) {}
   ~Array() noexcept override                             = default;
@@ -82,6 +82,10 @@ public:
   Array(Array &&other) noexcept                          = default;
   auto operator=(const Array &other) noexcept -> Array & = delete;
   auto operator=(Array &&other) noexcept -> Array      & = default;
+
+  static auto Create(Location location, Elements elements) noexcept {
+    return std::make_unique<Array>(location, std::move(elements));
+  }
 
   [[nodiscard]] auto Size() const noexcept -> std::size_t {
     return elements.size();

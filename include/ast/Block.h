@@ -39,9 +39,9 @@ private:
   Expressions expressions;
 
 public:
-  Block(const Location &location) noexcept
+  Block(Location location) noexcept
       : Ast(Ast::Kind::Block, location) {}
-  Block(const Location &location, Expressions expressions) noexcept
+  Block(Location location, Expressions expressions) noexcept
       : Ast(Ast::Kind::Block, location),
         expressions(std::move(expressions)) {}
   ~Block() noexcept override                             = default;
@@ -49,6 +49,14 @@ public:
   Block(Block &&other) noexcept                          = default;
   auto operator=(const Block &other) noexcept -> Block & = delete;
   auto operator=(Block &&other) noexcept -> Block      & = default;
+
+  static auto Create(Location location) noexcept {
+    return std::make_unique<Block>(location);
+  }
+
+  static auto Create(Location location, Expressions expressions) noexcept {
+    return std::make_unique<Block>(location, std::move(expressions));
+  }
 
   auto IsEmpty() const noexcept -> bool { return begin() == end(); }
 

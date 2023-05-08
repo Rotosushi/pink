@@ -33,7 +33,7 @@ private:
   Ast::Pointer right;
 
 public:
-  Dot(const Location &location, Ast::Pointer left, Ast::Pointer right) noexcept
+  Dot(Location location, Ast::Pointer left, Ast::Pointer right) noexcept
       : Ast(Ast::Kind::Dot, location),
         left(std::move(left)),
         right(std::move(right)) {}
@@ -42,6 +42,11 @@ public:
   Dot(Dot &&other) noexcept                          = default;
   auto operator=(const Dot &other) noexcept -> Dot & = delete;
   auto operator=(Dot &&other) noexcept -> Dot      & = default;
+
+  static auto
+  Create(Location location, Ast::Pointer left, Ast::Pointer right) noexcept {
+    return std::make_unique<Dot>(location, std::move(left), std::move(right));
+  }
 
   auto GetLeft() noexcept -> Ast::Pointer & { return left; }
   auto GetLeft() const noexcept -> const Ast::Pointer & { return left; }

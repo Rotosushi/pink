@@ -309,7 +309,7 @@ auto Parser::ParseBind(InternedString   name,
                     lhs_location.firstColumn,
                     location.lastLine,
                     location.lastColumn);
-  return {std::make_unique<Bind>(bind_loc, name, std::move(affix))};
+  return {Bind::Create(bind_loc, name, std::move(affix))};
 }
 
 /*
@@ -359,7 +359,7 @@ auto Parser::ParseFunction(CompilationUnit &env) -> Parser::Result {
                      rhs_loc.lastLine,
                      rhs_loc.lastColumn};
 
-  return {std::make_unique<Function>(fn_loc, name, args, std::move(body))};
+  return {Function::Create(fn_loc, name, args, std::move(body))};
 }
 
 /*
@@ -419,7 +419,7 @@ auto Parser::ParseBlock(CompilationUnit &env) -> Parser::Result {
                      left_loc.firstColumn,
                      rhs_loc.lastLine,
                      rhs_loc.lastColumn);
-  return {std::make_unique<Block>(block_loc, std::move(expressions))};
+  return {Block::Create(block_loc, std::move(expressions))};
 }
 
 /*
@@ -481,10 +481,10 @@ auto Parser::ParseConditional(CompilationUnit &env) -> Parser::Result {
                    lhs_loc.firstColumn,
                    rhs_loc.lastLine,
                    rhs_loc.lastColumn);
-  return {std::make_unique<IfThenElse>(condloc,
-                                       std::move(test_term),
-                                       std::move(then_term),
-                                       std::move(else_term))};
+  return {IfThenElse::Create(condloc,
+                             std::move(test_term),
+                             std::move(then_term),
+                             std::move(else_term))};
 }
 
 /*
@@ -507,9 +507,7 @@ auto Parser::ParseWhile(CompilationUnit &env) -> Parser::Result {
                     lhs_loc.firstColumn,
                     rhs_loc.lastLine,
                     rhs_loc.lastColumn);
-  return {std::make_unique<While>(whileloc,
-                                  std::move(test_term),
-                                  std::move(body_term))};
+  return {While::Create(whileloc, std::move(test_term), std::move(body_term))};
 }
 
 /*
@@ -545,9 +543,9 @@ auto Parser::ParseAssignment(Ast::Pointer composite, CompilationUnit &env)
                       lhs_loc.firstColumn,
                       rhs_loc.lastLine,
                       rhs_loc.lastColumn);
-  return {std::make_unique<Assignment>(assign_loc,
-                                       std::move(composite),
-                                       std::move(right_term))};
+  return {Assignment::Create(assign_loc,
+                             std::move(composite),
+                             std::move(right_term))};
 }
 
 /*
@@ -586,9 +584,7 @@ auto Parser::ParseApplication(Ast::Pointer callee, CompilationUnit &env)
                    lhs_loc.firstColumn,
                    rhs_loc.lastLine,
                    rhs_loc.lastColumn);
-  return {std::make_unique<Application>(app_loc,
-                                        std::move(callee),
-                                        std::move(args))};
+  return {Application::Create(app_loc, std::move(callee), std::move(args))};
 }
 
 /*
@@ -642,7 +638,7 @@ auto Parser::ParseDot(Ast::Pointer left, CompilationUnit &env)
                   lhs_loc.firstColumn,
                   rhs_loc.lastLine,
                   rhs_loc.lastColumn);
-  return {std::make_unique<Dot>(dotloc, std::move(left), std::move(right))};
+  return {Dot::Create(dotloc, std::move(left), std::move(right))};
 }
 
 /*
@@ -664,8 +660,7 @@ auto Parser::ParseSubscript(Ast::Pointer left, CompilationUnit &env)
                     lhs_loc.firstColumn,
                     rhs_loc.lastLine,
                     rhs_loc.lastColumn);
-  return {
-      std::make_unique<Subscript>(location, std::move(left), std::move(right))};
+  return {Subscript::Create(location, std::move(left), std::move(right))};
 }
 
 /*
@@ -725,10 +720,10 @@ auto Parser::ParseInfix(Ast::Pointer     lhs,
                        op_loc.firstColumn,
                        rhs_loc.lastLine,
                        rhs_loc.lastColumn);
-    result = std::make_unique<Binop>(binop_loc,
-                                     op,
-                                     std::move(result.GetFirst()),
-                                     std::move(right));
+    result = Binop::Create(binop_loc,
+                           op,
+                           std::move(result.GetFirst()),
+                           std::move(right));
   }
 
   return {std::move(result.GetFirst())};
@@ -757,7 +752,7 @@ auto Parser::ParseBasic(CompilationUnit &env) -> Parser::Result {
       return ParseBind(symbol, lhs_loc, env);
     }
 
-    return {std::make_unique<Variable>(lhs_loc, symbol)};
+    return {Variable::Create(lhs_loc, symbol)};
   }
 
   // #RULE: "!" and "-" are unary operators
@@ -776,7 +771,7 @@ auto Parser::ParseBasic(CompilationUnit &env) -> Parser::Result {
                       lhs_loc.firstColumn,
                       rhs_loc.lastLine,
                       rhs_loc.lastColumn};
-    return {std::make_unique<Unop>(unop_loc, op, std::move(right))};
+    return {Unop::Create(unop_loc, op, std::move(right))};
   }
 
   // #RULE '&' in basic position is the address of operator
@@ -792,7 +787,7 @@ auto Parser::ParseBasic(CompilationUnit &env) -> Parser::Result {
                             lhs_loc.firstColumn,
                             rhs_loc.lastLine,
                             rhs_loc.lastColumn};
-    return {std::make_unique<AddressOf>(address_of_loc, std::move(right))};
+    return {AddressOf::Create(address_of_loc, std::move(right))};
   }
 
   // #RULE '*' in basic position is the address of operator
@@ -808,7 +803,7 @@ auto Parser::ParseBasic(CompilationUnit &env) -> Parser::Result {
                           lhs_loc.firstColumn,
                           rhs_loc.lastLine,
                           rhs_loc.lastColumn};
-    return {std::make_unique<ValueOf>(value_of_loc, std::move(right))};
+    return {ValueOf::Create(value_of_loc, std::move(right))};
   }
 
   // #RULE a open paren appearing in basic position
@@ -840,7 +835,7 @@ auto Parser::ParseBasic(CompilationUnit &env) -> Parser::Result {
   case Token::Nil: {
     Location lhs_loc = location;
     nexttok(); // eat 'nil'
-    return {std::make_unique<Nil>(lhs_loc)};
+    return {Nil::Create(lhs_loc)};
   }
 
   // #RULE Token::Int at basic position is a literal integer
@@ -852,21 +847,21 @@ auto Parser::ParseBasic(CompilationUnit &env) -> Parser::Result {
     }
 
     nexttok(); // eat [0-9]+
-    return {std::make_unique<Integer>(lhs_loc, maybe_integer.GetFirst())};
+    return {Integer::Create(lhs_loc, maybe_integer.GetFirst())};
   }
 
   // #RULE Token::True at basic position is the literal true
   case Token::True: {
     Location lhs_loc = location;
     nexttok(); // Eat "true"
-    return {std::make_unique<Boolean>(lhs_loc, true)};
+    return {Boolean::Create(lhs_loc, true)};
   }
 
   // #RULE Token::False at basic position is the literal false
   case Token::False: {
     Location lhs_loc = location;
     nexttok(); // Eat "false"
-    return {std::make_unique<Boolean>(lhs_loc, false)};
+    return {Boolean::Create(lhs_loc, false)};
   }
 
   default: {
@@ -902,7 +897,7 @@ auto Parser::ParseArray(CompilationUnit &env) -> Result {
                      lhs_loc.firstColumn,
                      rhs_loc.lastLine,
                      rhs_loc.lastColumn);
-  return {std::make_unique<Array>(array_loc, std::move(elements))};
+  return {Array::Create(array_loc, std::move(elements))};
 }
 
 auto Parser::ParseTuple(Ast::Pointer first_element, CompilationUnit &env)
@@ -928,7 +923,7 @@ auto Parser::ParseTuple(Ast::Pointer first_element, CompilationUnit &env)
                     lhs_loc.firstColumn,
                     rhs_loc.lastLine,
                     rhs_loc.lastColumn);
-  return {std::make_unique<Tuple>(tupleloc, std::move(elements))};
+  return {Tuple::Create(tupleloc, std::move(elements))};
 }
 
 /*

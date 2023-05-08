@@ -24,7 +24,7 @@ private:
   Ast::Pointer right;
 
 public:
-  AddressOf(const Location &location, Ast::Pointer right) noexcept
+  AddressOf(Location location, Ast::Pointer right) noexcept
       : Ast(Ast::Kind::AddressOf, location),
         right(std::move(right)) {}
   ~AddressOf() noexcept override                                 = default;
@@ -32,6 +32,10 @@ public:
   AddressOf(AddressOf &&other) noexcept                          = default;
   auto operator=(const AddressOf &other) noexcept -> AddressOf & = delete;
   auto operator=(AddressOf &&other) noexcept -> AddressOf      & = default;
+
+  static auto Create(Location location, Ast::Pointer right) noexcept {
+    return std::make_unique<AddressOf>(location, std::move(right));
+  }
 
   [[nodiscard]] auto GetRight() noexcept -> Ast::Pointer & { return right; }
   [[nodiscard]] auto GetRight() const noexcept -> const Ast::Pointer & {

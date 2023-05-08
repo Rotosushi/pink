@@ -28,9 +28,7 @@ private:
   Ast::Pointer right;
 
 public:
-  Subscript(const Location &location,
-            Ast::Pointer    left,
-            Ast::Pointer    right) noexcept
+  Subscript(Location location, Ast::Pointer left, Ast::Pointer right) noexcept
       : Ast(Ast::Kind::Subscript, location),
         left(std::move(left)),
         right(std::move(right)) {}
@@ -44,6 +42,13 @@ public:
   auto GetLeft() const noexcept -> const Ast::Pointer & { return left; }
   auto GetRight() noexcept -> Ast::Pointer & { return right; }
   auto GetRight() const noexcept -> const Ast::Pointer & { return right; }
+
+  static auto
+  Create(Location location, Ast::Pointer left, Ast::Pointer right) noexcept {
+    return std::make_unique<Subscript>(location,
+                                       std::move(left),
+                                       std::move(right));
+  }
 
   static auto classof(const Ast *ast) noexcept -> bool {
     return Ast::Kind::Subscript == ast->GetKind();

@@ -39,7 +39,7 @@ private:
   bool value;
 
 public:
-  Boolean(const Location &location, bool value) noexcept
+  Boolean(Location location, bool value) noexcept
       : Ast(Ast::Kind::Boolean, location),
         value(value) {}
   ~Boolean() noexcept override                               = default;
@@ -47,6 +47,10 @@ public:
   Boolean(Boolean &&other) noexcept                          = default;
   auto operator=(const Boolean &other) noexcept -> Boolean & = delete;
   auto operator=(Boolean &&other) noexcept -> Boolean      & = default;
+
+  static auto Create(Location location, bool value) noexcept {
+    return std::make_unique<Boolean>(location, value);
+  }
 
   auto GetValue() const noexcept -> bool { return value; }
 
